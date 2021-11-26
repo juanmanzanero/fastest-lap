@@ -18,14 +18,14 @@ Fastest-lap is an optimal laptime simulator, written in C++, and with a python A
     
     This is not a quasi-steady-state simulation. The model solves the fully transient states as in the dynamic equations without steady-state assumptions.
 
-[gg]:https://github.com/juanmanzanero/fastest-lap-private/tree/main/examples/python/gg-diagram
-[optimal-laptime]:https://github.com/juanmanzanero/fastest-lap-private/tree/main/examples/python/optimal-laptime
+[gg]:https://github.com/juanmanzanero/fastest-lap/tree/main/examples/python/gg-diagram
+[optimal-laptime]:https://github.com/juanmanzanero/fastest-lap/tree/main/examples/python/optimal-laptime
 
 ### The approach
 
 The core of the software is a C++ library, that can be used through a Python API. Full documentation is not yet available but some examples can be found in [examples/python][examples-python]
 
-[examples-python]:https://github.com/juanmanzanero/fastest-lap-private/tree/main/examples/python
+[examples-python]:https://github.com/juanmanzanero/fastest-lap/tree/main/examples/python
 
 ### Dynamic models
 
@@ -33,7 +33,7 @@ The only model implemented to date, is a [Go-Kart model][link2] with 6DOF (x,y,z
 
 The default parameters used can be found in [./database/roberto-lot-2016-kart.xml][database]
 
-[database]:https://github.com/juanmanzanero/fastest-lap-private/blob/main/database/roberto-lot-kart-2016.xml
+[database]:https://github.com/juanmanzanero/fastest-lap/blob/main/database/roberto-lot-kart-2016.xml
 
 ### Circuits
 
