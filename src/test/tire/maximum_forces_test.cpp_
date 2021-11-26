@@ -1,0 +1,75 @@
+#include "gtest/gtest.h"
+#include "src/core/tire/tire_pacejka.h"
+#include "matplotlibcpp.h"
+
+namespace plt = matplotlibcpp;
+
+using Tire_t = Tire_pacejka<0,0>;
+
+class Maximum_forces_test : public ::testing::TestWithParam<std::tuple<int>>
+{
+ protected:
+    const size_t N = 25;
+    const int i = std::get<0>(GetParam());
+    const double theta = 360.0*DEG*i/(N-1);
+};
+
+INSTANTIATE_TEST_SUITE_P(theta0, Maximum_forces_test, ::testing::Values(0));
+INSTANTIATE_TEST_SUITE_P(theta1, Maximum_forces_test, ::testing::Values(1));
+INSTANTIATE_TEST_SUITE_P(theta2, Maximum_forces_test, ::testing::Values(2));
+INSTANTIATE_TEST_SUITE_P(theta3, Maximum_forces_test, ::testing::Values(3));
+INSTANTIATE_TEST_SUITE_P(theta4, Maximum_forces_test, ::testing::Values(4));
+INSTANTIATE_TEST_SUITE_P(theta5, Maximum_forces_test, ::testing::Values(5));
+INSTANTIATE_TEST_SUITE_P(theta6, Maximum_forces_test, ::testing::Values(6));
+INSTANTIATE_TEST_SUITE_P(theta7, Maximum_forces_test, ::testing::Values(7));
+INSTANTIATE_TEST_SUITE_P(theta8, Maximum_forces_test, ::testing::Values(8));
+INSTANTIATE_TEST_SUITE_P(theta9, Maximum_forces_test, ::testing::Values(9));
+INSTANTIATE_TEST_SUITE_P(theta10, Maximum_forces_test, ::testing::Values(10));
+INSTANTIATE_TEST_SUITE_P(theta11, Maximum_forces_test, ::testing::Values(11));
+INSTANTIATE_TEST_SUITE_P(theta12, Maximum_forces_test, ::testing::Values(12));
+INSTANTIATE_TEST_SUITE_P(theta13, Maximum_forces_test, ::testing::Values(13));
+INSTANTIATE_TEST_SUITE_P(theta14, Maximum_forces_test, ::testing::Values(14));
+INSTANTIATE_TEST_SUITE_P(theta15, Maximum_forces_test, ::testing::Values(15));
+INSTANTIATE_TEST_SUITE_P(theta16, Maximum_forces_test, ::testing::Values(16));
+INSTANTIATE_TEST_SUITE_P(theta17, Maximum_forces_test, ::testing::Values(17));
+INSTANTIATE_TEST_SUITE_P(theta18, Maximum_forces_test, ::testing::Values(18));
+INSTANTIATE_TEST_SUITE_P(theta19, Maximum_forces_test, ::testing::Values(19));
+INSTANTIATE_TEST_SUITE_P(theta20, Maximum_forces_test, ::testing::Values(20));
+INSTANTIATE_TEST_SUITE_P(theta21, Maximum_forces_test, ::testing::Values(21));
+INSTANTIATE_TEST_SUITE_P(theta22, Maximum_forces_test, ::testing::Values(22));
+INSTANTIATE_TEST_SUITE_P(theta23, Maximum_forces_test, ::testing::Values(23));
+INSTANTIATE_TEST_SUITE_P(theta24, Maximum_forces_test, ::testing::Values(24));
+
+TEST_P(Maximum_forces_test, gg_diagram)
+{
+    Xml_document database = { "database/roberto-lot-kart-2016.xml", true };
+    Tire_t tire("Test tire",database,"vehicle/rear-tire/");
+
+    std::vector<double> Fx_saved = {503.99999999989507, 501.7606299804512, 493.48630774892189, 471.65320239438546, 403.80609130162441, 220.24277275949942, 
+                                    2.5995780002731048e-14, -220.24277275949942, -403.80609130162401, -471.65320239438472, -493.48630774892098, 
+                                    -501.7606299804512, -503.99983141550746, -501.76062998045114, -493.48630774892104, -471.65320239438483, -403.80609130162429, 
+                                    -220.24277275949933, -7.7297632842612846e-14, 220.24277275949936, 403.80609130162486, 471.6532023943854, 493.48630774892189, 
+                                    501.7606299804512, 503.99999999989507};
+
+    std::vector<double> Fy_saved = {0, 134.44635559698895, 284.91445262022506, 471.65320239438063, 699.41266654021092, 821.9572179383199, 839.99999999978809, 
+                                    821.9572179383199, 699.41266654021172, 471.65320239438552, 284.91445262023564, 134.44635559698887, -1.1735931059230758, 
+                                    -134.44635559698884, -284.91445262023581, -471.65320239438455, -699.41266654021115, -821.9572179383199, -839.99999999978809, 
+                                    -821.9572179383199, -699.41266654021024, -471.65320239438137, -284.91445262022472, -134.44635559698969, -2.1286090193597554e-37}; 
+
+    std::vector<double> kappa_saved = {0.090392115678262386, 0.090144619971011961, 0.089179149901133167, 0.086217944819782538, 0.072705533908717396, 0.029459933398608383, 
+                                       3.0616169978683832e-18, -0.029459933398609275, -0.072705533908717757, -0.086217944820058998, -0.08917914989688272, -0.090144619971006423, 
+                                       -0.090391975305257471, -0.090144619971002565, -0.089179149896888674, -0.086217944820053183, -0.072705533908717354, -0.029459933398609396, 
+                                       -9.1036216870996176e-18, 0.029459933398607151, 0.072705533908707806, 0.086217944819789089, 0.089179149901139856, 0.090144619970990408, 
+                                       0.090392115678262386};
+
+    std::vector<double> lambda_saved = {0, 0.0067544163649952884, 0.014805219029554666, 0.02677234952935351, 0.051290477175418819, 0.081348474038791224, 0.08564105337962763, 
+                                        0.081348474038794402, 0.051290477175419097, 0.026772349529371915, 0.014805219029431323, 0.0067544163649952147, -5.8422553868760952e-05, 
+                                        -0.0067544163649951678, -0.014805219029431506, -0.026772349529371457, -0.05129047717541884, -0.081348474038794874, -0.08564105337962763, 
+                                        -0.081348474038786978, -0.051290477175416065, -0.026772349529353985, -0.014805219029554839, -0.0067544163649950603, -1.0596408231374486e-41};
+
+    auto result = tire.compute_maximum_force(theta, 560.0);
+    EXPECT_NEAR(result.Fx, Fx_saved[i],1.0e-8) << "with i = " << i;
+    EXPECT_NEAR(result.Fy, Fy_saved[i],1.0e-8) << "with i = " << i;
+    EXPECT_NEAR(result.kappa, kappa_saved[i],1.0e-8) << "with i = " << i;
+    EXPECT_NEAR(result.lambda, lambda_saved[i],1.0e-8) << "with i = " << i;
+}

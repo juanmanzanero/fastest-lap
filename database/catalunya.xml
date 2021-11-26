@@ -1,0 +1,148 @@
+<catalunya type="closed" format="by-arcs">
+    <straight
+        length = "927.0"
+    />
+    <corner 
+        direction = "right"
+        radius = "40.0"
+        sweep = "1.48"
+    />
+    <straight
+        length = "32.0"
+    />
+    <corner
+        direction = "left"
+        radius = "50.0"
+        sweep = "1.04"
+    />
+    <straight
+        length = "87.0"
+    />
+    <corner
+        direction = "right"
+        radius = "104.0"
+        sweep = "1.10"
+    />
+    <straight
+        length = "30.0"
+    />
+    <corner
+        direction = "right"
+        radius = "150.0"
+        sweep = "1.60"
+    />
+    <straight
+        length = "263.0"
+    />
+    <corner
+        direction = "right"
+        radius = "44.0"
+        sweep = "1.48"
+    />
+    <straight
+        length = "10.0"
+    />
+    <corner
+        direction = "right"
+        radius = "100.0"
+        sweep = "1.56"
+    />
+    <straight
+        length = "177.0"
+    />
+    <corner
+        direction = "left"
+        radius = "42.0"
+        sweep = "2.54"
+    />
+    <straight
+        length = "130.0"
+    />
+    <corner
+        direction = "left"
+        radius = "150.0"
+        sweep = "0.55"
+    />
+    <straight
+        length = "115.0"
+    />
+    <corner
+        direction = "left"
+        radius = "52.0"
+        sweep = "1.48"
+    />
+    <straight
+        length = "45.0"
+    />
+    <corner
+        direction = "right"
+        radius = "100.0"
+        sweep = "0.4"
+    />
+    <straight
+        length = "181.0"
+    />
+    <corner
+        direction = "right"
+        radius = "85.0"
+        sweep = "1.72"
+    />
+    <straight
+        length = "505.0"
+    />
+    <corner
+        direction = "left"
+        radius = "34.0"
+        sweep = "2.60"
+    />
+    <straight
+        length = "100.0"
+    />
+    <corner
+        direction = "left"
+        radius = "30.0"
+        sweep = "0.8"
+    />
+    <straight
+        length = "10.0"
+    />
+    <corner
+        direction = "right"
+        radius = "60.0"
+        sweep = "3.20"
+    />
+    <straight
+        length = "135.0"
+    />
+    <corner
+        direction = "right"
+        radius = "30.0"
+        sweep = "1.40"
+    />
+    <straight
+        length = "100.0"
+    />
+    <corner
+        direction = "left"
+        radius = "25.0"
+        sweep = "1.65"
+    />
+    <straight
+        length = "10.0"
+    />
+    <corner
+        direction = "right"
+        radius = "33.0"
+        sweep = "1.50"
+    />
+    <straight
+        length = "74.84"
+    />
+    <corner
+        direction = "right"
+        radius = "90.0"
+        sweep = "1.503"
+    />
+    <straight
+    />
+</catalunya>

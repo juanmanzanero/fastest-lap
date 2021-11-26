@@ -1,0 +1,23 @@
+diff --git a/src/Algorithm/IpIpoptAlg.cpp b/src/Algorithm/IpIpoptAlg.cpp
+index e3e48a11..aca74000 100644
+--- a/src/Algorithm/IpIpoptAlg.cpp
++++ b/src/Algorithm/IpIpoptAlg.cpp
+@@ -983,12 +983,12 @@ void IpoptAlgorithm::print_copyright_message(
+    const Journalist& jnlst
+ )
+ {
+-   jnlst.Printf(J_INSUPPRESSIBLE, J_MAIN,
+-                "\n******************************************************************************\n"
+-                "This program contains Ipopt, a library for large-scale nonlinear optimization.\n"
+-                " Ipopt is released as open source code under the Eclipse Public License (EPL).\n"
+-                "         For more information visit https://github.com/coin-or/Ipopt\n"
+-                "******************************************************************************\n\n");
++// jnlst.Printf(J_INSUPPRESSIBLE, J_MAIN,
++//              "\n******************************************************************************\n"
++//              "This program contains Ipopt, a library for large-scale nonlinear optimization.\n"
++//              " Ipopt is released as open source code under the Eclipse Public License (EPL).\n"
++//              "         For more information visit https://github.com/coin-or/Ipopt\n"
++//              "******************************************************************************\n\n");
+    copyright_message_printed = true;
+ }
+ 

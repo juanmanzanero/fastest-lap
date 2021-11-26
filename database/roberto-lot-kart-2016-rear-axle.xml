@@ -1,0 +1,51 @@
+<vehicle name="roberto-lot-kart-2016">
+    <rear-axle model="axle-car">
+        <track units="m">1.2</track>
+        <stiffness>
+            <chassis>60.0e3</chassis>
+            <antiroll>0.0</antiroll>
+        </stiffness>
+        <inertia>0.2</inertia>
+    </rear-axle>
+
+    <chassis model="chassis-car">
+        <mass>165.0</mass>
+    </chassis>
+
+    <rear-tire model="tire-pacejka" type="normal">
+        <radius>0.139</radius> 
+        <radial-stiffness>61.3e3</radial-stiffness>
+        <radial-damping>1.0e3</radial-damping>
+        <nominal-vertical-load>560</nominal-vertical-load>
+        <lambdaFz0>1.6</lambdaFz0>
+	<Fz-max-ref2> 1.0 </Fz-max-ref2>
+        <longitudinal>
+            <pure>
+                <pCx1>2.3</pCx1>
+                <pDx1>0.9</pDx1>
+                <pEx1>0.95</pEx1>
+                <pKx1>20.0</pKx1>
+                <pKx2>1.0</pKx2>
+                <pKx3>-0.5</pKx3>
+            </pure>
+            <combined>
+                <rBx1>14.0</rBx1>
+                <rCx1>1.0</rCx1>    <!-- This one I am not 100% sure -->
+            </combined>
+        </longitudinal>
+        <lateral>
+            <pure>
+                <pCy1>2.3</pCy1>
+                <pDy1>1.5</pDy1>
+                <pEy1>0.9</pEy1>
+                <pKy1>37.6</pKy1> <!-- I have changed its sign -->
+                <pKy2>1.6</pKy2>
+                <pKy4>2.0</pKy4>
+            </pure>
+            <combined>
+                <rBy1>12.0</rBy1>
+                <rCy1>0.6</rCy1>
+            </combined>
+        </lateral>
+    </rear-tire>
+</vehicle>

@@ -1,0 +1,36 @@
+<ovaltrack type="straight-and-curve">
+    <straight
+    	length="150.0"
+    />
+    <corner
+	sweep="1.570796326794897"
+	radius="50.0"
+	direction ="left"
+    />
+    <straight
+	length="100.0"
+    />
+    <corner
+	sweep="1.570796326794897"
+	radius="90.0"
+	direction="left"
+    />
+    <straight
+	length="300.0"
+    />
+    <corner
+	sweep="1.570796326794897"
+	radius="50.0"
+	direction="left"
+    />
+    <straight
+	length="100.0"
+    />
+    <corner
+	sweep="1.570796326794897"
+	radius="90.0"
+	direction="left"
+    />
+    <straight
+    />	
+</ovaltrack>
