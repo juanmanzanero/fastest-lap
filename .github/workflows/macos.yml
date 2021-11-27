@@ -1,0 +1,525 @@
+name: MacOS
+
+on:
+  push:
+
+  schedule:
+    - cron: 0 4 * * TUE
+
+env:
+  BUILD_RELEASE: Release
+  BUILD_DEBUG: Debug
+
+jobs:
+  build_release:
+  
+    # The CMake configure and build commands are platform agnostic and should work equally
+    # well on Windows or Mac.  You can convert this to a matrix build if you need
+    # cross-platform coverage.
+    # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install gfortran
+      run: brew reinstall gcc
+
+    - name: Create Build Environment
+      # Some projects don't allow in-source building, so create a separate build directory
+      # We'll use this as our working directory for all subsequent commands 
+      run: cmake -E make_directory ${{runner.workspace}}/build
+
+    - name: Configure CMake
+      # Use a bash shell so we can use the same syntax for environment variable
+      # access regardless of the host operating system
+      shell: bash
+      working-directory: ${{runner.workspace}}/build
+      # Note the current convention is to use the -S and -B options here to specify source 
+      # and build directories, but this is only available with CMake 3.13 and higher.  
+      # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_RELEASE -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+
+    - name: Build
+      working-directory: ${{runner.workspace}}/build
+      shell: bash
+      # Execute the build.  You can specify a specific target with "--target <NAME>" 
+      run: cmake --build . --config $BUILD_RELEASE
+      
+    - uses: actions/upload-artifact@v2 
+      with:
+        name: tests_release
+        path: ${{runner.workspace}}/build/src/test/**/*_test
+        retention-days: 1 
+
+    - uses: actions/upload-artifact@v2 
+      with:
+        name: applications_test_release_data
+        path: src/test/applications/data/
+        retention-days: 1 
+
+    - uses: actions/upload-artifact@v2 
+      with:
+        name: database_release
+        path: database
+        retention-days: 1 
+
+    - uses: actions/upload-artifact@v2 
+      with:
+        name: libraries_release
+        path: ${{runner.workspace}}/build/thirdparty/lib/*
+        retention-days: 1 
+
+  build_debug:
+  
+    # The CMake configure and build commands are platform agnostic and should work equally
+    # well on Windows or Mac.  You can convert this to a matrix build if you need
+    # cross-platform coverage.
+    # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install gfortran
+      run: brew reinstall gcc
+
+    - name: Create Build Environment
+      # Some projects don't allow in-source building, so create a separate build directory
+      # We'll use this as our working directory for all subsequent commands 
+      run: cmake -E make_directory ${{runner.workspace}}/build
+
+    - name: Configure CMake
+      # Use a bash shell so we can use the same syntax for environment variable
+      # access regardless of the host operating system
+      shell: bash
+      working-directory: ${{runner.workspace}}/build
+      # Note the current convention is to use the -S and -B options here to specify source 
+      # and build directories, but this is only available with CMake 3.13 and higher.  
+      # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_DEBUG -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+
+    - name: Build
+      working-directory: ${{runner.workspace}}/build
+      shell: bash
+      # Execute the build.  You can specify a specific target with "--target <NAME>" 
+      run: cmake --build . --config $BUILD_DEBUG
+
+    - uses: actions/upload-artifact@v2 
+      with:
+        name: tests_debug
+        path: ${{runner.workspace}}/build/src/test/**/*_test
+        retention-days: 1 
+
+    - uses: actions/upload-artifact@v2 
+      with:
+        name: applications_test_debug_data
+        path: src/test/applications/data/
+        retention-days: 1 
+          
+    - uses: actions/upload-artifact@v2 
+      with:
+        name: database_debug
+        path: database
+        retention-days: 1 
+
+    - uses: actions/upload-artifact@v2 
+      with:
+        name: libraries_debug
+        path: ${{runner.workspace}}/build/thirdparty/lib/*
+        retention-days: 1 
+
+
+  tire_test_release:
+  
+    # The CMake configure and build commands are platform agnostic and should work equally
+    # well on Windows or Mac.  You can convert this to a matrix build if you need
+    # cross-platform coverage.
+    # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
+    runs-on: macos-latest
+    
+    needs: [build_release]
+    
+    steps:
+    - uses: actions/download-artifact@v2
+      with:
+        name: database_release
+        path: ${{runner.workspace}}/database
+
+    - uses: actions/download-artifact@v2
+      with:
+        name: tests_release
+        path: ${{runner.workspace}}
+      
+    - uses: actions/download-artifact@v2
+      with:
+        name: libraries_release
+        path: ${{runner.workspace}}
+      
+    - name: Tire test
+      working-directory: ${{runner.workspace}}
+      shell: bash     
+      # Execute tests defined by the CMake configuration.  
+      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
+      run: cp ./tire/tire_test . && chmod +x ./tire_test && export LD_LIBRARY_PATH=${{runner.workspace}}:${LD_LIBRARY_PATH} && ./tire_test
+
+  tire_test_debug:
+  
+    # The CMake configure and build commands are platform agnostic and should work equally
+    # well on Windows or Mac.  You can convert this to a matrix build if you need
+    # cross-platform coverage.
+    # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
+    runs-on: macos-latest
+    
+    needs: [build_debug]
+    
+    steps:
+    - uses: actions/download-artifact@v2
+      with:
+        name: database_debug
+        path: ${{runner.workspace}}/database
+
+    - uses: actions/download-artifact@v2
+      with:
+        name: tests_debug
+        path: ${{runner.workspace}}
+      
+    - uses: actions/download-artifact@v2
+      with:
+        name: libraries_debug
+        path: ${{runner.workspace}}
+      
+    - name: Tire test
+      working-directory: ${{runner.workspace}}
+      shell: bash     
+      # Execute tests defined by the CMake configuration.  
+      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
+      run: cp ./tire/tire_test . && chmod +x ./tire_test && export LD_LIBRARY_PATH=${{runner.workspace}}:${LD_LIBRARY_PATH} && ./tire_test
+
+  chassis_test_release:
+  
+    # The CMake configure and build commands are platform agnostic and should work equally
+    # well on Windows or Mac.  You can convert this to a matrix build if you need
+    # cross-platform coverage.
+    # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
+    runs-on: macos-latest
+    
+    needs: [build_release]
+    
+    steps:
+    - uses: actions/download-artifact@v2
+      with:
+        name: database_release
+        path: ${{runner.workspace}}/database
+
+    - uses: actions/download-artifact@v2
+      with:
+        name: tests_release
+        path: ${{runner.workspace}}
+      
+    - uses: actions/download-artifact@v2
+      with:
+        name: libraries_release
+        path: ${{runner.workspace}}
+      
+    - name: Chassis test
+      working-directory: ${{runner.workspace}}
+      shell: bash     
+      # Execute tests defined by the CMake configuration.  
+      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
+      run: cp ./chassis/chassis_test . && chmod +x ./chassis_test && export LD_LIBRARY_PATH=${{runner.workspace}}:${LD_LIBRARY_PATH} && ./chassis_test
+    
+  chassis_test_debug:
+  
+    # The CMake configure and build commands are platform agnostic and should work equally
+    # well on Windows or Mac.  You can convert this to a matrix build if you need
+    # cross-platform coverage.
+    # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
+    runs-on: macos-latest
+    
+    needs: [build_debug]
+    
+    steps:
+    - uses: actions/download-artifact@v2
+      with:
+        name: database_debug
+        path: ${{runner.workspace}}/database
+
+    - uses: actions/download-artifact@v2
+      with:
+        name: tests_debug
+        path: ${{runner.workspace}}
+      
+    - uses: actions/download-artifact@v2
+      with:
+        name: libraries_debug
+        path: ${{runner.workspace}}
+      
+    - name: Chassis test
+      working-directory: ${{runner.workspace}}
+      shell: bash     
+      # Execute tests defined by the CMake configuration.  
+      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
+      run: cp ./chassis/chassis_test . && chmod +x ./chassis_test && export LD_LIBRARY_PATH=${{runner.workspace}}:${LD_LIBRARY_PATH} && ./chassis_test
+
+  vehicles_test_release:
+  
+    # The CMake configure and build commands are platform agnostic and should work equally
+    # well on Windows or Mac.  You can convert this to a matrix build if you need
+    # cross-platform coverage.
+    # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
+    runs-on: macos-latest
+    
+    needs: [build_release]
+    
+    steps:
+    - uses: actions/download-artifact@v2
+      with:
+        name: database_release
+        path: ${{runner.workspace}}/database
+
+    - uses: actions/download-artifact@v2
+      with:
+        name: tests_release
+        path: ${{runner.workspace}}
+      
+    - uses: actions/download-artifact@v2
+      with:
+        name: libraries_release
+        path: ${{runner.workspace}}
+      
+    - name: Vehicles test
+      working-directory: ${{runner.workspace}}
+      shell: bash     
+      # Execute tests defined by the CMake configuration.  
+      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
+      run: cp vehicles/vehicles_test . && chmod +x ./vehicles_test && export LD_LIBRARY_PATH=${{runner.workspace}}:${LD_LIBRARY_PATH} && ./vehicles_test
+
+  vehicles_test_debug:
+  
+    # The CMake configure and build commands are platform agnostic and should work equally
+    # well on Windows or Mac.  You can convert this to a matrix build if you need
+    # cross-platform coverage.
+    # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
+    runs-on: macos-latest
+    
+    needs: [build_debug]
+    
+    steps:
+    - uses: actions/download-artifact@v2
+      with:
+        name: database_debug
+        path: ${{runner.workspace}}/database
+
+    - uses: actions/download-artifact@v2
+      with:
+        name: tests_debug
+        path: ${{runner.workspace}}
+      
+    - uses: actions/download-artifact@v2
+      with:
+        name: libraries_debug
+        path: ${{runner.workspace}}
+      
+    - name: Vehicles test
+      working-directory: ${{runner.workspace}}
+      shell: bash     
+      # Execute tests defined by the CMake configuration.  
+      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
+      run: cp vehicles/vehicles_test . && chmod +x ./vehicles_test && export LD_LIBRARY_PATH=${{runner.workspace}}:${LD_LIBRARY_PATH} && ./vehicles_test
+
+  applications_test_release:
+  
+    # The CMake configure and build commands are platform agnostic and should work equally
+    # well on Windows or Mac.  You can convert this to a matrix build if you need
+    # cross-platform coverage.
+    # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
+    runs-on: macos-latest
+    
+    needs: [build_release]
+    
+    steps:
+    - uses: actions/download-artifact@v2
+      with:
+        name: database_release
+        path: ${{runner.workspace}}/database
+
+    - uses: actions/download-artifact@v2
+      with:
+        name: applications_test_release_data
+        path: ${{runner.workspace}}/data
+
+    - uses: actions/download-artifact@v2
+      with:
+        name: tests_release
+        path: ${{runner.workspace}}
+
+    - uses: actions/download-artifact@v2
+      with:
+        name: libraries_release
+        path: ${{runner.workspace}}
+      
+    - name: Applications test
+      working-directory: ${{runner.workspace}}
+      shell: bash     
+      # Execute tests defined by the CMake configuration.  
+      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
+      run: cp applications/applications_test . && chmod +x ./applications_test && export LD_LIBRARY_PATH=${{runner.workspace}}:${LD_LIBRARY_PATH} && ./applications_test
+
+  applications_test_debug:
+  
+    # The CMake configure and build commands are platform agnostic and should work equally
+    # well on Windows or Mac.  You can convert this to a matrix build if you need
+    # cross-platform coverage.
+    # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
+    runs-on: macos-latest
+    
+    needs: [build_debug]
+    
+    steps:
+    - uses: actions/download-artifact@v2
+      with:
+        name: database_debug
+        path: ${{runner.workspace}}/database
+
+    - uses: actions/download-artifact@v2
+      with:
+        name: applications_test_debug_data
+        path: ${{runner.workspace}}/data
+
+    - uses: actions/download-artifact@v2
+      with:
+        name: tests_debug
+        path: ${{runner.workspace}}
+
+    - uses: actions/download-artifact@v2
+      with:
+        name: libraries_debug
+        path: ${{runner.workspace}}
+      
+    - name: Applications test
+      working-directory: ${{runner.workspace}}
+      shell: bash     
+      # Execute tests defined by the CMake configuration.  
+      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
+      run: cp applications/applications_test . && chmod +x ./applications_test && export LD_LIBRARY_PATH=${{runner.workspace}}:${LD_LIBRARY_PATH} && ./applications_test
+
+  actuators_test_release:
+  
+    # The CMake configure and build commands are platform agnostic and should work equally
+    # well on Windows or Mac.  You can convert this to a matrix build if you need
+    # cross-platform coverage.
+    # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
+    runs-on: macos-latest
+    
+    needs: [build_release]
+    
+    steps:
+    - uses: actions/download-artifact@v2
+      with:
+        name: database_release
+        path: ${{runner.workspace}}/database
+
+    - uses: actions/download-artifact@v2
+      with:
+        name: tests_release
+        path: ${{runner.workspace}}
+      
+    - uses: actions/download-artifact@v2
+      with:
+        name: libraries_release
+        path: ${{runner.workspace}}
+      
+    - name: Actuators test
+      working-directory: ${{runner.workspace}}
+      shell: bash     
+      # Execute tests defined by the CMake configuration.  
+      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
+      run: cp actuators/actuators_test . && chmod +x ./actuators_test && export LD_LIBRARY_PATH=${{runner.workspace}}:${LD_LIBRARY_PATH} && ./actuators_test
+
+  actuators_test_debug:
+  
+    # The CMake configure and build commands are platform agnostic and should work equally
+    # well on Windows or Mac.  You can convert this to a matrix build if you need
+    # cross-platform coverage.
+    # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
+    runs-on: macos-latest
+    
+    needs: [build_debug]
+    
+    steps:
+    - uses: actions/download-artifact@v2
+      with:
+        name: database_debug
+        path: ${{runner.workspace}}/database
+
+    - uses: actions/download-artifact@v2
+      with:
+        name: tests_debug
+        path: ${{runner.workspace}}
+      
+    - uses: actions/download-artifact@v2
+      with:
+        name: libraries_debug
+        path: ${{runner.workspace}}
+      
+    - name: Actuators test
+      working-directory: ${{runner.workspace}}
+      shell: bash     
+      # Execute tests defined by the CMake configuration.  
+      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
+      run: cp actuators/actuators_test . && chmod +x ./actuators_test && export LD_LIBRARY_PATH=${{runner.workspace}}:${LD_LIBRARY_PATH} && ./actuators_test
+
+  remove_artifacts_release:
+  
+    runs-on: macos-latest
+    
+    needs: [actuators_test_release, applications_test_release, chassis_test_release, tire_test_release, vehicles_test_release]
+    if: always()
+    
+    steps:
+    - uses: geekyeggo/delete-artifact@v1
+      continue-on-error: true
+      with:
+        name: database_release
+
+    - uses: geekyeggo/delete-artifact@v1
+      continue-on-error: true
+      with:
+        name: libraries_release
+
+    - uses: geekyeggo/delete-artifact@v1
+      continue-on-error: true
+      with:
+        name: tests_release
+
+    - uses: geekyeggo/delete-artifact@v1
+      continue-on-error: true
+      with:
+        name: applications_test_release_data
+
+  remove_artifacts_debug:
+  
+    runs-on: macos-latest
+    
+    needs: [actuators_test_debug, applications_test_debug, chassis_test_debug, tire_test_debug, vehicles_test_debug]
+    if: always()
+    
+    steps:
+    - uses: geekyeggo/delete-artifact@v1
+      continue-on-error: true
+      with:
+        name: database_debug
+
+    - uses: geekyeggo/delete-artifact@v1
+      continue-on-error: true
+      with:
+        name: libraries_debug
+
+    - uses: geekyeggo/delete-artifact@v1
+      continue-on-error: true
+      with:
+        name: tests_debug
+
+    - uses: geekyeggo/delete-artifact@v1
+      continue-on-error: true
+      with:
+        name: applications_test_debug_data
