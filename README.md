@@ -1,7 +1,9 @@
 # Fastest-lap 🏁🏎
 Fastest-lap is an optimal laptime simulator, written in C++, and with a python API.
 
+[![MacOS](https://github.com/juanmanzanero/fastest-lap/actions/workflows/macos.yml/badge.svg)](https://github.com/juanmanzanero/fastest-lap/actions/workflows/macos.yml)
 [![Linux](https://github.com/juanmanzanero/fastest-lap/actions/workflows/linux.yml/badge.svg)](https://github.com/juanmanzanero/fastest-lap/actions/workflows/linux.yml)
+
 <p align="center">
   <img src="https://pbs.twimg.com/media/FEJF_KaWYAEjS86?format=png&name=900x900" />
 </p>
@@ -37,7 +39,7 @@ The default parameters used can be found in [./database/roberto-lot-2016-kart.xm
 
 ### Circuits
 
-Circuits are modeled following [Peter De Buck´s][dymos] approach: connecting straights and 
+Circuits are modeled following [Peter De Buck´s][dymos] approach: connecting straights by circumference arcs.
 
 [dymos]:https://github.com/OpenMDAO/dymos
 
