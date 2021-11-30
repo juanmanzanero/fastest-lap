@@ -1,0 +1,108 @@
+name: Windows
+
+on: 
+  push:
+
+  schedule:
+    - cron: 0 4 * * MON
+
+env:
+  BUILD_RELEASE: Release
+  BUILD_DEBUG: Debug
+  CMAKE_GENERATOR: Ninja
+
+jobs:
+  build_release:
+  
+    # The CMake configure and build commands are platform agnostic and should work equally
+    # well on Windows or Mac.  You can convert this to a matrix build if you need
+    # cross-platform coverage.
+    # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}    
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Setup MinGW native environment
+      uses: msys2/setup-msys2@v2
+      with:
+         msystem: MSYS
+         update: false
+         install: >-
+           git
+           gcc
+           gcc-fortran
+           python
+           python-pip
+           cmake
+           ninja
+           make
+           patch
+           
+    - name: Install fypp
+      run: pip install fypp
+      
+    - name: Configure
+      run: >-
+        cmake .
+        -B build -DCMAKE_BUILD_TYPE=$BUILD_RELEASE
+        
+    - name: Build
+      # Execute the build.  You can specify a specific target with "--target <NAME>" 
+      run: cmake --build build
+
+      
+    - name: Test
+      working-directory: ${{runner.workspace}}/fastest-lap/build
+      # Execute the build.  You can specify a specific target with "--target <NAME>" 
+      run: ctest --verbose 
+
+  build_debug:
+  
+    # The CMake configure and build commands are platform agnostic and should work equally
+    # well on Windows or Mac.  You can convert this to a matrix build if you need
+    # cross-platform coverage.
+    # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}    
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Setup MinGW native environment
+      uses: msys2/setup-msys2@v2
+      with:
+         msystem: MSYS
+         update: false
+         install: >-
+           git
+           gcc
+           gcc-fortran
+           python
+           python-pip
+           cmake
+           ninja
+           make
+           patch
+           
+    - name: Install fypp
+      run: pip install fypp
+      
+    - name: Configure
+      run: >-
+        cmake .
+        -B build -DCMAKE_BUILD_TYPE=$BUILD_DEBUG
+        
+    - name: Build
+      # Execute the build.  You can specify a specific target with "--target <NAME>" 
+      run: cmake --build build
+      
+    - name: Test
+      working-directory: ${{runner.workspace}}/fastest-lap/build
+      # Execute the build.  You can specify a specific target with "--target <NAME>" 
+      run: ctest --verbose 
