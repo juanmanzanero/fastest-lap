@@ -6,8 +6,11 @@ set_target_properties(fastestlapc PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
     )
-if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-	set(LFASTESTLAPC_ADDITIONAL_FLAGS -static-libstdc++ -static-libgcc)
+
+if (NOT MSYS)
+	if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+		set(LFASTESTLAPC_ADDITIONAL_FLAGS -static-libstdc++ -static-libgcc)
+	endif()
 endif()
 
 target_link_libraries(fastestlapc LINK_PUBLIC lion::lion python ${LFASTESTLAPC_ADDITIONAL_FLAGS})

@@ -49,34 +49,34 @@ inline std::vector<scalar> Minimum_curvature_path::compute(const Track_by_arcs& 
 inline void Minimum_curvature_path::Fitness_fcn::operator()(Minimum_curvature_path::Fitness_fcn::ADvector& fg, const Minimum_curvature_path::Fitness_fcn::ADvector& x) const
 {
     assert(fg.size() == 1);
-    assert(x.size() == _N);
+    assert(x.size() == _n);
 
-    const scalar ds = _track.get_total_length() / ((scalar)_N); 
+    const scalar ds = _track.get_total_length() / ((scalar)_n); 
     const scalar inv_ds = 1.0/ds;
 
     const ADvector& w = x;
     
     // Compute derivatives of the normal distance
-    ADvector dw(_N);
-    ADvector d2w(_N);
+    ADvector dw(_n);
+    ADvector d2w(_n);
 
     // Compute derivative of interior points
-    for (size_t i = 1; i < _N-1; ++i) 
+    for (size_t i = 1; i < _n-1; ++i) 
     {
         dw[i] = (w[i+1]-w[i-1])*0.5*inv_ds;
         d2w[i] = (w[i+1]+w[i-1]-2.0*w[i])*inv_ds*inv_ds;
     }
 
     // Compute derivatives of first point
-    dw[0] = (w[1] - w[_N-1])*0.5*inv_ds;
-    d2w[0] = (w[1] + w[_N-1] - 2.0*w[0])*inv_ds*inv_ds;
+    dw[0] = (w[1] - w[_n-1])*0.5*inv_ds;
+    d2w[0] = (w[1] + w[_n-1] - 2.0*w[0])*inv_ds*inv_ds;
 
-    dw[_N-1] = (w[0] - w[_N-2])*0.5*inv_ds;
-    d2w[_N-1] = (w[0] + w[_N-2] - 2.0*w[_N-1])*inv_ds*inv_ds;
+    dw[_n-1] = (w[0] - w[_n-2])*0.5*inv_ds;
+    d2w[_n-1] = (w[0] + w[_n-2] - 2.0*w[_n-1])*inv_ds*inv_ds;
 
     // Compute the curvature
     CppAD::AD<scalar> total_curvature = 0.0;
-    for (size_t i = 0; i < _N; ++i)
+    for (size_t i = 0; i < _n; ++i)
     {
         const scalar s = ((scalar)i)*ds;
         total_curvature += _track.pseudo_curvature2_at(s,w[i],dw[i],d2w[i])*ds;

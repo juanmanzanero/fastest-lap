@@ -14,7 +14,7 @@ inline Track_run<DynamicModel_t>::Track_run(const DynamicModel_t& vehicle, const
   _x(),
   _n_control_variables(n_control_variables), 
   _n_blocks(_n_control_variables,0),
-  _L(_n_control_variables),
+  _lengths(_n_control_variables),
   _u0(_n_control_variables),
   _max_u(_n_control_variables,0.0),
   _min_u(_n_control_variables,0.0)
@@ -93,7 +93,7 @@ template<class DynamicModel_t>
 constexpr void Track_run<DynamicModel_t>::set_number_of_blocks(size_t i, size_t n_blocks) 
 { 
     _n_blocks.at(i) = n_blocks; 
-    _L.at(i) = std::vector<Timeseries_t>(n_blocks,1.0);
+    _lengths.at(i) = std::vector<Timeseries_t>(n_blocks,1.0);
     _u0.at(i) = std::vector<std::vector<Timeseries_t>>(n_blocks, std::vector<Timeseries_t>(_p+1,0.0));
 } 
 
@@ -118,7 +118,7 @@ void Track_run<DynamicModel_t>::set_control_points(const std::vector<typename Dy
     {
         if ( _n_blocks[i] == 0 ) break; 
 
-//      for (auto il = _L.at(i).begin(); il != _L.at(i).end(); ++il)
+//      for (auto il = _lengths.at(i).begin(); il != _lengths.at(i).end(); ++il)
 //      {
 //          *il = *ix;
 //          ++ix;
@@ -148,13 +148,13 @@ void inline Track_run<DynamicModel_t>::construct_controls(const double t_start, 
     for (size_t i = 0; i < _n_control_variables; ++i)
     {
 //      L must be scaled such that it sums the track_length
-        const scalar L = std::accumulate(_L.at(i).cbegin(), _L.at(i).cend(), 0.0);
+        const scalar L = std::accumulate(_lengths.at(i).cbegin(), _lengths.at(i).cend(), 0.0);
         const scalar factor = (t_end - t_start) / L;
 
-        for (auto il = _L.at(i).begin(); il != _L.at(i).end(); ++il)
+        for (auto il = _lengths.at(i).begin(); il != _lengths.at(i).end(); ++il)
             *il *= factor;
 
-        _controls.at(i) = sPolynomial(t_start, _L.at(i), _u0.at(i));
+        _controls.at(i) = sPolynomial(t_start, _lengths.at(i), _u0.at(i));
     }
 }
 

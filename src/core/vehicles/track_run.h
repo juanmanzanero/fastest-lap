@@ -53,7 +53,7 @@ class Track_run
     std::vector<size_t> _n_blocks; //! Number of blocks for each control polynomial
     size_t _p = 10;                //! Polynomial order of each block
 
-    std::vector<std::vector<Timeseries_t>> _L;               //! Length of the polynomial blocks
+    std::vector<std::vector<Timeseries_t>> _lengths;               //! Length of the polynomial blocks
     std::vector<std::vector<std::vector<Timeseries_t>>> _u0; //! Control values at LGL points
 
     std::vector<scalar> _max_u;

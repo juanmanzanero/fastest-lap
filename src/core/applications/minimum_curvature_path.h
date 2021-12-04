@@ -19,12 +19,12 @@ class Minimum_curvature_path
      public:
         using ADvector = std::vector<timeseries>;
 
-        Fitness_fcn(const size_t N, const Track_by_arcs& track) : _N(N), _track(track) {}
+        Fitness_fcn(const size_t N, const Track_by_arcs& track) : _n(N), _track(track) {}
 
         void operator()(ADvector& fg, const ADvector& x) const;
 
      private:
-        size_t _N;
+        size_t _n;
         Track_by_arcs _track;
     };
 
