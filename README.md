@@ -3,6 +3,7 @@ Fastest-lap is an optimal laptime simulator, written in C++, and with a python A
 
 [![MacOS](https://github.com/juanmanzanero/fastest-lap/actions/workflows/macos.yml/badge.svg)](https://github.com/juanmanzanero/fastest-lap/actions/workflows/macos.yml)
 [![Linux](https://github.com/juanmanzanero/fastest-lap/actions/workflows/linux.yml/badge.svg)](https://github.com/juanmanzanero/fastest-lap/actions/workflows/linux.yml)
+[![Windows](https://github.com/juanmanzanero/fastest-lap/actions/workflows/windows.yml/badge.svg)](https://github.com/juanmanzanero/fastest-lap/actions/workflows/windows.yml)
 
 <p align="center">
   <img src="https://pbs.twimg.com/media/FEJF_KaWYAEjS86?format=png&name=900x900" />
