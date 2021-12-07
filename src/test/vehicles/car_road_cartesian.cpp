@@ -936,7 +936,7 @@ TEST_F(Car_road_cartesian_test, braking_simulation)
     }
 
     for (size_t i = 0; i < q.size(); ++i)
-        EXPECT_NEAR(Value(q.at(i)), Value(q_saved.at(i)),1.0e-12);
+        EXPECT_NEAR(Value(q.at(i)), Value(q_saved.at(i)),2.0e-08);
 }
 
 

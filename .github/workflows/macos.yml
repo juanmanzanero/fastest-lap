@@ -59,6 +59,12 @@ jobs:
 
     - uses: actions/upload-artifact@v2 
       with:
+        name: vehicles_test_release_data
+        path: src/test/vehicles/data/
+        retention-days: 1 
+
+    - uses: actions/upload-artifact@v2 
+      with:
         name: database_release
         path: database
         retention-days: 1 
@@ -115,6 +121,12 @@ jobs:
         path: src/test/applications/data/
         retention-days: 1 
           
+    - uses: actions/upload-artifact@v2 
+      with:
+        name: vehicles_test_debug_data
+        path: src/test/vehicles/data/
+        retention-days: 1 
+
     - uses: actions/upload-artifact@v2 
       with:
         name: database_debug
@@ -278,6 +290,11 @@ jobs:
 
     - uses: actions/download-artifact@v2
       with:
+        name: vehicles_test_release_data
+        path: ${{runner.workspace}}/data
+
+    - uses: actions/download-artifact@v2
+      with:
         name: tests_release
         path: ${{runner.workspace}}
       
@@ -314,6 +331,11 @@ jobs:
         name: tests_debug
         path: ${{runner.workspace}}
       
+    - uses: actions/download-artifact@v2
+      with:
+        name: vehicles_test_debug_data
+        path: ${{runner.workspace}}/data
+
     - uses: actions/download-artifact@v2
       with:
         name: libraries_debug
@@ -496,6 +518,11 @@ jobs:
       with:
         name: applications_test_release_data
 
+    - uses: geekyeggo/delete-artifact@v1
+      continue-on-error: true
+      with:
+        name: vehicles_test_release_data
+
   remove_artifacts_debug:
   
     runs-on: macos-latest
@@ -523,3 +550,8 @@ jobs:
       continue-on-error: true
       with:
         name: applications_test_debug_data
+
+    - uses: geekyeggo/delete-artifact@v1
+      continue-on-error: true
+      with:
+        name: vehicles_test_debug_data
