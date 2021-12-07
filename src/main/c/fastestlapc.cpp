@@ -138,7 +138,7 @@ void track_coordinates(double* x_center, double* y_center, double* x_left, doubl
 }
 
 
-void optimal_laptime(double* x, double* y, double* delta, double* T, struct c_Vehicle* c_vehicle, const c_Track* c_track, const double width, const int n_points)
+void optimal_laptime(struct c_Channel* channels, struct c_Vehicle* c_vehicle, const c_Track* c_track, const double width, const int n_points, const int n_channels)
 {
     auto& track = tracks_by_arcs.at(c_track->name);
     auto& car_curv = vehicles_lot2016kart.at(c_vehicle->name).curvilinear_ad;
@@ -165,9 +165,28 @@ void optimal_laptime(double* x, double* y, double* delta, double* T, struct c_Ve
     {
         const scalar& L = car_curv.get_road().track_length();
         car_curv_sc(opt_laptime.q[i], opt_laptime.u[i], ((double)i)*L/((double)n_points));
-        x[i] = car_curv_sc.get_road().get_x();
-        y[i] = car_curv_sc.get_road().get_y();
-        delta[i] = opt_laptime.u[i][0]; 
-        T[i] = opt_laptime.u[i][1]; 
+
+        for (int j = 0; j < n_channels; ++j)
+        {
+            if ( std::string(channels[j].name) == "x" ) 
+                channels[j].data[i] = car_curv_sc.get_road().get_x();
+    
+            else if ( std::string(channels[j].name) == "y" )
+                channels[j].data[i] = car_curv_sc.get_road().get_y();
+
+            else if ( std::string(channels[j].name) == "u" )
+                channels[j].data[i] = opt_laptime.q[i][lot2016kart<scalar>::curvilinear_a::Chassis_type::IU];
+
+            else if ( std::string(channels[j].name) == "delta" )
+                channels[j].data[i] = opt_laptime.u[i][lot2016kart<scalar>::curvilinear_a::Chassis_type::Front_axle_type::ISTEERING];
+
+            else if ( std::string(channels[j].name) == "throttle" )
+                channels[j].data[i] = opt_laptime.u[i][lot2016kart<scalar>::curvilinear_a::Chassis_type::Rear_axle_type::ITORQUE];
+        }
     }
+
+    std::cout << "Channel 0" << std::endl;
+    for (int i = 0; i < n_points; ++i)
+        std::cout << channels[0].data[i] << ", " ;
+    std::cout << std::endl;
 }

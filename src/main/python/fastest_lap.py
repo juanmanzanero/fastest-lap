@@ -21,6 +21,12 @@ class c_Track(c.Structure):
                 ("is_closed", c.c_bool)
                ]
 
+class c_Channel(c.Structure):
+    _fields_ = [("data", c.POINTER(c.c_double)),
+                ("name", c.c_char_p) 
+               ]
+
+
 def load_vehicle(database_file,name):
 	name = c.c_char_p((name).encode('utf-8'))
 	database_file = c.c_char_p((database_file).encode('utf-8'))
@@ -58,26 +64,25 @@ def gg_diagram(vehicle,speed,n_points):
 
 	return ay,ay_minus,ax_max,ax_min;
 
-def optimal_laptime(vehicle, track, width, n_points):
-	c_x     = (c.c_double*n_points)();
-	c_y     = (c.c_double*n_points)();
-	c_delta = (c.c_double*n_points)();
-	c_T     = (c.c_double*n_points)();
+def optimal_laptime(vehicle, track, width, n_points, channels):
 
-	c_lib.optimal_laptime(c_x, c_y, c_delta, c_T, c.byref(vehicle), c.byref(track), c.c_double(width), c.c_int(n_points));
+	# Get channels ready to be written by C++
+	n_channels = len(channels);
+	c_Channels = ((c_Channel)*n_channels)();
 
-	x     = [None]*n_points;
-	y     = [None]*n_points;
-	delta = [None]*n_points;
-	T     = [None]*n_points;
+	for channel in range(0,n_channels):
+		c_Channels[channel].name = c.c_char_p(channels[channel].encode('utf-8'));
+		c_Channels[channel].data = c.cast((c.c_double*n_points)(),c.POINTER(c.c_double))
+
+	c_lib.optimal_laptime(c.byref(c_Channels), c.byref(vehicle), c.byref(track), c.c_double(width), c.c_int(n_points), c.c_int(n_channels));
+
+	channels_data = [[None]*n_points for i in range(n_channels)];
 
 	for i in range(n_points):
-	        x[i]     = c_x[i];
-	        y[i]     = c_y[i];
-	        delta[i] = c_delta[i]*180.0/np.pi;
-	        T[i]     = c_T[i];
+		for j in range(n_channels):
+			channels_data[j][i] = c_Channels[j].data[i];
 
-	return x, y, delta, T;
+	return channels_data;
 
 def track_coordinates(track,width,n_points):
 	c_x_center = (c.c_double*n_points)();
