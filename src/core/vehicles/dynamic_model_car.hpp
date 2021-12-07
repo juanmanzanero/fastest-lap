@@ -27,4 +27,17 @@ std::array<Timeseries_t,_NSTATE> Dynamic_model_car<Timeseries_t,Chassis_t,RoadMo
     return dqdt;
 }
 
+
+template<typename Timeseries_t, typename Chassis_t, typename RoadModel_t, size_t _NSTATE, size_t _NCONTROL>
+std::tuple<std::string,std::array<std::string,_NSTATE>,std::array<std::string,_NCONTROL>> Dynamic_model_car<Timeseries_t,Chassis_t,RoadModel_t,_NSTATE,_NCONTROL>::get_state_and_control_names() const
+{
+    std::string key_name;
+    std::array<std::string,NSTATE> q_names;
+    std::array<std::string,NCONTROL> u_names;
+    _road.set_state_and_control_names(key_name,q_names,u_names);
+    _chassis.set_state_and_control_names(q_names,u_names);
+
+    return {key_name,q_names,u_names};
+}
+
 #endif

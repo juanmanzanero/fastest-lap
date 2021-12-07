@@ -6,6 +6,7 @@
             <antiroll>0.0</antiroll>
         </stiffness>
         <inertia>0.2</inertia>
+        <smooth_throttle_coeff> 0.01 </smooth_throttle_coeff>
     </rear-axle>
 
     <chassis model="chassis-car">

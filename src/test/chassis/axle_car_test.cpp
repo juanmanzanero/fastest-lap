@@ -65,6 +65,7 @@ Rear_axle_t construct_rear_axle(const sFrame& car_frame, const std::map<std::str
                           "            <antiroll>35.0e3</antiroll>"
                           "        </stiffness>"
                           "        <inertia>0.2</inertia>"
+                          "        <smooth_throttle_coeff> 0.0 </smooth_throttle_coeff>"
                           "    </rear-axle>"
                           "</vehicle>");
 

@@ -33,6 +33,8 @@ class Road_curvilinear : public Road<Timeseries_t,STATE0,CONTROL0>
 
     constexpr const Timeseries_t& get_n() const { return _n; } 
 
+    constexpr const Timeseries_t& get_alpha() const { return _alpha; } 
+
     constexpr const scalar& get_curvature() const { return _k; }
 
     constexpr const sVector3d& get_tangent() const { return _tan; }
@@ -52,7 +54,7 @@ class Road_curvilinear : public Road<Timeseries_t,STATE0,CONTROL0>
     void set_state_and_controls(const scalar t, const std::array<Timeseries_t,NSTATE>& q, const std::array<Timeseries_t,NCONTROL>& u);
 
     template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_control_names(std::array<std::string,NSTATE>& q, std::array<std::string,NCONTROL>& u) const;
+    void set_state_and_control_names(std::string& key_name, std::array<std::string,NSTATE>& q, std::array<std::string,NCONTROL>& u) const;
 
     void update_track(const scalar t);
 

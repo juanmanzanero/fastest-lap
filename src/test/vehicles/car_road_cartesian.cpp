@@ -59,7 +59,7 @@ static_assert(Road_t::IIDPSI==12);
 class Control_acceleration
 {
  public:
-    std::array<scalar,2> operator()(const scalar t) const { 
+    std::array<scalar,2> operator()(const std::array<scalar,13>& q, const scalar t) const { 
         return {0.0,1.0};
     }
 };
@@ -68,8 +68,8 @@ class Control_acceleration
 class Control_brake
 {
  public:
-    std::array<scalar,2> operator()(const scalar t) const { 
-        return {0.0,-0.8};
+    std::array<scalar,2> operator()(const std::array<scalar,13>& q, const scalar t) const { 
+        return {0.0,-0.5};
     }
 };
 
@@ -129,6 +129,8 @@ class Car_road_cartesian_test : public ::testing::Test
 
     Xml_document* database = get_database(); 
     Dynamic_model_t car = *database;
+
+    Xml_document results = { "./data/saved_results.xml", true};
 };
 
 
@@ -898,11 +900,7 @@ TEST_F(Car_road_cartesian_test, dqdt)
 
 TEST_F(Car_road_cartesian_test, acceleration_simulation)
 {
-    const std::vector<scalar> q_saved = {187.01910029261293, 25.708419287425475, 0, 0, 
-                                             0.018484886503620991, 0, -0.0024904033777344908, 
-                                             3.4150028749262432e-16, 0, -4.1232949849367397e-17, 
-                                             2564.0455256469309, 0, 0};
-
+    const std::vector<scalar> q_saved = results.get_element("vehicles_test/car_cartesian/acceleration").get_value(std::vector<scalar>());
     const size_t n_timesteps = 5000;
     const scalar dt = 0.02;
     const scalar v0 = 18.0;
@@ -917,19 +915,12 @@ TEST_F(Car_road_cartesian_test, acceleration_simulation)
     }
 
     for (size_t i = 0; i < q.size(); ++i)
-    {
-#ifdef CHECK_BINARY_EQUAL
-        EXPECT_DOUBLE_EQ(Value(q.at(i)), Value(q_saved.at(i)));
-        out(2) << "Check binary equal: on" << std::endl;
-#else
         EXPECT_NEAR(Value(q.at(i)), Value(q_saved.at(i)), 1.0e-12);
-#endif
-    }
 }
   
 TEST_F(Car_road_cartesian_test, braking_simulation)
 {
-    const std::vector<scalar> q_saved = {18.346086583978675, 2.6607506862812751, 0, 0, 0.019226095633866274, 0, -0.012826279039732172, 4.3162033413118284e-07, 0, -6.0764622739507547e-06, 66.31993280195131, 0, 0};
+    const std::vector<scalar> q_saved = results.get_element("vehicles_test/car_cartesian/braking").get_value(std::vector<scalar>());
 
     const size_t n_timesteps = 500;
     const scalar dt = 0.010;
@@ -945,14 +936,7 @@ TEST_F(Car_road_cartesian_test, braking_simulation)
     }
 
     for (size_t i = 0; i < q.size(); ++i)
-    {
-#ifdef CHECK_BINARY_EQUAL
-        EXPECT_DOUBLE_EQ(q.at(i), q_saved.at(i));
-        out(2) << "Check binary equal: on" << std::endl;
-#else
         EXPECT_NEAR(Value(q.at(i)), Value(q_saved.at(i)),1.0e-12);
-#endif
-    }
 }
 
 
@@ -1045,6 +1029,4 @@ TEST_F(Car_road_cartesian_test, jacobian_autodiff)
         {
             EXPECT_NEAR(Value(numerical_jacobian[i][j]), Value(dqdt0_jacobian[i + 15*j]), 2.0e-6*std::max(Value(fabs(dqdt0_jacobian[i+15*j])),1.0)) << "with i = " << i << " and j = " << j ;
         }
-
 }
-

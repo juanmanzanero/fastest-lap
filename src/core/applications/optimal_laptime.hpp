@@ -35,8 +35,14 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const size_t n, con
     std::vector<scalar> c_ub(fg.get_n_constraints(),0.0);
 
     // Set minimum and maximum variables: set no bound atm
-    std::vector<scalar> u_lb = {-20.0*DEG,-200.0};
-    std::vector<scalar> u_ub = { 20.0*DEG, 200.0};
+    std::vector<scalar> u_lb = {-20.0*DEG,-1.0};
+    std::vector<scalar> u_ub = { 20.0*DEG, 1.0};
+
+    if ( fg.get_car().get_chassis().get_rear_axle().is_direct_torque() )
+    {
+        u_lb.back() = -200.0;
+        u_ub.back() =  200.0;
+    }
 
     std::vector<scalar> q_lb = { 10.0*KMH/0.139, 10.0*KMH,-10.0*KMH, -10.0, 1.0e-5, -30.0*DEG, -30.0*DEG, -10.0, -10.0, -10.0, 0.0, -2.0, -30.0*DEG };
     std::vector<scalar> q_ub = { 200.0*KMH/0.139, 200.0*KMH,10.0*KMH, 10.0, 0.139,  30.0*DEG,  30.0*DEG,  10.0,  10.0,  10.0, 0.0,  2.0,  30.0*DEG };
@@ -147,6 +153,22 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const size_t n, con
     for (size_t i = 0; i < fg.get_controls().size(); ++i)
         for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
             u[i][j] = Value(fg.get_control(i)[j]);
+
+    // Compute the time and arclength
+    s = std::vector<scalar>(fg.get_states().size(),0.0);
+    const scalar& L = fg.get_car().get_road().track_length();
+    const scalar ds = L/((scalar)(n));
+    auto dtimeds_first = fg.get_car()(fg.get_state(0),fg.get_control(0),0.0)[Dynamic_model_t::Road_type::ITIME];
+    auto dtimeds_prev = dtimeds_first;
+    for (size_t i = 1; i < fg.get_states().size(); ++i)
+    {
+        s[i] = ((double)i)*ds;
+        const auto dtimeds = fg.get_car()(fg.get_state(i),fg.get_control(i),s[i])[Dynamic_model_t::Road_type::ITIME];
+        q[i][Dynamic_model_t::Road_type::ITIME] = q[i-1][Dynamic_model_t::Road_type::ITIME] + Value(0.5*ds*(dtimeds + dtimeds_prev));
+        dtimeds_prev = dtimeds;
+    }
+
+    laptime = q.back()[Dynamic_model_t::Road_type::ITIME] + Value(0.5*ds*(dtimeds_prev*dtimeds_first));
 }
 
 template<typename Dynamic_model_t>
@@ -162,12 +184,21 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const size_t n,
     std::vector<scalar> c_ub(fg.get_n_constraints(),0.0);
 
     // Set minimum and maximum variables
-    std::vector<scalar> u_lb = {-20.0*DEG,-200.0};
-    std::vector<scalar> u_ub = { 20.0*DEG, 200.0};
+    std::vector<scalar> u_lb = {-20.0*DEG,-1.0};
+    std::vector<scalar> u_ub = { 20.0*DEG, 1.0};
 
     // Set minimum and maximum control derivatives
-    std::vector<scalar> dudt_lb = { -20.0*DEG, -4000.0 };
-    std::vector<scalar> dudt_ub = {  20.0*DEG,  4000.0 };
+    std::vector<scalar> dudt_lb = { -20.0*DEG, -4000.0/400.0 };
+    std::vector<scalar> dudt_ub = {  20.0*DEG,  4000.0/400.0 };
+
+    if ( fg.get_car().get_chassis().get_rear_axle().is_direct_torque() )
+    {
+        u_lb.back() = -200.0;
+        u_ub.back() =  200.0;
+        dudt_lb.back() = -4000.0;
+        dudt_ub.back() =  4000.0;
+    }
+
 
     // Set state bounds
     std::vector<scalar> q_lb = { 10.0*KMH/0.139, 10.0*KMH,-10.0*KMH, -10.0, 1.0e-5, -30.0*DEG, -30.0*DEG, -10.0, -10.0, -10.0, 0.0, -2.0, -30.0*DEG };
@@ -296,6 +327,22 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const size_t n,
     for (size_t i = 0; i < fg.get_controls().size(); ++i)
         for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
             u[i][j] = Value(fg.get_control(i)[j]);
+
+    // Compute the time and arclength
+    s = std::vector<scalar>(fg.get_states().size(),0.0);
+    const scalar& L = fg.get_car().get_road().track_length();
+    const scalar ds = L/((scalar)(n));
+    auto dtimeds_first = fg.get_car()(fg.get_state(0),fg.get_control(0),0.0)[Dynamic_model_t::Road_type::ITIME];
+    auto dtimeds_prev = dtimeds_first;
+    for (size_t i = 1; i < fg.get_states().size(); ++i)
+    {
+        s[i] = ((double)i)*ds;
+        const auto dtimeds = fg.get_car()(fg.get_state(i),fg.get_control(i),s[i])[Dynamic_model_t::Road_type::ITIME];
+        q[i][Dynamic_model_t::Road_type::ITIME] = q[i-1][Dynamic_model_t::Road_type::ITIME] + Value(0.5*ds*(dtimeds + dtimeds_prev));
+        dtimeds_prev = dtimeds;
+    }
+
+    laptime = q.back()[Dynamic_model_t::Road_type::ITIME] + Value(0.5*ds*(dtimeds_prev*dtimeds_first));
 }
 
 

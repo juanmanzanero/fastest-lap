@@ -26,7 +26,7 @@ Axle_car<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::Axle_
     {
         // Construct engine and brakes
         if ( database.has_element(path + "engine/") )
-            _engine = Engine<Timeseries_t>(database, path + "engine/");
+            _engine = Engine<Timeseries_t>(database, path + "engine/", true);
 
         if ( database.has_element(path + "brakes/" ) )
             _brakes = Brake<Timeseries_t>(database, path + "brakes/");
@@ -143,15 +143,15 @@ std::enable_if_t<std::is_same<T,POWERED_WITHOUT_DIFFERENTIAL<0,0>>::value,void> 
     // Compute the torque from the engine curve
     if ( !_engine.direct_torque() )
     {
-        if ( throttle > 0 ) 
-            if ( omega > eps ) 
-                _T_ax = throttle*_engine(_engine.gear_ratio()*omega)/omega;
-    
-            else 
-                _T_ax = 0.0;
-    
-        else
-            _T_ax = -sign(omega)*_brakes(-throttle);
+        // Compute throttle and brake percentage
+        const Timeseries_t throttle_percentage  =  smooth_pos( throttle,_throttle_smooth_pos);
+        const Timeseries_t brake_percentage     =  smooth_pos(-throttle,_throttle_smooth_pos);
+
+        // Compute engine torque
+        _T_ax  =  _engine(throttle_percentage, omega);
+
+        // Compute brake torque
+        _T_ax -= smooth_sign(omega,1.0)*_brakes(brake_percentage);
     }
     else
         _T_ax = throttle;
@@ -226,7 +226,7 @@ void Axle_car<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::
     if constexpr (std::is_same<Axle_mode<0,0>,STEERING_FREE_ROLL<0,0>>::value)
     {
         // steering angle
-        u[Axle_type::STEERING] = "delta";
+        u[Axle_type::ISTEERING] = "delta";
     }
 }
 

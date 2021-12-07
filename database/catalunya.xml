@@ -1,3 +1,7 @@
+<!-- 
+    Circuit de Catalunya as track by arcs
+    Reference: https://github.com/OpenMDAO/dymos/blob/master/dymos/examples/racecar/tracks.py
+-->
 <catalunya type="closed" format="by-arcs">
     <straight
         length = "927.0"

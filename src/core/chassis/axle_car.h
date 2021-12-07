@@ -238,6 +238,8 @@ class Axle_car : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,S
     //! Enable direct torque
     void enable_direct_torque() { _engine.direct_torque() = true; }
 
+    constexpr bool is_direct_torque() const { return _engine.direct_torque() == true; }
+
 
  private:
     // Geometry
@@ -247,6 +249,9 @@ class Axle_car : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,S
     // Mechanical
     scalar _k_chassis;  //! [c] Chassis stiffness [N/m]
     scalar _k_antiroll; //! [c] Antiroll bar stiffness [N/m]
+
+    // Numerical
+    scalar _throttle_smooth_pos; //! [c] Coefficient used to smooth throttle/brake
 
     Timeseries_t _phi;   //! [in] Angle rotated by the axle in the X direction [rad]
     Timeseries_t _dphi;  //! [in] Omega of the angle rotated by the axle in the X direction [rad/s]
@@ -275,7 +280,8 @@ class Axle_car : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,S
         { "track", _track },
         { "stiffness/chassis", _k_chassis },
         { "stiffness/antiroll", _k_antiroll },
-        { "inertia", _I }
+        { "inertia", _I },
+        { "smooth_throttle_coeff", _throttle_smooth_pos }
     };}
 
     template<typename T = Axle_mode<0,0>>

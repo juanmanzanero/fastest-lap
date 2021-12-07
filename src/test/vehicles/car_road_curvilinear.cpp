@@ -59,7 +59,7 @@ class Control
  public:
     Control(const Road_t& road) : _roadPtr(&road) {};
 
-    std::array<scalar,2> operator()(const scalar t) const { 
+    std::array<scalar,2> operator()(const std::array<scalar,13>& q, const scalar t) const { 
          return { std::min(40.0,std::max(-40.0,-07.0*DEG*Value(_roadPtr->get_n()))), 0.0 };
     }
 
@@ -77,6 +77,7 @@ class Car_road_curvilinear_test : public ::testing::Test
                 // set the 'smooth' max parameter to 0
                 database.get_element("vehicle/front-tire/Fz-max-ref2").set_value("0.0");
                 database.get_element("vehicle/rear-tire/Fz-max-ref2").set_value("0.0");
+                database.get_element("vehicle/rear-axle/smooth_throttle_coeff").set_value("0.0");
 
                 _car = {database, _road };
 

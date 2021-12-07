@@ -42,8 +42,10 @@ class Optimal_laptime
 
 
     // Outputs
+    std::vector<scalar> s;                                           //! Arclengths
     std::vector<std::array<scalar,Dynamic_model_t::NSTATE>> q;       //! All state vectors
     std::vector<std::array<scalar,Dynamic_model_t::NCONTROL>> u;     //! All control vectors
+    double laptime;
 
  private:
 

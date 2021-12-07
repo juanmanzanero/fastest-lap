@@ -68,8 +68,10 @@ void Road_curvilinear<Timeseries_t,Track_t,STATE0,CONTROL0>::set_state_and_contr
 
 template<typename Timeseries_t,typename Track_t,size_t STATE0, size_t CONTROL0>
 template<size_t NSTATE, size_t NCONTROL>
-void Road_curvilinear<Timeseries_t,Track_t,STATE0,CONTROL0>::set_state_and_control_names(std::array<std::string,NSTATE>& q, std::array<std::string,NCONTROL>& u) const
+void Road_curvilinear<Timeseries_t,Track_t,STATE0,CONTROL0>::set_state_and_control_names(std::string& key_name, std::array<std::string,NSTATE>& q, std::array<std::string,NCONTROL>& u) const
 {
+    key_name = "arclength";
+
     // time
     q[ITIME]  = "time";
 

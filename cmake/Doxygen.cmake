@@ -48,21 +48,21 @@ IF (BUILD_DOC)
         MESSAGE(STATUS "Doxygen dot executable NOT found. Disabling graph generation in docs...")
         SET(DOXYGEN_DOT_AVAILABLE "NO")
     ENDIF()
-    CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/docs/doxygen/Doxyfile.in
+    CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/cmake/doxygen/Doxyfile.in
                    ${PROJECT_BINARY_DIR}/docs/doxygen/Doxyfile @ONLY)
 
     ADD_CUSTOM_TARGET(doc
         COMMAND ${CMAKE_COMMAND} -E copy
-            ${CMAKE_SOURCE_DIR}/docs/doxygen/custom.css
+            ${CMAKE_SOURCE_DIR}/cmake/doxygen/custom.css
             ${PROJECT_BINARY_DIR}/docs/doxygen/custom.css
         COMMAND ${CMAKE_COMMAND} -E copy
-            ${CMAKE_SOURCE_DIR}/docs/doxygen/custom_dark_theme.css
+            ${CMAKE_SOURCE_DIR}/cmake/doxygen/custom_dark_theme.css
             ${PROJECT_BINARY_DIR}/docs/doxygen/custom_dark_theme.css
         COMMAND ${CMAKE_COMMAND} -E copy
-            ${CMAKE_SOURCE_DIR}/docs/doxygen/html_header.html
+            ${CMAKE_SOURCE_DIR}/cmake/doxygen/html_header.html
             ${PROJECT_BINARY_DIR}/docs/doxygen/html_header.html
         COMMAND ${CMAKE_COMMAND} -E copy
-            ${CMAKE_SOURCE_DIR}/docs/doxygen/html_footer.html
+            ${CMAKE_SOURCE_DIR}/cmake/doxygen/html_footer.html
             ${PROJECT_BINARY_DIR}/docs/doxygen/html_footer.html
         COMMAND ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/docs/doxygen/Doxyfile
         SOURCES ${PROJECT_BINARY_DIR}/docs/doxygen/Doxyfile)

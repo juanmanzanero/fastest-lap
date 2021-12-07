@@ -222,6 +222,8 @@ template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_
 template<size_t NSTATE, size_t NCONTROL>
 void Chassis_car<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_state_and_control_names(std::array<std::string,NSTATE>& q, std::array<std::string,NCONTROL>& u) const
 {
+    base_type::set_state_and_control_names(q,u);
+
     // z
     q[IZ] = "z";
 

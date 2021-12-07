@@ -14,11 +14,11 @@ class Engine
     Engine() = default;
 
     //! Proper constructor from parameters + engine path
-    Engine(Xml_document& database, const std::string& path);
+    Engine(Xml_document& database, const std::string& path, const bool only_max_power);
 
     constexpr const sPolynomial& get_polynomial() const { return _p; }
 
-    Timeseries_t operator()(const Timeseries_t rpm);
+    Timeseries_t operator()(const Timeseries_t throttle_percentage, const Timeseries_t rpm);
 
     constexpr const bool& direct_torque() const { return _direct_torque; }
     constexpr       bool& direct_torque()       { return _direct_torque; }
@@ -30,6 +30,9 @@ class Engine
 
     scalar _gear_ratio;
     bool _direct_torque = true;
+    bool _only_max_power;
+
+    scalar _maximum_power;      
 };
 
 #include "engine.hpp"

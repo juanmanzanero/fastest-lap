@@ -18,7 +18,7 @@ class Brake
         _Tmax(database.get_element(path + "max_torque").get_value(double())) {}; 
 
     //! Operator(): Apply a scaling of the maximum braking torque with the brake percentage applied
-    Timeseries_t operator()(const Timeseries_t brake_percentage) { return std::min(Value(brake_percentage),1.0)*_Tmax; }
+    Timeseries_t operator()(const Timeseries_t brake_percentage) { return brake_percentage*_Tmax; }
 
  private:
     scalar _Tmax;

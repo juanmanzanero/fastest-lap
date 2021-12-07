@@ -150,20 +150,15 @@ void optimal_laptime(double* x, double* y, double* delta, double* T, struct c_Ve
     car_curv.get_road().change_track(track,width);
     car_curv_sc.get_road().change_track(track,width);
 
-    car_curv.get_chassis().get_rear_axle().enable_direct_torque();
-    car_cart.get_chassis().get_rear_axle().enable_direct_torque();
-
     // Start from the steady-state values at 50km/h-0g    
     const scalar v = 50.0*KMH;
     auto ss = Steady_state(car_cart).solve(v,0.0,0.0); 
 
-    const scalar trq = -ss.dqdt[0]*0.2;
-   
-    ss.u[1] = trq;
+    ss.u[1] = 0.0;
     
     ss.dqdt = car_cart_sc(ss.q, ss.u, 0.0);
 
-    Optimal_laptime opt_laptime(n_points, true, false, car_curv, ss.q, ss.u, {1.0e-2, 1.0e-10});
+    Optimal_laptime opt_laptime(n_points, true, false, car_curv, ss.q, ss.u, {1.0e-2,200.0*200.0*1.0e-10});
 
     // Set outputs
     for (int i = 0; i < n_points; ++i)

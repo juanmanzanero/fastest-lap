@@ -10,7 +10,6 @@ extern bool is_valgrind;
 class Optimal_laptime_test : public ::testing::Test
 {
  protected:
-    Optimal_laptime_test() { car_cartesian.get_chassis().get_rear_axle().enable_direct_torque(); car_cartesian_scalar.get_chassis().get_rear_axle().enable_direct_torque();}
     Xml_document database = {"./database/roberto-lot-kart-2016.xml", true};
     Xml_document results  = {"./data/optimal_laptime.xml", true};
     lot2016kart<CppAD::AD<scalar>>::cartesian car_cartesian = { database };
@@ -20,11 +19,13 @@ class Optimal_laptime_test : public ::testing::Test
 
 TEST_F(Optimal_laptime_test, maximum_acceleration)
 {
+    car_cartesian.get_chassis().get_rear_axle().enable_direct_torque(); 
+    car_cartesian_scalar.get_chassis().get_rear_axle().enable_direct_torque();
+
     Xml_document straight_xml("./data/straight.xml",true);
     Track_by_arcs straight(straight_xml,false);
 
-    lot2016kart<CppAD::AD<scalar>>::curvilinear<Track_by_arcs>::Road_t road(straight, 10.0);
-    lot2016kart<CppAD::AD<scalar>>::curvilinear<Track_by_arcs> car(database, road);
+    lot2016kart<CppAD::AD<scalar>>::curvilinear<Track_by_arcs> car(database, {straight, 10.0});
     car.get_chassis().get_rear_axle().enable_direct_torque();
 
     constexpr const size_t n = 30;
@@ -71,11 +72,16 @@ TEST_F(Optimal_laptime_test, maximum_acceleration)
         EXPECT_NEAR(opt_laptime.u[i][1], T_saved[i],1.0e-2);
 
 
+    lot2016kart<scalar>::curvilinear<Track_by_arcs> car_scalar(database, {straight, 10.0});
+    car_scalar.get_chassis().get_rear_axle().enable_direct_torque();
 }
 
 TEST_F(Optimal_laptime_test, Ovaltrack_open)
 {
     if ( is_valgrind ) GTEST_SKIP();
+
+    car_cartesian.get_chassis().get_rear_axle().enable_direct_torque(); 
+    car_cartesian_scalar.get_chassis().get_rear_axle().enable_direct_torque();
 
     Xml_document ovaltrack_xml("./database/ovaltrack.xml",true);
     Track_by_arcs ovaltrack(ovaltrack_xml,0.2,true);
@@ -114,6 +120,9 @@ TEST_F(Optimal_laptime_test, Ovaltrack_open)
 
 TEST_F(Optimal_laptime_test, Ovaltrack_closed)
 {
+    car_cartesian.get_chassis().get_rear_axle().enable_direct_torque(); 
+    car_cartesian_scalar.get_chassis().get_rear_axle().enable_direct_torque();
+
     Xml_document ovaltrack_xml("./database/ovaltrack.xml",true);
     Track_by_arcs ovaltrack(ovaltrack_xml,0.2,true);
     
@@ -150,6 +159,9 @@ TEST_F(Optimal_laptime_test, Ovaltrack_closed)
 
 TEST_F(Optimal_laptime_test, Ovaltrack_derivative)
 {
+    car_cartesian.get_chassis().get_rear_axle().enable_direct_torque(); 
+    car_cartesian_scalar.get_chassis().get_rear_axle().enable_direct_torque();
+
     Xml_document ovaltrack_xml("./database/ovaltrack.xml",true);
     Track_by_arcs ovaltrack(ovaltrack_xml,0.2,true);
     
@@ -188,9 +200,13 @@ TEST_F(Optimal_laptime_test, Ovaltrack_derivative)
 
 
 
-TEST_F(Optimal_laptime_test, Catalunya)
+TEST_F(Optimal_laptime_test, Catalunya_direct)
 {
     if ( is_valgrind ) GTEST_SKIP();
+
+    car_cartesian.get_chassis().get_rear_axle().enable_direct_torque(); 
+    car_cartesian_scalar.get_chassis().get_rear_axle().enable_direct_torque();
+
     Xml_document catalunya_xml("./database/catalunya.xml",true);
     Track_by_arcs catalunya(catalunya_xml,0.2,true);
     
@@ -233,6 +249,10 @@ TEST_F(Optimal_laptime_test, Catalunya_derivative)
     #endif
 
     if ( is_valgrind ) GTEST_SKIP();
+
+    car_cartesian.get_chassis().get_rear_axle().enable_direct_torque(); 
+    car_cartesian_scalar.get_chassis().get_rear_axle().enable_direct_torque();
+
     Xml_document catalunya_xml("./database/catalunya.xml",true);
     Track_by_arcs catalunya(catalunya_xml,0.2,true);
     
@@ -266,4 +286,45 @@ TEST_F(Optimal_laptime_test, Catalunya_derivative)
     }
 }
 
+TEST_F(Optimal_laptime_test, Catalunya_derivative_throttle)
+{
+    #ifndef NDEBUG
+        GTEST_SKIP();
+    #endif
 
+    if ( is_valgrind ) GTEST_SKIP();
+
+    car_cartesian.get_chassis().get_rear_axle().enable_direct_torque(); 
+    car_cartesian_scalar.get_chassis().get_rear_axle().enable_direct_torque();
+
+    Xml_document catalunya_xml("./database/catalunya.xml",true);
+    Track_by_arcs catalunya(catalunya_xml,0.2,true);
+    
+    constexpr const size_t n = 500;
+
+    lot2016kart<CppAD::AD<scalar>>::curvilinear<Track_by_arcs>::Road_t road(catalunya, 2.0);
+    lot2016kart<CppAD::AD<scalar>>::curvilinear<Track_by_arcs> car(database, road);
+
+    // Start from the steady-state values at 50km/h-0g    
+    const scalar v = 50.0*KMH;
+    auto ss = Steady_state(car_cartesian).solve(v,0.0,0.0); 
+
+    const scalar T = 0.0;
+   
+    ss.u[1] = T;
+
+    ss.dqdt = car_cartesian_scalar(ss.q, ss.u, 0.0);
+
+    Optimal_laptime opt_laptime(n, true, false, car, ss.q, ss.u, {1.0e-2,200*200.0*1.0e-10});
+
+    std::vector<scalar> delta_saved = results.get_root_element().get_child("catalunya_derivative_throttle/delta").get_value(std::vector<scalar>());
+    std::vector<scalar> T_saved = results.get_root_element().get_child("catalunya_derivative_throttle/T").get_value(std::vector<scalar>());
+
+    EXPECT_EQ(opt_laptime.u.size(), delta_saved.size());
+
+    for (size_t i = 0; i < n; ++i)
+    {
+        EXPECT_NEAR(opt_laptime.u[i][0], delta_saved[i],6.0e-7);
+        EXPECT_NEAR(opt_laptime.u[i][1], T_saved[i],1.0e-2);
+    }
+}

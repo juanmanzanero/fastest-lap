@@ -160,7 +160,7 @@ class Torque_maximum_accel
 {
  public:
     Torque_maximum_accel(const std::vector<scalar>& torque_values) : _torque_values(torque_values), _torque(0.0,{10.0},{_torque_values}){}
-    std::array<scalar,1> operator()(const scalar t) const { 
+    std::array<scalar,1> operator()(const std::array<scalar,5>& q, const scalar t) const { 
         return {_torque[t]};
     }
 

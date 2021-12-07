@@ -52,6 +52,8 @@ class Dynamic_model_car
                                                 const std::array<Timeseries_t,_NCONTROL>& u,
                                                 scalar t);
 
+    std::tuple<std::string,std::array<std::string,_NSTATE>,std::array<std::string,_NCONTROL>> get_state_and_control_names() const;
+
     //! Return the chassis
     constexpr const Chassis_t& get_chassis() const { return _chassis; }
     constexpr       Chassis_t& get_chassis()       { return _chassis; }

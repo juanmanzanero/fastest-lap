@@ -10,7 +10,7 @@ class Engine_curve : public ::testing::Test
  protected:
 
     Xml_document database = { "database/roberto-lot-kart-2016.xml", true };
-    Engine<scalar> _engine = {database,"vehicle/rear-axle/engine/"};
+    Engine<scalar> _engine = {database,"vehicle/rear-axle/engine/",false};
 
 };
 
@@ -26,7 +26,9 @@ TEST_F(Engine_curve,evaluation_at_control_points)
 
     for (size_t i = 0; i < speed.size(); ++i)
     {
-        EXPECT_NEAR( std::abs(power[i]-_engine(speed[i]))/power[i], 0.0, 2.0e-2) << "with i = " << i ;
+        const scalar axle_speed = speed[i]/_engine.gear_ratio();
+        const scalar power_computed = _engine(1.0,axle_speed)*axle_speed;
+        EXPECT_NEAR( std::abs(power[i]-power_computed)/power[i], 0.0, 2.0e-2) << "with i = " << i ;
     }
 
 }
