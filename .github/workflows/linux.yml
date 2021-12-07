@@ -56,6 +56,12 @@ jobs:
 
     - uses: actions/upload-artifact@v2 
       with:
+        name: vehicles_test_release_data
+        path: src/test/vehicles/data/
+        retention-days: 1 
+
+    - uses: actions/upload-artifact@v2 
+      with:
         name: database_release
         path: database
         retention-days: 1 
@@ -108,6 +114,12 @@ jobs:
       with:
         name: applications_test_debug_data
         path: src/test/applications/data/
+        retention-days: 1 
+
+    - uses: actions/upload-artifact@v2 
+      with:
+        name: vehicles_test_debug_data
+        path: src/test/vehicles/data/
         retention-days: 1 
           
     - uses: actions/upload-artifact@v2 
@@ -377,6 +389,11 @@ jobs:
 
     - uses: actions/download-artifact@v2
       with:
+        name: vehicles_test_release_data
+        path: ${{runner.workspace}}/data
+
+    - uses: actions/download-artifact@v2
+      with:
         name: tests_release
         path: ${{runner.workspace}}
       
@@ -407,6 +424,11 @@ jobs:
       with:
         name: database_debug
         path: ${{runner.workspace}}/database
+
+    - uses: actions/download-artifact@v2
+      with:
+        name: vehicles_test_debug_data
+        path: ${{runner.workspace}}/data
 
     - uses: actions/download-artifact@v2
       with:
@@ -443,6 +465,11 @@ jobs:
 
     - uses: actions/download-artifact@v2
       with:
+        name: vehicles_test_debug_data
+        path: ${{runner.workspace}}/data
+
+    - uses: actions/download-artifact@v2
+      with:
         name: valgrind_utils
         path: ${{runner.workspace}}
 
@@ -467,8 +494,6 @@ jobs:
       # Execute tests defined by the CMake configuration.  
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       run: cp vehicles/vehicles_test . && chmod +x ./vehicles_test && sh valgrindtest.sh vehicles
-
-
 
   applications_test_release:
   
@@ -731,6 +756,11 @@ jobs:
       with:
         name: applications_test_release_data
 
+    - uses: geekyeggo/delete-artifact@v1
+      continue-on-error: true
+      with:
+        name: vehicles_test_release_data
+
   remove_artifacts_debug:
   
     runs-on: ubuntu-latest
@@ -758,6 +788,11 @@ jobs:
       continue-on-error: true
       with:
         name: applications_test_debug_data
+
+    - uses: geekyeggo/delete-artifact@v1
+      continue-on-error: true
+      with:
+        name: vehicles_test_debug_data
 
     - uses: geekyeggo/delete-artifact@v1
       continue-on-error: true
