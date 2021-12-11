@@ -91,7 +91,8 @@ def track_coordinates(track,width,n_points):
 	c_y_left   = (c.c_double*n_points)();
 	c_x_right  = (c.c_double*n_points)();
 	c_y_right  = (c.c_double*n_points)();
-	c_lib.track_coordinates(c_x_center, c_y_center, c_x_left, c_y_left, c_x_right, c_y_right, c.byref(track), c.c_double(width), c.c_int(n_points));
+	c_theta    = (c.c_double*n_points)();
+	c_lib.track_coordinates(c_x_center, c_y_center, c_x_left, c_y_left, c_x_right, c_y_right, c_theta, c.byref(track), c.c_double(width), c.c_int(n_points));
 
 	x_center = [None] * n_points;
 	y_center = [None] * n_points;
@@ -99,6 +100,7 @@ def track_coordinates(track,width,n_points):
 	y_left   = [None] * n_points;
 	x_right  = [None] * n_points;
 	y_right  = [None] * n_points;
+	theta    = [None] * n_points;
 
 	for i in range(n_points):
         	x_center[i] = c_x_center[i];
@@ -107,8 +109,9 @@ def track_coordinates(track,width,n_points):
         	y_left[i]   = c_y_left[i];
         	x_right[i]  = c_x_right[i];
         	y_right[i]  = c_y_right[i];
+        	theta[i]    = c_theta[i];   
 
-	return x_center, y_center, x_left, y_left, x_right, y_right;
+	return x_center, y_center, x_left, y_left, x_right, y_right, theta;
 
 def plot_gg(ay,ay_minus,ax_max,ax_min):
 	# initializing the figure

@@ -61,7 +61,10 @@ class Tire
     //! Returns the lateral slip [-]
     const Timeseries_t& get_lambda() const { return _lambda; }
 
-    //! Returns the contact point velocity [m/s]
+    //! Returns the tire center absolute position [m]
+    const Vector3d<Timeseries_t> get_position() const { return _frame.get_absolute_position(); }
+
+    //! Returns the contact point absolute velocity [m/s]
     const Vector3d<Timeseries_t>& get_velocity() const { return _v; }
 
     //! Get the forces torque at the wheel enter [N.m]

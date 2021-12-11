@@ -46,7 +46,7 @@ void gg_diagram(double* ay, double* ax_max, double* ax_min, struct c_Vehicle* ve
 
 void optimal_laptime(struct c_Channel* channels, struct c_Vehicle* c_vehicle, const c_Track* c_track, const double width, const int n_points, const int n_channels);
 
-void track_coordinates(double* x_center, double* y_center, double* x_left, double* y_left, double* x_right, double* y_right, struct c_Track* c_track, const double width, const int n_points);
+void track_coordinates(double* x_center, double* y_center, double* x_left, double* y_left, double* x_right, double* y_right, double* theta, struct c_Track* c_track, const double width, const int n_points);
 
 #ifdef __cplusplus
 }

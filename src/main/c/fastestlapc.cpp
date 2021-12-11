@@ -104,7 +104,7 @@ void gg_diagram(double* ay, double* ax_max, double* ax_min, struct c_Vehicle* ve
 }
 
 
-void track_coordinates(double* x_center, double* y_center, double* x_left, double* y_left, double* x_right, double* y_right, struct c_Track* c_track, const double width, const int n_points)
+void track_coordinates(double* x_center, double* y_center, double* x_left, double* y_left, double* x_right, double* y_right, double* theta, struct c_Track* c_track, const double width, const int n_points)
 {
     auto& track = tracks_by_arcs.at(c_track->name);
 
@@ -121,6 +121,9 @@ void track_coordinates(double* x_center, double* y_center, double* x_left, doubl
         x_center[i] = r_c[0];
         y_center[i] = r_c[1];
 
+        // Heading angle (theta)
+        theta[i] = atan2(v_c[1],v_c[0]);
+
         // Compute left boundary
         auto [r_l,v_l,a_l] = track.position_at(s,width,0.0,0.0);
 
@@ -132,6 +135,8 @@ void track_coordinates(double* x_center, double* y_center, double* x_left, doubl
 
         x_right[i] = r_r[0];
         y_right[i] = r_r[1];
+
+        
     }
 
     return;
@@ -177,16 +182,41 @@ void optimal_laptime(struct c_Channel* channels, struct c_Vehicle* c_vehicle, co
             else if ( std::string(channels[j].name) == "u" )
                 channels[j].data[i] = opt_laptime.q[i][lot2016kart<scalar>::curvilinear_a::Chassis_type::IU];
 
+            else if ( std::string(channels[j].name) == "time" )
+                channels[j].data[i] = opt_laptime.q[i][lot2016kart<scalar>::curvilinear_a::Road_type::ITIME];
+
             else if ( std::string(channels[j].name) == "delta" )
                 channels[j].data[i] = opt_laptime.u[i][lot2016kart<scalar>::curvilinear_a::Chassis_type::Front_axle_type::ISTEERING];
 
+            else if ( std::string(channels[j].name) == "psi" )
+                channels[j].data[i] = car_curv_sc.get_road().get_psi();
+
             else if ( std::string(channels[j].name) == "throttle" )
                 channels[j].data[i] = opt_laptime.u[i][lot2016kart<scalar>::curvilinear_a::Chassis_type::Rear_axle_type::ITORQUE];
+
+            else if ( std::string(channels[j].name) == "rear_axle/left_tire/x" )
+                channels[j].data[i] = car_curv_sc.get_chassis().get_rear_axle().get_tire<0>().get_position().at(0);
+
+            else if ( std::string(channels[j].name) == "rear_axle/left_tire/y" )
+                channels[j].data[i] = car_curv_sc.get_chassis().get_rear_axle().get_tire<0>().get_position().at(1);
+
+            else if ( std::string(channels[j].name) == "rear_axle/right_tire/x" )
+                channels[j].data[i] = car_curv_sc.get_chassis().get_rear_axle().get_tire<1>().get_position().at(0);
+
+            else if ( std::string(channels[j].name) == "rear_axle/right_tire/y" )
+                channels[j].data[i] = car_curv_sc.get_chassis().get_rear_axle().get_tire<1>().get_position().at(1);
+
+            else if ( std::string(channels[j].name) == "front_axle/left_tire/x" )
+                channels[j].data[i] = car_curv_sc.get_chassis().get_front_axle().get_tire<0>().get_position().at(0);
+
+            else if ( std::string(channels[j].name) == "front_axle/left_tire/y" )
+                channels[j].data[i] = car_curv_sc.get_chassis().get_front_axle().get_tire<0>().get_position().at(1);
+
+            else if ( std::string(channels[j].name) == "front_axle/right_tire/x" )
+                channels[j].data[i] = car_curv_sc.get_chassis().get_front_axle().get_tire<1>().get_position().at(0);
+
+            else if ( std::string(channels[j].name) == "front_axle/right_tire/y" )
+                channels[j].data[i] = car_curv_sc.get_chassis().get_front_axle().get_tire<1>().get_position().at(1);
         }
     }
-
-    std::cout << "Channel 0" << std::endl;
-    for (int i = 0; i < n_points; ++i)
-        std::cout << channels[0].data[i] << ", " ;
-    std::cout << std::endl;
 }
