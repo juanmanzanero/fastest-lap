@@ -5,7 +5,7 @@
 #include "src/core/tire/tire_pacejka.h"
 #include "src/core/chassis/axle_car.h"
 #include "src/core/vehicles/dynamic_model_powered_axle.h"
-#include "src/core/chassis/chassis_car.h"
+#include "src/core/chassis/chassis_car_6dof.h"
 #include "lion/math/matrix_extensions.h"
 #include "lion/propagators/rk4.h"
 #include <iomanip>

@@ -2,7 +2,7 @@
 #define __CHASSIS_CAR_HPP__
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
-inline Chassis_car<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::Chassis_car(const FrontAxle_t& front_axle, 
+inline Chassis_car_6dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::Chassis_car_6dof(const FrontAxle_t& front_axle, 
                                                          const RearAxle_t& rear_axle,
                                                          Xml_document& database,
                                                          const std::string& path)
@@ -14,7 +14,7 @@ _phi(0.0), _dphi(0.0), _d2phi(0.0)
     read_parameters(database, path, get_parameters());
     // Chassis frame must have zero rotations
     if ( base_type::get_chassis_frame().get_rotation_angles().size() != 0 )
-        throw std::runtime_error("Chassis frame must have cero rotations for Chassis_car");
+        throw std::runtime_error("Chassis frame must have cero rotations for Chassis_car_6dof");
 
     // Set chassis frame position and velocity (it does not matter before calling update())
     base_type::get_chassis_frame().set_origin(get_com_position(), get_com_velocity()); 
@@ -26,8 +26,8 @@ _phi(0.0), _dphi(0.0), _d2phi(0.0)
 
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
-inline Chassis_car<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::Chassis_car(Xml_document& database)
-: Chassis_car<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>(
+inline Chassis_car_6dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::Chassis_car_6dof(Xml_document& database)
+: Chassis_car_6dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>(
            FrontAxle_t("front axle",
                        typename FrontAxle_t::Tire_left_type("front left tire", database, "vehicle/front-tire/"),
                        typename FrontAxle_t::Tire_right_type("front right tire", database, "vehicle/front-tire/"),
@@ -41,7 +41,7 @@ inline Chassis_car<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::Chassis
 
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
-inline void Chassis_car<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_state
+inline void Chassis_car_6dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_state
  (Timeseries_t u, Timeseries_t v, Timeseries_t omega, Timeseries_t z, Timeseries_t dz, Timeseries_t mu, Timeseries_t dmu, Timeseries_t phi, Timeseries_t dphi)
 {
     base_type::set_state(u,v,omega);
@@ -61,7 +61,7 @@ inline void Chassis_car<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::se
 
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
-inline void Chassis_car<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::update
+inline void Chassis_car_6dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::update
     (Timeseries_t x, Timeseries_t y, Timeseries_t psi)
 {
     // Update base_type
@@ -128,7 +128,7 @@ inline void Chassis_car<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::up
 
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
-inline Vector3d<Timeseries_t> Chassis_car<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::Newton_lhs() const
+inline Vector3d<Timeseries_t> Chassis_car_6dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::Newton_lhs() const
 {
     const Frame<Timeseries_t>& road_frame = base_type::get_road_frame();
     const Vector3d<Timeseries_t> omega = road_frame.get_omega_absolute_in_body();
@@ -139,7 +139,7 @@ inline Vector3d<Timeseries_t> Chassis_car<Timeseries_t,FrontAxle_t,RearAxle_t,ST
 
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
-inline Vector3d<Timeseries_t> Chassis_car<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::Euler_lhs() const
+inline Vector3d<Timeseries_t> Chassis_car_6dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::Euler_lhs() const
 {
     const Frame<Timeseries_t>& road_frame = base_type::get_road_frame();
     const Timeseries_t& omega = road_frame.get_rotation_angles_derivative()[0];
@@ -165,7 +165,7 @@ inline Vector3d<Timeseries_t> Chassis_car<Timeseries_t,FrontAxle_t,RearAxle_t,ST
 
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
-inline Matrix3x3<Timeseries_t> Chassis_car<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::Euler_m() const
+inline Matrix3x3<Timeseries_t> Chassis_car_6dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::Euler_m() const
 {
     const sMatrix3x3& I = base_type::get_inertia();
 
@@ -176,7 +176,7 @@ inline Matrix3x3<Timeseries_t> Chassis_car<Timeseries_t,FrontAxle_t,RearAxle_t,S
 
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
-scalar Chassis_car<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::get_parameter(const std::string& parameter_name) const
+scalar Chassis_car_6dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::get_parameter(const std::string& parameter_name) const
 {
      if (parameter_name == "cog_height") return -_x_com[2];
 
@@ -191,7 +191,7 @@ scalar Chassis_car<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::get_par
 // ------- Handle state vector
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
 template<size_t N>
-void Chassis_car<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::get_state_derivative(std::array<Timeseries_t,N>& dqdt) const
+void Chassis_car_6dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::get_state_derivative(std::array<Timeseries_t,N>& dqdt) const
 {
     base_type::get_state_derivative(dqdt);
     // 1st order
@@ -220,7 +220,7 @@ void Chassis_car<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::get_state
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
 template<size_t NSTATE, size_t NCONTROL>
-void Chassis_car<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_state_and_control_names(std::array<std::string,NSTATE>& q, std::array<std::string,NCONTROL>& u) const
+void Chassis_car_6dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_state_and_control_names(std::array<std::string,NSTATE>& q, std::array<std::string,NCONTROL>& u) const
 {
     base_type::set_state_and_control_names(q,u);
 
@@ -247,7 +247,7 @@ void Chassis_car<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_state
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
 template<size_t NSTATE, size_t NCONTROL>
-void Chassis_car<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_state_and_controls(const std::array<Timeseries_t,NSTATE>& q, const std::array<Timeseries_t,NCONTROL>& u)
+void Chassis_car_6dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_state_and_controls(const std::array<Timeseries_t,NSTATE>& q, const std::array<Timeseries_t,NALGEBRAIC>& qa, const std::array<Timeseries_t,NCONTROL>& u)
 {
     base_type::set_state_and_controls(q,u);
 

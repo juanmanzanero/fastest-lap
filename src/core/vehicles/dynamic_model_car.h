@@ -4,7 +4,7 @@
 #include <map>
 #include <vector>
 #include "lion/foundation/types.h"
-#include "src/core/chassis/chassis_car.h"
+#include "src/core/chassis/chassis_car_6dof.h"
 #include "src/core/chassis/axle_car.h"
 #include "src/core/tire/tire_pacejka.h"
 
@@ -21,6 +21,7 @@ template<typename Timeseries_t, typename Chassis_t, typename RoadModel_t, size_t
 class Dynamic_model_car
 {
  public: 
+
     using Timeseries_type = Timeseries_t;
     //! The chassis type
     using Chassis_type = Chassis_t;
@@ -30,6 +31,9 @@ class Dynamic_model_car
 
     //! The number of state variables
     constexpr static size_t NSTATE    = _NSTATE;
+
+    //! The number of algebraic variables
+    constexpr static size_t NALGEBRAIC = Chassis_t::NALGEBRAIC;
 
     //! The number of control variables
     constexpr static size_t NCONTROL  = _NCONTROL; 
@@ -48,9 +52,24 @@ class Dynamic_model_car
         : _chassis(database), _road(road) {};
 
     //! The time derivative functor, dqdt = operator()(q,u,t)
-    std::array<Timeseries_t,_NSTATE> operator()(const std::array<Timeseries_t,_NSTATE>& q, 
-                                                const std::array<Timeseries_t,_NCONTROL>& u,
-                                                scalar t);
+    //! Only enabled if the dynamic model has no algebraic equations
+    //! @param[in] q: state vector
+    //! @param[in] u: controls vector
+    //! @param[in] t: time/arclength
+    template<size_t NALG = NALGEBRAIC>
+    std::enable_if_t<NALG==0,std::array<Timeseries_t,_NSTATE>> operator()(const std::array<Timeseries_t,_NSTATE>& q, 
+                                                                          const std::array<Timeseries_t,_NCONTROL>& u,
+                                                                          scalar t);
+
+    //! The time derivative functor + algebraic equations: dqdt,dqa = operator()(q,qa,u,t)
+    //! @param[in] q: state vector
+    //! @param[in] qa: constraint variables vector
+    //! @param[in] u: controls vector
+    //! @param[in] t: time/arclength
+    std::pair<std::array<Timeseries_t,_NSTATE>,std::array<Timeseries_t,Chassis_t::NALGEBRAIC>> operator()(const std::array<Timeseries_t,_NSTATE>& q,
+                                                                                                          const std::array<Timeseries_t,NALGEBRAIC>& qa,
+                                                                                                          const std::array<Timeseries_t,_NCONTROL>& u,
+                                                                                                          scalar t);
 
     std::tuple<std::string,std::array<std::string,_NSTATE>,std::array<std::string,_NCONTROL>> get_state_and_control_names() const;
 

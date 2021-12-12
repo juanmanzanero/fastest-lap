@@ -1,5 +1,5 @@
-#ifndef __CHASSIS_CAR_H__
-#define __CHASSIS_CAR_H__
+#ifndef __CHASSIS_CAR_6DOF_H__
+#define __CHASSIS_CAR_6DOF_H__
 
 #include "chassis.h"
 #include <array>
@@ -18,7 +18,7 @@
 //!  @param STATE0: index of the first state variable defined here
 //!  @param CONTROL0: index of the first control variable defined here
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
-class Chassis_car : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, STATE0,CONTROL0>
+class Chassis_car_6dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, STATE0,CONTROL0>
 {
  public:
 
@@ -68,15 +68,17 @@ class Chassis_car : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, STATE0,
     constexpr static size_t IID2PHI = IDPHI; //! Roll acceleration [rad/s2]
     constexpr static size_t IID2MU  = IDMU;  //! Pitch acceleration [rad/s2]
 
+    constexpr static size_t NALGEBRAIC = 0;  //! Number of algebraic equations
+
     //! Default constructor
-    Chassis_car() = default;
+    Chassis_car_6dof() = default;
 
     //! Constructor from axles and extra parameters
     //! @param[in] front_axle: Front axle
     //! @param[in] rear_axle: Rear axle
     //! @param[in] parameters: map containing mechanical/geometrical parameters by name
     //! @param[in] path: path to find its parameters on the map
-    Chassis_car(const FrontAxle_t& front_axle, 
+    Chassis_car_6dof(const FrontAxle_t& front_axle, 
                 const RearAxle_t& rear_axle,
                 Xml_document& database,
                 const std::string& path=""
@@ -89,7 +91,7 @@ class Chassis_car : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, STATE0,
     //! @param[in] front_right_tire_type: Type of the front right tire type
     //! @param[in] rear_left_tire_type: Type of the rear left tire
     //! @param[in] rear_right_tire_type: Type of the rear right tire type
-    Chassis_car(Xml_document& database);
+    Chassis_car_6dof(Xml_document& database);
 
     //! Update the chassis: update the axles to get forces and compute accelerations
     //! @param[in] x: x-coordinate of the road frame [m]
@@ -156,6 +158,7 @@ class Chassis_car : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, STATE0,
     //! @param[in] u: the vehicle control vector
     template<size_t NSTATE, size_t NCONTROL>
     void set_state_and_controls(const std::array<Timeseries_t,NSTATE>& q, 
+                                const std::array<Timeseries_t,NALGEBRAIC>& qa,
                                 const std::array<Timeseries_t,NCONTROL>& u);
 
     //! Get the names of the state and control varaibles of this class
@@ -165,7 +168,7 @@ class Chassis_car : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, STATE0,
     void set_state_and_control_names(std::array<std::string,NSTATE>& q, 
                                      std::array<std::string,NCONTROL>& u) const;
 
-    static std::string type() { return "chassis_car"; }
+    static std::string type() { return "chassis_car_6dof"; }
  private:
     //! Compute the left hand side of Newton's equations (linear momentum derivative)
     Vector3d<Timeseries_t> Newton_lhs() const;
@@ -205,7 +208,7 @@ class Chassis_car : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, STATE0,
     };}
 };
 
-#include "chassis_car.hpp"
+#include "chassis_car_6dof.hpp"
 
 
 #endif

@@ -4,12 +4,23 @@
 #include "lion/math/matrix_extensions.h"
 
 template<typename Timeseries_t, typename Chassis_t, typename RoadModel_t, size_t _NSTATE, size_t _NCONTROL>
-std::array<Timeseries_t,_NSTATE> Dynamic_model_car<Timeseries_t,Chassis_t,RoadModel_t,_NSTATE,_NCONTROL>::operator()(const std::array<Timeseries_t,_NSTATE>& q, const std::array<Timeseries_t,_NCONTROL>& u, scalar t)
+template<size_t NALG>
+std::enable_if_t<NALG==0,std::array<Timeseries_t,_NSTATE>> Dynamic_model_car<Timeseries_t,Chassis_t,RoadModel_t,_NSTATE,_NCONTROL>::operator()
+    (const std::array<Timeseries_t,_NSTATE>& q, const std::array<Timeseries_t,_NCONTROL>& u, scalar t)
+{
+    return std::get<0>((*this)(q,{},u,t));
+}
+
+
+template<typename Timeseries_t, typename Chassis_t, typename RoadModel_t, size_t _NSTATE, size_t _NCONTROL>
+std::pair<std::array<Timeseries_t,_NSTATE>,std::array<Timeseries_t,Chassis_t::NALGEBRAIC>> Dynamic_model_car<Timeseries_t,Chassis_t,RoadModel_t,_NSTATE,_NCONTROL>::operator()
+    (const std::array<Timeseries_t,_NSTATE>& q, const std::array<Timeseries_t,NALGEBRAIC>& qa, const std::array<Timeseries_t,_NCONTROL>& u, scalar t)
 {
     std::array<Timeseries_t,NSTATE> dqdt;
+    std::array<Timeseries_t,NALGEBRAIC> dqa;
 
     // (1) Set state and controls
-    _chassis.set_state_and_controls(q,u);
+    _chassis.set_state_and_controls(q,qa,u);
     _road.set_state_and_controls(t,q,u);
 
     // (2) Update
@@ -20,11 +31,15 @@ std::array<Timeseries_t,_NSTATE> Dynamic_model_car<Timeseries_t,Chassis_t,RoadMo
     _chassis.get_state_derivative(dqdt);
     _road.get_state_derivative(dqdt);
 
-    // (4) Scale the temporal parameter to curvilinear if needed
+    // (4) Get algebraic constraints from the chassis
+    if constexpr (NALGEBRAIC != 0)
+        _chassis.get_algebraic_constraints(dqa);
+
+    // (5) Scale the temporal parameter to curvilinear if needed
     for (auto it = dqdt.begin(); it != dqdt.end(); ++it)
         (*it) *= _road.get_dtimedt();
 
-    return dqdt;
+    return {dqdt,dqa};
 }
 
 

@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include "src/core/actuators/engine.h"
-#include "src/core/chassis/chassis_car.h"
+#include "src/core/chassis/chassis_car_6dof.h"
 #include <iomanip>
 #include <fstream>
 

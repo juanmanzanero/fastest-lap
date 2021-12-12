@@ -205,6 +205,10 @@ class Axle_car : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,S
     const Vector3d<Timeseries_t> get_tire_position(Tires tire) const { 
                         return {0.0, _y_tire[tire], _s[tire] + _phi*_y_tire[tire] + _beta[tire]*_delta }; }
 
+    //! Get the tire position y-position (in axle frame)
+    //! @param[in] tire: which tire (LEFT/RIGHT)
+    const scalar get_tire_y_position(Tires tire) const { return _y_tire[tire]; }
+
     //! Get the tire relative velocity (in axle frame)
     //! @param[in] tire: which tire (LEFT/RIGHT)
     const Vector3d<Timeseries_t> get_tire_velocity(Tires tire) const { 

@@ -11,7 +11,7 @@
 #include "src/core/chassis/axle_car.h"
 #include "src/core/vehicles/dynamic_model_powered_axle.h"
 #include "src/core/vehicles/track_run.h"
-#include "src/core/chassis/chassis_car.h"
+#include "src/core/chassis/chassis_car_6dof.h"
 #include "lion/math/polynomial.h"
 
 // mex types

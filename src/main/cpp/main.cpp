@@ -1,7 +1,7 @@
 #include "lion/propagators/rk4.h"
 #include "src/core/chassis/axle_car.h"
 #include "lion/math/optimise.h"
-#include "src/core/chassis/chassis_car.h"
+#include "src/core/chassis/chassis_car_6dof.h"
 #include "src/core/chassis/axle_car.h"
 #include "src/core/tire/tire_pacejka.h"
 #include "src/core/vehicles/road_curvilinear.h"
@@ -28,7 +28,7 @@ using Front_axle_type = Axle_car<scalar,Front_left_tire_type, Front_right_tire_t
 using Rear_axle_type  = Axle_car<scalar,Rear_left_tire_type , Rear_right_tire_type , POWERED_WITHOUT_DIFFERENTIAL, Front_axle_type     ::STATE_END, Front_axle_type     ::CONTROL_END>;
 
 // Chassis
-using Chassis_t = Chassis_car<scalar,Front_axle_type,Rear_axle_type,Rear_axle_type::STATE_END,Rear_axle_type::CONTROL_END>;
+using Chassis_t = Chassis_car_6dof<scalar,Front_axle_type,Rear_axle_type,Rear_axle_type::STATE_END,Rear_axle_type::CONTROL_END>;
 
 // Road
 using Road_t           = Road_curvilinear<scalar,Track_by_polynomial,Chassis_t::STATE_END, Chassis_t::CONTROL_END>;
