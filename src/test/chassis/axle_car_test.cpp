@@ -1,10 +1,10 @@
 #include "gtest/gtest.h"
-#include "src/core/chassis/axle_car.h"
+#include "src/core/chassis/axle_car_6dof.h"
 #include "src/core/tire/tire_pacejka.h"
 
 using Tire_t       = Tire_pacejka<scalar,0,0>;
-using Front_axle_t = Axle_car<scalar,Tire_t,Tire_t,STEERING_FREE_ROLL,0,0>;
-using Rear_axle_t  = Axle_car<scalar,Tire_t,Tire_t,POWERED_WITHOUT_DIFFERENTIAL,0,0>;
+using Front_axle_t = Axle_car_6dof<scalar,Tire_t,Tire_t,STEERING_FREE_ROLL,0,0>;
+using Rear_axle_t  = Axle_car_6dof<scalar,Tire_t,Tire_t,POWERED_WITHOUT_DIFFERENTIAL,0,0>;
 
 Front_axle_t construct_front_axle(const sFrame& car_frame, const std::map<std::string,scalar>& parameters)
 {

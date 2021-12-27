@@ -2,7 +2,7 @@
 #define __LOT2016KART_H__
 
 #include "src/core/tire/tire_pacejka.h"
-#include "src/core/chassis/axle_car.h"
+#include "src/core/chassis/axle_car_6dof.h"
 #include "src/core/chassis/chassis_car_6dof.h"
 #include "src/core/vehicles/track_by_polynomial.h"
 #include "src/core/vehicles/track_by_arcs.h"
@@ -22,8 +22,8 @@ class lot2016kart
     using Rear_left_tire_type   = Tire_pacejka<Timeseries_t,Front_right_tire_type::STATE_END,Front_right_tire_type::CONTROL_END>;
     using Rear_right_tire_type  = Tire_pacejka<Timeseries_t,Rear_left_tire_type::STATE_END,Rear_left_tire_type::CONTROL_END>;
 
-    using Front_axle_t          = Axle_car<Timeseries_t,Front_left_tire_type,Front_right_tire_type,STEERING_FREE_ROLL,Rear_right_tire_type::STATE_END,Rear_right_tire_type::CONTROL_END>;
-    using Rear_axle_t           = Axle_car<Timeseries_t,Rear_left_tire_type,Rear_right_tire_type,POWERED_WITHOUT_DIFFERENTIAL,Front_axle_t::STATE_END,Front_axle_t::CONTROL_END>;
+    using Front_axle_t          = Axle_car_6dof<Timeseries_t,Front_left_tire_type,Front_right_tire_type,STEERING_FREE_ROLL,Rear_right_tire_type::STATE_END,Rear_right_tire_type::CONTROL_END>;
+    using Rear_axle_t           = Axle_car_6dof<Timeseries_t,Rear_left_tire_type,Rear_right_tire_type,POWERED_WITHOUT_DIFFERENTIAL,Front_axle_t::STATE_END,Front_axle_t::CONTROL_END>;
     using Chassis_t             = Chassis_car_6dof<Timeseries_t,Front_axle_t,Rear_axle_t,Rear_axle_t::STATE_END,Rear_axle_t::CONTROL_END>;
 
     using Road_cartesian_t   = Road_cartesian<Timeseries_t,Chassis_t::STATE_END,Chassis_t::CONTROL_END>;

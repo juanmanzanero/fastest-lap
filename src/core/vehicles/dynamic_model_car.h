@@ -5,7 +5,7 @@
 #include <vector>
 #include "lion/foundation/types.h"
 #include "src/core/chassis/chassis_car_6dof.h"
-#include "src/core/chassis/axle_car.h"
+#include "src/core/chassis/axle_car_6dof.h"
 #include "src/core/tire/tire_pacejka.h"
 
 //!      The dynamic model of a Car

@@ -1,5 +1,5 @@
-#ifndef __CAR_AXLE_H__
-#define __CAR_AXLE_H__
+#ifndef __AXLE_CAR_6DOF_H__
+#define __AXLE_CAR_6DOF_H__
 
 #include "axle.h"
 #include "src/core/actuators/engine.h"
@@ -78,7 +78,7 @@ struct STEERING_FREE_ROLL
 //!  @param STATE0: index of the first state variable defined here
 //!  @param CONTROL0: index of the first control variable defined here
 template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t> typename Axle_mode, size_t STATE0, size_t CONTROL0>
-class Axle_car : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,STATE0,CONTROL0>, 
+class Axle_car_6dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,STATE0,CONTROL0>, 
                  public Axle_mode<Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,STATE0,CONTROL0>::STATE_END, 
                                   Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,STATE0,CONTROL0>::CONTROL_END>
 {
@@ -106,7 +106,7 @@ class Axle_car : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,S
     enum Tires : size_t { LEFT, RIGHT };
 
     //! Default constructor
-    Axle_car() = default;
+    Axle_car_6dof() = default;
 
     //! Constructor
     //! @param[in] name: name given to the axle for identification (e.g. front, rear)
@@ -114,7 +114,7 @@ class Axle_car : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,S
     //! @param[in] tire_r: right tire
     //! @param[in] parameters: map containing the mechanical and geometrical parameters
     //! @param[in] path: path of this axle in the parameters map
-    Axle_car(const std::string& name, 
+    Axle_car_6dof(const std::string& name, 
              const Tire_left_t& tire_l,
              const Tire_right_t& tire_r,
              Xml_document& database,
@@ -302,6 +302,6 @@ class Axle_car : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,S
 
 };
 
-#include "axle_car.hpp"
+#include "axle_car_6dof.hpp"
 
 #endif

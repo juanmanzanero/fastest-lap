@@ -1,8 +1,7 @@
 #include "lion/propagators/rk4.h"
-#include "src/core/chassis/axle_car.h"
+#include "src/core/chassis/axle_car_6dof.h"
 #include "lion/math/optimise.h"
 #include "src/core/chassis/chassis_car_6dof.h"
-#include "src/core/chassis/axle_car.h"
 #include "src/core/tire/tire_pacejka.h"
 #include "src/core/vehicles/road_curvilinear.h"
 #include "src/core/vehicles/dynamic_model_car.h"
@@ -24,8 +23,8 @@ using Rear_left_tire_type   = Tire_pacejka<scalar,Front_right_tire_type::STATE_E
 using Rear_right_tire_type  = Tire_pacejka<scalar,Rear_left_tire_type  ::STATE_END, Rear_left_tire_type  ::CONTROL_END>;
 
 // Axles
-using Front_axle_type = Axle_car<scalar,Front_left_tire_type, Front_right_tire_type, STEERING_FREE_ROLL          , Rear_right_tire_type::STATE_END, Rear_right_tire_type::CONTROL_END>;
-using Rear_axle_type  = Axle_car<scalar,Rear_left_tire_type , Rear_right_tire_type , POWERED_WITHOUT_DIFFERENTIAL, Front_axle_type     ::STATE_END, Front_axle_type     ::CONTROL_END>;
+using Front_axle_type = Axle_car_6dof<scalar,Front_left_tire_type, Front_right_tire_type, STEERING_FREE_ROLL          , Rear_right_tire_type::STATE_END, Rear_right_tire_type::CONTROL_END>;
+using Rear_axle_type  = Axle_car_6dof<scalar,Rear_left_tire_type , Rear_right_tire_type , POWERED_WITHOUT_DIFFERENTIAL, Front_axle_type     ::STATE_END, Front_axle_type     ::CONTROL_END>;
 
 // Chassis
 using Chassis_t = Chassis_car_6dof<scalar,Front_axle_type,Rear_axle_type,Rear_axle_type::STATE_END,Rear_axle_type::CONTROL_END>;

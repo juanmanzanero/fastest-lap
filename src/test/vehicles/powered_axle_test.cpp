@@ -3,7 +3,7 @@
 #include "lion/thirdparty/include/cppad/cppad.hpp"
 
 #include "src/core/tire/tire_pacejka.h"
-#include "src/core/chassis/axle_car.h"
+#include "src/core/chassis/axle_car_6dof.h"
 #include "src/core/vehicles/dynamic_model_powered_axle.h"
 #include "src/core/chassis/chassis_car_6dof.h"
 #include "lion/math/matrix_extensions.h"
@@ -12,7 +12,7 @@
 
 using Rear_left_tire = Tire_pacejka<scalar,0,0>;
 using Rear_right_tire = Tire_pacejka<scalar,Rear_left_tire::STATE_END,Rear_left_tire::CONTROL_END>;
-using Axle_type = Axle_car<scalar,Rear_left_tire,Rear_right_tire,POWERED_WITHOUT_DIFFERENTIAL,Rear_right_tire::STATE_END,Rear_right_tire::CONTROL_END>;
+using Axle_type = Axle_car_6dof<scalar,Rear_left_tire,Rear_right_tire,POWERED_WITHOUT_DIFFERENTIAL,Rear_right_tire::STATE_END,Rear_right_tire::CONTROL_END>;
 using Dynamic_model_t = Dynamic_model_powered_axle<scalar,Axle_type,Axle_type::STATE_END,Axle_type::CONTROL_END>;
 
 const static std::map<std::string,scalar> Lot2016kart_rear_axle =
