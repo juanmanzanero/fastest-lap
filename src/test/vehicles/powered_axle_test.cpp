@@ -10,8 +10,8 @@
 #include "lion/propagators/rk4.h"
 #include <iomanip>
 
-using Rear_left_tire = Tire_pacejka<scalar,0,0>;
-using Rear_right_tire = Tire_pacejka<scalar,Rear_left_tire::STATE_END,Rear_left_tire::CONTROL_END>;
+using Rear_left_tire = Tire_pacejka_std<scalar,0,0>;
+using Rear_right_tire = Tire_pacejka_std<scalar,Rear_left_tire::STATE_END,Rear_left_tire::CONTROL_END>;
 using Axle_type = Axle_car_6dof<scalar,Rear_left_tire,Rear_right_tire,POWERED_WITHOUT_DIFFERENTIAL,Rear_right_tire::STATE_END,Rear_right_tire::CONTROL_END>;
 using Dynamic_model_t = Dynamic_model_powered_axle<scalar,Axle_type,Axle_type::STATE_END,Axle_type::CONTROL_END>;
 

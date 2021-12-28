@@ -4,7 +4,7 @@
 
 namespace plt = matplotlibcpp;
 
-using Tire_t = Tire_pacejka<0,0>;
+using Tire_t = Tire_pacejka_std<0,0>;
 
 class Maximum_forces_test : public ::testing::TestWithParam<std::tuple<int>>
 {

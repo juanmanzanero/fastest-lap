@@ -6,7 +6,7 @@
 
 
 using Tire_t = Tire<scalar,0,0>;
-using Tire_pacejka_t = Tire_pacejka<scalar,0,0>;
+using Tire_pacejka_std_t = Tire_pacejka_std<scalar,0,0>;
 
 TEST(Tire_test, base_lambda_and_kappa)
 {
@@ -76,6 +76,7 @@ TEST(Tire_test, base_lambda_and_kappa)
     EXPECT_DOUBLE_EQ ( tire_fl.get_lambda(), lambda_fl);
 }
 
+
 TEST(Tire_test, pacejka_lambda_and_kappa)
 {
     sFrame inertial_frame;
@@ -109,10 +110,10 @@ TEST(Tire_test, pacejka_lambda_and_kappa)
     sFrame tire_fl_frame({+a,-tf,-R},{0.0,0.0,0.0},{delta}, {0.0}, {Z}, chassis_frame);
 
     Xml_document database = { "database/roberto-lot-kart-2016.xml", true };
-    Tire_pacejka_t tire_rr("Rear right",database,"vehicle/rear-tire/");
-    Tire_pacejka_t tire_rl("Rear left",database,"vehicle/rear-tire/");
-    Tire_pacejka_t tire_fr("Front right",database,"vehicle/front-tire/");
-    Tire_pacejka_t tire_fl("Front left",database,"vehicle/front-tire/");
+    Tire_pacejka_std_t tire_rr("Rear right",database,"vehicle/rear-tire/");
+    Tire_pacejka_std_t tire_rl("Rear left",database,"vehicle/rear-tire/");
+    Tire_pacejka_std_t tire_fr("Front right",database,"vehicle/front-tire/");
+    Tire_pacejka_std_t tire_fl("Front left",database,"vehicle/front-tire/");
 
     tire_fl.get_frame().set_parent(tire_fl_frame);
     tire_fr.get_frame().set_parent(tire_fr_frame);

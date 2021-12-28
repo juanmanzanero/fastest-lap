@@ -6,16 +6,15 @@
 #include "src/core/tire/tire_pacejka.h"
 
 
-using Front_left_tire_type  = Tire_pacejka<scalar,0,0>;
-using Front_right_tire_type = Tire_pacejka<scalar,Front_left_tire_type ::STATE_END, Front_left_tire_type ::CONTROL_END>;
-using Rear_left_tire_type   = Tire_pacejka<scalar,Front_right_tire_type::STATE_END, Front_right_tire_type::CONTROL_END>;
-using Rear_right_tire_type  = Tire_pacejka<scalar,Rear_left_tire_type  ::STATE_END, Rear_left_tire_type  ::CONTROL_END>;
+using Front_left_tire_type  = Tire_pacejka_std<scalar,0,0>;
+using Front_right_tire_type = Tire_pacejka_std<scalar,Front_left_tire_type ::STATE_END, Front_left_tire_type ::CONTROL_END>;
+using Rear_left_tire_type   = Tire_pacejka_std<scalar,Front_right_tire_type::STATE_END, Front_right_tire_type::CONTROL_END>;
+using Rear_right_tire_type  = Tire_pacejka_std<scalar,Rear_left_tire_type  ::STATE_END, Rear_left_tire_type  ::CONTROL_END>;
 
 using Front_axle_type = Axle_car_6dof<scalar,Front_left_tire_type,Front_right_tire_type,STEERING_FREE_ROLL,Rear_right_tire_type::STATE_END,Rear_right_tire_type::CONTROL_END>;
 using Rear_axle_type  = Axle_car_6dof<scalar,Rear_left_tire_type,Rear_right_tire_type,POWERED_WITHOUT_DIFFERENTIAL,Front_axle_type::STATE_END,Front_axle_type::CONTROL_END>;
 using Chassis_t = Chassis_car_6dof<scalar,Front_axle_type,Rear_axle_type,Rear_axle_type::STATE_END,Rear_axle_type::CONTROL_END>;
 
-template class Tire_pacejka<scalar,0,0>;
 template class Axle_car_6dof<scalar,Front_left_tire_type,Front_right_tire_type,STEERING_FREE_ROLL,Rear_right_tire_type::STATE_END,Rear_right_tire_type::CONTROL_END>;
 template class Axle_car_6dof<scalar,Rear_left_tire_type,Rear_right_tire_type,POWERED_WITHOUT_DIFFERENTIAL,Front_axle_type::STATE_END,Front_axle_type::CONTROL_END>;
 template class Chassis_car_6dof<scalar,Front_axle_type,Rear_axle_type,Rear_axle_type::STATE_END,Rear_axle_type::CONTROL_END>;

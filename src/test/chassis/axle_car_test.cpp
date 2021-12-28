@@ -2,7 +2,7 @@
 #include "src/core/chassis/axle_car_6dof.h"
 #include "src/core/tire/tire_pacejka.h"
 
-using Tire_t       = Tire_pacejka<scalar,0,0>;
+using Tire_t       = Tire_pacejka_std<scalar,0,0>;
 using Front_axle_t = Axle_car_6dof<scalar,Tire_t,Tire_t,STEERING_FREE_ROLL,0,0>;
 using Rear_axle_t  = Axle_car_6dof<scalar,Tire_t,Tire_t,POWERED_WITHOUT_DIFFERENTIAL,0,0>;
 
@@ -559,11 +559,11 @@ TEST_P(Axle_car_test, front_axle_magic_forces)
     EXPECT_DOUBLE_EQ(tire_fl.get_force().at(X), 0.0);
     EXPECT_DOUBLE_EQ(tire_fr.get_force().at(X), 0.0);
 
-    const scalar Fl = tire_fl.force_pure_lateral_magic(tire_fl.get_lambda(), 
-                                                           -tire_fl.get_force().at(Z));
+    const scalar Fl = tire_fl.get_model().force_pure_lateral_magic(tire_fl.get_lambda(), 
+                                                                  -tire_fl.get_force().at(Z));
 
-    const scalar Fr = tire_fr.force_pure_lateral_magic(tire_fr.get_lambda(), 
-                                                           -tire_fr.get_force().at(Z));
+    const scalar Fr = tire_fr.get_model().force_pure_lateral_magic(tire_fr.get_lambda(), 
+                                                                  -tire_fr.get_force().at(Z));
 
     EXPECT_DOUBLE_EQ(tire_fl.get_force().at(Y), Fl);
     EXPECT_DOUBLE_EQ(tire_fr.get_force().at(Y), Fr);
@@ -577,22 +577,22 @@ TEST_P(Axle_car_test, rear_axle_magic_forces)
     const Tire_t& tire_rr = rear_axle.get_tire<Rear_axle_t::RIGHT>();
     
     // Check the forces generated
-    const scalar Sl = tire_rl.force_combined_longitudinal_magic(tire_rl.get_kappa(), 
+    const scalar Sl = tire_rl.get_model().force_combined_longitudinal_magic(tire_rl.get_kappa(), 
                                                                     tire_rl.get_lambda(), 
                                                                     -tire_rl.get_force().at(Z));
 
-    const scalar Sr = tire_rr.force_combined_longitudinal_magic(tire_rr.get_kappa(), 
+    const scalar Sr = tire_rr.get_model().force_combined_longitudinal_magic(tire_rr.get_kappa(), 
                                                                     tire_rr.get_lambda(), 
                                                                     -tire_rr.get_force().at(Z));
 
     EXPECT_DOUBLE_EQ(tire_rl.get_force().at(X), Sl);
     EXPECT_DOUBLE_EQ(tire_rr.get_force().at(X), Sr);
 
-    const scalar Fl = tire_rl.force_combined_lateral_magic(tire_rl.get_kappa(), 
+    const scalar Fl = tire_rl.get_model().force_combined_lateral_magic(tire_rl.get_kappa(), 
                                                                tire_rl.get_lambda(), 
                                                                -tire_rl.get_force().at(Z));
 
-    const scalar Fr = tire_rr.force_combined_lateral_magic(tire_rr.get_kappa(), 
+    const scalar Fr = tire_rr.get_model().force_combined_lateral_magic(tire_rr.get_kappa(), 
                                                                tire_rr.get_lambda(), 
                                                                -tire_rr.get_force().at(Z));
 
@@ -608,11 +608,11 @@ TEST_P(Axle_car_test, rear_axle_torque_equation)
     const scalar& wl = rear_axle.get_tire<Rear_axle_t::LEFT>().get_vertical_deformation();
     const scalar& wr = rear_axle.get_tire<Rear_axle_t::RIGHT>().get_vertical_deformation();
 
-    const scalar& Sl = tire_rl.force_combined_longitudinal_magic(tire_rl.get_kappa(), 
+    const scalar& Sl = tire_rl.get_model().force_combined_longitudinal_magic(tire_rl.get_kappa(), 
                                                                      tire_rl.get_lambda(), 
                                                                      -tire_rl.get_force().at(Z));
 
-    const scalar& Sr = tire_rr.force_combined_longitudinal_magic(tire_rr.get_kappa(), 
+    const scalar& Sr = tire_rr.get_model().force_combined_longitudinal_magic(tire_rr.get_kappa(), 
                                                                      tire_rr.get_lambda(), 
                                                                      -tire_rr.get_force().at(Z));
 

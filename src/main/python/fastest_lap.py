@@ -167,7 +167,7 @@ def plot_gg(ay,ay_minus,ax_max,ax_min):
 
 	return fig;
 
-def plot_track(x_center, y_center, x_left, y_left, x_right, y_right):
+def plot_track(x_center, y_center, x_left, y_left, x_right, y_right, theta):
 	fig = plt.figure(figsize=(14,7));
 	plt.axis('equal');
 	plt.grid(False);

@@ -22,8 +22,8 @@ using Dynamic_model_t       = lot2016kart<scalar>::cartesian;
 
 // Make sure that the enumerators are correct
 // Controls
-static_assert(Front_axle_t::Axle_type::ISTEERING==0);
-static_assert(Rear_axle_t::Axle_type::ITORQUE==1);
+static_assert(Front_axle_t::ISTEERING==0);
+static_assert(Rear_axle_t::ITORQUE==1);
 
 // State
 static_assert(Rear_axle_t::IOMEGA_AXLE==0);

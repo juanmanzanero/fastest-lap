@@ -55,6 +55,9 @@ class Tire
     //! Return the nominal radius of the tire [N]
     constexpr const scalar& get_radius() const { return _R0; }
 
+    //! Return the tire angular speed [rad/s]
+    const Timeseries_t& get_omega() const { return _omega; }
+
     //! Returns the longitudinal slip [-]
     const Timeseries_t& get_kappa() const { return _kappa; }
 

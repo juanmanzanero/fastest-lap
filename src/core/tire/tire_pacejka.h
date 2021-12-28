@@ -3,50 +3,12 @@
 
 #include "tire.h"
 
-template<typename Timeseries_t, size_t STATE0, size_t CONTROL0>
-class Tire_pacejka : public Tire<Timeseries_t, STATE0,CONTROL0>
+//! Implementation of the complete Pacejka tire model
+struct Pacejka_standard_model
 {
- public:
-    //! The parent class type
-    using base_type = Tire<Timeseries_t,STATE0,CONTROL0>;
+    //! Initialise the model (i.e. compute extra parameters)
+    void initialise();
 
-    //! Indices of the state variables of this class: none
-    enum State     { STATE_END    = base_type::STATE_END } ;
-
-    //! Indices of the control variables of this class: none
-    enum Controls  { CONTROL_END  = base_type::CONTROL_END  } ;
-
-    //! Default constructor
-    Tire_pacejka() = default;
-
-    //! Constructor
-    //! @param[in] name: name of the tire
-    //! @param[in] parameters: map(string,scalar) with the tire parameters
-    //! @param[in] path: path of this tire on the parameters map
-    //! @param[in] type: type of the tire: NORMAL or ONLY_LATERAL
-    Tire_pacejka(const std::string& name, 
-                 Xml_document& database,
-                 const std::string& path="" 
-                );
-
-    //! Calls update(x0,v0,omega) of the base class, and calls update()
-    //! This updates the tire dynamics and tire forces
-    //! @param[in] x0: new frame origin position [m]
-    //! @param[in] v0: new frame origin velocity [m/s]
-    //! @param[in] omega: new value for tire angular speed [rad/s]
-    void update(const Vector3d<Timeseries_t>& x0, const Vector3d<Timeseries_t>& v0, Timeseries_t omega);
-
-    //! Calls update(omega) of the base class, and calls update()
-    //! @param[in] omega: new value for tire angular speed [rad/s]
-    void update(Timeseries_t omega);
-
-    //! Returns the tire carcass radial stiffness [N/m]
-    constexpr const scalar& get_radial_stiffness() const { return _kt; }
-
-    //! Print the tire parameters
-    //! @param[in] os: output stream
-    std::ostream& print(std::ostream& os) const;
- 
     //! Applies the magic formula for the case of pure longitudinal slip (lambda=0)
     //! Fx0 = Dx sin(Cx atan(Bx kappa - Ex(Bx kappa - atan(Bx kappa))))
     //! with:
@@ -59,6 +21,7 @@ class Tire_pacejka : public Tire<Timeseries_t, STATE0,CONTROL0>
     //!     dfz0 = (Fz - lambdaFz0 Fz0)/(lambda Fz0 Fz0)
     //! @param[in] kappa: instantaneous longitudinal slip
     //! @param[in] Fz: Vertical load [N]
+    template<typename Timeseries_t>
     Timeseries_t force_pure_longitudinal_magic(Timeseries_t kappa, Timeseries_t Fz) const;
 
     //! Applies the magic formula for the case of pure lateral slip (kappa=0)
@@ -73,6 +36,7 @@ class Tire_pacejka : public Tire<Timeseries_t, STATE0,CONTROL0>
     //!     (if Fz=0, By = pKy1 pKy4 / (pKy2 pCy1 pDy1)
     //! @param[in] lambda: instantaneous lateral slip
     //! @param[in] Fz: Vertical load [N]
+    template<typename Timeseries_t>
     Timeseries_t force_pure_lateral_magic(Timeseries_t lambda, Timeseries_t Fz) const;
 
     //! Applies the magic formula for the case of longitudinal combined slip
@@ -81,6 +45,7 @@ class Tire_pacejka : public Tire<Timeseries_t, STATE0,CONTROL0>
     //! @param[in] kappa: instantaneous longitudinal slip
     //! @param[in] kappa: instantaneous lateral slip     
     //! @param[in] Fz: Vertical load [N]
+    template<typename Timeseries_t>
     Timeseries_t force_combined_longitudinal_magic(Timeseries_t kappa, Timeseries_t lambda, Timeseries_t Fz) const;
 
     //! Applies the magic formula for the case of lateral combined slip
@@ -91,43 +56,32 @@ class Tire_pacejka : public Tire<Timeseries_t, STATE0,CONTROL0>
     //! @param[in] kappa: instantaneous longitudinal slip
     //! @param[in] kappa: instantaneous lateral slip     
     //! @param[in] Fz: Vertical load [N]
+    template<typename Timeseries_t>
     Timeseries_t force_combined_lateral_magic(Timeseries_t kappa, Timeseries_t lambda, Timeseries_t Fz) const;
 
-    struct Max_force
-    {
-        double Fx;
-        double Fy;
-        double kappa;
-        double lambda;
-    };
+    std::vector<Database_parameter> get_parameters() { return 
+    { 
+        { "nominal-vertical-load", _Fz0 },
+        { "lambdaFz0", _lambdaFz0 },
+        { "longitudinal/pure/pCx1", _pCx1 },
+        { "longitudinal/pure/pDx1", _pDx1 },
+        { "longitudinal/pure/pEx1", _pEx1 },
+        { "longitudinal/pure/pKx1", _pKx1 },
+        { "longitudinal/pure/pKx2", _pKx2 },
+        { "longitudinal/pure/pKx3", _pKx3 },
+        { "lateral/pure/pCy1", _pCy1 },
+        { "lateral/pure/pDy1", _pDy1 },
+        { "lateral/pure/pEy1", _pEy1 },
+        { "lateral/pure/pKy1", _pKy1 },
+        { "lateral/pure/pKy2", _pKy2 },
+        { "lateral/pure/pKy4", _pKy4 },
+        { "longitudinal/combined/rBx1", _rBx1 },
+        { "longitudinal/combined/rCx1", _rCx1 },
+        { "lateral/combined/rBy1", _rBy1 },
+        { "lateral/combined/rCy1", _rCy1 } 
+    };}
 
-    Max_force compute_maximum_force(double theta, double Fz) const;
-
-    //! Load the time derivative of the state variables computed herein to the dqdt
-    //! @param[out] dqdt: the vehicle state vector time derivative
-    template<size_t N>
-    void get_state_derivative(std::array<Timeseries_t,N>& dqdt) const {};
-
-    //! Set the state variables of this class
-    //! @param[in] q: the vehicle state vector 
-    //! @param[in] u: the vehicle control vector
-    template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_controls(const std::array<Timeseries_t,NSTATE>& q, 
-                                const std::array<Timeseries_t,NCONTROL>& u) {};
-
-    //! Get the names of the state and control varaibles of this class
-    //! @param[out] q: the vehicle state names
-    //! @param[out] u: the vehicle control names
-    template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_control_names(std::array<std::string,NSTATE>& q, 
-                                     std::array<std::string,NCONTROL>& u) const {};
-
-    static std::string type() { return "tire_pacejka"; }
-
- private:
-    //! Performs an update of the tire: computes tire forces from kappa, lambda, and tire 
-    //! deformations
-    void update();
+    std::ostream& print(std::ostream& os) const;
 
     // Parameters of the magic formula
     // ===============================
@@ -161,6 +115,149 @@ class Tire_pacejka : public Tire<Timeseries_t, STATE0,CONTROL0>
     scalar _rBy1;   //! [c] Coefficient inside the atan
     scalar _rCy1;   //! [c] Coefficient outside the atan
 
+};
+
+
+//! Implementation of a simpler pacejka model with fewer parameters
+struct Pacejka_simple_model
+{
+    //! Compute extra constants from the inputs
+    void initialise();
+
+    //! Compute the combined longitudinal force
+    template<typename Timeseries_t>
+    Timeseries_t force_combined_longitudinal_magic(Timeseries_t kappa, Timeseries_t lambda, Timeseries_t Fz) const;
+
+    //! Compute the combined lateral force
+    template<typename Timeseries_t>
+    Timeseries_t force_combined_lateral_magic(Timeseries_t kappa, Timeseries_t lambda, Timeseries_t Fz) const;
+
+    // Constants
+    scalar _Fz1;            //! [c] Reference load 1
+    scalar _Fz2;            //! [c] Reference load 2
+    
+    scalar _mu_x_max1;      //! [c] peak longitudinal friction coefficient at load 1
+    scalar _mu_x_max2;      //! [c] peak longitudinal friction coefficient at load 2
+
+    scalar _mu_y_max1;      //! [c] peak lateral friction coefficient at load 1
+    scalar _mu_y_max2;      //! [c] peak lateral friction coefficient at load 2
+
+    scalar _kappa_max1;     //! [c] slip coefficient for the friction peak at load 1
+    scalar _kappa_max2;     //! [c] slip coefficient for the friction peak at load 2
+
+    scalar _lambda_max1;     //! [c] slip angle for the friction peak at load 1
+    scalar _lambda_max2;     //! [c] slip angle for the friction peak at load 2
+
+    scalar _Qx;             //! [c] longitudinal shape factor
+    scalar _Qy;             //! [c] lateral shape factor
+
+    scalar _Sx;             //! [c] pi/(2.atan(Qx))
+    scalar _Sy;             //! [c] pi/(2.atan(Qy))
+
+    //! Database parameters to be read from an XML element
+    std::vector<Database_parameter> get_parameters() { return 
+    { 
+        { "reference-load-1", _Fz1 },
+        { "reference-load-2", _Fz2 },
+        { "mu-x-max-1", _mu_x_max1 },
+        { "mu-x-max-2", _mu_x_max2 },
+        { "mu-y-max-1", _mu_y_max1 },
+        { "mu-y-max-2", _mu_y_max2 },
+        { "kappa-max-1", _kappa_max1 },
+        { "kappa-max-2", _kappa_max2 },
+        { "lambda-max-1", _lambda_max1 },
+        { "lambda-max-2", _lambda_max2 },
+        { "Qx", _Qx },
+        { "Qy", _Qy } 
+    };}
+
+
+};
+
+template<typename Timeseries_t, typename Pacejka_model, size_t STATE0, size_t CONTROL0>
+class Tire_pacejka : public Tire<Timeseries_t, STATE0,CONTROL0>
+{
+ public:
+    //! The parent class type
+    using base_type = Tire<Timeseries_t,STATE0,CONTROL0>;
+
+    //! Indices of the state variables of this class: none
+    enum State     { STATE_END    = base_type::STATE_END } ;
+
+    //! Indices of the control variables of this class: none
+    enum Controls  { CONTROL_END  = base_type::CONTROL_END  } ;
+
+    //! Default constructor
+    Tire_pacejka() = default;
+
+    //! Constructor
+    //! @param[in] name: name of the tire
+    //! @param[in] parameters: map(string,scalar) with the tire parameters
+    //! @param[in] path: path of this tire on the parameters map
+    //! @param[in] type: type of the tire: NORMAL or ONLY_LATERAL
+    Tire_pacejka(const std::string& name, 
+                 Xml_document& database,
+                 const std::string& path="" 
+                );
+
+    //! Calls Tire::update(x0,v0,omega) of the base class, and calls update_self()
+    //! This updates the tire dynamics and tire forces
+    //! @param[in] x0: new frame origin position [m]
+    //! @param[in] v0: new frame origin velocity [m/s]
+    //! @param[in] omega: new value for tire angular speed [rad/s]
+    void update(const Vector3d<Timeseries_t>& x0, const Vector3d<Timeseries_t>& v0, Timeseries_t omega);
+
+    //! Calls Tire::update(omega) of the base class, and calls update_self(Fz)
+    //! This updates the tire dynamics and tire forces
+    //! In this function, the normal load is provided externally
+    //! @param[in] Fz: the normal load
+    //! @param[in] omega: new value for tire angular speed [rad/s]
+    void update(Timeseries_t Fz, Timeseries_t omega);
+
+    //! Calls update(omega) of the base class, and calls update_self()
+    //! @param[in] omega: new value for tire angular speed [rad/s]
+    void update(Timeseries_t omega);
+
+    //! Returns the tire carcass radial stiffness [N/m]
+    constexpr const scalar& get_radial_stiffness() const { return _kt; }
+
+    //! Print the tire parameters
+    //! @param[in] os: output stream
+    std::ostream& print(std::ostream& os) const;
+ 
+    //! Load the time derivative of the state variables computed herein to the dqdt
+    //! @param[out] dqdt: the vehicle state vector time derivative
+    template<size_t N>
+    void get_state_derivative(std::array<Timeseries_t,N>& dqdt) const {};
+
+    //! Set the state variables of this class
+    //! @param[in] q: the vehicle state vector 
+    //! @param[in] u: the vehicle control vector
+    template<size_t NSTATE, size_t NCONTROL>
+    void set_state_and_controls(const std::array<Timeseries_t,NSTATE>& q, 
+                                const std::array<Timeseries_t,NCONTROL>& u) {};
+
+    //! Get the names of the state and control varaibles of this class
+    //! @param[out] q: the vehicle state names
+    //! @param[out] u: the vehicle control names
+    template<size_t NSTATE, size_t NCONTROL>
+    void set_state_and_control_names(std::array<std::string,NSTATE>& q, 
+                                     std::array<std::string,NCONTROL>& u) const {};
+
+    static std::string type() { return "tire_pacejka"; }
+
+    const Pacejka_model& get_model() const { return _model; }
+
+ private:
+    //! Performs an update of the tire: computes tire forces from kappa, lambda, and tire 
+    //! deformations
+    void update_self();
+
+    //! Performs an update with given normal load
+    void update_self(const Timeseries_t Fz);
+
+    Pacejka_model _model;
+
     scalar _kt; //! [c] Radial stiffness of the carcass
     scalar _ct; //! [c] Radial damping of the carcass
     scalar _Fz_max_ref2;    //! [c] Reference normal force for the smooth max function
@@ -171,66 +268,12 @@ class Tire_pacejka : public Tire<Timeseries_t, STATE0,CONTROL0>
 
     std::vector<Database_parameter> get_parameters() { return 
     { 
-        { "nominal-vertical-load", _Fz0 },
-        { "lambdaFz0", _lambdaFz0 },
-        { "longitudinal/pure/pCx1", _pCx1 },
-        { "longitudinal/pure/pDx1", _pDx1 },
-        { "longitudinal/pure/pEx1", _pEx1 },
-        { "longitudinal/pure/pKx1", _pKx1 },
-        { "longitudinal/pure/pKx2", _pKx2 },
-        { "longitudinal/pure/pKx3", _pKx3 },
-        { "lateral/pure/pCy1", _pCy1 },
-        { "lateral/pure/pDy1", _pDy1 },
-        { "lateral/pure/pEy1", _pEy1 },
-        { "lateral/pure/pKy1", _pKy1 },
-        { "lateral/pure/pKy2", _pKy2 },
-        { "lateral/pure/pKy4", _pKy4 },
-        { "longitudinal/combined/rBx1", _rBx1 },
-        { "longitudinal/combined/rCx1", _rCx1 },
-        { "lateral/combined/rBy1", _rBy1 },
-        { "lateral/combined/rCy1", _rCy1 },
         { "radial-stiffness", _kt },
         { "radial-damping", _ct },
         { "Fz-max-ref2", _Fz_max_ref2 }
     };}
 
-    struct optimise
-    {
-        struct fitness
-        {
-            using argument_type = std::array<Timeseries_t,2>;
-            fitness(double theta, double Fz, const Tire_pacejka& tire) : _theta(wrap_to_pi(theta)), _Fz(Fz), _tire(&tire) {}
-            double operator() (const argument_type& x) const
-            { 
-                double Fx = _tire->force_combined_longitudinal_magic(x[0], x[1], _Fz);
-                double Fy = _tire->force_combined_lateral_magic(x[0], x[1], _Fz);
 
-                return -(Fx*Fx + Fy*Fy);
-            }
-
-            double _theta;
-            double _Fz;
-            const Tire_pacejka* _tire;
-        };
-
-        struct constraints
-        {
-            using argument_type = std::array<Timeseries_t,2>;
-            constraints(double theta, double Fz, const Tire_pacejka& tire) : _theta(wrap_to_pi(theta)), _Fz(Fz), _tire(&tire) {}
-
-            std::array<Timeseries_t,1> operator() (const argument_type& x) const
-            {
-                double Fx = _tire->force_combined_longitudinal_magic(x[0], x[1], _Fz) ;
-                double Fy = _tire->force_combined_lateral_magic(x[0], x[1], _Fz) ;
-
-                return {_theta - std::atan2(Fy,Fx)};
-            }
-
-            double _theta;
-            double _Fz;
-            const Tire_pacejka* _tire;
-        };
-    };
 
 };
 
@@ -238,8 +281,14 @@ class Tire_pacejka : public Tire<Timeseries_t, STATE0,CONTROL0>
 //! Display the properties of a tire
 //! @param[in] os: out stream
 //! @param[in] tire: the tire
+template<typename Timeseries_t,typename Pacejka_model,size_t STATE0, size_t CONTROL0>
+inline std::ostream& operator<<(std::ostream& os, const Tire_pacejka<Timeseries_t,Pacejka_model,STATE0,CONTROL0>& tire){return tire.print(os);}
+
 template<typename Timeseries_t,size_t STATE0, size_t CONTROL0>
-inline std::ostream& operator<<(std::ostream& os, const Tire_pacejka<Timeseries_t,STATE0,CONTROL0>& tire){return tire.print(os);}
+using Tire_pacejka_std = Tire_pacejka<Timeseries_t,Pacejka_standard_model,STATE0,CONTROL0>;
+
+template<typename Timeseries_t,size_t STATE0, size_t CONTROL0>
+using Tire_pacejka_simple = Tire_pacejka<Timeseries_t,Pacejka_simple_model,STATE0,CONTROL0>;
 
 #include "tire_pacejka.hpp"
 
