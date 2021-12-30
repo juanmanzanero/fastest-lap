@@ -62,27 +62,27 @@ inline void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0
     const Vector3d<Timeseries_t> F_aero = base_type::get_aerodynamic_force();
 
     // Compute vertical loads
-    //
-    // The equations that govern the vertical loads are:
-    //  (Fz):           Fz_fl + Fz_fr + Fz_rl + Fz_rr          = -m.g - Fz_a
-    //  (Mx):           wr.(Fz_rl - Fz_rr) + wf(Fz_fl - Fz_fr) = -h.Fy
-    //  (My):           b.(Fz_rr + Fz_rl) - a.(Fz_fr + Fz_fl)  = -h.Fz - (a_A - a).Fz_a
-    //  (compliance):   Fz_fr.(1-D) - Fz_fl.(1-D)              = D.Fz_rr - D.Fz_rl
-    //
-    // Written as matrix-vector product: A.F = b
-    //
-    //      / 1     1    1    1 \/Fz_fl\   /-m.g - Fz_a            \
-    //      | wf   -wf  wr  -wr ||Fz_fr|   |-h.Fy                  |
-    //  A = | -a   -a    b    b ||Fz_rl| = |-h.Fz - (a_A - a).Fz_a |
-    //      \ D-1  1-D  -D    D /\Fz_rr/   \ 0                     /
-    //
-    // Whose inverse matrix is: Lambda = 2.(D.wf + (D-1).wr)
-    //
-    //          / b/2(a+b)    D/Lambda      -1/2(a+b)   wr/Lambda \
-    //          | b/2(a+b)   -D/Lambda      -1/2(a+b)  -wr/Lambda |
-    // A^(-1) = | a/2(a+b)   (D-1)/Lambda    1/2(a+b)  -wf/Lambda |
-    //          \ a/2(a+b)   (1-D)/Lambda    1/2(a+b)   wf/Lambda /
-    // 
+    /*
+       The equations that govern the vertical loads are:
+        (Fz):           Fz_fl + Fz_fr + Fz_rl + Fz_rr          = -m.g - Fz_a
+        (Mx):           wr.(Fz_rl - Fz_rr) + wf(Fz_fl - Fz_fr) = -h.Fy
+        (My):           b.(Fz_rr + Fz_rl) - a.(Fz_fr + Fz_fl)  = -h.Fz - (a_A - a).Fz_a
+        (compliance):   Fz_fr.(1-D) - Fz_fl.(1-D)              = D.Fz_rr - D.Fz_rl
+      
+       Written as matrix-vector product: A.F = b
+      
+            / 1     1    1    1 \/Fz_fl\   /-m.g - Fz_a            \
+            | wf   -wf  wr  -wr ||Fz_fr|   |-h.Fy                  |
+        A = | -a   -a    b    b ||Fz_rl| = |-h.Fz - (a_A - a).Fz_a |
+            \ D-1  1-D  -D    D /\Fz_rr/   \ 0                     /
+      
+       Whose inverse matrix is: Lambda = 2.(D.wf + (D-1).wr)
+      
+                / b/2(a+b)    D/Lambda      -1/2(a+b)   wr/Lambda \
+                | b/2(a+b)   -D/Lambda      -1/2(a+b)  -wr/Lambda |
+       A^(-1) = | a/2(a+b)   (D-1)/Lambda    1/2(a+b)  -wf/Lambda |
+                \ a/2(a+b)   (1-D)/Lambda    1/2(a+b)   wf/Lambda /
+    */ 
 
     // Smoothly restrict to negative forces
     _neg_Fz_fl = -smooth_pos(-_Fz_fl, _Fz_max_ref2);
