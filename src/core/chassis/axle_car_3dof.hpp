@@ -70,8 +70,8 @@ void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTRO
     const Timeseries_t brake_percentage     =  smooth_pos(-throttle,_throttle_smooth_pos);
 
     // Compute the braking torque
-    _torque_left  = -smooth_sign(_omega_left,1.0)*_brakes(brake_percentage);
-    _torque_right = -smooth_sign(_omega_right,1.0)*_brakes(brake_percentage);
+    _torque_left  = -smooth_sign(_omega_left,1.0)*_brakes(brake_percentage)*brake_bias;
+    _torque_right = -smooth_sign(_omega_right,1.0)*_brakes(brake_percentage)*brake_bias;
 
     if constexpr (std::is_same<Axle_mode<0,0>, POWERED<0,0>>::value)
     {

@@ -194,6 +194,8 @@ inline std::ostream& Tire_pacejka<Timeseries_t,Pacejka_model,STATE0,CONTROL0>::p
     out(2) << std::left << std::setw(16) << "   * kt: "  << std::right << std::setw(5) << _kt << std::endl;
     out(2) << std::left << std::setw(16) << "   * ct: "  << std::right << std::setw(5) << _ct << std::endl;
     _model.print(os);
+
+    return os;
 }
 
 
