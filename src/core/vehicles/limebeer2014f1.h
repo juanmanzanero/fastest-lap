@@ -3,7 +3,7 @@
 
 #include "src/core/tire/tire_pacejka.h"
 #include "src/core/chassis/axle_car_3dof.h"
-//#include "src/core/chassis/chassis_car_3dof.h"
+#include "src/core/chassis/chassis_car_3dof.h"
 #include "src/core/vehicles/track_by_polynomial.h"
 #include "src/core/vehicles/track_by_arcs.h"
 #include "src/core/vehicles/road_cartesian.h"
@@ -24,15 +24,15 @@ class limebeer2014f1
 
     using Front_axle_t          = Axle_car_3dof<Timeseries_t,Front_left_tire_type,Front_right_tire_type,STEERING,Rear_right_tire_type::STATE_END,Rear_right_tire_type::CONTROL_END>;
     using Rear_axle_t           = Axle_car_3dof<Timeseries_t,Rear_left_tire_type,Rear_right_tire_type,POWERED,Front_axle_t::STATE_END,Front_axle_t::CONTROL_END>;
-    //using Chassis_t             = Chassis_car_3dof<Timeseries_t,Front_axle_t,Rear_axle_t,Rear_axle_t::STATE_END,Rear_axle_t::CONTROL_END>;
+    using Chassis_t             = Chassis_car_3dof<Timeseries_t,Front_axle_t,Rear_axle_t,Rear_axle_t::STATE_END,Rear_axle_t::CONTROL_END>;
 
-    //using Road_cartesian_t   = Road_cartesian<Timeseries_t,Chassis_t::STATE_END,Chassis_t::CONTROL_END>;
+    using Road_cartesian_t   = Road_cartesian<Timeseries_t,Chassis_t::STATE_END,Chassis_t::CONTROL_END>;
 
-    //template<typename Track_t>
-    //using Road_curvilinear_t = Road_curvilinear<Timeseries_t,Track_t,Chassis_t::STATE_END,Chassis_t::CONTROL_END>;
+    template<typename Track_t>
+    using Road_curvilinear_t = Road_curvilinear<Timeseries_t,Track_t,Chassis_t::STATE_END,Chassis_t::CONTROL_END>;
  
  private:
-/*    
+      
     template<typename Road_type>
     class Dynamic_model : public Dynamic_model_car<Timeseries_t,Chassis_t,Road_type,Road_type::STATE_END,Road_type::CONTROL_END>
     {
@@ -42,19 +42,6 @@ class limebeer2014f1
 
         Dynamic_model() {}
         Dynamic_model(Xml_document& database, const Road_t& road = Road_t()) : Dynamic_model_t(database,road) {}
-
-        static std::pair<std::vector<scalar>,std::vector<scalar>> steady_state_variable_bounds() 
-        {
-            return { { -0.5, 1.0e-4, -10.0*DEG, -10.0*DEG, -10.0*DEG, -10.0*DEG },
-                     {  0.5, 0.04  ,  10.0*DEG,  10.0*DEG,  10.0*DEG,  10.0*DEG } };
-        }
-
-
-        static std::pair<std::vector<scalar>,std::vector<scalar>> steady_state_constraint_bounds() 
-        {
-            return { {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -0.11, -0.11, -0.09, -0.09, -0.09, -0.09},
-                     {0.0, 0.0, 0.0, 0.0, 0.0, 0.0,  0.11,  0.11,  0.09,  0.09,  0.09,  0.09} };
-        }
     };
 
  public:
@@ -66,10 +53,8 @@ class limebeer2014f1
 
     using curvilinear_p = curvilinear<Track_by_polynomial>;
     using curvilinear_a = curvilinear<Track_by_arcs>;
- */
 };
 
-/*
 struct limebeer2014f1_all
 {
     limebeer2014f1_all(Xml_document& database_xml)
@@ -84,7 +69,5 @@ struct limebeer2014f1_all
     limebeer2014f1<CppAD::AD<scalar>>::cartesian      cartesian_ad;
     limebeer2014f1<CppAD::AD<scalar>>::curvilinear_a  curvilinear_ad;
 };
-*/
-
 
 #endif

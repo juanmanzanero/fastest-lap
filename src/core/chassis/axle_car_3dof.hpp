@@ -65,8 +65,7 @@ void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTRO
     tire_l.update(-Fz_left, _omega_left);
     tire_r.update(-Fz_right, _omega_right);
 
-    // Compute throttle and brake percentages
-    const Timeseries_t throttle_percentage  =  smooth_pos( throttle,_throttle_smooth_pos);
+    // Compute brake percentage
     const Timeseries_t brake_percentage     =  smooth_pos(-throttle,_throttle_smooth_pos);
 
     // Compute the braking torque
@@ -75,6 +74,9 @@ void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTRO
 
     if constexpr (std::is_same<Axle_mode<0,0>, POWERED<0,0>>::value)
     {
+        // Compute throttle percentage 
+        const Timeseries_t throttle_percentage  =  smooth_pos( throttle,_throttle_smooth_pos);
+
         const Timeseries_t engine_torque = _engine(throttle_percentage, 0.5*(_omega_left + _omega_right));
         const Timeseries_t differential_torque = _differential_stiffness*(_omega_left - _omega_right);
         _torque_left  += 0.5*engine_torque - differential_torque;

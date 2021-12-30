@@ -1,5 +1,5 @@
-#ifndef __CHASSIS_CAR_HPP__
-#define __CHASSIS_CAR_HPP__
+#ifndef __CHASSIS_CAR_6DOF_HPP__
+#define __CHASSIS_CAR_6DOF_HPP__
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
 inline Chassis_car_6dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::Chassis_car_6dof(const FrontAxle_t& front_axle, 
