@@ -30,7 +30,33 @@
         </engine>
     </rear-axle>
 
-    <chassis/>
+    <chassis>
+        <mass units="kg"> 660.0 </mass>
+
+        <!-- 
+            Inertia matrix: this 3DOF model only uses Izz
+        -->
+        <inertia units="kg.m">
+             0.0  0.0  0.0
+             0.0  0.0  0.0
+             0.0  0.0 450.0
+        </inertia>
+
+        <aerodynamics>
+            <rho units="kg/m3"> 1.2 </rho>
+            <area units="m2"> 1.5 </area>
+            <cd> 0.9 </cd>
+            <cl> 3.0 </cl>
+        </aerodynamics>
+
+        <com units="m"> 0.0 0.0 -0.3 </com>
+        <front_axle units="m"> 1.8 0.0 -0.33 </front_axle>
+        <rear_axle units="m"> -1.6 0.0 -0.33 </rear_axle>
+        <pressure_center units="m"> -0.1 0.0 -0.3 </pressure_center>
+        <brake_bias> 0.5 </brake_bias>
+        <roll_balance_coefficient> 0.5 </roll_balance_coefficient>
+        <Fz_max_ref2> 1.0 </Fz_max_ref2>
+    </chassis>
 
     <front-tire model="tire-pacejka-simple" type="normal">
         <radius units="m">0.330</radius> 

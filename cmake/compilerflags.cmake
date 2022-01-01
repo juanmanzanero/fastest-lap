@@ -1,8 +1,14 @@
-add_compile_options(-Wfatal-errors -Werror -Wall)
+add_compile_options(-Wfatal-errors)
+add_compile_options(-Werror)
+add_compile_options(-Wall)
 
 if (CMAKE_BUILD_TYPE MATCHES "Debug")
 	add_compile_options(-O0)
 endif()
+
+#if (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+#	add_compile_options(-Wdocumentation)
+#endif()
 
 if(CHECK_BOUNDS)
     message(STATUS "Check bounds ON")

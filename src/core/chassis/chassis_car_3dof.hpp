@@ -91,8 +91,8 @@ inline void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0
     _neg_Fz_rr = -smooth_pos(-_Fz_rr, _Fz_max_ref2);
 
     // Update axles
-    base_type::get_front_axle().update(_neg_Fz_fl, _neg_Fz_fr);
-    base_type::get_rear_axle().update(_neg_Fz_rl, _neg_Fz_rr);
+    base_type::get_front_axle().update(_neg_Fz_fl, _neg_Fz_fr, _throttle, _brake_bias);
+    base_type::get_rear_axle().update(_neg_Fz_rl, _neg_Fz_rr, _throttle, 1.0-_brake_bias);
 
     // Get the forces from the axles
     const Vector3d<Timeseries_t> x_front = std::get<0>(front_axle.get_frame().get_position_and_velocity_in_target(road_frame));
@@ -108,17 +108,20 @@ inline void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0
     base_type::_F[Z] += base_type::get_mass()*g0;
 
     base_type::_T =  T_front + cross(x_front, F_front) + T_rear + cross(x_rear, F_rear)
-                     + cross(_x_aero, F_aero);
+                     + cross((_x_aero-_x_com), F_aero);
+
+    // In this model, the torque is computed around the road projection, hence inertia forces have to be considered
+    base_type::_T += cross(_x_com, -base_type::_F);
 
     // Write the 3DOF equations
-    base_type::_du     = base_type::_F[X]/base_type::get_mass() + base_type::_v*base_type::_Omega;
-    base_type::_dv     = base_type::_F[Y]/base_type::get_mass() - base_type::_u*base_type::_Omega;
+    base_type::_du     = base_type::_F[X]/base_type::get_mass() + base_type::get_v()*base_type::get_omega();
+    base_type::_dv     = base_type::_F[Y]/base_type::get_mass() - base_type::get_u()*base_type::get_omega();
     base_type::_dOmega = base_type::_T[Z]/base_type::get_inertia().zz();
 
     // Write the algebric equations
     _Fz_eq           = base_type::_F[Z];
-    _Mx_eq           = base_type::_M[X];
-    _My_eq           = base_type::_M[Y];
+    _Mx_eq           = -base_type::_T[X];   // -1 just to be consistent with Limebeer et al.
+    _My_eq           = base_type::_T[Y];
     _roll_balance_eq = (_Fz_fr-_Fz_fl)*(1.0-_roll_balance_coeff) + (_Fz_rl - _Fz_rr)*_roll_balance_coeff;
 }
 

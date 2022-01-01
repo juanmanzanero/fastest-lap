@@ -182,7 +182,7 @@ class Axle_car_3dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
     void set_state_and_controls(const std::array<Timeseries_t,NSTATE>& q, 
                                 const std::array<Timeseries_t,NCONTROL>& u);
 
-    //! Get the names of the state and control varaibles of this class
+    //! Get the names of the state and control variables of this class
     //! @param[out] q: the vehicle state names
     //! @param[out] u: the vehicle control names
     template<size_t NSTATE, size_t NCONTROL>
@@ -193,39 +193,39 @@ class Axle_car_3dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
 
  private:
     // Geometry
-    scalar _track;                //! [c] Distance between the two tires [m]
-    std::array<scalar,2> _y_tire; //! [c] y position of the two tires [m]
+    scalar _track;                      //! [c] Distance between the two tires [m]
+    std::array<scalar,2> _y_tire;       //! [c] y position of the two tires [m]
 
     // Mechanical
-    scalar _I;                      //! [c] Inertia
-    scalar _differential_stiffness; //! [c] Differential stiffness [N.m.s/rad]
+    scalar _I;                          //! [c] Inertia
+    scalar _differential_stiffness;     //! [c] Differential stiffness [N.m.s/rad]
 
     // Numerical
-    scalar _throttle_smooth_pos; //! [c] Coefficient used to smooth throttle/brake
+    scalar _throttle_smooth_pos;        //! [c] Coefficient used to smooth throttle/brake
 
-    // State Variables 
-    Timeseries_t _omega_left;     //! [in] Angular speed of the left tire [rad/s]
-    Timeseries_t _omega_right;    //! [in] Angular speed of the right tire [rad/s]
+    // State Variables
+    Timeseries_t _omega_left;           //! [in] Angular speed of the left tire [rad/s]
+    Timeseries_t _omega_right;          //! [in] Angular speed of the right tire [rad/s]
 
     // State variables time derivatives
-    Timeseries_t _domega_left;    //! [out] Angular acceleration of the left tire [rad/s2]
-    Timeseries_t _domega_right;   //! [out] Angular acceleration of the right tire [rad/s2]
+    Timeseries_t _domega_left;          //! [out] Angular acceleration of the left tire [rad/s2]
+    Timeseries_t _domega_right;         //! [out] Angular acceleration of the right tire [rad/s2]
 
     // Engine/brake torque
-    Timeseries_t _torque_left;      //! [out] Torque applied to the left tire
-    Timeseries_t _torque_right;     //! [out] Torque applied to the right tire
+    Timeseries_t _torque_left;          //! [out] Torque applied to the left tire
+    Timeseries_t _torque_right;         //! [out] Torque applied to the right tire
 
     // Control variables
-    Timeseries_t _throttle;       //! [in] Throttle/brake value in [-1/1]
+    Timeseries_t _throttle;             //! [in] Throttle/brake value in [-1/1]
 
     // Actuators
-    Brake<Timeseries_t>  _brakes; //! [c] Brakes model
+    Brake<Timeseries_t>  _brakes;       //! [c] Brakes model
 
     // Extra members for POWERED
-    Engine<Timeseries_t> _engine; //! [c] Engine model
+    Engine<Timeseries_t> _engine;       //! [c] Engine model
 
     // Extra members for STEERING
-    Timeseries_t _delta;           //! [in] Steering angle [rad]
+    Timeseries_t _delta;                //! [in] Steering angle [rad]
 
     template<typename T = Axle_mode<0,0>>
     std::enable_if_t<std::is_same<T,POWERED<0,0>>::value,std::vector<Database_parameter>> 

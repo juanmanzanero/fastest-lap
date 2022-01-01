@@ -71,11 +71,20 @@ class Chassis
     //! Get the longitudinal velocity [m/s]
     const Timeseries_t& get_u() const { return _u; }
 
+    //! Get the longitudinal acceleration [m/s2]
+    const Timeseries_t& get_du() const { return _du; }
+
     //! Get the lateral velocity [m/s]
     const Timeseries_t& get_v() const { return _v; }
 
+    //! Get the lateral acceleration [m/s2]
+    const Timeseries_t& get_dv() const { return _dv; }
+
     //! Get the yaw speed [rad/s]
     const Timeseries_t& get_omega() const { return _omega; }
+
+    //! Get the yaw acceleration [rad/s2]
+    const Timeseries_t& get_domega() const { return _dOmega; }
 
     //! Get the chassis mass [kg]
     constexpr const scalar& get_mass() const { return _m; } 
@@ -166,7 +175,9 @@ class Chassis
 
     // Aerodynamic properties
     scalar _rho;   //! [c] air density [kg/m3]
-    scalar _CdA;   //! [c] Cd times frontal area [m2]
+    scalar _cd;    //! [c] drag coefficient [-]      
+    scalar _cl;    //! [c] lift coefficient [-]      
+    scalar _A;     //! [c] frontal area [m2]
     
     FrontAxle_t _front_axle; //! Front axle
     RearAxle_t  _rear_axle;  //! Rear axle
@@ -176,7 +187,9 @@ class Chassis
         { "mass", _m },
         { "inertia", _I },
         { "aerodynamics/rho", _rho },
-        { "aerodynamics/cd.A", _CdA }
+        { "aerodynamics/cd", _cd },
+        { "aerodynamics/cl", _cl },
+        { "aerodynamics/area", _A }
     };}
 
  protected:

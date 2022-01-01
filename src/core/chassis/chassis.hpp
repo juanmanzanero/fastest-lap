@@ -29,7 +29,9 @@ inline Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::Chassis(con
   _m(other._m),
   _I(other._I),
   _rho(other._rho),
-  _CdA(other._CdA),
+  _cd(other._cd),
+  _cl(other._cl),
+  _A(other._A),
   _front_axle(other._front_axle),
   _rear_axle(other._rear_axle),
   _F(other._F),
@@ -57,7 +59,9 @@ inline Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>& Chassis<Tim
     _m             = other._m;
     _I             = other._I;
     _rho           = other._rho;
-    _CdA           = other._CdA;
+    _cd            = other._cd; 
+    _cl            = other._cl; 
+    _A             = other._A;  
 
     _road_frame.set_parent(_inertial_frame);
 
@@ -86,7 +90,7 @@ inline Vector3d<Timeseries_t> Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0
 {
     const Vector3d<Timeseries_t> vel = _road_frame.get_absolute_velocity_in_body();
 
-    return { -0.5*_rho*_CdA*vel[X]*vel[X], 0.0, 0.0 };
+    return { -0.5*_rho*_cd*_A*vel[X]*vel[X], 0.0, 0.5*_rho*_cl*_A*vel[X]*vel[X] };
 }
 
 

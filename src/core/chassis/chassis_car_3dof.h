@@ -118,6 +118,22 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
     //! Computes the rear axle velocity in chassis frame. Zero in the 3DOF model
     Vector3d<Timeseries_t> get_rear_axle_velocity() const { return {0.0, 0.0, 0.0}; }
 
+    //! Get a negative normal force
+    const Timeseries_t& get_negative_normal_force(const Algebraic id) const
+    {
+        switch(id)
+        {
+         case (IFZFL): return _neg_Fz_fl; break; 
+         case (IFZFR): return _neg_Fz_fr; break; 
+         case (IFZRL): return _neg_Fz_rl; break; 
+         case (IFZRR): return _neg_Fz_rr; break; 
+         default:      throw std::runtime_error("Id is incorrect");
+        }
+    }
+
+    //! Get the throttle
+    const Timeseries_t& get_throttle() const { return _throttle; }
+
     //! Return a mechanical/geometrical parameter by name
     //! @param[in] parameter_name: name of the parameter
     scalar get_parameter(const std::string& parameter_name) const;
@@ -158,7 +174,7 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
     sVector3d _x_aero;             //! [c] Aerodynamic center [m]
 
     // Mechanical properties
-    scalar    _roll_balance_coeff; //! [c] Coefficient in [0,1] such that: Fz_fr − Fz_fl = D(Fz_fr + Fz_rr − Fz_fl − Fz_rl)
+    scalar    _roll_balance_coeff; //! [c] Coefficient in [0,1], usually 1/2, such that: Fz_fr − Fz_fl = D(Fz_fr + Fz_rr − Fz_fl − Fz_rl)
     scalar    _Fz_max_ref2;        //! [c] Square of the parasitic smooth positive force when Fz = 0
 
     // Variables    ----------------------------------------------------------------
@@ -190,6 +206,7 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
     std::vector<Database_parameter> get_parameters() { return 
     { 
         { "com", _x_com },
+        { "pressure_center", _x_aero },
         { "front_axle", _x_front_axle },
         { "rear_axle", _x_rear_axle },
         { "brake_bias", _brake_bias_0 },

@@ -54,7 +54,9 @@
         </inertia>
         <aerodynamics>
             <rho>1.2</rho>
-            <cd.A>0.7</cd.A>
+            <cd> 0.7 </cd>
+            <cl> 0.0 </cl>
+            <area units="m2"> 1.0 </area>
         </aerodynamics>
     </chassis>
 
@@ -101,7 +103,7 @@
         <radial-damping>1.0e3</radial-damping>
         <nominal-vertical-load>560</nominal-vertical-load>
         <lambdaFz0>1.6</lambdaFz0>
-	<Fz-max-ref2> 1.0 </Fz-max-ref2>
+        <Fz-max-ref2> 1.0 </Fz-max-ref2>
         <longitudinal>
             <pure>
                 <pCx1>0.0</pCx1>

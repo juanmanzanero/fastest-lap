@@ -7,7 +7,21 @@ file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/thirdparty)
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/thirdparty/include)
 SET(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 
+option(CHECK_BOUNDS "Enable bounds check at runtime" OFF)
+option(ENABLE_TESTS "Enable testing" ON)
+
+message("")
+message("	Configure third party libraries ")
+message("	=============================== ")
+message("")
 include(get-third-party)
+message("")
+execute_process(COMMAND 
+     ${CMAKE_COMMAND} -E env CLICOLOR_FORCE=1
+     ${CMAKE_COMMAND} -E cmake_echo_color --green "-> [DONE]"
+     )
+
+message("")
 
 ## Configure doxygen
 include(Doxygen)
@@ -36,6 +50,9 @@ if("${isSystemDir}" STREQUAL "-1")
 endif("${isSystemDir}" STREQUAL "-1")
 
 
+message("	Configure Fastest-lap")
+message("	=====================")
+message("")
 include_directories(./)
 
 # Google tests
@@ -45,6 +62,7 @@ list(APPEND CMAKE_CTEST_ARGUMENTS "--verbose")
 # Compile the subdirectories
 include(compilerflags)
 include(matlabutils)
+
 add_subdirectory(./src)
 
 file(GENERATE OUTPUT ${CMAKE_SOURCE_DIR}/examples/python/fastest_lap.py INPUT ${CMAKE_SOURCE_DIR}/src/main/python/fastest_lap.py)
