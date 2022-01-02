@@ -20,6 +20,7 @@ class Steady_state
         scalar ax;
         scalar ay;
         std::array<scalar,Dynamic_model_t::NSTATE> q;
+        std::array<scalar,Dynamic_model_t::NALGEBRAIC> qa;
         std::array<scalar,Dynamic_model_t::NCONTROL> u;
         std::array<scalar,Dynamic_model_t::NSTATE> dqdt;
     };
@@ -69,20 +70,21 @@ class Steady_state
     class Solve_fitness
     {
      public:
-        using argument_type = std::array<Timeseries_t,6>;
+        using argument_type = std::array<Timeseries_t,Dynamic_model_t::N_SS_VARS>;
         Timeseries_t operator()(const argument_type& q) { return 0.0; };
     };
 
     class Solve_constraints
     {
      public:
-        using argument_type = std::array<Timeseries_t,6>;
-        using output_type   = std::array<Timeseries_t,6+2+4>;
-        Solve_constraints(Dynamic_model_t& car, scalar v, scalar ax, scalar ay) : _car(&car), _v(v), _ax(ax), _ay(ay) {}
+        using argument_type = std::array<Timeseries_t,Dynamic_model_t::N_SS_VARS>;
+        using output_type   = std::array<Timeseries_t,Dynamic_model_t::N_SS_EQNS>;
+        Solve_constraints(Dynamic_model_t& car, scalar v, scalar ax, scalar ay) : _car(&car), _v(v), _ax(ax), _ay(ay), _q(), _qa(), _u() {}
 
         output_type operator()(const argument_type& x);
 
         const std::array<Timeseries_t,Dynamic_model_t::NSTATE>& get_q() const { return _q; }
+        const std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC>& get_qa() const { return _qa; }
         const std::array<Timeseries_t,Dynamic_model_t::NCONTROL>& get_u() const { return _u; }
 
      private:
@@ -92,6 +94,7 @@ class Steady_state
         scalar _ay;
 
         std::array<Timeseries_t,Dynamic_model_t::NSTATE> _q;
+        std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC> _qa;
         std::array<Timeseries_t,Dynamic_model_t::NCONTROL> _u;
     };
 
@@ -104,20 +107,20 @@ class Steady_state
 
         void operator()(ADvector& fg, const ADvector& x) 
         {
-            assert(x.size() == 6);
-            assert(fg.size() == (1+6+2+4));
+            assert(x.size() == Dynamic_model_t::N_SS_VARS);
+            assert(fg.size() == (1+Dynamic_model_t::N_SS_EQNS));
 
             // Put x into a std::array
-            std::array<Timeseries_t,6> x_array;
+            std::array<Timeseries_t,Dynamic_model_t::N_SS_VARS> x_array;
             std::copy_n(x.begin(), x.size(), x_array.begin());
 
             // Compute f and g
             Timeseries_t f = _f(x_array);
-            std::array<Timeseries_t,6+2+4> g = _g(x_array);
+            std::array<Timeseries_t,Dynamic_model_t::N_SS_EQNS> g = _g(x_array);
 
             fg[0] = f;
 
-            for (size_t i = 0; i < (6+2+4); ++i)
+            for (size_t i = 0; i < (Dynamic_model_t::N_SS_EQNS); ++i)
                 fg[i+1] = g[i];
         }
     
@@ -130,20 +133,21 @@ class Steady_state
     class Max_lat_acc_fitness
     {
      public:
-        using argument_type = std::array<Timeseries_t,8>;
+        using argument_type = std::array<Timeseries_t,2+Dynamic_model_t::N_SS_VARS>;
         Timeseries_t operator()(const argument_type& x) { return -x.back(); };
     };
 
     class Max_lat_acc_constraints
     {
      public:
-        using argument_type = std::array<Timeseries_t,8>;
-        using output_type   = std::array<Timeseries_t,6+2+4>;
-        Max_lat_acc_constraints(Dynamic_model_t& car, scalar v) : _car(&car), _v(v) {}
+        using argument_type = std::array<Timeseries_t,2+Dynamic_model_t::N_SS_VARS>;
+        using output_type   = std::array<Timeseries_t,Dynamic_model_t::N_SS_EQNS>;
+        Max_lat_acc_constraints(Dynamic_model_t& car, scalar v) : _car(&car), _v(v), _q(), _qa(), _u() {}
 
         output_type operator()(const argument_type& x);
 
         const std::array<Timeseries_t,Dynamic_model_t::NSTATE>& get_q() const { return _q; }
+        const std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC>& get_qa() const { return _qa; }
         const std::array<Timeseries_t,Dynamic_model_t::NCONTROL>& get_u() const { return _u; }
 
      private:
@@ -151,6 +155,7 @@ class Steady_state
         scalar _v;
 
         std::array<Timeseries_t,Dynamic_model_t::NSTATE> _q;
+        std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC> _qa;
         std::array<Timeseries_t,Dynamic_model_t::NCONTROL> _u;
     };
 
@@ -163,20 +168,20 @@ class Steady_state
 
         void operator()(ADvector& fg, const ADvector& x) 
         {
-            assert(x.size() == 8);
-            assert(fg.size() == (1+6+2+4));
+            assert(x.size() == 2+Dynamic_model_t::N_SS_VARS);
+            assert(fg.size() == (1+Dynamic_model_t::N_SS_EQNS));
 
             // Put x into a std::array
-            std::array<Timeseries_t,8> x_array;
+            std::array<Timeseries_t,2+Dynamic_model_t::N_SS_VARS> x_array;
             std::copy_n(x.begin(), x.size(), x_array.begin());
 
             // Compute f and g
             Timeseries_t f = _f(x_array);
-            std::array<Timeseries_t,6+2+4> g = _g(x_array);
+            std::array<Timeseries_t,Dynamic_model_t::N_SS_EQNS> g = _g(x_array);
 
             fg[0] = f;
 
-            for (size_t i = 0; i < (6+2+4); ++i)
+            for (size_t i = 0; i < (Dynamic_model_t::N_SS_EQNS); ++i)
                 fg[i+1] = g[i];
         }
     
@@ -188,27 +193,28 @@ class Steady_state
     class Max_lon_acc_fitness
     {
      public:
-        using argument_type = std::array<Timeseries_t,7>;
+        using argument_type = std::array<Timeseries_t,1+Dynamic_model_t::N_SS_VARS>;
         Timeseries_t operator()(const argument_type& x) { return -x.back(); };
     };
 
     class Min_lon_acc_fitness
     {
      public:
-        using argument_type = std::array<Timeseries_t,7>;
+        using argument_type = std::array<Timeseries_t,1+Dynamic_model_t::N_SS_VARS>;
         Timeseries_t operator()(const argument_type& x) { return x.back(); };
     };
 
     class Max_lon_acc_constraints
     {
      public:
-        using argument_type = std::array<Timeseries_t,7>;
-        using output_type   = std::array<Timeseries_t,6+2+4>;
-        Max_lon_acc_constraints(Dynamic_model_t& car, scalar v, scalar ay) : _car(&car), _v(v), _ay(ay) {}
+        using argument_type = std::array<Timeseries_t,1+Dynamic_model_t::N_SS_VARS>;
+        using output_type   = std::array<Timeseries_t,Dynamic_model_t::N_SS_EQNS>;
+        Max_lon_acc_constraints(Dynamic_model_t& car, scalar v, scalar ay) : _car(&car), _v(v), _ay(ay), _q(), _qa(), _u() {}
 
         output_type operator()(const argument_type& x);
 
         const std::array<Timeseries_t,Dynamic_model_t::NSTATE>& get_q() const { return _q; }
+        const std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC>& get_qa() const { return _qa; }
         const std::array<Timeseries_t,Dynamic_model_t::NCONTROL>& get_u() const { return _u; }
 
      private:
@@ -217,6 +223,7 @@ class Steady_state
         scalar _ay;
 
         std::array<Timeseries_t,Dynamic_model_t::NSTATE> _q;
+        std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC> _qa;
         std::array<Timeseries_t,Dynamic_model_t::NCONTROL> _u;
     };
 
@@ -229,20 +236,20 @@ class Steady_state
 
         void operator()(ADvector& fg, const ADvector& x)
         {
-            assert(x.size() == 7);
-            assert(fg.size() == (1+6+2+4));
+            assert(x.size() == 1+Dynamic_model_t::N_SS_VARS);
+            assert(fg.size() == (1+Dynamic_model_t::N_SS_EQNS));
 
             // Put x into a std::array
-            std::array<Timeseries_t,7> x_array;
+            std::array<Timeseries_t,1+Dynamic_model_t::N_SS_VARS> x_array;
             std::copy_n(x.begin(), x.size(), x_array.begin());
 
             // Compute f and g
             Timeseries_t f = _f(x_array);
-            std::array<Timeseries_t,6+2+4> g = _g(x_array);
+            std::array<Timeseries_t,Dynamic_model_t::N_SS_EQNS> g = _g(x_array);
 
             fg[0] = f;
 
-            for (size_t i = 0; i < (6+2+4); ++i)
+            for (size_t i = 0; i < (Dynamic_model_t::N_SS_EQNS); ++i)
                 fg[i+1] = g[i];
         }
     
@@ -260,20 +267,20 @@ class Steady_state
 
         void operator()(ADvector& fg, const ADvector& x) 
         {
-            assert(x.size() == 7);
-            assert(fg.size() == (1+6+2+4));
+            assert(x.size() == 1+Dynamic_model_t::N_SS_VARS);
+            assert(fg.size() == (1+Dynamic_model_t::N_SS_EQNS));
 
             // Put x into a std::array
-            std::array<Timeseries_t,7> x_array;
+            std::array<Timeseries_t,1+Dynamic_model_t::N_SS_VARS> x_array;
             std::copy_n(x.begin(), x.size(), x_array.begin());
 
             // Compute f and g
             Timeseries_t f = _f(x_array);
-            std::array<Timeseries_t,6+2+4> g = _g(x_array);
+            std::array<Timeseries_t,Dynamic_model_t::N_SS_EQNS> g = _g(x_array);
 
             fg[0] = f;
 
-            for (size_t i = 0; i < (6+2+4); ++i)
+            for (size_t i = 0; i < (Dynamic_model_t::N_SS_EQNS); ++i)
                 fg[i+1] = g[i];
         }
     

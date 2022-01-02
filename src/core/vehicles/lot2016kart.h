@@ -43,6 +43,10 @@ class lot2016kart
         Dynamic_model() {}
         Dynamic_model(Xml_document& database, const Road_t& road = Road_t()) : Dynamic_model_t(database,road) {}
 
+        // Steady-state computation
+        static constexpr const size_t N_SS_VARS = 6;
+        static constexpr const size_t N_SS_EQNS = 12;
+
         static std::pair<std::vector<scalar>,std::vector<scalar>> steady_state_variable_bounds() 
         {
             return { { -0.5, 1.0e-4, -10.0*DEG, -10.0*DEG, -10.0*DEG, -10.0*DEG },
@@ -54,6 +58,66 @@ class lot2016kart
         {
             return { {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -0.11, -0.11, -0.09, -0.09, -0.09, -0.09},
                      {0.0, 0.0, 0.0, 0.0, 0.0, 0.0,  0.11,  0.11,  0.09,  0.09,  0.09,  0.09} };
+        }
+
+        std::tuple<std::array<Timeseries_t,N_SS_EQNS>,
+                   std::array<Timeseries_t,Dynamic_model_t::NSTATE>,
+                   std::array<Timeseries_t,Dynamic_model_t::NCONTROL>>
+            steady_state_equations(const std::array<Timeseries_t,N_SS_VARS>& x, 
+                                   const Timeseries_t& ax, 
+                                   const Timeseries_t& ay, 
+                                   const Timeseries_t& v)
+        {
+            // The content of x is: x = [w_axle, z, phi, mu, psi, delta]
+            // Construct state and controls
+            const Timeseries_t& psi = x[4];
+            const Timeseries_t omega = ay/v;
+             
+            // Construct the state
+            std::array<Timeseries_t,Dynamic_model_t::NSTATE> q;
+            q[Dynamic_model_t::Chassis_type::rear_axle_type::IOMEGA_AXLE] = (x[0]+1.0)*v/0.139;
+            q[Dynamic_model_t::Chassis_type::IU]                          = v*cos(psi);
+            q[Dynamic_model_t::Chassis_type::IV]                          = -v*sin(psi);
+            q[Dynamic_model_t::Chassis_type::IOMEGA]                      = omega;
+            q[Dynamic_model_t::Chassis_type::IZ]                          = x[1];
+            q[Dynamic_model_t::Chassis_type::IPHI]                        = x[2];
+            q[Dynamic_model_t::Chassis_type::IMU]                         = x[3];
+            q[Dynamic_model_t::Chassis_type::IDZ]                         = 0.0;
+            q[Dynamic_model_t::Chassis_type::IDPHI]                       = 0.0;
+            q[Dynamic_model_t::Chassis_type::IDMU]                        = 0.0;
+            q[Dynamic_model_t::Road_type::IX]                             = 0.0;
+            q[Dynamic_model_t::Road_type::IY]                             = 0.0;
+            q[Dynamic_model_t::Road_type::IPSI]                           = x[4];
+        
+            // Construct the controls
+            std::array<Timeseries_t,Dynamic_model_t::NCONTROL> u;
+            u[Dynamic_model_t::Chassis_type::front_axle_type::ISTEERING] = x[5];
+            u[Dynamic_model_t::Chassis_type::rear_axle_type::ITORQUE]    = 0.0;
+        
+            // Compute time derivative
+            auto dqdt = (*this)(q,u,0.0);
+        
+            // Compute constraints
+            std::array<Timeseries_t,N_SS_EQNS> constraints;
+        
+            constraints[0] = dqdt[Dynamic_model_t::Chassis_type::IID2Z];
+            constraints[1] = dqdt[Dynamic_model_t::Chassis_type::IIDOMEGA];
+            constraints[2] = dqdt[Dynamic_model_t::Chassis_type::IID2PHI];
+            constraints[3] = dqdt[Dynamic_model_t::Chassis_type::IID2MU];
+            constraints[4] = dqdt[Dynamic_model_t::Chassis_type::IIDU]*sin(psi)
+                            + dqdt[Dynamic_model_t::Chassis_type::IIDV]*cos(psi);
+            constraints[5] = ax - dqdt[Dynamic_model_t::Chassis_type::IIDU]*cos(psi)
+                                 + dqdt[Dynamic_model_t::Chassis_type::IIDV]*sin(psi);
+         
+        
+            constraints[6] = this->get_chassis().get_rear_axle().template get_tire<0>().get_kappa();
+            constraints[7] = this->get_chassis().get_rear_axle().template get_tire<1>().get_kappa();
+            constraints[8] = this->get_chassis().get_rear_axle().template get_tire<0>().get_lambda();
+            constraints[9] = this->get_chassis().get_rear_axle().template get_tire<1>().get_lambda();
+            constraints[10] = this->get_chassis().get_front_axle().template get_tire<0>().get_lambda();
+            constraints[11] = this->get_chassis().get_front_axle().template get_tire<1>().get_lambda();
+        
+            return {constraints,q,u};
         }
     };
 

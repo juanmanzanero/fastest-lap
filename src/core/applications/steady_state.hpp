@@ -17,7 +17,7 @@ std::enable_if_t<std::is_same<T,scalar>::value,typename Steady_state<Dynamic_mod
 
     if ( provide_x0 )
     {
-        assert(x0_provided.size() == 6);
+        assert(x0_provided.size() == Dynamic_model_t::N_SS_VARS);
         x0 = x0_provided;
     }
 
@@ -33,7 +33,7 @@ std::enable_if_t<std::is_same<T,scalar>::value,typename Steady_state<Dynamic_mod
     {
         const double factor = ((double) i)/((double) n_steps);
         Solve_constraints c(_car,v,factor*ax,factor*ay);
-        result = Solve_nonlinear_system<Solve_constraints>::solve(6,12,x0,c,x_lb,x_ub,c_lb,c_ub,options);
+        result = Solve_nonlinear_system<Solve_constraints>::solve(Dynamic_model_t::N_SS_VARS,Dynamic_model_t::N_SS_EQNS,x0,c,x_lb,x_ub,c_lb,c_ub,options);
 
         // Set x0 for the next iteration
         x0 = result.x;
@@ -45,10 +45,11 @@ std::enable_if_t<std::is_same<T,scalar>::value,typename Steady_state<Dynamic_mod
     std::copy(result.x.cbegin(), result.x.cend(), x.begin());
     c(x);
     std::array<Timeseries_t,Dynamic_model_t::NSTATE> q = c.get_q();
+    std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC> qa = c.get_qa();
     std::array<Timeseries_t,Dynamic_model_t::NCONTROL> u = c.get_u();
-    auto dqdt = _car(q,u,0.0);
+    auto [dqdt,dqa] = _car(q,qa,u,0.0);
 
-    return { result.solved, v, ax, ay, q, u, dqdt };
+    return { result.solved, v, ax, ay, q, qa, u, dqdt };
 }
 
 template<typename Dynamic_model_t>
@@ -61,7 +62,7 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,typename Steady_state<
 
     if ( provide_x0 )
     {
-        assert(x0_provided.size() == 6);
+        assert(x0_provided.size() == Dynamic_model_t::N_SS_VARS);
         x0 = x0_provided;
     }
 
@@ -91,15 +92,22 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,typename Steady_state<
     typename Solve_constraints::argument_type x;
     std::copy(solution.x.cbegin(), solution.x.cend(), x.begin());
     c(x);
-    std::array<CppAD::AD<scalar>,Dynamic_model_t::NSTATE> q = c.get_q();
-    std::array<CppAD::AD<scalar>,Dynamic_model_t::NCONTROL> u = c.get_u();
-    auto dqdt = _car(q,u,0.0);
+    std::array<CppAD::AD<scalar>,Dynamic_model_t::NSTATE>      q = c.get_q();
+    std::array<CppAD::AD<scalar>,Dynamic_model_t::NALGEBRAIC> qa = c.get_qa();
+    std::array<CppAD::AD<scalar>,Dynamic_model_t::NCONTROL>    u = c.get_u();
+    auto [dqdt,dqa] = _car(q,qa,u,0.0);
 
     // Transform all AD to scalar
     std::array<scalar,Dynamic_model_t::NSTATE> q_sc;
     for (size_t i = 0; i < Dynamic_model_t::NSTATE; ++i)
     {
         q_sc[i] = Value(q[i]);
+    }
+
+    std::array<scalar,Dynamic_model_t::NALGEBRAIC> qa_sc;
+    for (size_t i = 0; i < Dynamic_model_t::NALGEBRAIC; ++i)
+    {
+        qa_sc[i] = Value(qa[i]);
     }
 
     std::array<scalar,Dynamic_model_t::NCONTROL> u_sc;
@@ -114,7 +122,7 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,typename Steady_state<
         dqdt_sc[i] = Value(dqdt[i]);
     }
 
-    return { solution.status == CppAD::ipopt::solve_result<std::vector<scalar>>::success, v, ax, ay, q_sc, u_sc, dqdt_sc };
+    return { solution.status == CppAD::ipopt::solve_result<std::vector<scalar>>::success, v, ax, ay, q_sc, qa_sc, u_sc, dqdt_sc };
 }
 
 template<typename Dynamic_model_t>
@@ -146,16 +154,17 @@ std::enable_if_t<std::is_same<T,scalar>::value,typename Steady_state<Dynamic_mod
     auto [c_lb, c_ub] = Dynamic_model_t::steady_state_constraint_bounds();
 
     Optimise_options options;
-    auto result = Optimise<Max_lat_acc_fitness,Max_lat_acc_constraints>::optimise(8,12,x0,f,c,x_lb,x_ub,c_lb,c_ub,options);
+    auto result = Optimise<Max_lat_acc_fitness,Max_lat_acc_constraints>::optimise(Dynamic_model_t::N_SS_VARS+2,Dynamic_model_t::N_SS_EQNS,x0,f,c,x_lb,x_ub,c_lb,c_ub,options);
 
     typename Max_lat_acc_constraints::argument_type x;
     std::copy(result.x.cbegin(), result.x.cend(), x.begin());
     c(x);
     std::array<Timeseries_t,Dynamic_model_t::NSTATE> q = c.get_q();
+    std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC> qa = c.get_qa();
     std::array<Timeseries_t,Dynamic_model_t::NCONTROL> u = c.get_u();
-    auto dqdt = _car(q,u,0.0);
+    auto [dqdt,dqa] = _car(q,qa,u,0.0);
 
-    return { result.solved, v, result.x[6], result.x[7], q, u, dqdt };
+    return { result.solved, v, result.x[Dynamic_model_t::N_SS_VARS], result.x[Dynamic_model_t::N_SS_VARS+1], q, qa, u, dqdt };
 }
 
 template<typename Dynamic_model_t>
@@ -207,14 +216,21 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,typename Steady_state<
     std::copy(solution.x.cbegin(), solution.x.cend(), x.begin());
     c(x);
     std::array<CppAD::AD<scalar>,Dynamic_model_t::NSTATE> q = c.get_q();
+    std::array<CppAD::AD<scalar>,Dynamic_model_t::NALGEBRAIC> qa = c.get_qa();
     std::array<CppAD::AD<scalar>,Dynamic_model_t::NCONTROL> u = c.get_u();
-    auto dqdt = _car(q,u,0.0);
+    auto [dqdt,dqa] = _car(q,qa,u,0.0);
 
     // Transform all AD to scalar
     std::array<scalar,Dynamic_model_t::NSTATE> q_sc;
     for (size_t i = 0; i < Dynamic_model_t::NSTATE; ++i)
     {
         q_sc[i] = Value(q[i]);
+    }
+
+    std::array<scalar,Dynamic_model_t::NALGEBRAIC> qa_sc;
+    for (size_t i = 0; i < Dynamic_model_t::NALGEBRAIC; ++i)
+    {
+        qa_sc[i] = Value(qa[i]);
     }
 
     std::array<scalar,Dynamic_model_t::NCONTROL> u_sc;
@@ -229,7 +245,7 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,typename Steady_state<
         dqdt_sc[i] = Value(dqdt[i]);
     }
 
-    return { solution.status == CppAD::ipopt::solve_result<std::vector<scalar>>::success, v, Value(solution.x[6]), Value(solution.x[7]), q_sc, u_sc, dqdt_sc };
+    return { solution.status == CppAD::ipopt::solve_result<std::vector<scalar>>::success, v, Value(solution.x[Dynamic_model_t::N_SS_VARS]), Value(solution.x[Dynamic_model_t::N_SS_VARS+1]), q_sc, qa_sc, u_sc, dqdt_sc };
 }
 
 
@@ -287,33 +303,34 @@ std::enable_if_t<std::is_same<T,scalar>::value,std::pair<typename Steady_state<D
     auto [c_lb, c_ub] = Dynamic_model_t::steady_state_constraint_bounds();
 
     // Solve maximum acceleration
-    auto result_max = Optimise<Max_lon_acc_fitness,Max_lon_acc_constraints>::optimise(7,12,x0,fmax,c,x_lb,x_ub,c_lb,c_ub,options);
+    auto result_max = Optimise<Max_lon_acc_fitness,Max_lon_acc_constraints>::optimise(Dynamic_model_t::N_SS_VARS+1,Dynamic_model_t::N_SS_EQNS,x0,fmax,c,x_lb,x_ub,c_lb,c_ub,options);
 
     typename Max_lon_acc_constraints::argument_type x_max;
     std::copy(result_max.x.cbegin(), result_max.x.cend(), x_max.begin());
     c(x_max);
     std::array<Timeseries_t,Dynamic_model_t::NSTATE> q_max = c.get_q();
+    std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC> qa_max = c.get_qa();
     std::array<Timeseries_t,Dynamic_model_t::NCONTROL> u_max = c.get_u();
-    auto dqdt_max = _car(q_max,u_max,0.0);
+    auto [dqdt_max,dqa] = _car(q_max,qa_max,u_max,0.0);
 
-
-    Solution solution_max = {result_max.solved, v, result_max.x[6], ay, q_max, u_max, dqdt_max};
+    Solution solution_max = {result_max.solved, v, result_max.x[Dynamic_model_t::N_SS_VARS], ay, q_max, qa_max, u_max, dqdt_max};
 
     // Solve minimum acceleration
     std::tie(x_lb, x_ub) = Dynamic_model_t::steady_state_variable_bounds();
     x_lb.push_back(-10.0);
     x_ub.push_back( 2.0);
 
-    auto result_min = Optimise<Min_lon_acc_fitness,Max_lon_acc_constraints>::optimise(7,12,x0,fmin,c,x_lb,x_ub,c_lb,c_ub,options);
+    auto result_min = Optimise<Min_lon_acc_fitness,Max_lon_acc_constraints>::optimise(Dynamic_model_t::N_SS_VARS+1,Dynamic_model_t::N_SS_EQNS,x0,fmin,c,x_lb,x_ub,c_lb,c_ub,options);
 
     typename Max_lon_acc_constraints::argument_type x_min;
     std::copy(result_min.x.cbegin(), result_min.x.cend(), x_min.begin());
     c(x_min);
     std::array<Timeseries_t,Dynamic_model_t::NSTATE> q_min = c.get_q();
+    std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC> qa_min = c.get_qa();
     std::array<Timeseries_t,Dynamic_model_t::NCONTROL> u_min = c.get_u();
-    auto dqdt_min = _car(q_min,u_min,0.0);
+    auto [dqdt_min,dqa_min] = _car(q_min,qa_min,u_min,0.0);
 
-    Solution solution_min = {result_min.solved, v, result_min.x[6], ay, q_min, u_min, dqdt_min};
+    Solution solution_min = {result_min.solved, v, result_min.x[Dynamic_model_t::N_SS_VARS], ay, q_min, qa_min, u_min, dqdt_min};
 
     return {solution_max, solution_min};
 }
@@ -387,14 +404,21 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,std::pair<typename Ste
     std::copy(result_max.x.cbegin(), result_max.x.cend(), x_max.begin());
     c(x_max);
     std::array<Timeseries_t,Dynamic_model_t::NSTATE> q_max = c.get_q();
+    std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC> qa_max = c.get_qa();
     std::array<Timeseries_t,Dynamic_model_t::NCONTROL> u_max = c.get_u();
-    auto dqdt_max = _car(q_max,u_max,0.0);
+    auto [dqdt_max,dqa_max] = _car(q_max,qa_max,u_max,0.0);
 
     // Transform all AD to scalar
     std::array<scalar,Dynamic_model_t::NSTATE> q_max_sc;
     for (size_t i = 0; i < Dynamic_model_t::NSTATE; ++i)
     {
         q_max_sc[i] = Value(q_max[i]);
+    }
+
+    std::array<scalar,Dynamic_model_t::NALGEBRAIC> qa_max_sc;
+    for (size_t i = 0; i < Dynamic_model_t::NALGEBRAIC; ++i)
+    {
+        qa_max_sc[i] = Value(qa_max[i]);
     }
 
     std::array<scalar,Dynamic_model_t::NCONTROL> u_max_sc;
@@ -410,7 +434,7 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,std::pair<typename Ste
     }
 
     const bool max_solved = result_max.status == CppAD::ipopt::solve_result<std::vector<scalar>>::success;
-    Solution solution_max = {max_solved, v, Value(result_max.x[6]), ay, q_max_sc, u_max_sc, dqdt_max_sc};
+    Solution solution_max = {max_solved, v, Value(result_max.x[Dynamic_model_t::N_SS_VARS]), ay, q_max_sc, qa_max_sc, u_max_sc, dqdt_max_sc};
 
     // Solve minimum acceleration
     std::tie(x_lb, x_ub) = Dynamic_model_t::steady_state_variable_bounds();
@@ -428,14 +452,21 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,std::pair<typename Ste
     std::copy(result_min.x.cbegin(), result_min.x.cend(), x_min.begin());
     c(x_min);
     std::array<Timeseries_t,Dynamic_model_t::NSTATE> q_min = c.get_q();
+    std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC> qa_min = c.get_qa();
     std::array<Timeseries_t,Dynamic_model_t::NCONTROL> u_min = c.get_u();
-    auto dqdt_min = _car(q_min,u_min,0.0);
+    auto [dqdt_min,dqa] = _car(q_min,qa_min,u_min,0.0);
 
     // Transform all AD to scalar
     std::array<scalar,Dynamic_model_t::NSTATE> q_min_sc;
     for (size_t i = 0; i < Dynamic_model_t::NSTATE; ++i)
     {
         q_min_sc[i] = Value(q_min[i]);
+    }
+
+    std::array<scalar,Dynamic_model_t::NALGEBRAIC> qa_min_sc;
+    for (size_t i = 0; i < Dynamic_model_t::NALGEBRAIC; ++i)
+    {
+        qa_min_sc[i] = Value(qa_min[i]);
     }
 
     std::array<scalar,Dynamic_model_t::NCONTROL> u_min_sc;
@@ -451,7 +482,7 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,std::pair<typename Ste
     }
 
     const bool min_solved = result_min.status == CppAD::ipopt::solve_result<std::vector<scalar>>::success;
-    Solution solution_min = {min_solved, v, Value(result_min.x[6]), ay, q_min_sc, u_min_sc, dqdt_min_sc};
+    Solution solution_min = {min_solved, v, Value(result_min.x[Dynamic_model_t::N_SS_VARS]), ay, q_min_sc, qa_min_sc, u_min_sc, dqdt_min_sc};
 
     return {solution_max, solution_min};
 }
@@ -527,32 +558,34 @@ std::enable_if_t<std::is_same<T,scalar>::value,
         auto [c_lb, c_ub] = Dynamic_model_t::steady_state_constraint_bounds();
     
         // Solve maximum acceleration
-        auto result_max = Optimise<Max_lon_acc_fitness,Max_lon_acc_constraints>::optimise(7,12,x0,fmax,c,x_lb,x_ub,c_lb,c_ub,options);
+        auto result_max = Optimise<Max_lon_acc_fitness,Max_lon_acc_constraints>::optimise(Dynamic_model_t::N_SS_VARS+1,Dynamic_model_t::N_SS_EQNS,x0,fmax,c,x_lb,x_ub,c_lb,c_ub,options);
     
         typename Max_lon_acc_constraints::argument_type x_max;
         std::copy(result_max.x.cbegin(), result_max.x.cend(), x_max.begin());
         c(x_max);
         std::array<Timeseries_t,Dynamic_model_t::NSTATE> q_max = c.get_q();
+        std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC> qa_max = c.get_qa();
         std::array<Timeseries_t,Dynamic_model_t::NCONTROL> u_max = c.get_u();
-        auto dqdt_max = _car(q_max,u_max,0.0);
+        auto [dqdt_max,dqa_max] = _car(q_max,qa_max,u_max,0.0);
     
-        solution_max[i] = {result_max.solved, v, result_max.x[6], ay_gg[i], q_max, u_max, dqdt_max};
+        solution_max[i] = {result_max.solved, v, result_max.x[Dynamic_model_t::N_SS_VARS], ay_gg[i], q_max, qa_max, u_max, dqdt_max};
     
         // Solve minimum acceleration
         std::tie(x_lb, x_ub) = Dynamic_model_t::steady_state_variable_bounds();
         x_lb.push_back(-8.0);
         x_ub.push_back(result_max_lat_acc.ax + 0.5);
 
-        auto result_min = Optimise<Min_lon_acc_fitness,Max_lon_acc_constraints>::optimise(7,12,x0,fmin,c,x_lb,x_ub,c_lb,c_ub,options);
+        auto result_min = Optimise<Min_lon_acc_fitness,Max_lon_acc_constraints>::optimise(Dynamic_model_t::N_SS_VARS+1,Dynamic_model_t::N_SS_EQNS,x0,fmin,c,x_lb,x_ub,c_lb,c_ub,options);
     
         typename Max_lon_acc_constraints::argument_type x_min;
         std::copy(result_min.x.cbegin(), result_min.x.cend(), x_min.begin());
         c(x_min);
         std::array<Timeseries_t,Dynamic_model_t::NSTATE> q_min = c.get_q();
+        std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC> qa_min = c.get_qa();
         std::array<Timeseries_t,Dynamic_model_t::NCONTROL> u_min = c.get_u();
-        auto dqdt_min = _car(q_min,u_min,0.0);
+        auto [dqdt_min,dqa_min] = _car(q_min,qa_min,u_min,0.0);
     
-        solution_min[i] = {result_min.solved, v, result_min.x[6], ay_gg[i], q_min, u_min, dqdt_min};
+        solution_min[i] = {result_min.solved, v, result_min.x[Dynamic_model_t::N_SS_VARS], ay_gg[i], q_min, qa_min, u_min, dqdt_min};
 
         x0_ss_ay = {(result_ss_ay.q[Dynamic_model_t::Chassis_type::rear_axle_type::IOMEGA_AXLE]*0.139-v)/v,
                               result_ss_ay.q[Dynamic_model_t::Chassis_type::IZ],
@@ -652,8 +685,9 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,
         std::copy(result_max.x.cbegin(), result_max.x.cend(), x_max.begin());
         c(x_max);
         std::array<Timeseries_t,Dynamic_model_t::NSTATE> q_max = c.get_q();
+        std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC> qa_max = c.get_qa();
         std::array<Timeseries_t,Dynamic_model_t::NCONTROL> u_max = c.get_u();
-        auto dqdt_max = _car(q_max,u_max,0.0);
+        auto [dqdt_max, dqa_max] = _car(q_max,qa_max,u_max,0.0);
 
         // Transform all AD to scalar
         std::array<scalar,Dynamic_model_t::NSTATE> q_max_sc;
@@ -661,6 +695,13 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,
         {
             q_max_sc[i] = Value(q_max[i]);
         }
+
+        std::array<scalar,Dynamic_model_t::NALGEBRAIC> qa_max_sc;
+        for (size_t i = 0; i < Dynamic_model_t::NALGEBRAIC; ++i)
+        {
+            qa_max_sc[i] = Value(qa_max[i]);
+        }
+    
     
         std::array<scalar,Dynamic_model_t::NCONTROL> u_max_sc;
         for (size_t i = 0; i < Dynamic_model_t::NCONTROL; ++i)
@@ -675,7 +716,7 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,
         }
     
         const bool max_solved = result_max.status == CppAD::ipopt::solve_result<std::vector<scalar>>::success;
-        solution_max[i] = {max_solved, v, Value(result_max.x[6]), ay_gg[i], q_max_sc, u_max_sc, dqdt_max_sc};
+        solution_max[i] = {max_solved, v, Value(result_max.x[Dynamic_model_t::N_SS_VARS]), ay_gg[i], q_max_sc, qa_max_sc, u_max_sc, dqdt_max_sc};
 
         // Solve minimum acceleration
         std::tie(x_lb, x_ub) = Dynamic_model_t::steady_state_variable_bounds();
@@ -693,8 +734,9 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,
         std::copy(result_min.x.cbegin(), result_min.x.cend(), x_min.begin());
         c(x_min);
         std::array<Timeseries_t,Dynamic_model_t::NSTATE> q_min = c.get_q();
+        std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC> qa_min = c.get_qa();
         std::array<Timeseries_t,Dynamic_model_t::NCONTROL> u_min = c.get_u();
-        auto dqdt_min = _car(q_min,u_min,0.0);
+        auto [dqdt_min,dqa_min] = _car(q_min,qa_min,u_min,0.0);
     
         // Transform all AD to scalar
         std::array<scalar,Dynamic_model_t::NSTATE> q_min_sc;
@@ -702,7 +744,13 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,
         {
             q_min_sc[i] = Value(q_min[i]);
         }
-    
+
+        std::array<scalar,Dynamic_model_t::NALGEBRAIC> qa_min_sc;
+        for (size_t i = 0; i < Dynamic_model_t::NALGEBRAIC; ++i)
+        {
+            qa_min_sc[i] = Value(qa_min[i]);
+        }
+       
         std::array<scalar,Dynamic_model_t::NCONTROL> u_min_sc;
         for (size_t i = 0; i < Dynamic_model_t::NCONTROL; ++i)
         {
@@ -716,7 +764,7 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,
         }
     
         const bool min_solved = result_min.status == CppAD::ipopt::solve_result<std::vector<scalar>>::success;
-        solution_min[i] = {min_solved, v, Value(result_min.x[6]), ay_gg[i], q_min_sc, u_min_sc, dqdt_min_sc};
+        solution_min[i] = {min_solved, v, Value(result_min.x[Dynamic_model_t::N_SS_VARS]), ay_gg[i], q_min_sc, qa_min_sc, u_min_sc, dqdt_min_sc};
 
         x0_ss_ay = {(result_ss_ay.q[Dynamic_model_t::Chassis_type::rear_axle_type::IOMEGA_AXLE]*0.139-v)/v,
                               result_ss_ay.q[Dynamic_model_t::Chassis_type::IZ],
@@ -738,51 +786,8 @@ typename Steady_state<Dynamic_model_t>::Solve_constraints::output_type Steady_st
     (const typename Steady_state<Dynamic_model_t>::Solve_constraints::argument_type& x)
 {
     // The content of x is: x = [w_axle, z, phi, mu, psi, delta]
-
-    // Construct state and controls
-    const Timeseries_t& psi = x[4];
-    const Timeseries_t omega = _ay/_v;
-     
-    // Construct the state
-    _q[Dynamic_model_t::Chassis_type::rear_axle_type::IOMEGA_AXLE] = (x[0]+1.0)*_v/0.139;
-    _q[Dynamic_model_t::Chassis_type::IU]                          = _v*cos(psi);
-    _q[Dynamic_model_t::Chassis_type::IV]                          = -_v*sin(psi);
-    _q[Dynamic_model_t::Chassis_type::IOMEGA]                      = omega;
-    _q[Dynamic_model_t::Chassis_type::IZ]                          = x[1];
-    _q[Dynamic_model_t::Chassis_type::IPHI]                        = x[2];
-    _q[Dynamic_model_t::Chassis_type::IMU]                         = x[3];
-    _q[Dynamic_model_t::Chassis_type::IDZ]                         = 0.0;
-    _q[Dynamic_model_t::Chassis_type::IDPHI]                       = 0.0;
-    _q[Dynamic_model_t::Chassis_type::IDMU]                        = 0.0;
-    _q[Dynamic_model_t::Road_type::IX]                             = 0.0;
-    _q[Dynamic_model_t::Road_type::IY]                             = 0.0;
-    _q[Dynamic_model_t::Road_type::IPSI]                           = x[4];
-
-    // Construct the controls
-    _u[Dynamic_model_t::Chassis_type::front_axle_type::ISTEERING] = x[5];
-    _u[Dynamic_model_t::Chassis_type::rear_axle_type::ITORQUE]    = 0.0;
-
-    // Compute time derivative
-    auto dqdt = (*_car)(_q,_u,0.0);
-
-    // Compute constraints
-    std::array<Timeseries_t,12> constraints;
-
-    constraints[0] = dqdt[Dynamic_model_t::Chassis_type::IID2Z];
-    constraints[1] = dqdt[Dynamic_model_t::Chassis_type::IIDOMEGA];
-    constraints[2] = dqdt[Dynamic_model_t::Chassis_type::IID2PHI];
-    constraints[3] = dqdt[Dynamic_model_t::Chassis_type::IID2MU];
-    constraints[4] = dqdt[Dynamic_model_t::Chassis_type::IIDU]*sin(psi)
-                    + dqdt[Dynamic_model_t::Chassis_type::IIDV]*cos(psi);
-    constraints[5] = _ax - dqdt[Dynamic_model_t::Chassis_type::IIDU]*cos(psi)
-                         + dqdt[Dynamic_model_t::Chassis_type::IIDV]*sin(psi);
-    
-    constraints[6] = _car->get_chassis().get_rear_axle().template get_tire<0>().get_kappa();
-    constraints[7] = _car->get_chassis().get_rear_axle().template get_tire<1>().get_kappa();
-    constraints[8] = _car->get_chassis().get_rear_axle().template get_tire<0>().get_lambda();
-    constraints[9] = _car->get_chassis().get_rear_axle().template get_tire<1>().get_lambda();
-    constraints[10] = _car->get_chassis().get_front_axle().template get_tire<0>().get_lambda();
-    constraints[11] = _car->get_chassis().get_front_axle().template get_tire<1>().get_lambda();
+    std::array<Timeseries_t,Dynamic_model_t::N_SS_EQNS> constraints;
+    std::tie(constraints,_q,_u) = _car->steady_state_equations(x,_ax,_ay,_v);
 
     return constraints;
 }
@@ -792,53 +797,15 @@ typename Steady_state<Dynamic_model_t>::Max_lat_acc_constraints::output_type Ste
     (const typename Steady_state<Dynamic_model_t>::Max_lat_acc_constraints::argument_type& x)
 {
     // The content of x is: x = [w_axle, z, phi, mu, psi, delta, ax, ay]
-    const Timeseries_t& ax = x[6];
-    const Timeseries_t& ay = x[7];
+    const Timeseries_t& ax = x[Dynamic_model_t::N_SS_VARS+0];
+    const Timeseries_t& ay = x[Dynamic_model_t::N_SS_VARS+1];
 
-    // Construct state and controls
-    const Timeseries_t& psi = x[4];
-    const Timeseries_t omega = ay/_v;
-     
-    // Construct the state
-    _q[Dynamic_model_t::Chassis_type::rear_axle_type::IOMEGA_AXLE] = (x[0]+1.0)*_v/0.139;
-    _q[Dynamic_model_t::Chassis_type::IU]                          = _v*cos(psi);
-    _q[Dynamic_model_t::Chassis_type::IV]                          = -_v*sin(psi);
-    _q[Dynamic_model_t::Chassis_type::IOMEGA]                      = omega;
-    _q[Dynamic_model_t::Chassis_type::IZ]                          = x[1];
-    _q[Dynamic_model_t::Chassis_type::IPHI]                        = x[2];
-    _q[Dynamic_model_t::Chassis_type::IMU]                         = x[3];
-    _q[Dynamic_model_t::Chassis_type::IDZ]                         = 0.0;
-    _q[Dynamic_model_t::Chassis_type::IDPHI]                       = 0.0;
-    _q[Dynamic_model_t::Chassis_type::IDMU]                        = 0.0;
-    _q[Dynamic_model_t::Road_type::IX]                             = 0.0;
-    _q[Dynamic_model_t::Road_type::IY]                             = 0.0;
-    _q[Dynamic_model_t::Road_type::IPSI]                           = x[4];
+    // Get x
+    std::array<Timeseries_t, Dynamic_model_t::N_SS_VARS> x_reduced;  
+    std::copy(x.data(), x.data() + Dynamic_model_t::N_SS_VARS, x_reduced.begin());
 
-    // Construct the controls
-    _u[Dynamic_model_t::Chassis_type::front_axle_type::ISTEERING] = x[5];
-    _u[Dynamic_model_t::Chassis_type::rear_axle_type::ITORQUE]    = 0.0;
-
-    // Compute time derivative
-    auto dqdt = (*_car)(_q,_u,0.0);
-
-    // Compute constraints
-    std::array<Timeseries_t,12> constraints;
-
-    constraints[0] = dqdt[Dynamic_model_t::Chassis_type::IID2Z];
-    constraints[1] = dqdt[Dynamic_model_t::Chassis_type::IIDOMEGA];
-    constraints[2] = dqdt[Dynamic_model_t::Chassis_type::IID2PHI];
-    constraints[3] = dqdt[Dynamic_model_t::Chassis_type::IID2MU];
-    constraints[4] = dqdt[Dynamic_model_t::Chassis_type::IIDU]*sin(psi)
-                    + dqdt[Dynamic_model_t::Chassis_type::IIDV]*cos(psi);
-    constraints[5] = ax - dqdt[Dynamic_model_t::Chassis_type::IIDU]*cos(psi)
-                         + dqdt[Dynamic_model_t::Chassis_type::IIDV]*sin(psi);
-    
-    constraints[6] = _car->get_chassis().get_rear_axle().template get_tire<0>().get_kappa();
-    constraints[7] = _car->get_chassis().get_rear_axle().template get_tire<1>().get_kappa();
-    constraints[8] = _car->get_chassis().get_rear_axle().template get_tire<0>().get_lambda();
-    constraints[9] = _car->get_chassis().get_rear_axle().template get_tire<1>().get_lambda();
-    constraints[10] = _car->get_chassis().get_front_axle().template get_tire<0>().get_lambda();
-    constraints[11] = _car->get_chassis().get_front_axle().template get_tire<1>().get_lambda();
+    std::array<Timeseries_t,Dynamic_model_t::N_SS_EQNS> constraints;
+    std::tie(constraints,_q,_u) = _car->steady_state_equations(x_reduced,ax,ay,_v);
 
     return constraints;
 }
@@ -848,52 +815,14 @@ typename Steady_state<Dynamic_model_t>::Max_lon_acc_constraints::output_type Ste
     (const typename Steady_state<Dynamic_model_t>::Max_lon_acc_constraints::argument_type& x)
 {
     // The content of x is: x = [w_axle, z, phi, mu, psi, delta, ax]
-    const Timeseries_t& ax = x[6];
+    const Timeseries_t& ax = x[Dynamic_model_t::N_SS_VARS+0];
 
-    // Construct state and controls
-    const Timeseries_t& psi = x[4];
-    const Timeseries_t omega = _ay/_v;
-     
-    // Construct the state
-    _q[Dynamic_model_t::Chassis_type::rear_axle_type::IOMEGA_AXLE] = (x[0]+1.0)*_v/0.139;
-    _q[Dynamic_model_t::Chassis_type::IU]                          = _v*cos(psi);
-    _q[Dynamic_model_t::Chassis_type::IV]                          = -_v*sin(psi);
-    _q[Dynamic_model_t::Chassis_type::IOMEGA]                      = omega;
-    _q[Dynamic_model_t::Chassis_type::IZ]                          = x[1];
-    _q[Dynamic_model_t::Chassis_type::IPHI]                        = x[2];
-    _q[Dynamic_model_t::Chassis_type::IMU]                         = x[3];
-    _q[Dynamic_model_t::Chassis_type::IDZ]                         = 0.0;
-    _q[Dynamic_model_t::Chassis_type::IDPHI]                       = 0.0;
-    _q[Dynamic_model_t::Chassis_type::IDMU]                        = 0.0;
-    _q[Dynamic_model_t::Road_type::IX]                             = 0.0;
-    _q[Dynamic_model_t::Road_type::IY]                             = 0.0;
-    _q[Dynamic_model_t::Road_type::IPSI]                           = x[4];
+    // Get x
+    std::array<Timeseries_t, Dynamic_model_t::N_SS_VARS> x_reduced;  
+    std::copy(x.data(), x.data() + Dynamic_model_t::N_SS_VARS, x_reduced.begin());
 
-    // Construct the controls
-    _u[Dynamic_model_t::Chassis_type::front_axle_type::ISTEERING] = x[5];
-    _u[Dynamic_model_t::Chassis_type::rear_axle_type::ITORQUE]    = 0.0;
-
-    // Compute time derivative
-    auto dqdt = (*_car)(_q,_u,0.0);
-
-    // Compute constraints
-    std::array<Timeseries_t,12> constraints;
-
-    constraints[0] = dqdt[Dynamic_model_t::Chassis_type::IID2Z];
-    constraints[1] = dqdt[Dynamic_model_t::Chassis_type::IIDOMEGA];
-    constraints[2] = dqdt[Dynamic_model_t::Chassis_type::IID2PHI];
-    constraints[3] = dqdt[Dynamic_model_t::Chassis_type::IID2MU];
-    constraints[4] = dqdt[Dynamic_model_t::Chassis_type::IIDU]*sin(psi)
-                    + dqdt[Dynamic_model_t::Chassis_type::IIDV]*cos(psi);
-    constraints[5] = ax - dqdt[Dynamic_model_t::Chassis_type::IIDU]*cos(psi)
-                         + dqdt[Dynamic_model_t::Chassis_type::IIDV]*sin(psi);
-    
-    constraints[6] = _car->get_chassis().get_rear_axle().template get_tire<0>().get_kappa();
-    constraints[7] = _car->get_chassis().get_rear_axle().template get_tire<1>().get_kappa();
-    constraints[8] = _car->get_chassis().get_rear_axle().template get_tire<0>().get_lambda();
-    constraints[9] = _car->get_chassis().get_rear_axle().template get_tire<1>().get_lambda();
-    constraints[10] = _car->get_chassis().get_front_axle().template get_tire<0>().get_lambda();
-    constraints[11] = _car->get_chassis().get_front_axle().template get_tire<1>().get_lambda();
+    std::array<Timeseries_t,Dynamic_model_t::N_SS_EQNS> constraints;
+    std::tie(constraints,_q,_u) = _car->steady_state_equations(x_reduced,ax,_ay,_v);
 
     return constraints;
 }
