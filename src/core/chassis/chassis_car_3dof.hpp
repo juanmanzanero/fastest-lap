@@ -153,10 +153,10 @@ void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::get_
 {
     static_assert(NALGEBRAIC_ == NALGEBRAIC);
 
-    dqa[0] = _Fz_eq;
-    dqa[1] = _Mx_eq;
-    dqa[2] = _My_eq;
-    dqa[3] = _roll_balance_eq;
+    dqa[0] = _Fz_eq/(g0*base_type::get_mass());
+    dqa[1] = _Mx_eq/(g0*base_type::get_mass());
+    dqa[2] = _My_eq/(g0*base_type::get_mass());
+    dqa[3] = _roll_balance_eq/(g0*base_type::get_mass());
 }
 
 
@@ -193,16 +193,16 @@ void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_
     // Algebraic ---
 
     // Fz_fl
-    _Fz_fl = qa[IFZFL];
+    _Fz_fl = qa[IFZFL]*g0*base_type::get_mass();
 
     // Fz_fr
-    _Fz_fr = qa[IFZFR];
+    _Fz_fr = qa[IFZFR]*g0*base_type::get_mass();
 
     // Fz_rl
-    _Fz_rl = qa[IFZRL];
+    _Fz_rl = qa[IFZRL]*g0*base_type::get_mass();
 
     // Fz_rr
-    _Fz_rr = qa[IFZRR];
+    _Fz_rr = qa[IFZRR]*g0*base_type::get_mass();
 }
 
 #endif

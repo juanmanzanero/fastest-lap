@@ -12,8 +12,7 @@ template<typename T>
 std::enable_if_t<std::is_same<T,scalar>::value,typename Steady_state<Dynamic_model_t>::Solution> 
     Steady_state<Dynamic_model_t>::solve(scalar v, scalar ax, scalar ay, const size_t n_steps, const bool provide_x0, const std::vector<scalar>& x0_provided, bool throw_if_fail)
 {
-    // The content of x is: x = [w_axle, z, phi, mu, psi, delta]
-    std::vector<scalar> x0 = {0.0, 0.02, 0.0, 0.0, 0.0, 0.0};
+    std::vector<scalar> x0 = Dynamic_model_t::steady_state_initial_guess();
 
     if ( provide_x0 )
     {
@@ -57,8 +56,7 @@ template<typename T>
 std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,typename Steady_state<Dynamic_model_t>::Solution> 
     Steady_state<Dynamic_model_t>::solve(scalar v, scalar ax, scalar ay, const size_t, const bool provide_x0, const std::vector<scalar>& x0_provided, bool throw_if_fail)
 {
-    // The content of x is: x = [w_axle, z, phi, mu, psi, delta]
-    std::vector<scalar> x0 = {0.0, 0.02, 0.0, 0.0, 0.0, 0.0};
+    std::vector<scalar> x0 = Dynamic_model_t::steady_state_initial_guess();
 
     if ( provide_x0 )
     {
@@ -137,14 +135,9 @@ std::enable_if_t<std::is_same<T,scalar>::value,typename Steady_state<Dynamic_mod
     // Get the solution with ax = ay = 0 as initial point
     auto result_0g = solve(v,0.0,0.0);
 
-    std::vector<scalar> x0 = {(result_0g.q[Dynamic_model_t::Chassis_type::rear_axle_type::IOMEGA_AXLE]*0.139-v)/v,
-                              result_0g.q[Dynamic_model_t::Chassis_type::IZ],
-                              result_0g.q[Dynamic_model_t::Chassis_type::IPHI],
-                              result_0g.q[Dynamic_model_t::Chassis_type::IMU],
-                              result_0g.q[Dynamic_model_t::Road_type::IPSI],
-                              result_0g.u[Dynamic_model_t::Chassis_type::front_axle_type::ISTEERING],
-                              0.0, 0.0
-                             };
+    std::vector<scalar> x0 = Dynamic_model_t::get_x(result_0g.q, result_0g.qa, result_0g.u, v);
+    x0.push_back(0.0);
+    x0.push_back(0.0);
 
     // Solve the problem using the optimizer
     auto [x_lb, x_ub] = Dynamic_model_t::steady_state_variable_bounds();
@@ -153,8 +146,43 @@ std::enable_if_t<std::is_same<T,scalar>::value,typename Steady_state<Dynamic_mod
 
     auto [c_lb, c_ub] = Dynamic_model_t::steady_state_constraint_bounds();
 
-    Optimise_options options;
-    auto result = Optimise<Max_lat_acc_fitness,Max_lat_acc_constraints>::optimise(Dynamic_model_t::N_SS_VARS+2,Dynamic_model_t::N_SS_EQNS,x0,f,c,x_lb,x_ub,c_lb,c_ub,options);
+    typename Optimise<Max_lat_acc_fitness,Max_lat_acc_constraints>::Optimisation_result result;
+    bool success = false;
+
+    for (size_t attempt = 0; attempt < 5; ++attempt)
+    {
+        Optimise_options options;
+        result = Optimise<Max_lat_acc_fitness,Max_lat_acc_constraints>::optimise(Dynamic_model_t::N_SS_VARS+2,Dynamic_model_t::N_SS_EQNS,x0,f,c,x_lb,x_ub,c_lb,c_ub,options);
+
+        // Check if the solution is close to the bounds imposed in acceleration, repeat otherwise
+        success = true;
+
+        if ( std::abs(x_lb[Dynamic_model_t::N_SS_VARS] - result.x[Dynamic_model_t::N_SS_VARS]) < 1.0e-3 )
+        {
+            success = false;
+            x_lb[Dynamic_model_t::N_SS_VARS] *= 2.0;
+        }
+
+        if ( std::abs(x_ub[Dynamic_model_t::N_SS_VARS] - result.x[Dynamic_model_t::N_SS_VARS]) < 1.0e-3 )
+        {
+            success = false;
+            x_ub[Dynamic_model_t::N_SS_VARS] *= 2.0;
+        }
+
+        if ( std::abs(x_lb[Dynamic_model_t::N_SS_VARS+1] - result.x[Dynamic_model_t::N_SS_VARS+1]) < 1.0e-3 )
+        {
+            success = false;
+            x_lb[Dynamic_model_t::N_SS_VARS+1] *= 2.0;
+        }
+
+        if ( std::abs(x_ub[Dynamic_model_t::N_SS_VARS+1] - result.x[Dynamic_model_t::N_SS_VARS+1]) < 1.0e-3 )
+        {
+            success = false;
+            x_ub[Dynamic_model_t::N_SS_VARS+1] *= 2.0;
+        }
+    
+        if ( success ) break;
+    }
 
     typename Max_lat_acc_constraints::argument_type x;
     std::copy(result.x.cbegin(), result.x.cend(), x.begin());
@@ -172,7 +200,7 @@ template<typename T>
 std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,typename Steady_state<Dynamic_model_t>::Solution> 
     Steady_state<Dynamic_model_t>::solve_max_lat_acc(scalar v)
 {
-    // The content of x is: x = [w_axle, z, phi, mu, psi, delta, ax, ay]
+    // The content of x is: x = [x, ax, ay]
 
     // Get the solution with ax = ay = 0 as initial point
     auto result_0g = solve(v,0.0,0.0);
@@ -271,26 +299,14 @@ std::enable_if_t<std::is_same<T,scalar>::value,std::pair<typename Steady_state<D
 
     // (3)
     // Compute the steady state with ax = ax_aymax.ay/ay_max
-    std::vector<scalar> x0_ss_ay = {(result_0g.q[Dynamic_model_t::Chassis_type::rear_axle_type::IOMEGA_AXLE]*0.139-v)/v,
-                              result_0g.q[Dynamic_model_t::Chassis_type::IZ],
-                              result_0g.q[Dynamic_model_t::Chassis_type::IPHI],
-                              result_0g.q[Dynamic_model_t::Chassis_type::IMU],
-                              result_0g.q[Dynamic_model_t::Road_type::IPSI],
-                              result_0g.u[Dynamic_model_t::Chassis_type::front_axle_type::ISTEERING] 
-                             };
+    std::vector<scalar> x0_ss_ay = Dynamic_model_t::get_x(result_0g.q, result_0g.qa, result_0g.u, v);
 
     auto result_ss_ay = solve(v,result_max_lat_acc.ax*ay/result_max_lat_acc.ay, ay, 1, true, x0_ss_ay);
     
     // (4)
     // Optimise using the last optimization
-    std::vector<scalar> x0 = {(result_ss_ay.q[Dynamic_model_t::Chassis_type::rear_axle_type::IOMEGA_AXLE]*0.139-v)/v,
-                              result_ss_ay.q[Dynamic_model_t::Chassis_type::IZ],
-                              result_ss_ay.q[Dynamic_model_t::Chassis_type::IPHI],
-                              result_ss_ay.q[Dynamic_model_t::Chassis_type::IMU],
-                              result_ss_ay.q[Dynamic_model_t::Road_type::IPSI],
-                              result_ss_ay.u[Dynamic_model_t::Chassis_type::front_axle_type::ISTEERING],
-                              result_ss_ay.ax
-                             };
+    std::vector<scalar> x0 = Dynamic_model_t::get_x(result_ss_ay.q, result_ss_ay.qa, result_ss_ay.u, v);
+    x0.push_back(result_ss_ay.ax);
 
     Max_lon_acc_fitness fmax;
     Min_lon_acc_fitness fmin;
@@ -356,26 +372,14 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,std::pair<typename Ste
 
     // (3)
     // Compute the steady state with ax = ax_aymax.ay/ay_max
-    std::vector<scalar> x0_ss_ay = {(result_0g.q[Dynamic_model_t::Chassis_type::rear_axle_type::IOMEGA_AXLE]*0.139-v)/v,
-                              result_0g.q[Dynamic_model_t::Chassis_type::IZ],
-                              result_0g.q[Dynamic_model_t::Chassis_type::IPHI],
-                              result_0g.q[Dynamic_model_t::Chassis_type::IMU],
-                              result_0g.q[Dynamic_model_t::Road_type::IPSI],
-                              result_0g.u[Dynamic_model_t::Chassis_type::front_axle_type::ISTEERING] 
-                             };
+    std::vector<scalar> x0_ss_ay = Dynamic_model_t::get_x(result_0g.q, result_0g.qa, result_0g.u, v);
 
     auto result_ss_ay = solve(v,result_max_lat_acc.ax*ay/result_max_lat_acc.ay, ay, 1, true, x0_ss_ay);
     
     // (4)
     // Optimise using the last optimization
-    std::vector<scalar> x0 = {(result_ss_ay.q[Dynamic_model_t::Chassis_type::rear_axle_type::IOMEGA_AXLE]*0.139-v)/v,
-                              result_ss_ay.q[Dynamic_model_t::Chassis_type::IZ],
-                              result_ss_ay.q[Dynamic_model_t::Chassis_type::IPHI],
-                              result_ss_ay.q[Dynamic_model_t::Chassis_type::IMU],
-                              result_ss_ay.q[Dynamic_model_t::Road_type::IPSI],
-                              result_ss_ay.u[Dynamic_model_t::Chassis_type::front_axle_type::ISTEERING],
-                              result_ss_ay.ax
-                             };
+    std::vector<scalar> x0 = Dynamic_model_t::get_x(result_ss_ay.q, result_ss_ay.qa, result_ss_ay.u, v);
+    x0.push_back(result_ss_ay.ax);
 
     auto [x_lb, x_ub] = Dynamic_model_t::steady_state_variable_bounds();
     x_lb.push_back(-2.0);
@@ -514,13 +518,7 @@ std::enable_if_t<std::is_same<T,scalar>::value,
 
     // (3)
     // Loop on the requested lateral accelerations
-    std::vector<scalar> x0_ss_ay = {(result_0g.q[Dynamic_model_t::Chassis_type::rear_axle_type::IOMEGA_AXLE]*0.139-v)/v,
-                              result_0g.q[Dynamic_model_t::Chassis_type::IZ],
-                              result_0g.q[Dynamic_model_t::Chassis_type::IPHI],
-                              result_0g.q[Dynamic_model_t::Chassis_type::IMU],
-                              result_0g.q[Dynamic_model_t::Road_type::IPSI],
-                              result_0g.u[Dynamic_model_t::Chassis_type::front_axle_type::ISTEERING] 
-                             };
+    std::vector<scalar> x0_ss_ay = Dynamic_model_t::get_x(result_0g.q, result_0g.qa, result_0g.u, v);
 
     Solution result_ss_ay = result_0g;
 
@@ -537,19 +535,12 @@ std::enable_if_t<std::is_same<T,scalar>::value,
     
         // (4)
         // Optimise using the last optimization
-        std::vector<scalar> x0 = {(result_ss_ay.q[Dynamic_model_t::Chassis_type::rear_axle_type::IOMEGA_AXLE]*0.139-v)/v,
-                                  result_ss_ay.q[Dynamic_model_t::Chassis_type::IZ],
-                                  result_ss_ay.q[Dynamic_model_t::Chassis_type::IPHI],
-                                  result_ss_ay.q[Dynamic_model_t::Chassis_type::IMU],
-                                  result_ss_ay.q[Dynamic_model_t::Road_type::IPSI],
-                                  result_ss_ay.u[Dynamic_model_t::Chassis_type::front_axle_type::ISTEERING],
-                                  result_ss_ay.ax
-                                 };
-    
+        std::vector<scalar> x0 = Dynamic_model_t::get_x(result_ss_ay.q, result_ss_ay.qa, result_ss_ay.u, v);
+        x0.push_back(result_ss_ay.ax);
+
         Max_lon_acc_fitness fmax;
         Min_lon_acc_fitness fmin;
         Max_lon_acc_constraints c(_car,v,ay_gg[i]);
-
     
         auto [x_lb, x_ub] = Dynamic_model_t::steady_state_variable_bounds();
         x_lb.push_back(result_max_lat_acc.ax - 0.5);
@@ -587,13 +578,7 @@ std::enable_if_t<std::is_same<T,scalar>::value,
     
         solution_min[i] = {result_min.solved, v, result_min.x[Dynamic_model_t::N_SS_VARS], ay_gg[i], q_min, qa_min, u_min, dqdt_min};
 
-        x0_ss_ay = {(result_ss_ay.q[Dynamic_model_t::Chassis_type::rear_axle_type::IOMEGA_AXLE]*0.139-v)/v,
-                              result_ss_ay.q[Dynamic_model_t::Chassis_type::IZ],
-                              result_ss_ay.q[Dynamic_model_t::Chassis_type::IPHI],
-                              result_ss_ay.q[Dynamic_model_t::Chassis_type::IMU],
-                              result_ss_ay.q[Dynamic_model_t::Road_type::IPSI],
-                              result_ss_ay.u[Dynamic_model_t::Chassis_type::front_axle_type::ISTEERING] 
-                             };
+        std::vector<scalar> x0_ss_ay = Dynamic_model_t::get_x(result_ss_ay.q, result_ss_ay.qa, result_ss_ay.u, v);
     }
 
     out(2).stop_progress_bar();
@@ -627,13 +612,7 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,
 
     // (3)
     // Loop on the requested lateral accelerations
-    std::vector<scalar> x0_ss_ay = {(result_0g.q[Dynamic_model_t::Chassis_type::rear_axle_type::IOMEGA_AXLE]*0.139-v)/v,
-                              result_0g.q[Dynamic_model_t::Chassis_type::IZ],
-                              result_0g.q[Dynamic_model_t::Chassis_type::IPHI],
-                              result_0g.q[Dynamic_model_t::Chassis_type::IMU],
-                              result_0g.q[Dynamic_model_t::Road_type::IPSI],
-                              result_0g.u[Dynamic_model_t::Chassis_type::front_axle_type::ISTEERING] 
-                             };
+    std::vector<scalar> x0_ss_ay = Dynamic_model_t::get_x(result_0g.q, result_0g.qa, result_0g.u, v);
 
     Solution result_ss_ay = result_0g;
 
@@ -649,14 +628,8 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,
     
         // (4)
         // Optimise using the last optimization
-        std::vector<scalar> x0 = {(result_ss_ay.q[Dynamic_model_t::Chassis_type::rear_axle_type::IOMEGA_AXLE]*0.139-v)/v,
-                                  result_ss_ay.q[Dynamic_model_t::Chassis_type::IZ],
-                                  result_ss_ay.q[Dynamic_model_t::Chassis_type::IPHI],
-                                  result_ss_ay.q[Dynamic_model_t::Chassis_type::IMU],
-                                  result_ss_ay.q[Dynamic_model_t::Road_type::IPSI],
-                                  result_ss_ay.u[Dynamic_model_t::Chassis_type::front_axle_type::ISTEERING],
-                                  result_ss_ay.ax
-                                 };
+        std::vector<scalar> x0 = Dynamic_model_t::get_x(result_ss_ay.q, result_ss_ay.qa, result_ss_ay.u, v);
+        x0.push_back(result_ss_ay.ax);
 
         auto [x_lb, x_ub] = Dynamic_model_t::steady_state_variable_bounds();
         x_lb.push_back(-2.0);
@@ -766,13 +739,7 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,
         const bool min_solved = result_min.status == CppAD::ipopt::solve_result<std::vector<scalar>>::success;
         solution_min[i] = {min_solved, v, Value(result_min.x[Dynamic_model_t::N_SS_VARS]), ay_gg[i], q_min_sc, qa_min_sc, u_min_sc, dqdt_min_sc};
 
-        x0_ss_ay = {(result_ss_ay.q[Dynamic_model_t::Chassis_type::rear_axle_type::IOMEGA_AXLE]*0.139-v)/v,
-                              result_ss_ay.q[Dynamic_model_t::Chassis_type::IZ],
-                              result_ss_ay.q[Dynamic_model_t::Chassis_type::IPHI],
-                              result_ss_ay.q[Dynamic_model_t::Chassis_type::IMU],
-                              result_ss_ay.q[Dynamic_model_t::Road_type::IPSI],
-                              result_ss_ay.u[Dynamic_model_t::Chassis_type::front_axle_type::ISTEERING] 
-                             };
+        std::vector<scalar> x0_ss_ay = Dynamic_model_t::get_x(result_ss_ay.q, result_ss_ay.qa, result_ss_ay.u, v);
     }
 
     out(2).stop_progress_bar();

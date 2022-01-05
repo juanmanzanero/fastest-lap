@@ -47,10 +47,17 @@ class limebeer2014f1
         static constexpr const size_t N_SS_VARS = 11;
         static constexpr const size_t N_SS_EQNS = 16;
 
+        // The content of x is: x = [omega_fl, omega_fr, omega_rl, omega_rr, psi, Fz_fl, Fz_fr, Fz_rl, Fz_rr, delta, throttle]
+        static std::vector<scalar> steady_state_initial_guess()
+        {
+            return {0.0, 0.0, 0.0, 0.0, 0.0, -0.25, -0.25, -0.25, -0.25, 0.0, 0.0};
+        }
+
+
         static std::pair<std::vector<scalar>,std::vector<scalar>> steady_state_variable_bounds() 
         {
-            return { { -0.5, -0.5, -0.5, -0.5, -10.0*DEG, -0.1, -0.1, -0.1, -0.1, -10.0*DEG, -1.0},
-                     {  0.5,  0.5,  0.5,  0.5,  10.0*DEG,  3.0,  3.0,  3.0,  3.0,  10.0*DEG,  1.0} };
+            return { { -0.5, -0.5, -0.5, -0.5, -10.0*DEG, -3.0, -3.0, -3.0, -3.0, -10.0*DEG, -1.0},
+                     {  0.5,  0.5,  0.5,  0.5,  10.0*DEG,  0.1,  0.1,  0.1,  0.1,  10.0*DEG,  1.0} };
         }
 
 
@@ -58,6 +65,26 @@ class limebeer2014f1
         {
             return { {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -0.11, -0.11, -0.09, -0.09, -0.09, -0.09},
                      {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,  0.11,  0.11,  0.09,  0.09,  0.09,  0.09} };
+        }
+
+        template<typename T>
+        static std::vector<T> get_x(const std::array<T,Dynamic_model_t::NSTATE>& q,
+                                         const std::array<T,Dynamic_model_t::NALGEBRAIC>& qa,
+                                         const std::array<T,Dynamic_model_t::NCONTROL>& u,
+                                         scalar v) 
+        {
+            return { (q[Dynamic_model_t::Chassis_type::front_axle_type::IOMEGA_LEFT]*0.33-v)/v,
+                     (q[Dynamic_model_t::Chassis_type::front_axle_type::IOMEGA_RIGHT]*0.33-v)/v,
+                     (q[Dynamic_model_t::Chassis_type::rear_axle_type::IOMEGA_LEFT]*0.33-v)/v,
+                     (q[Dynamic_model_t::Chassis_type::rear_axle_type::IOMEGA_RIGHT]*0.33-v)/v,
+                      q[Dynamic_model_t::Road_type::IPSI],
+                      qa[Dynamic_model_t::Chassis_type::IFZFL],
+                      qa[Dynamic_model_t::Chassis_type::IFZFR],
+                      qa[Dynamic_model_t::Chassis_type::IFZRL],
+                      qa[Dynamic_model_t::Chassis_type::IFZRR],
+                      u[Dynamic_model_t::Chassis_type::front_axle_type::ISTEERING],
+                      u[Dynamic_model_t::Chassis_type::ITHROTTLE]
+                    };
         }
 
         std::tuple<std::array<Timeseries_t,N_SS_EQNS>,
@@ -88,10 +115,10 @@ class limebeer2014f1
 
             // Constract the algebraic variables
             std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC> qa;
-            q[Dynamic_model_t::Chassis_type::IFZFL] = x[5]*g0*660.0;
-            q[Dynamic_model_t::Chassis_type::IFZFR] = x[6]*g0*660.0;
-            q[Dynamic_model_t::Chassis_type::IFZRL] = x[7]*g0*660.0;
-            q[Dynamic_model_t::Chassis_type::IFZRR] = x[8]*g0*660.0;
+            qa[Dynamic_model_t::Chassis_type::IFZFL] = x[5];
+            qa[Dynamic_model_t::Chassis_type::IFZFR] = x[6];
+            qa[Dynamic_model_t::Chassis_type::IFZRL] = x[7];
+            qa[Dynamic_model_t::Chassis_type::IFZRR] = x[8];
         
             // Construct the controls
             std::array<Timeseries_t,Dynamic_model_t::NCONTROL> u;
@@ -99,7 +126,7 @@ class limebeer2014f1
             u[Dynamic_model_t::Chassis_type::ITHROTTLE]    = x[10];
         
             // Compute time derivative
-            auto [dqdt,dqa] = (*this)(q,u,qa,0.0);
+            auto [dqdt,dqa] = (*this)(q,qa,u,0.0);
         
             // Compute constraints
             std::array<Timeseries_t,N_SS_EQNS> constraints;

@@ -35,10 +35,10 @@ class Chassis_car_3dof_test : public ::testing::Test
         u_in[Front_axle_t::ISTEERING] = delta;
         u_in[Chassis_t::ITHROTTLE]    = throttle;
 
-        qa_in[Chassis_t::IFZFL] = Fz_fl;
-        qa_in[Chassis_t::IFZFR] = Fz_fr;
-        qa_in[Chassis_t::IFZRL] = Fz_rl;
-        qa_in[Chassis_t::IFZRR] = Fz_rr;
+        qa_in[Chassis_t::IFZFL] = Fz_fl/(9.81*660.0);
+        qa_in[Chassis_t::IFZFR] = Fz_fr/(9.81*660.0);
+        qa_in[Chassis_t::IFZRL] = Fz_rl/(9.81*660.0);
+        qa_in[Chassis_t::IFZRR] = Fz_rr/(9.81*660.0);
 
         chassis.set_state_and_controls(q_in,qa_in,u_in);
         chassis.update(x,y,psi);
@@ -226,7 +226,7 @@ TEST_F(Chassis_car_3dof_test, newton_equations)
 
     EXPECT_NEAR(chassis.get_du(), du, 2.0e-11);
     EXPECT_NEAR(chassis.get_dv(), dv, 2.0e-11);
-    EXPECT_NEAR(dqa[0], dw, 2.0e-11);
+    EXPECT_NEAR(dqa[0]*9.81*660.0, dw, 2.0e-11);
 }
 
 
@@ -237,8 +237,8 @@ TEST_F(Chassis_car_3dof_test, euler_equations)
 
     const scalar domega = (1.8*(cos(delta)*(F_fr[1]+F_fl[1])+sin(delta)*(F_fr[0]+F_fl[0])) + 0.73*(sin(delta)*F_fr[1]-cos(delta)*F_fr[0]) - 0.73*F_rr[0] + 0.73*(cos(delta)*F_fl[0] - sin(delta)*F_fl[1]) + 0.73*F_rl[0] - 1.6*(F_rr[1]+F_rl[1]))/450.0;
 
-    EXPECT_NEAR(dqa[1], 0.73*(neg_Fz_rl-neg_Fz_rr)+0.73*(neg_Fz_fl-neg_Fz_fr) + 0.3*Fy, 2.0e-11); 
-    EXPECT_NEAR(dqa[2], 1.6*(neg_Fz_rr+neg_Fz_rl)-1.8*(neg_Fz_fr+neg_Fz_fl)+ 0.3*Fx + 0.1*F_lift, 2.0e-11);
+    EXPECT_NEAR(dqa[1]*9.81*660.0, 0.73*(neg_Fz_rl-neg_Fz_rr)+0.73*(neg_Fz_fl-neg_Fz_fr) + 0.3*Fy, 2.0e-11); 
+    EXPECT_NEAR(dqa[2]*9.81*660.0, 1.6*(neg_Fz_rr+neg_Fz_rl)-1.8*(neg_Fz_fr+neg_Fz_fl)+ 0.3*Fx + 0.1*F_lift, 2.0e-11);
     EXPECT_NEAR(chassis.get_domega(), domega, 2.0e-11);
 }
 
@@ -248,5 +248,5 @@ TEST_F(Chassis_car_3dof_test, suspension_compliance_equation)
     std::array<scalar,4> dqa;
     chassis.get_algebraic_constraints(dqa);
 
-    EXPECT_NEAR(dqa[3], Fz_fr - Fz_fl - 0.5*(Fz_fr + Fz_rr - Fz_fl - Fz_rl), 2.0e-11);
+    EXPECT_NEAR(dqa[3]*9.81*660.0, Fz_fr - Fz_fl - 0.5*(Fz_fr + Fz_rr - Fz_fl - Fz_rl), 2.0e-11);
 }

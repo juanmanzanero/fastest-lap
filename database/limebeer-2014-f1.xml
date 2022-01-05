@@ -26,7 +26,7 @@
             <max_torque units="N.m">200.0</max_torque>
         </brakes>
         <engine>
-            <maximum-power units="kW"> 20.1 </maximum-power>
+            <maximum-power units="kW"> 735.499 </maximum-power>
         </engine>
     </rear-axle>
 

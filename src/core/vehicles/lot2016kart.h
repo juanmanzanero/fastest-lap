@@ -47,12 +47,33 @@ class lot2016kart
         static constexpr const size_t N_SS_VARS = 6;
         static constexpr const size_t N_SS_EQNS = 12;
 
+        // The content of x is: x = [w_axle, z, phi, mu, psi, delta]
+        static std::vector<scalar> steady_state_initial_guess()
+        {
+            return {0.0, 0.02, 0.0, 0.0, 0.0, 0.0};
+        }
+
         static std::pair<std::vector<scalar>,std::vector<scalar>> steady_state_variable_bounds() 
         {
             return { { -0.5, 1.0e-4, -10.0*DEG, -10.0*DEG, -10.0*DEG, -10.0*DEG },
                      {  0.5, 0.04  ,  10.0*DEG,  10.0*DEG,  10.0*DEG,  10.0*DEG } };
         }
 
+        template<typename T>
+        static std::vector<T> get_x(const std::array<T,Dynamic_model_t::NSTATE>& q,
+                                         const std::array<T,Dynamic_model_t::NALGEBRAIC>& qa,
+                                         const std::array<T,Dynamic_model_t::NCONTROL>& u,
+                                         scalar v) 
+        {
+            (void)qa;
+            return {(q[Dynamic_model_t::Chassis_type::rear_axle_type::IOMEGA_AXLE]*0.139-v)/v,
+                     q[Dynamic_model_t::Chassis_type::IZ],
+                     q[Dynamic_model_t::Chassis_type::IPHI],
+                     q[Dynamic_model_t::Chassis_type::IMU],
+                     q[Dynamic_model_t::Road_type::IPSI],
+                     u[Dynamic_model_t::Chassis_type::front_axle_type::ISTEERING] 
+                    };
+        }
 
         static std::pair<std::vector<scalar>,std::vector<scalar>> steady_state_constraint_bounds() 
         {

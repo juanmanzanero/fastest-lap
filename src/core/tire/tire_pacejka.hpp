@@ -166,7 +166,7 @@ Timeseries_t Pacejka_simple_model::force_combined_longitudinal_magic(Timeseries_
 
     const Timeseries_t mu_x = mu_x_max*sin(_Qx*atan(_Sx*rho));
     
-    return mu_x*Fz*kappa_n/rho;
+    return mu_x*Fz*kappa_n/(rho + 1.0e-12);
 }
 
 
@@ -183,7 +183,7 @@ Timeseries_t Pacejka_simple_model::force_combined_lateral_magic(Timeseries_t kap
 
     const Timeseries_t mu_y = mu_y_max*sin(_Qy*atan(_Sy*rho));
     
-    return mu_y*Fz*lambda_n/rho;
+    return mu_y*Fz*lambda_n/(rho + 1.0e-12);
 }
 
 

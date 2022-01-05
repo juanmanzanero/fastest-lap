@@ -14,8 +14,8 @@ inline sVector3d get_tire_forces(const scalar kappa, const scalar lambda, const 
     const scalar mu_x = mu_x_max*sin(1.9*atan(0.5*pi*rho/atan(1.9)));
     const scalar mu_y = mu_y_max*sin(1.9*atan(0.5*pi*rho/atan(1.9)));
 
-    const scalar Fx_computed = mu_x*Fz*kappa_n/rho;
-    const scalar Fy_computed = mu_y*Fz*lambda_n/rho;
+    const scalar Fx_computed = mu_x*Fz*kappa_n/(rho + 1.0e-12);
+    const scalar Fy_computed = mu_y*Fz*lambda_n/(rho + 1.0e-12);
 
     return {Fx_computed, Fy_computed, -Fz};
 }
