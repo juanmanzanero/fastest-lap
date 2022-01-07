@@ -73,6 +73,16 @@ TEST_F(Steady_state_test_f1, max_longitudinal_acceleration_several_speeds)
         EXPECT_TRUE(solution_min.solved);
         PRINTVARIABLE(JMT, solution_max.ax);
         PRINTVARIABLE(JMT, solution_min.ax);
+        std::cout << "Maximum acc: " << std::endl;
+        car_sc(solution_max.q, solution_max.qa, solution_max.u, 0.0);
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_front_axle().template get_tire<0>().get_kappa());
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_front_axle().template get_tire<1>().get_kappa());
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_rear_axle().template get_tire<0>().get_kappa());
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_rear_axle().template get_tire<1>().get_kappa());
+        PRINTVARIABLE(JMT, car_sc.get_road().get_psi()*RAD);
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_front_axle().get_steering_angle()*RAD);
+
+        std::cout << "Minimum acc: " << std::endl;
         car_sc(solution_min.q, solution_min.qa, solution_min.u, 0.0);
         PRINTVARIABLE(JMT, car_sc.get_chassis().get_front_axle().template get_tire<0>().get_kappa());
         PRINTVARIABLE(JMT, car_sc.get_chassis().get_front_axle().template get_tire<1>().get_kappa());
@@ -110,10 +120,11 @@ TEST_F(Steady_state_test_f1, max_lateral_accel_several_speeds)
     for (size_t i = 0; i < n; ++i)
     {
         const scalar v = 250.0*KMH*i/(n-1) + 100.0*KMH;
-        std::cout << v/KMH << std::endl;
 
+        std::cout << "vel: " << v/KMH << std::endl;
         Steady_state ss(car);
         auto solution = ss.solve_max_lat_acc(v);
+        std::cout << "throttle: " << solution.u[1] << std::endl;
 
         car_sc(solution.q,solution.qa,solution.u,0.0);
     
