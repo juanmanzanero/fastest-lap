@@ -56,19 +56,19 @@ class limebeer2014f1
         static std::pair<std::vector<scalar>,std::vector<scalar>> steady_state_variable_bounds() 
         {
             return { { -0.11, -0.11, -0.11, -0.11, -10.0*DEG, -3.0, -3.0, -3.0, -3.0, -10.0*DEG, -1.0},
-                     {  0.11,  0.11,  0.11,  0.11,  10.0*DEG,  0.1,  0.1,  0.1,  0.1,  10.0*DEG,  1.0} };
+                     {  0.11,  0.11,  0.11,  0.11,  10.0*DEG,  1.0,  1.0,  1.0,  1.0,  10.0*DEG,  1.0} };
         }
 
         static std::pair<std::vector<scalar>,std::vector<scalar>> steady_state_variable_bounds_accelerate() 
         {
-            return { { -0.04, -0.04, -0.04, -0.04, -10.0*DEG, -3.0, -3.0, -3.0, -3.0, -10.0*DEG, -0.1},
-                     {  0.04,  0.04,  0.10,  0.10,  10.0*DEG,  0.1,  0.1,  0.1,  0.1,  10.0*DEG,  1.0} };
+            return { { -0.04, -0.04, -0.08, -0.08, -0.1*DEG, -3.0, -3.0, -3.0, -3.0, -0.1*DEG, -0.1},
+                     {  0.04,  0.04,  1.50,  1.50,  10.0*DEG,  1.0,  1.0,  1.0,  1.0,  10.0*DEG,  1.0} };
         }
 
         static std::pair<std::vector<scalar>,std::vector<scalar>> steady_state_variable_bounds_brake() 
         {
             return { { -0.20, -0.20, -0.20, -0.20, -0.1*DEG, -3.0, -3.0, -3.0, -3.0, -0.1*DEG, -1.0},
-                     {  0.03,  0.03,  0.04,  0.04,  10.0*DEG,  0.1,  0.1,  0.1,  0.1,  10.0*DEG,  0.1} };
+                     {  0.03,  0.03,  0.04,  0.04,  10.0*DEG,  1.0,  1.0,  1.0,  1.0,  10.0*DEG,  0.1} };
         }
 
 
