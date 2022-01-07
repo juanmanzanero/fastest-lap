@@ -396,7 +396,7 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,std::pair<typename Ste
     std::vector<scalar> x0 = Dynamic_model_t::get_x(result_ss_ay.q, result_ss_ay.qa, result_ss_ay.u, v);
     x0.push_back(result_ss_ay.ax);
 
-    auto [x_lb, x_ub] = Dynamic_model_t::steady_state_variable_bounds();
+    auto [x_lb, x_ub] = Dynamic_model_t::steady_state_variable_bounds_accelerate();
     x_lb.push_back(-2.0);
     x_ub.push_back(10.0);
 
@@ -494,7 +494,7 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,std::pair<typename Ste
     Solution solution_max = {max_solved, v, Value(result_max.x[Dynamic_model_t::N_SS_VARS]), ay, q_max_sc, qa_max_sc, u_max_sc, dqdt_max_sc};
 
     // Solve minimum acceleration
-    std::tie(x_lb, x_ub) = Dynamic_model_t::steady_state_variable_bounds();
+    std::tie(x_lb, x_ub) = Dynamic_model_t::steady_state_variable_bounds_brake();
     x_lb.push_back(-10.0);
     x_ub.push_back(result_max_lat_acc.ax*ay/result_max_lat_acc.ay);
 

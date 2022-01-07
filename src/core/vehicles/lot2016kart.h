@@ -59,6 +59,16 @@ class lot2016kart
                      {  0.5, 0.04  ,  10.0*DEG,  10.0*DEG,  10.0*DEG,  10.0*DEG } };
         }
 
+        static std::pair<std::vector<scalar>,std::vector<scalar>> steady_state_variable_bounds_accelerate() 
+        {   
+            return steady_state_variable_bounds();
+        }
+
+        static std::pair<std::vector<scalar>,std::vector<scalar>> steady_state_variable_bounds_brake() 
+        {   
+            return steady_state_variable_bounds();
+        }
+
         template<typename T>
         static std::vector<T> get_x(const std::array<T,Dynamic_model_t::NSTATE>& q,
                                          const std::array<T,Dynamic_model_t::NALGEBRAIC>& qa,

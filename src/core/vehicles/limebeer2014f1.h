@@ -55,14 +55,27 @@ class limebeer2014f1
 
         static std::pair<std::vector<scalar>,std::vector<scalar>> steady_state_variable_bounds() 
         {
-            return { { -0.09, -0.09, -0.09, -0.09, -1.0*DEG, -1.5, -1.5, -1.5, -1.5, -1.0*DEG, -1.0},
-                     {  0.09,  0.09,  0.09,  0.09,  10.0*DEG,  0.1,  0.1,  0.1,  0.1,  10.0*DEG,  1.0} };
+            return { { -0.11, -0.11, -0.11, -0.11, -10.0*DEG, -3.0, -3.0, -3.0, -3.0, -10.0*DEG, -1.0},
+                     {  0.11,  0.11,  0.11,  0.11,  10.0*DEG,  0.1,  0.1,  0.1,  0.1,  10.0*DEG,  1.0} };
         }
+
+        static std::pair<std::vector<scalar>,std::vector<scalar>> steady_state_variable_bounds_accelerate() 
+        {
+            return { { -0.04, -0.04, -0.04, -0.04, -10.0*DEG, -3.0, -3.0, -3.0, -3.0, -10.0*DEG, -0.1},
+                     {  0.04,  0.04,  0.11,  0.11,  10.0*DEG,  0.1,  0.1,  0.1,  0.1,  10.0*DEG,  1.0} };
+        }
+
+        static std::pair<std::vector<scalar>,std::vector<scalar>> steady_state_variable_bounds_brake() 
+        {
+            return { { -0.20, -0.20, -0.20, -0.20, -0.1*DEG, -3.0, -3.0, -3.0, -3.0, -0.1*DEG, -1.0},
+                     {  0.03,  0.03,  0.04,  0.04,  10.0*DEG,  0.1,  0.1,  0.1,  0.1,  10.0*DEG,  0.1} };
+        }
+
 
         static std::pair<std::vector<scalar>,std::vector<scalar>> steady_state_constraint_bounds() 
         {
-            return { {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -0.09, -0.09, -0.09, -0.09, 0.0},
-                     {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,  0.09,  0.09,  0.09,  0.09, 100.0*DEG*DEG} };
+            return { {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -0.09, -0.09, -0.09, -0.09, -1.0e-10},
+                     {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,  0.09,  0.09,  0.09,  0.09, 10.0*DEG} };
         }
 
         template<typename T>
@@ -149,7 +162,7 @@ class limebeer2014f1
             constraints[13] = this->get_chassis().get_rear_axle().template get_tire<1>().get_lambda();
 
             // One final constraint: car should not counter steer in a steady state! psi.delta >= 0
-            constraints[14] = x[4]*x[9];
+            constraints[14] = x[4]*x[9]/(10.0*DEG);
 
             return {constraints,q,u};
         }
