@@ -55,8 +55,8 @@ class limebeer2014f1
 
         static std::pair<std::vector<scalar>,std::vector<scalar>> steady_state_variable_bounds() 
         {
-            return { { -0.095, -0.095, -0.095, -0.095, -10.0*DEG, -1.5, -1.5, -1.5, -1.5, -10.0*DEG, -1.0},
-                     {  0.095,  0.095,  0.095,  0.095,  10.0*DEG,  0.1,  0.1,  0.1,  0.1,  10.0*DEG,  1.0} };
+            return { { -0.09, -0.09, -0.09, -0.09, -1.0*DEG, -1.5, -1.5, -1.5, -1.5, -1.0*DEG, -1.0},
+                     {  0.09,  0.09,  0.09,  0.09,  10.0*DEG,  0.1,  0.1,  0.1,  0.1,  10.0*DEG,  1.0} };
         }
 
         static std::pair<std::vector<scalar>,std::vector<scalar>> steady_state_constraint_bounds() 
