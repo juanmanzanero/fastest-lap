@@ -32,11 +32,11 @@
 template<size_t STATE0, size_t CONTROL0>
 struct POWERED
 {
-    //! State variables: omega of the two wheels
+    //! State variables: kappa of the two wheels
     enum State     
     { 
-        IOMEGA_LEFT  = STATE0,     //! Left tire angular speed [rad/s]
-        IOMEGA_RIGHT,              //! Right tire angular speed [rad/s]
+        IKAPPA_LEFT  = STATE0,     //! Left tire longitudinal slip [-]
+        IKAPPA_RIGHT,              //! Right tire longitudinal slip [-]
         STATE_END    
     } ;
 
@@ -46,8 +46,8 @@ struct POWERED
         CONTROL_END = CONTROL0 
     } ;
     
-    constexpr static size_t IIDOMEGA_LEFT  = IOMEGA_LEFT;    //! Left tire angular acceleration [rad/s2]
-    constexpr static size_t IIDOMEGA_RIGHT = IOMEGA_RIGHT;   //! Right tire angular acceleration [rad/s2]
+    constexpr static size_t IIDKAPPA_LEFT  = IKAPPA_LEFT;    //! Left tire longitudinal slip time derivative [1/s]
+    constexpr static size_t IIDKAPPA_RIGHT = IKAPPA_RIGHT;   //! Right tire longitudinal slip time derivative [1/s]
 };
 
 //! State and control variables for Steering with free roll axles
@@ -56,11 +56,11 @@ struct POWERED
 template<size_t STATE0, size_t CONTROL0>
 struct STEERING
 {
-    //! State variables: omega of the two wheels
+    //! State variables: kappa of the two wheels
     enum State     
     { 
-        IOMEGA_LEFT  = STATE0,     //! Left tire angular speed [rad/s]
-        IOMEGA_RIGHT,              //! Right tire angular speed [rad/s]
+        IKAPPA_LEFT  = STATE0,     //! Left tire longitudinal slip [-]
+        IKAPPA_RIGHT,              //! Right tire longitudinal slip [-]
         STATE_END    
     } ;
 
@@ -71,8 +71,8 @@ struct STEERING
         CONTROL_END  
     } ;
 
-    constexpr static size_t IIDOMEGA_LEFT  = IOMEGA_LEFT;    //! Left tire angular acceleration [rad/s2]
-    constexpr static size_t IIDOMEGA_RIGHT = IOMEGA_RIGHT;   //! Right tire angular acceleration [rad/s2]
+    constexpr static size_t IIDKAPPA_LEFT  = IKAPPA_LEFT;    //! Left tire longitudinal slip time derivative [1/s]
+    constexpr static size_t IIDKAPPA_RIGHT = IKAPPA_RIGHT;   //! Right tire longitudinal slip time derivative [1/s]
 };
 
 //! Car axle class
@@ -126,7 +126,7 @@ class Axle_car_3dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
             );
 
 
-    //! Updates the axle: compute domega_left and domega_right, plus the equivalent force+torque at the axle center
+    //! Updates the axle: compute dkappa_left and dkappa_right, plus the equivalent force+torque at the axle center
     //! @param[in] Fz_left: the normal force of the left tire
     //! @param[in] Fz_right: the normal force of the right tire
     //! @param[in] throttle: the throttle/brake percentage in [-1,1]
@@ -137,16 +137,16 @@ class Axle_car_3dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
     const Timeseries_t& get_steering_angle() const { return _delta; }
 
     //! Get the angular speed of the left tire [rad/s]
-    const Timeseries_t& get_omega_left() const { return _omega_left; }
+    const Timeseries_t& get_kappa_left() const { return _kappa_left; }
 
     //! Get the angular speed of the right tire [rad/s]
-    const Timeseries_t& get_omega_right() const { return _omega_right; }
+    const Timeseries_t& get_kappa_right() const { return _kappa_right; }
 
     //! Get the axle angular acceleration [rad/s2]
-    const Timeseries_t& get_omega_left_derivative() const { return _domega_left; } 
+    const Timeseries_t& get_kappa_left_derivative() const { return _dkappa_left; } 
 
     //! Get the axle angular acceleration [rad/s2]
-    const Timeseries_t& get_omega_right_derivative() const { return _domega_right; } 
+    const Timeseries_t& get_kappa_right_derivative() const { return _dkappa_right; } 
 
     //! Get the left wheel torque [N.m]
     const Timeseries_t& get_torque_left() const { return _torque_left; }
@@ -204,12 +204,12 @@ class Axle_car_3dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
     scalar _throttle_smooth_pos;        //! [c] Coefficient used to smooth throttle/brake
 
     // State Variables
-    Timeseries_t _omega_left;           //! [in] Angular speed of the left tire [rad/s]
-    Timeseries_t _omega_right;          //! [in] Angular speed of the right tire [rad/s]
+    Timeseries_t _kappa_left;           //! [in] Angular speed of the left tire [rad/s]
+    Timeseries_t _kappa_right;          //! [in] Angular speed of the right tire [rad/s]
 
     // State variables time derivatives
-    Timeseries_t _domega_left;          //! [out] Angular acceleration of the left tire [rad/s2]
-    Timeseries_t _domega_right;         //! [out] Angular acceleration of the right tire [rad/s2]
+    Timeseries_t _dkappa_left;          //! [out] Angular acceleration of the left tire [rad/s2]
+    Timeseries_t _dkappa_right;         //! [out] Angular acceleration of the right tire [rad/s2]
 
     // Engine/brake torque
     Timeseries_t _torque_left;          //! [out] Torque applied to the left tire

@@ -12,7 +12,8 @@ class Steady_state_test_f1 : public ::testing::Test
  protected:
     Steady_state_test_f1() {}
     Xml_document database = {"./database/limebeer-2014-f1.xml", true};
-    limebeer2014f1<scalar>::cartesian car = { database };
+    limebeer2014f1<CppAD::AD<scalar>>::cartesian car = { database };
+    limebeer2014f1<scalar>::cartesian car_sc = { database };
 };
 
 TEST_F(Steady_state_test_f1, _0g_0g_300kmh)
@@ -31,31 +32,110 @@ TEST_F(Steady_state_test_f1, _0g_0g_300kmh)
     EXPECT_NEAR(solution.u[0], 0.0, 1.0e-4);
 }
 
+TEST_F(Steady_state_test_f1, max_longitudinal_acceleration)
+{
+    double ay = 0.0;
+
+    const scalar v = 150.0*KMH;
+    Steady_state ss(car);
+    auto [solution_max, solution_min] = ss.solve_max_lon_acc(v,ay);
+
+    EXPECT_TRUE(solution_max.solved);
+    EXPECT_TRUE(solution_min.solved);
+
+    PRINTVARIABLE(JMT, solution_max.ax);
+    PRINTVARIABLE(JMT, solution_min.ax);
+
+    // Check the minimum acceleration solution
+    car_sc(solution_min.q, solution_min.qa, solution_min.u, 0.0);
+
+    PRINTVARIABLE(JMT, car_sc.get_chassis().get_front_axle().template get_tire<0>().get_kappa());
+    PRINTVARIABLE(JMT, car_sc.get_chassis().get_front_axle().template get_tire<1>().get_kappa());
+    PRINTVARIABLE(JMT, car_sc.get_chassis().get_rear_axle().template get_tire<0>().get_kappa());
+    PRINTVARIABLE(JMT, car_sc.get_chassis().get_rear_axle().template get_tire<1>().get_kappa());
+}
+
+TEST_F(Steady_state_test_f1, max_longitudinal_acceleration_several_speeds)
+{
+    double ay = 0.0;
+
+    size_t n = 25;
+
+    double ax_previous = 0.0;
+    for (size_t i = 0; i < n; ++i)
+    {
+        const scalar v = 100.0*KMH + 200.0*KMH*i/(n-1);
+        Steady_state ss(car);
+        auto [solution_max, solution_min] = ss.solve_max_lon_acc(v,ay);
+    
+        std::cout << v/KMH << std::endl;
+        EXPECT_TRUE(solution_max.solved);
+        EXPECT_TRUE(solution_min.solved);
+        PRINTVARIABLE(JMT, solution_max.ax);
+        PRINTVARIABLE(JMT, solution_min.ax);
+        car_sc(solution_min.q, solution_min.qa, solution_min.u, 0.0);
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_front_axle().template get_tire<0>().get_kappa());
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_front_axle().template get_tire<1>().get_kappa());
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_rear_axle().template get_tire<0>().get_kappa());
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_rear_axle().template get_tire<1>().get_kappa());
+        PRINTVARIABLE(JMT, car_sc.get_road().get_psi()*RAD);
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_front_axle().get_steering_angle()*RAD);
+
+        // For now, just test that the longitudinal acceleration decreases
+        EXPECT_TRUE(ax_previous > solution_min.ax);
+        ax_previous = solution_min.ax;
+
+    }
+}
+
+
+
 TEST_F(Steady_state_test_f1, max_lateral_accel_300kmh)
 {
-    const scalar ax_saved =  -0.81549439077264418;
-    const scalar ay_saved = 4.8089375742708746;
     const scalar v = 300.0*KMH;
 
     Steady_state ss(car);
     auto solution = ss.solve_max_lat_acc(v);
 
-    car(solution.q,solution.qa,solution.u,0.0);
+    car_sc(solution.q,solution.qa,solution.u,0.0);
     
     EXPECT_TRUE(solution.solved);
-    EXPECT_NEAR(solution.ax/g0, ax_saved, 1.0e-4);
-    EXPECT_NEAR(solution.ay/g0, ay_saved, 1.0e-4);
 }
+
+TEST_F(Steady_state_test_f1, max_lateral_accel_several_speeds)
+{
+    const size_t n = 100;
+    std::array<double,n> vel, acc;
+    double ay_prev = 0.0;
+    for (size_t i = 0; i < n; ++i)
+    {
+        const scalar v = 250.0*KMH*i/(n-1) + 100.0*KMH;
+        std::cout << v/KMH << std::endl;
+
+        Steady_state ss(car);
+        auto solution = ss.solve_max_lat_acc(v);
+
+        car_sc(solution.q,solution.qa,solution.u,0.0);
+    
+        EXPECT_TRUE(solution.solved);
+        vel[i] = v;
+        acc[i] = solution.ay; 
+
+        // For now, just test that the lateral acceleration increases
+        if ( v < 80.0 )
+        {
+            EXPECT_TRUE(solution.ay > ay_prev);
+        }
+
+        ay_prev = solution.ay;
+    }
+
+    std::cout << vel << std::endl;
+    std::cout << acc << std::endl;
+}
+
 
 /*
-TEST_F(Steady_state_test_f1, gg_diagram_50)
-{
-    constexpr size_t n = 10;
-    const scalar v = 50.0*KMH;
-    Steady_state ss(car);
-    auto [sol_max, sol_min] = ss.gg_diagram(v,n);
-}
-
 TEST_F(Steady_state_test_f1, gg_diagram_60)
 {
     if ( is_valgrind ) GTEST_SKIP();

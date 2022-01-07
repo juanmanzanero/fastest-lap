@@ -54,8 +54,32 @@ inline void Tire<Timeseries_t,STATE0,CONTROL0>::update(Timeseries_t omega)
     // Kappa and lambda
     _kappa = kappa();
     _lambda = lambda();
+
+    _dkappadomega = dkappadomega();
 }
 
+template<typename Timeseries_t, size_t STATE0, size_t CONTROL0>
+inline void Tire<Timeseries_t,STATE0,CONTROL0>::update_from_kappa(Timeseries_t kappa)
+{
+    _kappa = kappa;
+
+    // Compute outputs ---
+
+    // Tire deformations: position and velocity of the point at (0,0,R0)
+    _w  =  _frame.get_absolute_position({0.0,0.0,_R0}).at(Z);
+    _dw = _frame.get_absolute_velocity_in_inertial({0.0,0.0,_R0}).at(Z);
+
+    // Contact point velocity: velocity of the point at (0,0,R0-w)
+    _v =  _frame.get_absolute_velocity_in_body(get_contact_point());
+
+    if ( _type == ONLY_LATERAL )
+        _omega = _v[X]/_R0;
+
+    // omega and lambda
+    _lambda = lambda();
+    _omega = (1.0+kappa)*_v[0]/_R0;
+    _dkappadomega = dkappadomega();
+}
 
 template<typename Timeseries_t, size_t STATE0, size_t CONTROL0>
 inline std::ostream& Tire<Timeseries_t,STATE0,CONTROL0>::print(std::ostream& os) const

@@ -12,10 +12,10 @@ Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::
   _I(0.0),
   _differential_stiffness(0.0),
   _throttle_smooth_pos(0.0),
-  _omega_left(0.0),
-  _omega_right(0.0),
-  _domega_left(0.0),
-  _domega_right(0.0),
+  _kappa_left(0.0),
+  _kappa_right(0.0),
+  _dkappa_left(0.0),
+  _dkappa_right(0.0),
   _torque_left(0.0),
   _torque_right(0.0),
   _throttle(0.0),
@@ -62,30 +62,33 @@ void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTRO
     Tire_right_t& tire_r = std::get<RIGHT>(base_type::_tires);
 
     // Update the tires
-    tire_l.update(-Fz_left, _omega_left);
-    tire_r.update(-Fz_right, _omega_right);
+    tire_l.update(-Fz_left, _kappa_left);
+    tire_r.update(-Fz_right, _kappa_right);
+
+    const Timeseries_t& omega_left = tire_l.get_omega();
+    const Timeseries_t& omega_right = tire_r.get_omega();
 
     // Compute brake percentage
     const Timeseries_t brake_percentage     =  smooth_pos(-throttle,_throttle_smooth_pos);
 
     // Compute the braking torque
-    _torque_left  = -smooth_sign(_omega_left,1.0)*_brakes(brake_percentage)*brake_bias;
-    _torque_right = -smooth_sign(_omega_right,1.0)*_brakes(brake_percentage)*brake_bias;
+    _torque_left  = -smooth_sign(omega_left,1.0)*_brakes(brake_percentage)*brake_bias;
+    _torque_right = -smooth_sign(omega_right,1.0)*_brakes(brake_percentage)*brake_bias;
 
     if constexpr (std::is_same<Axle_mode<0,0>, POWERED<0,0>>::value)
     {
         // Compute throttle percentage 
         const Timeseries_t throttle_percentage  =  smooth_pos( throttle,_throttle_smooth_pos);
 
-        const Timeseries_t engine_torque = _engine(throttle_percentage, 0.5*(_omega_left + _omega_right));
-        const Timeseries_t differential_torque = _differential_stiffness*(_omega_left - _omega_right);
+        const Timeseries_t engine_torque = _engine(throttle_percentage, 0.5*(omega_left + omega_right));
+        const Timeseries_t differential_torque = _differential_stiffness*(omega_left - omega_right);
         _torque_left  += 0.5*engine_torque - differential_torque;
         _torque_right += 0.5*engine_torque + differential_torque;
     }
 
-    // Compute the time derivative of the two omegas
-    _domega_left  = (_torque_left  + tire_l.get_longitudinal_torque_at_wheel_center()) / _I;
-    _domega_right = (_torque_right + tire_r.get_longitudinal_torque_at_wheel_center()) / _I;
+    // Compute the time derivative of the two kappas
+    _dkappa_left  = tire_l.get_dkappadomega()*(_torque_left  + tire_l.get_longitudinal_torque_at_wheel_center()) / _I;
+    _dkappa_right = tire_r.get_dkappadomega()*(_torque_right + tire_r.get_longitudinal_torque_at_wheel_center()) / _I;
 
     // Get the total force and torque by the tires
     const Vector3d<Timeseries_t> F_left = tire_l.get_force_in_parent(); 
@@ -117,11 +120,11 @@ void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTRO
 {
     base_type::get_state_derivative(dqdt);
 
-    // Left tire's omega
-    dqdt[Axle_type::IIDOMEGA_LEFT] = _domega_left;
+    // Left tire's kappa
+    dqdt[Axle_type::IIDKAPPA_LEFT] = _dkappa_left;
 
-    // Right tire's omega
-    dqdt[Axle_type::IIDOMEGA_RIGHT] = _domega_right;
+    // Right tire's kappa
+    dqdt[Axle_type::IIDKAPPA_RIGHT] = _dkappa_right;
 }
 
 
@@ -133,19 +136,19 @@ void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTRO
 
     if constexpr (std::is_same<Axle_mode<0,0>,POWERED<0,0>>::value)
     {
-        // omega left
-        q[Axle_type::IOMEGA_LEFT] = "powered-omega-left";
+        // kappa left
+        q[Axle_type::IKAPPA_LEFT] = "powered-kappa-left";
 
-        // omega right
-        q[Axle_type::IOMEGA_RIGHT] = "powered-omega-right";
+        // kappa right
+        q[Axle_type::IKAPPA_RIGHT] = "powered-kappa-right";
     }
     else if constexpr (std::is_same<Axle_mode<0,0>,STEERING<0,0>>::value)
     {
-        // omega left
-        q[Axle_type::IOMEGA_LEFT] = "steering-omega-left";
+        // kappa left
+        q[Axle_type::IKAPPA_LEFT] = "steering-kappa-left";
 
-        // omega right
-        q[Axle_type::IOMEGA_RIGHT] = "steering-omega-right";
+        // kappa right
+        q[Axle_type::IKAPPA_RIGHT] = "steering-kappa-right";
 
         // steering angle
         u[Axle_type::ISTEERING] = "delta";
@@ -159,11 +162,11 @@ void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTRO
 {
     base_type::set_state_and_controls(q,u);
 
-    // omega left
-    _omega_left  = q[Axle_type::IOMEGA_LEFT];
+    // kappa left
+    _kappa_left  = q[Axle_type::IKAPPA_LEFT];
 
-    // omega right
-    _omega_right  = q[Axle_type::IOMEGA_RIGHT];
+    // kappa right
+    _kappa_right  = q[Axle_type::IKAPPA_RIGHT];
 
     if constexpr (std::is_same<Axle_mode<0,0>,STEERING<0,0>>::value)
     {

@@ -211,8 +211,8 @@ class Tire_pacejka : public Tire<Timeseries_t, STATE0,CONTROL0>
     //! This updates the tire dynamics and tire forces
     //! In this function, the normal load is provided externally
     //! @param[in] Fz: the normal load
-    //! @param[in] omega: new value for tire angular speed [rad/s]
-    void update(Timeseries_t Fz, Timeseries_t omega);
+    //! @param[in] kappa: new value for tire longitudinal slip [-]
+    void update(Timeseries_t Fz, Timeseries_t kappa);
 
     //! Calls update(omega) of the base class, and calls update_self()
     //! @param[in] omega: new value for tire angular speed [rad/s]

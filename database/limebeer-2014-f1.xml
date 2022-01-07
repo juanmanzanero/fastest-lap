@@ -11,19 +11,19 @@
     <front-axle model="axle-car"> 
         <track units="m"> 1.46 </track>
         <inertia units="kg.m2"> 1.00 </inertia>   <!-- (*) -->
-        <smooth_throttle_coeff> 0.01 </smooth_throttle_coeff>
+        <smooth_throttle_coeff> 0.00001 </smooth_throttle_coeff>
         <brakes>
-            <max_torque units="N.m">200.0</max_torque>
+            <max_torque units="N.m">5000.0</max_torque>
         </brakes>
     </front-axle>
 
     <rear-axle>
         <track units="m"> 1.46 </track>
         <inertia units="kg.m2"> 1.55 </inertia>   <!-- (*) -->
-        <smooth_throttle_coeff> 0.01 </smooth_throttle_coeff>
+        <smooth_throttle_coeff> 0.00001 </smooth_throttle_coeff>
         <differential_stiffness units="N.m.s/rad"> 10.47 </differential_stiffness>
         <brakes>
-            <max_torque units="N.m">200.0</max_torque>
+            <max_torque units="N.m">5000.0</max_torque>
         </brakes>
         <engine>
             <maximum-power units="kW"> 735.499 </maximum-power>
@@ -53,7 +53,7 @@
         <front_axle units="m"> 1.8 0.0 -0.33 </front_axle>
         <rear_axle units="m"> -1.6 0.0 -0.33 </rear_axle>
         <pressure_center units="m"> -0.1 0.0 -0.3 </pressure_center>
-        <brake_bias> 0.5 </brake_bias>
+        <brake_bias> 0.6 </brake_bias>
         <roll_balance_coefficient> 0.5 </roll_balance_coefficient>
         <Fz_max_ref2> 1.0 </Fz_max_ref2>
     </chassis>

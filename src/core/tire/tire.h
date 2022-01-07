@@ -52,6 +52,10 @@ class Tire
     //! @param[in] omega: new value for tire angular speed
     void update(Timeseries_t omega);
 
+    //! Updates omega, deformation, the contact point velocity, kappa and lambda, but the input is kappa
+    //! @param[in] kappa: new value for tire longitudinal slip
+    void update_from_kappa(Timeseries_t kappa);
+
     //! Return the nominal radius of the tire [N]
     constexpr const scalar& get_radius() const { return _R0; }
 
@@ -60,6 +64,9 @@ class Tire
 
     //! Returns the longitudinal slip [-]
     const Timeseries_t& get_kappa() const { return _kappa; }
+
+    //! Returns the derivative of the longitudinal slip w.r.t. omega
+    const Timeseries_t& get_dkappadomega() const { return _dkappadomega; }
 
     //! Returns the lateral slip [-]
     const Timeseries_t& get_lambda() const { return _lambda; }
@@ -109,6 +116,9 @@ class Tire
     //! Compute the longitudinal slip
     Timeseries_t kappa() const { return (_omega*_R0-_v[0])/_v[0]; } 
 
+    //! Compute the derivative of the longitudinal slip w.r.t. omega
+    Timeseries_t dkappadomega() const { return _R0/_v[0]; }
+
     //! Compute the lateral slip
     Timeseries_t lambda() const { return -_v[1]/_v[0]; }
 
@@ -137,6 +147,8 @@ class Tire
 
     Timeseries_t _kappa;  //! [out] Longitudinal slip  ((omega.R0)/v[0] - 1)
     Timeseries_t _lambda; //! [out] Sideslip angle = -atan(v[1]/v[0])
+
+    Timeseries_t _dkappadomega; //! [out] Derivative of the longitudinal slip w.r.t. omega
 
     Vector3d<Timeseries_t> _F;       //! [out] Tire forces [N]
     Vector3d<Timeseries_t> _T;       //! [out] Tire torques at wheel centre [N.m]

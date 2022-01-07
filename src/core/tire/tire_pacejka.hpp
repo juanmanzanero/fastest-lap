@@ -27,9 +27,10 @@ inline Tire_pacejka<Timeseries_t,Pacejka_model,STATE0,CONTROL0>::Tire_pacejka(co
 
 
 template<typename Timeseries_t, typename Pacejka_model, size_t STATE0, size_t CONTROL0>
-inline void Tire_pacejka<Timeseries_t,Pacejka_model,STATE0,CONTROL0>::update(Timeseries_t Fz, Timeseries_t omega)
+inline void Tire_pacejka<Timeseries_t,Pacejka_model,STATE0,CONTROL0>::update(Timeseries_t Fz, Timeseries_t kappa)
 {
-    base_type::update(omega);
+    // Compute omega
+    base_type::update_from_kappa(kappa);
 
     update_self(Fz);
 }
@@ -162,11 +163,11 @@ Timeseries_t Pacejka_simple_model::force_combined_longitudinal_magic(Timeseries_
 
     const Timeseries_t kappa_n = kappa/kappa_max;
     const Timeseries_t lambda_n = lambda/lambda_max;
-    const Timeseries_t rho = sqrt(kappa_n*kappa_n + lambda_n*lambda_n);
+    const Timeseries_t rho = sqrt(kappa_n*kappa_n + lambda_n*lambda_n + 1.0e-12);
 
     const Timeseries_t mu_x = mu_x_max*sin(_Qx*atan(_Sx*rho));
     
-    return mu_x*Fz*kappa_n/(rho + 1.0e-12);
+    return mu_x*Fz*kappa_n/(rho);
 }
 
 
@@ -179,11 +180,11 @@ Timeseries_t Pacejka_simple_model::force_combined_lateral_magic(Timeseries_t kap
 
     const Timeseries_t kappa_n = kappa/kappa_max;
     const Timeseries_t lambda_n = lambda/lambda_max;
-    const Timeseries_t rho = sqrt(kappa_n*kappa_n + lambda_n*lambda_n);
+    const Timeseries_t rho = sqrt(kappa_n*kappa_n + lambda_n*lambda_n + 1.0e-12);
 
     const Timeseries_t mu_y = mu_y_max*sin(_Qy*atan(_Sy*rho));
     
-    return mu_y*Fz*lambda_n/(rho + 1.0e-12);
+    return mu_y*Fz*lambda_n/(rho);
 }
 
 

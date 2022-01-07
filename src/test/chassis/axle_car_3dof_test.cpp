@@ -16,11 +16,11 @@ static_assert(Front_axle_t::RIGHT == 1);
 static_assert(Rear_axle_t::LEFT == 0);
 static_assert(Rear_axle_t::RIGHT == 1);
 
-static_assert(Front_axle_t::IOMEGA_LEFT  == 0);
-static_assert(Front_axle_t::IOMEGA_RIGHT == 1);
+static_assert(Front_axle_t::IKAPPA_LEFT  == 0);
+static_assert(Front_axle_t::IKAPPA_RIGHT == 1);
 
-static_assert(Rear_axle_t::IOMEGA_LEFT  == 2);
-static_assert(Rear_axle_t::IOMEGA_RIGHT == 3);
+static_assert(Rear_axle_t::IKAPPA_LEFT  == 2);
+static_assert(Rear_axle_t::IKAPPA_RIGHT == 3);
  
 class Axle_car_3dof_test : public testing::Test
 {
@@ -30,7 +30,7 @@ class Axle_car_3dof_test : public testing::Test
         front_axle.get_frame().set_parent(axle_frame);
         rear_axle.get_frame().set_parent(axle_frame);
 
-        std::array<scalar,4> q = {omega_fl, omega_fr, omega_rl, omega_rr};
+        std::array<scalar,4> q = {kappa_fl, kappa_fr, kappa_rl, kappa_rr};
         std::array<scalar,1> u = {delta};
 
         front_axle.set_state_and_controls(q,u);
@@ -189,13 +189,13 @@ TEST_F(Axle_car_3dof_test, rear_axle_constructor)
 
 TEST_F(Axle_car_3dof_test, set_state_and_controls)
 {
-    EXPECT_EQ(front_axle.get_omega_left(), omega_fl);
-    EXPECT_EQ(front_axle.get_omega_right(), omega_fr);
+    EXPECT_EQ(front_axle.get_kappa_left(), kappa_fl);
+    EXPECT_EQ(front_axle.get_kappa_right(), kappa_fr);
 
     EXPECT_EQ(front_axle.get_steering_angle(), delta);
 
-    EXPECT_EQ(rear_axle.get_omega_left(), omega_rl);
-    EXPECT_EQ(rear_axle.get_omega_right(), omega_rr);
+    EXPECT_EQ(rear_axle.get_kappa_left(), kappa_rl);
+    EXPECT_EQ(rear_axle.get_kappa_right(), kappa_rr);
 }
 
 
@@ -269,8 +269,8 @@ TEST_F(Axle_car_3dof_test, update_front_axle)
     EXPECT_DOUBLE_EQ(front_axle.get_torque()[2], F_fl_ax[0]*0.73 - F_fr_ax[0]*0.73);
 
     // Check the tires rotational dynamics
-    EXPECT_DOUBLE_EQ(front_axle.get_omega_left_derivative(), -0.33*F_fl[0]/1.0);
-    EXPECT_DOUBLE_EQ(front_axle.get_omega_right_derivative(), -0.33*F_fr[0]/1.0);
+    EXPECT_DOUBLE_EQ(front_axle.get_kappa_left_derivative(), -0.33*F_fl[0]/1.0*0.33/v_fl_body[0]);
+    EXPECT_DOUBLE_EQ(front_axle.get_kappa_right_derivative(), -0.33*F_fr[0]/1.0*0.33/v_fr_body[0]);
 }
 
 
@@ -284,7 +284,7 @@ TEST_F(Axle_car_3dof_test, update_rear_axle)
 
     // Check omega of the tires
     EXPECT_EQ(rear_axle.template get_tire<0>().get_omega(), omega_rl);    
-    EXPECT_EQ(rear_axle.template get_tire<1>().get_omega(), omega_rr);    
+    EXPECT_NEAR(rear_axle.template get_tire<1>().get_omega(), omega_rr, 1.0e-12);    
 
     // Check tires absolute velocity in inertial
     EXPECT_DOUBLE_EQ(rear_axle.template get_tire<0>().get_frame().get_absolute_velocity_in_inertial()[0], v_rl[0]);
@@ -335,9 +335,9 @@ TEST_F(Axle_car_3dof_test, update_rear_axle)
     // Check axle torques
     EXPECT_NEAR(rear_axle.get_torque()[0], F_rr[2]*0.73 - F_rl[2]*0.73 - (F_rl[1]+F_rr[1])*0.33,1.0e-12);
     EXPECT_NEAR(rear_axle.get_torque()[1], (F_rl[0]+F_rr[0])*0.33,1.0e-12);
-    EXPECT_NEAR(rear_axle.get_torque()[2], F_rl[0]*0.73 - F_rr[0]*0.73,1.0e-12);
+    EXPECT_NEAR(rear_axle.get_torque()[2], F_rl[0]*0.73 - F_rr[0]*0.73,2.0e-12);
 
     // Check the tires rotational dynamics
-    EXPECT_DOUBLE_EQ(rear_axle.get_omega_left_derivative(), (-10.47*(omega_rl-omega_rr) - 0.33*F_rl[0])/1.55);
-    EXPECT_DOUBLE_EQ(rear_axle.get_omega_right_derivative(),( 10.47*(omega_rl-omega_rr) - 0.33*F_rr[0])/1.55);
+    EXPECT_DOUBLE_EQ(rear_axle.get_kappa_left_derivative(), (-10.47*(omega_rl-omega_rr) - 0.33*F_rl[0])/1.55*0.33/(u+omega*0.73));
+    EXPECT_DOUBLE_EQ(rear_axle.get_kappa_right_derivative(),( 10.47*(omega_rl-omega_rr) - 0.33*F_rr[0])/1.55*0.33/(u-omega*0.73));
 }

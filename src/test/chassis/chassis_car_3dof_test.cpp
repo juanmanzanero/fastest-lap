@@ -21,10 +21,10 @@ class Chassis_car_3dof_test : public ::testing::Test
         std::array<scalar,limebeer2014f1<scalar>::cartesian::NCONTROL> u_in;
         std::array<scalar,limebeer2014f1<scalar>::cartesian::NALGEBRAIC> qa_in;
 
-        q_in[Front_axle_t::IOMEGA_LEFT]  = omega_fl;
-        q_in[Front_axle_t::IOMEGA_RIGHT] = omega_fr;
-        q_in[Rear_axle_t::IOMEGA_LEFT]   = omega_rl;
-        q_in[Rear_axle_t::IOMEGA_RIGHT]  = omega_rr;
+        q_in[Front_axle_t::IKAPPA_LEFT]  = kappa_fl;
+        q_in[Front_axle_t::IKAPPA_RIGHT] = kappa_fr;
+        q_in[Rear_axle_t::IKAPPA_LEFT]   = kappa_rl;
+        q_in[Rear_axle_t::IKAPPA_RIGHT]  = kappa_rr;
         q_in[Chassis_t::IU]              = u;
         q_in[Chassis_t::IV]              = v;
         q_in[Chassis_t::IOMEGA]          = omega;
@@ -161,10 +161,10 @@ TEST_F(Chassis_car_3dof_test, velocities)
 
 TEST_F(Chassis_car_3dof_test, check_set_state)
 {
-    EXPECT_DOUBLE_EQ(chassis.get_front_axle().get_omega_left() , omega_fl);
-    EXPECT_DOUBLE_EQ(chassis.get_front_axle().get_omega_right(), omega_fr);
-    EXPECT_DOUBLE_EQ(chassis.get_rear_axle().get_omega_left()  , omega_rl);
-    EXPECT_DOUBLE_EQ(chassis.get_rear_axle().get_omega_right() , omega_rr);
+    EXPECT_DOUBLE_EQ(chassis.get_front_axle().template get_tire<0>().get_omega() , omega_fl);
+    EXPECT_DOUBLE_EQ(chassis.get_front_axle().template get_tire<1>().get_omega(), omega_fr);
+    EXPECT_DOUBLE_EQ(chassis.get_rear_axle().template get_tire<0>().get_omega()  , omega_rl);
+    EXPECT_DOUBLE_EQ(chassis.get_rear_axle().template get_tire<1>().get_omega() , omega_rr);
 
     EXPECT_DOUBLE_EQ(tire_fl.get_omega(), omega_fl); 
     EXPECT_DOUBLE_EQ(tire_fr.get_omega(), omega_fr); 

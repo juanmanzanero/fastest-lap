@@ -20,10 +20,10 @@ class limebeer2014f1_test : public testing::Test
 
 
 // Check expected indexes for state variables
-static_assert(Front_axle_t::IOMEGA_LEFT  == 0);
-static_assert(Front_axle_t::IOMEGA_RIGHT == 1);
-static_assert(Rear_axle_t::IOMEGA_LEFT   == 2);
-static_assert(Rear_axle_t::IOMEGA_RIGHT  == 3);
+static_assert(Front_axle_t::IKAPPA_LEFT  == 0);
+static_assert(Front_axle_t::IKAPPA_RIGHT == 1);
+static_assert(Rear_axle_t::IKAPPA_LEFT   == 2);
+static_assert(Rear_axle_t::IKAPPA_RIGHT  == 3);
 static_assert(Chassis_t::IU              == 4);
 static_assert(Chassis_t::IV              == 5);
 static_assert(Chassis_t::IOMEGA          == 6);
@@ -38,10 +38,10 @@ static_assert(Chassis_t::ITHROTTLE    == 1);
 static_assert(limebeer2014f1<scalar>::cartesian::NCONTROL == 2);
 
 // Check expected indexes for state derivative variables
-static_assert(Front_axle_t::IIDOMEGA_LEFT  == 0);
-static_assert(Front_axle_t::IIDOMEGA_RIGHT == 1);
-static_assert(Rear_axle_t::IIDOMEGA_LEFT   == 2);
-static_assert(Rear_axle_t::IIDOMEGA_RIGHT  == 3);
+static_assert(Front_axle_t::IIDKAPPA_LEFT  == 0);
+static_assert(Front_axle_t::IIDKAPPA_RIGHT == 1);
+static_assert(Rear_axle_t::IIDKAPPA_LEFT   == 2);
+static_assert(Rear_axle_t::IIDKAPPA_RIGHT  == 3);
 static_assert(Chassis_t::IIDU              == 4);
 static_assert(Chassis_t::IIDV              == 5);
 static_assert(Chassis_t::IIDOMEGA          == 6);
@@ -55,10 +55,10 @@ static_assert(limebeer2014f1<scalar>::cartesian::NALGEBRAIC == 4);
 
 TEST_F(limebeer2014f1_test, indexes)
 {
-    EXPECT_EQ(Front_axle_t::IOMEGA_LEFT  , 0);
-    EXPECT_EQ(Front_axle_t::IOMEGA_RIGHT , 1);
-    EXPECT_EQ(Rear_axle_t::IOMEGA_LEFT   , 2);
-    EXPECT_EQ(Rear_axle_t::IOMEGA_RIGHT  , 3);
+    EXPECT_EQ(Front_axle_t::IKAPPA_LEFT  , 0);
+    EXPECT_EQ(Front_axle_t::IKAPPA_RIGHT , 1);
+    EXPECT_EQ(Rear_axle_t::IKAPPA_LEFT   , 2);
+    EXPECT_EQ(Rear_axle_t::IKAPPA_RIGHT  , 3);
     EXPECT_EQ(Chassis_t::IU              , 4);
     EXPECT_EQ(Chassis_t::IV              , 5);
     EXPECT_EQ(Chassis_t::IOMEGA          , 6);
@@ -72,10 +72,10 @@ TEST_F(limebeer2014f1_test, indexes)
     EXPECT_EQ(Chassis_t::ITHROTTLE, 1);
     EXPECT_EQ(limebeer2014f1<scalar>::cartesian::NCONTROL, 2);
 
-    EXPECT_EQ(Front_axle_t::IIDOMEGA_LEFT  , 0);
-    EXPECT_EQ(Front_axle_t::IIDOMEGA_RIGHT , 1);
-    EXPECT_EQ(Rear_axle_t::IIDOMEGA_LEFT   , 2);
-    EXPECT_EQ(Rear_axle_t::IIDOMEGA_RIGHT  , 3);
+    EXPECT_EQ(Front_axle_t::IIDKAPPA_LEFT  , 0);
+    EXPECT_EQ(Front_axle_t::IIDKAPPA_RIGHT , 1);
+    EXPECT_EQ(Rear_axle_t::IIDKAPPA_LEFT   , 2);
+    EXPECT_EQ(Rear_axle_t::IIDKAPPA_RIGHT  , 3);
     EXPECT_EQ(Chassis_t::IIDU              , 4);
     EXPECT_EQ(Chassis_t::IIDV              , 5);
     EXPECT_EQ(Chassis_t::IIDOMEGA          , 6);
