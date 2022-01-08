@@ -55,8 +55,8 @@ class limebeer2014f1
 
         static std::pair<std::vector<scalar>,std::vector<scalar>> steady_state_variable_bounds() 
         {
-            return { { -0.11, -0.11, -0.11, -0.11, -10.0*DEG, -3.0, -3.0, -3.0, -3.0, -10.0*DEG, -1.0},
-                     {  0.11,  0.11,  0.11,  0.11,  10.0*DEG,  1.0,  1.0,  1.0,  1.0,  10.0*DEG,  1.0} };
+            return { { -0.085, -0.085, -0.085, -0.085, -10.0*DEG, -3.0, -3.0, -3.0, -3.0, -10.0*DEG, -1.0},
+                     {  0.085,  0.085,  0.085,  0.085,  10.0*DEG,  1.0,  1.0,  1.0,  1.0,  10.0*DEG,  1.0} };
         }
 
         static std::pair<std::vector<scalar>,std::vector<scalar>> steady_state_variable_bounds_accelerate() 
@@ -67,14 +67,14 @@ class limebeer2014f1
 
         static std::pair<std::vector<scalar>,std::vector<scalar>> steady_state_variable_bounds_brake() 
         {
-            return { { -0.085, -0.085, -0.085, -0.085, -8.0*DEG, -3.0, -3.0, -3.0, -3.0, -8.0*DEG, -1.0},
-                     {  0.06,  0.06,  0.06,  0.06,  8.0*DEG,  1.0,  1.0,  1.0,  1.0,  8.0*DEG,  0.1} };
+            return { { -0.085, -0.085, -0.085, -0.085, -10.0*DEG, -3.0, -3.0, -3.0, -3.0, -10.0*DEG, -1.0},
+                     {  0.04,  0.04,  0.04,  0.04,  10.0*DEG,  1.0,  1.0,  1.0,  1.0,  10.0*DEG,  0.1} };
         }
 
 
         static std::pair<std::vector<scalar>,std::vector<scalar>> steady_state_constraint_bounds() 
         {
-            return { {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -0.09, -0.09, -0.09, -0.09, -1.0e-4},
+            return { {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -0.09, -0.09, -0.09, -0.09, -1.0e-10},
                      {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,  0.09,  0.09,  0.09,  0.09, 10.0*DEG} };
         }
 
@@ -142,10 +142,10 @@ class limebeer2014f1
             // Compute constraints
             std::array<Timeseries_t,N_SS_EQNS> constraints;
         
-            constraints[0] = dqa[0];
-            constraints[1] = dqa[1];
-            constraints[2] = dqa[2];
-            constraints[3] = dqa[3];
+            constraints[0] = dqa[0]*9.81;
+            constraints[1] = dqa[1]*9.81;
+            constraints[2] = dqa[2]*9.81;
+            constraints[3] = dqa[3]*9.81;
             constraints[4] = (dqdt[Dynamic_model_t::Chassis_type::IIDU]*sin(psi)
                             + dqdt[Dynamic_model_t::Chassis_type::IIDV]*cos(psi))/g0;
             constraints[5] = (ax - dqdt[Dynamic_model_t::Chassis_type::IIDU]*cos(psi)
