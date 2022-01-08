@@ -67,7 +67,7 @@ class limebeer2014f1
 
         static std::pair<std::vector<scalar>,std::vector<scalar>> steady_state_variable_bounds_brake() 
         {
-            return { { -0.30, -0.30, -0.30, -0.30, -10.0*DEG, -3.0, -3.0, -3.0, -3.0, -10.0*DEG, -1.0},
+            return { { -0.090, -0.090, -0.090, -0.090, -10.0*DEG, -3.0, -3.0, -3.0, -3.0, -10.0*DEG, -1.0},
                      {  0.03,  0.03,  0.04,  0.04,  10.0*DEG,  1.0,  1.0,  1.0,  1.0,  10.0*DEG,  0.1} };
         }
 

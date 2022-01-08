@@ -98,6 +98,187 @@ TEST_F(Steady_state_test_f1, max_longitudinal_acceleration_several_speeds)
     }
 }
 
+TEST_F(Steady_state_test_f1, max_longitudinal_acceleration_several_speeds_25percent_lat)
+{
+    size_t n = 25;
+
+    double ax_previous = 0.0;
+    for (size_t i = 0; i < n; ++i)
+    {
+        const scalar v = 100.0*KMH + 200.0*KMH*i/(n-1);
+        Steady_state ss(car);
+
+        auto solution = ss.solve_max_lat_acc(v);
+        double ay = solution.ay*0.25;
+        auto [solution_max, solution_min] = ss.solve_max_lon_acc(v,ay);
+    
+        std::cout << v/KMH << std::endl;
+        EXPECT_TRUE(solution_max.solved);
+        EXPECT_TRUE(solution_min.solved);
+        PRINTVARIABLE(JMT, solution_max.ax);
+        PRINTVARIABLE(JMT, solution_min.ax);
+        std::cout << "Maximum acc: " << std::endl;
+        car_sc(solution_max.q, solution_max.qa, solution_max.u, 0.0);
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_front_axle().template get_tire<0>().get_kappa());
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_front_axle().template get_tire<1>().get_kappa());
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_rear_axle().template get_tire<0>().get_kappa());
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_rear_axle().template get_tire<1>().get_kappa());
+        PRINTVARIABLE(JMT, car_sc.get_road().get_psi()*RAD);
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_front_axle().get_steering_angle()*RAD);
+
+        std::cout << "Minimum acc: " << std::endl;
+        car_sc(solution_min.q, solution_min.qa, solution_min.u, 0.0);
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_front_axle().template get_tire<0>().get_kappa());
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_front_axle().template get_tire<1>().get_kappa());
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_rear_axle().template get_tire<0>().get_kappa());
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_rear_axle().template get_tire<1>().get_kappa());
+        PRINTVARIABLE(JMT, car_sc.get_road().get_psi()*RAD);
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_front_axle().get_steering_angle()*RAD);
+
+        // For now, just test that the longitudinal acceleration decreases
+        EXPECT_TRUE(ax_previous > solution_min.ax);
+        ax_previous = solution_min.ax;
+
+    }
+}
+
+
+TEST_F(Steady_state_test_f1, max_longitudinal_acceleration_several_speeds_50percent_lat)
+{
+    size_t n = 25;
+
+    double ax_previous = 0.0;
+    for (size_t i = 0; i < n; ++i)
+    {
+        const scalar v = 100.0*KMH + 200.0*KMH*i/(n-1);
+        Steady_state ss(car);
+
+        auto solution = ss.solve_max_lat_acc(v);
+        double ay = solution.ay*0.50;
+        auto [solution_max, solution_min] = ss.solve_max_lon_acc(v,ay);
+    
+        std::cout << v/KMH << std::endl;
+        EXPECT_TRUE(solution_max.solved);
+        EXPECT_TRUE(solution_min.solved);
+        PRINTVARIABLE(JMT, solution_max.ax);
+        PRINTVARIABLE(JMT, solution_min.ax);
+        std::cout << "Maximum acc: " << std::endl;
+        car_sc(solution_max.q, solution_max.qa, solution_max.u, 0.0);
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_front_axle().template get_tire<0>().get_kappa());
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_front_axle().template get_tire<1>().get_kappa());
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_rear_axle().template get_tire<0>().get_kappa());
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_rear_axle().template get_tire<1>().get_kappa());
+        PRINTVARIABLE(JMT, car_sc.get_road().get_psi()*RAD);
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_front_axle().get_steering_angle()*RAD);
+
+        std::cout << "Minimum acc: " << std::endl;
+        car_sc(solution_min.q, solution_min.qa, solution_min.u, 0.0);
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_front_axle().template get_tire<0>().get_kappa());
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_front_axle().template get_tire<1>().get_kappa());
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_rear_axle().template get_tire<0>().get_kappa());
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_rear_axle().template get_tire<1>().get_kappa());
+        PRINTVARIABLE(JMT, car_sc.get_road().get_psi()*RAD);
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_front_axle().get_steering_angle()*RAD);
+
+        // For now, just test that the longitudinal acceleration decreases
+        EXPECT_TRUE(ax_previous > solution_min.ax);
+        ax_previous = solution_min.ax;
+
+    }
+}
+
+TEST_F(Steady_state_test_f1, max_longitudinal_acceleration_several_speeds_75percent_lat)
+{
+    size_t n = 25;
+
+    double ax_previous = 0.0;
+    for (size_t i = 0; i < n; ++i)
+    {
+        const scalar v = 100.0*KMH + 200.0*KMH*i/(n-1);
+        Steady_state ss(car);
+
+        auto solution = ss.solve_max_lat_acc(v);
+        double ay = solution.ay*0.75;
+        auto [solution_max, solution_min] = ss.solve_max_lon_acc(v,ay);
+    
+        std::cout << v/KMH << std::endl;
+        EXPECT_TRUE(solution_max.solved);
+        EXPECT_TRUE(solution_min.solved);
+        PRINTVARIABLE(JMT, solution_max.ax);
+        PRINTVARIABLE(JMT, solution_min.ax);
+        std::cout << "Maximum acc: " << std::endl;
+        car_sc(solution_max.q, solution_max.qa, solution_max.u, 0.0);
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_front_axle().template get_tire<0>().get_kappa());
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_front_axle().template get_tire<1>().get_kappa());
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_rear_axle().template get_tire<0>().get_kappa());
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_rear_axle().template get_tire<1>().get_kappa());
+        PRINTVARIABLE(JMT, car_sc.get_road().get_psi()*RAD);
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_front_axle().get_steering_angle()*RAD);
+
+        std::cout << "Minimum acc: " << std::endl;
+        car_sc(solution_min.q, solution_min.qa, solution_min.u, 0.0);
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_front_axle().template get_tire<0>().get_kappa());
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_front_axle().template get_tire<1>().get_kappa());
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_rear_axle().template get_tire<0>().get_kappa());
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_rear_axle().template get_tire<1>().get_kappa());
+        PRINTVARIABLE(JMT, car_sc.get_road().get_psi()*RAD);
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_front_axle().get_steering_angle()*RAD);
+
+        // For now, just test that the longitudinal acceleration decreases
+        EXPECT_TRUE(ax_previous > solution_min.ax);
+        ax_previous = solution_min.ax;
+
+    }
+}
+
+TEST_F(Steady_state_test_f1, max_longitudinal_acceleration_several_speeds_95percent_lat)
+{
+    size_t n = 25;
+
+    double ax_previous = 0.0;
+    for (size_t i = 0; i < n; ++i)
+    {
+        const scalar v = 100.0*KMH + 200.0*KMH*i/(n-1);
+        Steady_state ss(car);
+
+        auto solution = ss.solve_max_lat_acc(v);
+        double ay = solution.ay*0.95;
+        auto [solution_max, solution_min] = ss.solve_max_lon_acc(v,ay);
+    
+        std::cout << v/KMH << std::endl;
+        EXPECT_TRUE(solution_max.solved);
+        EXPECT_TRUE(solution_min.solved);
+        PRINTVARIABLE(JMT, solution_max.ax);
+        PRINTVARIABLE(JMT, solution_min.ax);
+        std::cout << "Maximum acc: " << std::endl;
+        car_sc(solution_max.q, solution_max.qa, solution_max.u, 0.0);
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_front_axle().template get_tire<0>().get_kappa());
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_front_axle().template get_tire<1>().get_kappa());
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_rear_axle().template get_tire<0>().get_kappa());
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_rear_axle().template get_tire<1>().get_kappa());
+        PRINTVARIABLE(JMT, car_sc.get_road().get_psi()*RAD);
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_front_axle().get_steering_angle()*RAD);
+
+        std::cout << "Minimum acc: " << std::endl;
+        car_sc(solution_min.q, solution_min.qa, solution_min.u, 0.0);
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_front_axle().template get_tire<0>().get_kappa());
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_front_axle().template get_tire<1>().get_kappa());
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_rear_axle().template get_tire<0>().get_kappa());
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_rear_axle().template get_tire<1>().get_kappa());
+        PRINTVARIABLE(JMT, car_sc.get_road().get_psi()*RAD);
+        PRINTVARIABLE(JMT, car_sc.get_chassis().get_front_axle().get_steering_angle()*RAD);
+
+        // For now, just test that the longitudinal acceleration decreases
+        EXPECT_TRUE(ax_previous > solution_min.ax);
+        ax_previous = solution_min.ax;
+
+    }
+}
+
+
+
+
+
 
 
 TEST_F(Steady_state_test_f1, max_lateral_accel_300kmh)
