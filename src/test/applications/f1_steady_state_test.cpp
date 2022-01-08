@@ -95,6 +95,7 @@ TEST_F(Steady_state_test_f1, max_longitudinal_acceleration_several_speeds)
         EXPECT_TRUE(ax_previous > solution_min.ax);
         ax_previous = solution_min.ax;
 
+        if ( is_valgrind ) break;
     }
 }
 
@@ -139,6 +140,7 @@ TEST_F(Steady_state_test_f1, max_longitudinal_acceleration_several_speeds_25perc
         EXPECT_TRUE(ax_previous > solution_min.ax);
         ax_previous = solution_min.ax;
 
+        if ( is_valgrind ) break;
     }
 }
 
@@ -184,6 +186,7 @@ TEST_F(Steady_state_test_f1, max_longitudinal_acceleration_several_speeds_50perc
         EXPECT_TRUE(ax_previous > solution_min.ax);
         ax_previous = solution_min.ax;
 
+        if ( is_valgrind ) break;
     }
 }
 
@@ -228,6 +231,7 @@ TEST_F(Steady_state_test_f1, max_longitudinal_acceleration_several_speeds_75perc
         EXPECT_TRUE(ax_previous > solution_min.ax);
         ax_previous = solution_min.ax;
 
+        if ( is_valgrind ) break;
     }
 }
 
@@ -272,6 +276,7 @@ TEST_F(Steady_state_test_f1, max_longitudinal_acceleration_several_speeds_95perc
         EXPECT_TRUE(ax_previous > solution_min.ax);
         ax_previous = solution_min.ax;
 
+        if ( is_valgrind ) break;
     }
 }
 
