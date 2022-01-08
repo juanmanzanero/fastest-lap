@@ -700,6 +700,13 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,
 
     std::vector<scalar> ay_gg = linspace(0.0,result_max_lat_acc.ay,n_points);
 
+    PRINTVARIABLE(JMT, result_max_lat_acc.ax);
+    PRINTVARIABLE(JMT, result_max_lat_acc.ay);
+
+    // (3) 
+    // Compute the maximum longitudinal acceleration at 0g-lateral
+    auto [result_max_lon_acc,result_min_lon_acc] = solve_max_lon_acc(v,0.0);
+
     // (3)
     // Loop on the requested lateral accelerations
     std::vector<scalar> x0_ss_ay = Dynamic_model_t::get_x(result_0g.q, result_0g.qa, result_0g.u, v);
@@ -721,9 +728,9 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,
         std::vector<scalar> x0 = Dynamic_model_t::get_x(result_ss_ay.q, result_ss_ay.qa, result_ss_ay.u, v);
         x0.push_back(result_ss_ay.ax);
 
-        auto [x_lb, x_ub] = Dynamic_model_t::steady_state_variable_bounds();
-        x_lb.push_back(-2.0);
-        x_ub.push_back(7.0);
+        auto [x_lb, x_ub] = Dynamic_model_t::steady_state_variable_bounds_accelerate();
+        x_lb.push_back(result_max_lat_acc.ax-0.1);
+        x_ub.push_back(result_max_lon_acc.ax+0.1);
 
         auto [c_lb, c_ub] = Dynamic_model_t::steady_state_constraint_bounds();
 
@@ -782,9 +789,9 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,
         solution_max[i] = {max_solved, v, Value(result_max.x[Dynamic_model_t::N_SS_VARS]), ay_gg[i], q_max_sc, qa_max_sc, u_max_sc, dqdt_max_sc};
 
         // Solve minimum acceleration
-        std::tie(x_lb, x_ub) = Dynamic_model_t::steady_state_variable_bounds();
-        x_lb.push_back(-7.0);
-        x_ub.push_back( 2.0);
+        std::tie(x_lb, x_ub) = Dynamic_model_t::steady_state_variable_bounds_brake();
+        x_lb.push_back(result_min_lon_acc.ax-0.1);
+        x_ub.push_back(result_max_lat_acc.ax+0.1);
     
         // place to return solution
         CppAD::ipopt::solve_result<std::vector<scalar>> result_min;

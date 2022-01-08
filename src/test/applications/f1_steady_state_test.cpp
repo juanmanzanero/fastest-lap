@@ -16,6 +16,27 @@ class Steady_state_test_f1 : public ::testing::Test
     limebeer2014f1<scalar>::cartesian car_sc = { database };
 };
 
+TEST_F(Steady_state_test_f1, gg_diagram_200)
+{
+    if ( is_valgrind ) GTEST_SKIP();
+
+    constexpr size_t n = 200;
+    Steady_state ss(car);
+    const scalar v = 150.0*KMH;
+    auto [sol_max, sol_min] = ss.gg_diagram(v,n);
+
+    for (size_t i = 0; i < n; ++i)
+    {
+        EXPECT_TRUE(sol_max[i].solved) << "with i = " << i;
+        EXPECT_TRUE(sol_min[i].solved) << "with i = " << i;
+        std::cout << sol_max[i].ay << ", " << sol_max[i].ax << ", " << sol_min[i].ax << std::endl;
+    }
+
+
+}
+
+
+
 TEST_F(Steady_state_test_f1, _0g_0g_300kmh)
 {
     const double v = 300.0*KMH;
@@ -333,16 +354,6 @@ TEST_F(Steady_state_test_f1, max_lateral_accel_several_speeds)
 
 
 /*
-TEST_F(Steady_state_test_f1, gg_diagram_60)
-{
-    if ( is_valgrind ) GTEST_SKIP();
-
-    constexpr size_t n = 20;
-    Steady_state ss(car);
-    const scalar v = 60.0*KMH;
-    auto [sol_max, sol_min] = ss.gg_diagram(v,n);
-}
-
 TEST_F(Steady_state_test_f1, gg_diagram_70)
 {
     if ( is_valgrind ) GTEST_SKIP();
