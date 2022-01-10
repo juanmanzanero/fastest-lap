@@ -16,11 +16,65 @@ class Steady_state_test_f1 : public ::testing::Test
     limebeer2014f1<scalar>::cartesian car_sc = { database };
 };
 
-TEST_F(Steady_state_test_f1, gg_diagram_200)
+
+TEST_F(Steady_state_test_f1, max_lateral_accel_several_speeds)
+{
+    const size_t n = 100;
+    std::array<double,n> vel, acc, ax;
+    double ay_prev = 0.0;
+    for (size_t i = 0; i < n; ++i)
+    {
+        const scalar v = 250.0*KMH*i/(n-1) + 100.0*KMH;
+
+        std::cout << "vel: " << v/KMH << std::endl;
+        Steady_state ss(car);
+        auto solution = ss.solve_max_lat_acc(v);
+        std::cout << "throttle: " << solution.u[1] << std::endl;
+
+        car_sc(solution.q,solution.qa,solution.u,0.0);
+    
+        EXPECT_TRUE(solution.solved);
+        vel[i] = v;
+        acc[i] = solution.ay; 
+        ax[i]  = solution.ax;
+
+        // For now, just test that the lateral acceleration increases
+        EXPECT_TRUE(solution.ay > ay_prev);
+
+        ay_prev = solution.ay;
+    }
+
+    std::cout << vel << std::endl;
+    std::cout << acc << std::endl;
+    std::cout << ax  << std::endl;
+}
+
+
+
+TEST_F(Steady_state_test_f1, gg_diagram_100)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
-    constexpr size_t n = 200;
+    constexpr size_t n = 49;
+    Steady_state ss(car);
+    const scalar v = 100.0*KMH;
+    auto [sol_max, sol_min] = ss.gg_diagram(v,n);
+
+    for (size_t i = 0; i < n; ++i)
+    {
+        EXPECT_TRUE(sol_max[i].solved) << "with i = " << i;
+        EXPECT_TRUE(sol_min[i].solved) << "with i = " << i;
+        std::cout << sol_max[i].ay << ", " << sol_max[i].ax << ", " << sol_min[i].ax << std::endl;
+    }
+}
+
+
+
+TEST_F(Steady_state_test_f1, gg_diagram_150)
+{
+    if ( is_valgrind ) GTEST_SKIP();
+
+    constexpr size_t n = 49;
     Steady_state ss(car);
     const scalar v = 150.0*KMH;
     auto [sol_max, sol_min] = ss.gg_diagram(v,n);
@@ -31,10 +85,62 @@ TEST_F(Steady_state_test_f1, gg_diagram_200)
         EXPECT_TRUE(sol_min[i].solved) << "with i = " << i;
         std::cout << sol_max[i].ay << ", " << sol_max[i].ax << ", " << sol_min[i].ax << std::endl;
     }
-
-
 }
 
+
+TEST_F(Steady_state_test_f1, gg_diagram_200)
+{
+    if ( is_valgrind ) GTEST_SKIP();
+
+    constexpr size_t n = 49;
+    Steady_state ss(car);
+    const scalar v = 200.0*KMH;
+    auto [sol_max, sol_min] = ss.gg_diagram(v,n);
+
+    for (size_t i = 0; i < n; ++i)
+    {
+        EXPECT_TRUE(sol_max[i].solved) << "with i = " << i;
+        EXPECT_TRUE(sol_min[i].solved) << "with i = " << i;
+        std::cout << sol_max[i].ay << ", " << sol_max[i].ax << ", " << sol_min[i].ax << std::endl;
+    }
+}
+
+
+TEST_F(Steady_state_test_f1, gg_diagram_250)
+{
+    if ( is_valgrind ) GTEST_SKIP();
+
+    constexpr size_t n = 49;
+    Steady_state ss(car);
+    const scalar v = 250.0*KMH;
+    auto [sol_max, sol_min] = ss.gg_diagram(v,n);
+
+    for (size_t i = 0; i < n; ++i)
+    {
+        EXPECT_TRUE(sol_max[i].solved) << "with i = " << i;
+        EXPECT_TRUE(sol_min[i].solved) << "with i = " << i;
+        std::cout << sol_max[i].ay << ", " << sol_max[i].ax << ", " << sol_min[i].ax << std::endl;
+    }
+}
+
+
+
+TEST_F(Steady_state_test_f1, gg_diagram_300)
+{
+    if ( is_valgrind ) GTEST_SKIP();
+
+    constexpr size_t n = 49;
+    Steady_state ss(car);
+    const scalar v = 300.0*KMH;
+    auto [sol_max, sol_min] = ss.gg_diagram(v,n);
+
+    for (size_t i = 0; i < n; ++i)
+    {
+        EXPECT_TRUE(sol_max[i].solved) << "with i = " << i;
+        EXPECT_TRUE(sol_min[i].solved) << "with i = " << i;
+        std::cout << sol_max[i].ay << ", " << sol_max[i].ax << ", " << sol_min[i].ax << std::endl;
+    }
+}
 
 
 TEST_F(Steady_state_test_f1, _0g_0g_300kmh)
@@ -264,13 +370,13 @@ TEST_F(Steady_state_test_f1, max_longitudinal_acceleration_several_speeds_95perc
     for (size_t i = 0; i < n; ++i)
     {
         const scalar v = 100.0*KMH + 200.0*KMH*i/(n-1);
+        std::cout << v/KMH << std::endl;
         Steady_state ss(car);
 
         auto solution = ss.solve_max_lat_acc(v);
         double ay = solution.ay*0.95;
         auto [solution_max, solution_min] = ss.solve_max_lon_acc(v,ay);
     
-        std::cout << v/KMH << std::endl;
         EXPECT_TRUE(solution_max.solved);
         EXPECT_TRUE(solution_min.solved);
         PRINTVARIABLE(JMT, solution_max.ax);
@@ -318,40 +424,6 @@ TEST_F(Steady_state_test_f1, max_lateral_accel_300kmh)
     
     EXPECT_TRUE(solution.solved);
 }
-
-TEST_F(Steady_state_test_f1, max_lateral_accel_several_speeds)
-{
-    const size_t n = 100;
-    std::array<double,n> vel, acc;
-    double ay_prev = 0.0;
-    for (size_t i = 0; i < n; ++i)
-    {
-        const scalar v = 250.0*KMH*i/(n-1) + 100.0*KMH;
-
-        std::cout << "vel: " << v/KMH << std::endl;
-        Steady_state ss(car);
-        auto solution = ss.solve_max_lat_acc(v);
-        std::cout << "throttle: " << solution.u[1] << std::endl;
-
-        car_sc(solution.q,solution.qa,solution.u,0.0);
-    
-        EXPECT_TRUE(solution.solved);
-        vel[i] = v;
-        acc[i] = solution.ay; 
-
-        // For now, just test that the lateral acceleration increases
-        if ( v < 80.0 )
-        {
-            EXPECT_TRUE(solution.ay > ay_prev);
-        }
-
-        ay_prev = solution.ay;
-    }
-
-    std::cout << vel << std::endl;
-    std::cout << acc << std::endl;
-}
-
 
 /*
 TEST_F(Steady_state_test_f1, gg_diagram_70)

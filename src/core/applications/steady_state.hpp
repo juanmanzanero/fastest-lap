@@ -197,7 +197,7 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,typename Steady_state<
     Max_lat_acc f(_car,v);
 
     bool success = false;
-    for (size_t attempt = 0; attempt < 3; ++attempt)
+    for (size_t attempt = 0; attempt < 6; ++attempt)
     {
         CppAD::ipopt::solve<std::vector<scalar>, Max_lat_acc>(options, x0, x_lb, x_ub, c_lb, c_ub, f, solution);
 
@@ -231,7 +231,7 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,typename Steady_state<
         if ( success ) break;
 
         // Set the new starting point as the final point in the previous attempt
-        x0 = solution.x;
+        //x0 = solution.x;
     }
 
 
@@ -497,6 +497,12 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,std::pair<typename Ste
     std::tie(x_lb, x_ub) = Dynamic_model_t::steady_state_variable_bounds_brake();
     x_lb.push_back(-10.0);
     x_ub.push_back(result_max_lat_acc.ax*ay/result_max_lat_acc.ay);
+
+    if ( (x_ub.back()-1.0e-3) < x_lb.back() )
+    {
+        x_lb.back() = x_ub.back() - 10.0;
+    }
+
 
     // Restore the initial point
     x0 = Dynamic_model_t::get_x(result_ss_ay.q, result_ss_ay.qa, result_ss_ay.u, v);
@@ -792,17 +798,17 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,
         std::tie(x_lb, x_ub) = Dynamic_model_t::steady_state_variable_bounds_brake();
         x_lb.push_back(result_min_lon_acc.ax-0.1);
         x_ub.push_back(result_max_lat_acc.ax+0.1);
-    
+
         // place to return solution
         CppAD::ipopt::solve_result<std::vector<scalar>> result_min;
     
         // solve the problem
         Min_lon_acc f_min(_car,v,ay_gg[i]);
         CppAD::ipopt::solve<std::vector<scalar>, Min_lon_acc>(options, x0, x_lb, x_ub, c_lb, c_ub, f_min, result_min);
-    
+
         typename Max_lon_acc_constraints::argument_type x_min;
         std::copy(result_min.x.cbegin(), result_min.x.cend(), x_min.begin());
-        c(x_min);
+        auto constraints = c(x_min);
         std::array<Timeseries_t,Dynamic_model_t::NSTATE> q_min = c.get_q();
         std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC> qa_min = c.get_qa();
         std::array<Timeseries_t,Dynamic_model_t::NCONTROL> u_min = c.get_u();
@@ -832,6 +838,24 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,
         {
             dqdt_min_sc[i] = Value(dqdt_min[i]);
         }
+
+        if ( result_min.status != CppAD::ipopt::solve_result<std::vector<scalar>>::success )
+        {
+            std::cout << "Ipopt was not successful" << std::endl;
+            const auto& x = result_min.x;
+    
+            std::cout << std::setprecision(16);
+            for (size_t i = 0; i < x.size(); ++i)
+            {
+                std::cout << x_lb[i] << " < x[" << i << "]: " << x[i] << " < " << x_ub[i] << std::endl;
+            }
+            for (size_t i = 0; i < constraints.size(); ++i)
+            {
+                std::cout << c_lb[i] << " < c[" << i << "]: " << constraints[i] << " < " << c_ub[i] << std::endl;
+            }
+    
+        }
+
     
         const bool min_solved = result_min.status == CppAD::ipopt::solve_result<std::vector<scalar>>::success;
         solution_min[i] = {min_solved, v, Value(result_min.x[Dynamic_model_t::N_SS_VARS]), ay_gg[i], q_min_sc, qa_min_sc, u_min_sc, dqdt_min_sc};
