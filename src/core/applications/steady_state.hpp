@@ -804,7 +804,18 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,
     
         // solve the problem
         Min_lon_acc f_min(_car,v,ay_gg[i]);
+
         CppAD::ipopt::solve<std::vector<scalar>, Min_lon_acc>(options, x0, x_lb, x_ub, c_lb, c_ub, f_min, result_min);
+
+        if ( result_min.status != CppAD::ipopt::solve_result<std::vector<scalar>>::success )
+        {
+            // Second attempt using the previous solution as initial point
+            if ( i > 0 )
+            {
+                auto x = Dynamic_model_t::get_x(solution_min[i-1].q, solution_min[i-1].qa, solution_min[i-1].u, v);
+                CppAD::ipopt::solve<std::vector<scalar>, Min_lon_acc>(options, x, x_lb, x_ub, c_lb, c_ub, f_min, result_min);
+            }
+        }
 
         typename Max_lon_acc_constraints::argument_type x_min;
         std::copy(result_min.x.cbegin(), result_min.x.cend(), x_min.begin());
