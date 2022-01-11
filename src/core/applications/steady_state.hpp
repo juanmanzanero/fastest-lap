@@ -813,6 +813,7 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,
             if ( i > 0 )
             {
                 auto x = Dynamic_model_t::get_x(solution_min[i-1].q, solution_min[i-1].qa, solution_min[i-1].u, v);
+                x.push_back(solution_min[i-1].ax);
                 CppAD::ipopt::solve<std::vector<scalar>, Min_lon_acc>(options, x, x_lb, x_ub, c_lb, c_ub, f_min, result_min);
             }
         }
