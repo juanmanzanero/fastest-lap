@@ -143,9 +143,9 @@ class limebeer2014f1
             std::array<Timeseries_t,N_SS_EQNS> constraints;
         
             constraints[0] = dqa[0]*5.0;
-            constraints[1] = dqa[1]*5.0;
-            constraints[2] = dqa[2]*5.0;
-            constraints[3] = dqa[3]*5.0;
+            constraints[1] = dqa[1]*1.0;
+            constraints[2] = dqa[2]*1.0;
+            constraints[3] = dqa[3]*1.0;
             constraints[4] = (dqdt[Dynamic_model_t::Chassis_type::IIDU]*sin(psi)
                             + dqdt[Dynamic_model_t::Chassis_type::IIDV]*cos(psi))/g0;
             constraints[5] = (ax - dqdt[Dynamic_model_t::Chassis_type::IIDU]*cos(psi)
