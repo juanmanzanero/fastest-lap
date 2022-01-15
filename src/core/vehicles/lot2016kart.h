@@ -47,6 +47,9 @@ class lot2016kart
         static constexpr const size_t N_SS_VARS = 6;
         static constexpr const size_t N_SS_EQNS = 12;
 
+        // Factor to scale the acceleration on the fitness function
+        static constexpr const scalar acceleration_scaling = 1.0;
+
         // The content of x is: x = [w_axle, z, phi, mu, psi, delta]
         static std::vector<scalar> steady_state_initial_guess()
         {
