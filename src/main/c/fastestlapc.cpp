@@ -163,7 +163,7 @@ void optimal_laptime(struct c_Channel* channels, struct c_Vehicle* c_vehicle, co
     
     ss.dqdt = car_cart_sc(ss.q, ss.u, 0.0);
 
-    Optimal_laptime opt_laptime(n_points, true, false, car_curv, ss.q, ss.u, {1.0e-2,200.0*200.0*1.0e-10});
+    Optimal_laptime opt_laptime(n_points, true, false, car_curv, ss.q, ss.qa, ss.u, {1.0e-2,200.0*200.0*1.0e-10});
 
     // Set outputs
     for (int i = 0; i < n_points; ++i)

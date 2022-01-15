@@ -47,6 +47,9 @@ class limebeer2014f1
         static constexpr const size_t N_SS_VARS = 11;
         static constexpr const size_t N_SS_EQNS = 15;
 
+        // Optimal-laptime computation
+        static constexpr const size_t N_OL_EXTRA_CONSTRAINTS = 4;    //! The number of tire constraints: lambda_fl, lambda_fr, lambda_rl, lambda_rr
+
         // Factor to scale the acceleration on the fitness function
         static constexpr const scalar acceleration_scaling = 1.0;
 
@@ -169,6 +172,44 @@ class limebeer2014f1
 
             return {constraints,q,u};
         }
+
+        // Optimal lap-time --------------------------------------------------------
+        std::tuple<std::vector<scalar>,std::vector<scalar>,std::vector<scalar>,std::vector<scalar>> optimal_laptime_control_bounds() const
+        {
+            return {{-20.0*DEG, -1.0}, {20.0*DEG, 1.0}, {-20.0*DEG,-10.0}, {20.0*DEG, 10.0}};
+        }
+
+        static std::pair<std::vector<scalar>,std::vector<scalar>> optimal_laptime_state_bounds() 
+        {
+            return 
+            {
+                // k_fl   k_fr   k_rl   k_rr  u          v         omega  time    n  psi
+                { -0.11, -0.11, -0.11, -0.11,  50.0*KMH, -50.0*KMH, -10.0, 0.0, -5.0, -30.0*DEG},
+                {  0.11,  0.11,  0.11,  0.11, 350.0*KMH,  50.0*KMH,  10.0, 0.0,  5.0,  30.0*DEG},
+            };
+        }
+
+        static std::pair<std::vector<scalar>,std::vector<scalar>> optimal_laptime_algebraic_state_bounds()
+        {
+            return {{-3.0,-3.0,-3.0,-3.0},{1.0,1.0,1.0,1.0}};
+        }
+
+        static std::pair<std::vector<scalar>,std::vector<scalar>> optimal_laptime_extra_constraints_bounds()
+        {
+            return {{-0.11,-0.11,-0.11,-0.11},{0.11,0.11,0.11,0.11}};
+        }
+
+        std::array<Timeseries_t,N_OL_EXTRA_CONSTRAINTS> optimal_laptime_extra_constraints() const
+        {
+            return 
+            {
+                this->get_chassis().get_front_axle().template get_tire<0>().get_lambda(),
+                this->get_chassis().get_front_axle().template get_tire<1>().get_lambda(),
+                this->get_chassis().get_rear_axle().template get_tire<0>().get_lambda(),
+                this->get_chassis().get_rear_axle().template get_tire<1>().get_lambda() 
+            };
+        }
+
  
     };
 

@@ -23,6 +23,7 @@ class Optimal_laptime
                     const bool is_direct,
                     const Dynamic_model_t& car, 
                     const std::array<scalar,Dynamic_model_t::NSTATE>& q0, 
+                    const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& qa0,
                     const std::array<scalar,Dynamic_model_t::NCONTROL>& u0, 
                     const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations);
 
@@ -30,6 +31,7 @@ class Optimal_laptime
     void compute_direct(const size_t n, 
             const Dynamic_model_t& car, 
             const std::array<scalar,Dynamic_model_t::NSTATE>& q0, 
+            const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& qa0,
             const std::array<scalar,Dynamic_model_t::NCONTROL>& u0, 
             const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations);
 
@@ -37,6 +39,7 @@ class Optimal_laptime
     void compute_derivative(const size_t n, 
             const Dynamic_model_t& car, 
             const std::array<scalar,Dynamic_model_t::NSTATE>& q0, 
+            const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& qa0,
             const std::array<scalar,Dynamic_model_t::NCONTROL>& u0, 
             const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations);
 
@@ -44,6 +47,7 @@ class Optimal_laptime
     // Outputs
     std::vector<scalar> s;                                           //! Arclengths
     std::vector<std::array<scalar,Dynamic_model_t::NSTATE>> q;       //! All state vectors
+    std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>> qa;  //! All algebraic variables vectors
     std::vector<std::array<scalar,Dynamic_model_t::NCONTROL>> u;     //! All control vectors
     double laptime;
 
@@ -62,10 +66,11 @@ class Optimal_laptime
            const size_t n_points,
            const Dynamic_model_t& car, 
            const std::array<scalar,Dynamic_model_t::NSTATE>& q0, 
+           const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& qa0, 
            const std::array<scalar,Dynamic_model_t::NCONTROL>& u0,
            const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations
-          ) : _n(n), _car(car), _q0(q0), _u0(u0), _dissipations(dissipations), _n_variables(n_variables),
-              _n_constraints(n_constraints), _q(n_points,{0.0}), _u(n_points,{0.0}), _dqdt(n_points,{0.0}) {}
+          ) : _n(n), _car(car), _q0(q0), _qa0(qa0), _u0(u0), _dissipations(dissipations), _n_variables(n_variables),
+              _n_constraints(n_constraints), _q(n_points,{0.0}), _qa(n_points), _u(n_points,{0.0}), _dqdt(n_points,{0.0}), _dqa(n_points) {}
 
      public:
         const size_t& get_n_variables() const { return _n_variables; }
@@ -74,9 +79,13 @@ class Optimal_laptime
 
         const std::vector<std::array<Timeseries_t,Dynamic_model_t::NSTATE>>& get_states() const { return _q; }
 
+        const std::vector<std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC>>& get_algebraic_states() const { return _qa; }
+
         const std::vector<std::array<Timeseries_t,Dynamic_model_t::NCONTROL>>& get_controls() const { return _u; }
 
         const std::array<Timeseries_t,Dynamic_model_t::NSTATE>& get_state(const size_t i) const { return _q[i]; }
+
+        const std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC>& get_algebraic_state(const size_t i) const { return _qa[i]; }
 
         const std::array<Timeseries_t,Dynamic_model_t::NCONTROL>& get_control(const size_t i) const { return _u[i]; }
 
@@ -85,15 +94,18 @@ class Optimal_laptime
      protected:
         size_t _n;                          //! [c] Number of discretization points
         Dynamic_model_t _car;               //! Vehicle
-        std::array<scalar,Dynamic_model_t::NSTATE> _q0;   //! [c] State vector for the initial node
-        std::array<scalar,Dynamic_model_t::NCONTROL> _u0; //! [c] Control vector for the initial node
+        std::array<scalar,Dynamic_model_t::NSTATE> _q0;        //! [c] State vector for the initial node
+        std::array<scalar,Dynamic_model_t::NALGEBRAIC> _qa0;   //! [c] Algebraic state vector for the initial node
+        std::array<scalar,Dynamic_model_t::NCONTROL> _u0;      //! [c] Control vector for the initial node
         std::array<scalar,Dynamic_model_t::NCONTROL> _dissipations;
 
-        size_t _n_variables;        //! [c] Number of total variables (NSTATE+NCONTROL-1).(n-1)
-        size_t _n_constraints;      //! [c] Number of total constraints (NSTATE-1).(n-1)
+        size_t _n_variables;                                                    //! [c] Number of total variables (NSTATE+NCONTROL-1).(n-1)
+        size_t _n_constraints;                                                  //! [c] Number of total constraints (NSTATE-1).(n-1)
         std::vector<std::array<Timeseries_t,Dynamic_model_t::NSTATE>> _q;       //! All state vectors
+        std::vector<std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC>> _qa;  //! All algebraic state vectors
         std::vector<std::array<Timeseries_t,Dynamic_model_t::NCONTROL>> _u;     //! All control vectors
         std::vector<std::array<Timeseries_t,Dynamic_model_t::NSTATE>> _dqdt;    //! All state derivative vectors
+        std::vector<std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC>> _dqa; //! All algebraic state derivative vectors
     };
 
 
@@ -107,10 +119,11 @@ class Optimal_laptime
         FG_direct(const size_t n, 
            const Dynamic_model_t& car, 
            const std::array<scalar,Dynamic_model_t::NSTATE>& q0, 
+           const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& qa0, 
            const std::array<scalar,Dynamic_model_t::NCONTROL>& u0,
            const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations
-          ) : FG(n,n*(Dynamic_model_t::NCONTROL + Dynamic_model_t::NSTATE-1),n*(Dynamic_model_t::NSTATE-1+6), 
-                 (is_closed ? n : n+1), car, q0, u0, dissipations) {}
+          ) : FG(n,n*(Dynamic_model_t::NCONTROL + Dynamic_model_t::NSTATE + Dynamic_model_t::NALGEBRAIC - 1),n*(Dynamic_model_t::NSTATE + Dynamic_model_t::NALGEBRAIC - 1 + Dynamic_model_t::N_OL_EXTRA_CONSTRAINTS), 
+                 (is_closed ? n : n+1), car, q0, qa0, u0, dissipations) {}
 
         void operator()(ADvector& fg, const ADvector& x);
     };
@@ -126,10 +139,11 @@ class Optimal_laptime
         FG_derivative(const size_t n, 
            const Dynamic_model_t& car, 
            const std::array<scalar,Dynamic_model_t::NSTATE>& q0, 
+           const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& qa0, 
            const std::array<scalar,Dynamic_model_t::NCONTROL>& u0,
            const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations
-          ) : FG(n,n*(Dynamic_model_t::NSTATE-1+2*Dynamic_model_t::NCONTROL),n*(Dynamic_model_t::NSTATE-1+6)+n*Dynamic_model_t::NCONTROL, 
-                 (is_closed ? n : n+1), car, q0, u0, dissipations), _dudt((is_closed ? n : n+1),{0.0}) {}
+          ) : FG(n,n*(Dynamic_model_t::NSTATE+Dynamic_model_t::NALGEBRAIC-1+2*Dynamic_model_t::NCONTROL),n*(Dynamic_model_t::NSTATE+Dynamic_model_t::NALGEBRAIC-1+Dynamic_model_t::N_OL_EXTRA_CONSTRAINTS)+n*Dynamic_model_t::NCONTROL, 
+                 (is_closed ? n : n+1), car, q0, qa0, u0, dissipations), _dudt((is_closed ? n : n+1),{0.0}) {}
 
         void operator()(ADvector& fg, const ADvector& x);
      private:

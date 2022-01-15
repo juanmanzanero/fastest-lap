@@ -47,6 +47,9 @@ class lot2016kart
         static constexpr const size_t N_SS_VARS = 6;
         static constexpr const size_t N_SS_EQNS = 12;
 
+        // Optimal-laptime computation
+        static constexpr const size_t N_OL_EXTRA_CONSTRAINTS = 6;    //! The number of tire constraints: kappa_rl, kappa_rr, lambda_fl, lambda_fr, lambda_rl, lambda_rr
+    
         // Factor to scale the acceleration on the fitness function
         static constexpr const scalar acceleration_scaling = 1.0;
 
@@ -152,6 +155,48 @@ class lot2016kart
             constraints[11] = this->get_chassis().get_front_axle().template get_tire<1>().get_lambda();
         
             return {constraints,q,u};
+        }
+
+
+        // Optimal lap-time --------------------------------------------------------
+        std::tuple<std::vector<scalar>,std::vector<scalar>,std::vector<scalar>,std::vector<scalar>> optimal_laptime_control_bounds() const
+        {
+            if ( this->get_chassis().get_rear_axle().is_direct_torque() )
+                return {{-20.0*DEG,-200.0},{20.0*DEG,200.0},{-20.0*DEG,-4000.0},{20.0*DEG,4000.0}};
+            else
+                return {{-20.0*DEG,-1.0},{20.0*DEG,1.0},{-20.0*DEG,-10.0},{20.0*DEG,10.0}};
+        }
+
+        static std::pair<std::vector<scalar>,std::vector<scalar>> optimal_laptime_state_bounds() 
+        {
+            return 
+            {
+                { 10.0*KMH/0.139, 10.0*KMH,-10.0*KMH, -10.0, 1.0e-5, -30.0*DEG, -30.0*DEG, -10.0, -10.0, -10.0, 0.0, -2.0, -30.0*DEG },
+                { 200.0*KMH/0.139, 200.0*KMH,10.0*KMH, 10.0, 0.139,  30.0*DEG,  30.0*DEG,  10.0,  10.0,  10.0, 0.0,  2.0,  30.0*DEG }
+            };
+        }
+
+        static std::pair<std::vector<scalar>,std::vector<scalar>> optimal_laptime_algebraic_state_bounds()
+        {
+            return {{},{}};
+        }
+
+        static std::pair<std::vector<scalar>,std::vector<scalar>> optimal_laptime_extra_constraints_bounds()
+        {
+            return {{-0.11,-0.11,-0.11,-0.11,-0.11,-0.11},{0.11,0.11,0.11,0.11,0.11,0.11}};
+        }
+
+        std::array<Timeseries_t,N_OL_EXTRA_CONSTRAINTS> optimal_laptime_extra_constraints() const
+        {
+            return 
+            {
+                this->get_chassis().get_rear_axle().template get_tire<0>().get_kappa(),
+                this->get_chassis().get_rear_axle().template get_tire<1>().get_kappa(),
+                this->get_chassis().get_front_axle().template get_tire<0>().get_lambda(),
+                this->get_chassis().get_front_axle().template get_tire<1>().get_lambda(),
+                this->get_chassis().get_rear_axle().template get_tire<0>().get_lambda(),
+                this->get_chassis().get_rear_axle().template get_tire<1>().get_lambda() 
+            };
         }
     };
 
