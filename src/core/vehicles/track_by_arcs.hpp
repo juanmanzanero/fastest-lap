@@ -85,6 +85,7 @@ inline Track_by_arcs::Track_by_arcs(Xml_document& doc, const scalar scale, const
         curvature.back() = k;
         total_length += R*theta;
     }
+
 }
 
 
@@ -128,7 +129,7 @@ inline std::tuple<sVector3d,sVector3d,sVector3d,sVector3d> Track_by_arcs::at(con
         throw std::runtime_error("Track is empty, and it cannot be used.");
     }
 
-    assert(s <= total_length);
+    assert(s <= (total_length + 1.0e-10));
     
     // Find the appropriate segment
     size_t i = 0;

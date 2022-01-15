@@ -168,12 +168,12 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const size_t n, con
     s = std::vector<scalar>(fg.get_states().size(),0.0);
     const scalar& L = fg.get_car().get_road().track_length();
     const scalar ds = L/((scalar)(n));
-    auto dtimeds_first = fg.get_car()(fg.get_state(0),fg.get_control(0),0.0)[Dynamic_model_t::Road_type::ITIME];
+    auto dtimeds_first = fg.get_car()(fg.get_state(0),fg.get_algebraic_state(0),fg.get_control(0),0.0).first[Dynamic_model_t::Road_type::ITIME];
     auto dtimeds_prev = dtimeds_first;
     for (size_t i = 1; i < fg.get_states().size(); ++i)
     {
         s[i] = ((double)i)*ds;
-        const auto dtimeds = fg.get_car()(fg.get_state(i),fg.get_control(i),s[i])[Dynamic_model_t::Road_type::ITIME];
+        const auto dtimeds = fg.get_car()(fg.get_state(i),fg.get_algebraic_state(i),fg.get_control(i),s[i]).first[Dynamic_model_t::Road_type::ITIME];
         q[i][Dynamic_model_t::Road_type::ITIME] = q[i-1][Dynamic_model_t::Road_type::ITIME] + Value(0.5*ds*(dtimeds + dtimeds_prev));
         dtimeds_prev = dtimeds;
     }
@@ -344,12 +344,12 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const size_t n,
     s = std::vector<scalar>(fg.get_states().size(),0.0);
     const scalar& L = fg.get_car().get_road().track_length();
     const scalar ds = L/((scalar)(n));
-    auto dtimeds_first = fg.get_car()(fg.get_state(0),fg.get_control(0),0.0)[Dynamic_model_t::Road_type::ITIME];
+    auto dtimeds_first = fg.get_car()(fg.get_state(0),fg.get_algebraic_state(0),fg.get_control(0),0.0).first[Dynamic_model_t::Road_type::ITIME];
     auto dtimeds_prev = dtimeds_first;
     for (size_t i = 1; i < fg.get_states().size(); ++i)
     {
         s[i] = ((double)i)*ds;
-        const auto dtimeds = fg.get_car()(fg.get_state(i),fg.get_control(i),s[i])[Dynamic_model_t::Road_type::ITIME];
+        const auto dtimeds = fg.get_car()(fg.get_state(i),fg.get_algebraic_state(i),fg.get_control(i),s[i]).first[Dynamic_model_t::Road_type::ITIME];
         q[i][Dynamic_model_t::Road_type::ITIME] = q[i-1][Dynamic_model_t::Road_type::ITIME] + Value(0.5*ds*(dtimeds + dtimeds_prev));
         dtimeds_prev = dtimeds;
     }
@@ -449,7 +449,7 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_direct<is_closed>::operator()(F
             fg[k++] = _q[i][j] - _q[i-1][j] - 0.5*ds*(_dqdt[i-1][j] + _dqdt[i][j]);
 
         // algebraic constraints: dqa^{i} = 0.0
-        for (size_t j = 0; j < Dynamic_model_t::NALGEBRAIC; ++i)
+        for (size_t j = 0; j < Dynamic_model_t::NALGEBRAIC; ++j)
             fg[k++] = _dqa[i][j];
         
         // Inequality constraints: -0.11 < kappa < 0.11, -0.11 < lambda < 0.11
@@ -491,7 +491,7 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_direct<is_closed>::operator()(F
             fg[k++] = _dqa[0][j];
 
         // Inequality constraints: -0.11 < kappa < 0.11, -0.11 < lambda < 0.11
-        _car(_q[0],_u[0],0.0);
+        _car(_q[0],_qa[0],_u[0],0.0);
         const auto c_extra = _car.optimal_laptime_extra_constraints();
     
         for (size_t j = 0; j < Dynamic_model_t::N_OL_EXTRA_CONSTRAINTS; ++j)
