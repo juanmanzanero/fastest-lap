@@ -24,13 +24,13 @@ TEST_F(F1_optimal_laptime_test, maximum_acceleration)
 
     limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_arcs> car(database, {straight, 10.0});
 
-    constexpr const size_t n = 70;
+    constexpr const size_t n = 100;
 
     // Start from the steady-state values at 50km/h-0g    
-    const scalar v = 50.0*KMH;
+    const scalar v = 80.0*KMH;
     auto ss = Steady_state(car_cartesian).solve(v,0.0,0.0); 
 
-    Optimal_laptime opt_laptime(n, false, true, car, ss.q, ss.qa, ss.u, {0.0, 4.0e-5});
+    Optimal_laptime opt_laptime(n, false, true, car, ss.q, ss.qa, ss.u, {0.0, 4.0e-7});
 
     // Check that the car accelerates
     constexpr const size_t IU = limebeer2014f1<scalar>::curvilinear<Track_by_arcs>::Chassis_type::IU;

@@ -103,7 +103,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const size_t n, con
     // options
     std::string options;
     // turn off any printing
-    options += "Integer print_level  0\n";
+    options += "Integer print_level  5\n";
     options += "String  sb           yes\n";
     options += "Sparse true forward\n";
     options += "Numeric tol          1e-10\n";
@@ -277,7 +277,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const size_t n,
     // options
     std::string options;
     // turn off any printing
-    options += "Integer print_level  0\n";
+    options += "Integer print_level  5\n";
     options += "String  sb           yes\n";
     options += "Sparse true forward\n";
     options += "Numeric tol          1e-6\n";
@@ -450,7 +450,7 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_direct<is_closed>::operator()(F
 
         // algebraic constraints: dqa^{i} = 0.0
         for (size_t j = 0; j < Dynamic_model_t::NALGEBRAIC; ++j)
-            fg[k++] = _dqa[i][j];
+            fg[k++] = 5.0*_dqa[i][j];
         
         // Inequality constraints: -0.11 < kappa < 0.11, -0.11 < lambda < 0.11
         auto c_extra = _car.optimal_laptime_extra_constraints();
@@ -488,7 +488,7 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_direct<is_closed>::operator()(F
 
         // algebraic constraints: dqa^{0} = 0.0
         for (size_t j = 0; j < Dynamic_model_t::NALGEBRAIC; ++j)
-            fg[k++] = _dqa[0][j];
+            fg[k++] = 5.0*_dqa[0][j];
 
         // Inequality constraints: -0.11 < kappa < 0.11, -0.11 < lambda < 0.11
         _car(_q[0],_qa[0],_u[0],0.0);
@@ -588,7 +588,7 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_derivative<is_closed>::operator
 
         // algebraic constraints: dqa^{i} = 0.0
         for (size_t j = 0; j < Dynamic_model_t::NALGEBRAIC; ++j)
-            fg[k++] = _dqa[i][j];
+            fg[k++] = 5.0*_dqa[i][j];
 
         // Inequality constraints: -0.11 < kappa < 0.11, -0.11 < lambda < 0.11
         const auto& kappa_left = _car.get_chassis().get_rear_axle().template get_tire<0>().get_kappa();
@@ -636,7 +636,7 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_derivative<is_closed>::operator
 
         // algebraic constraints: dqa^{0} = 0
         for (size_t j = 0; j < Dynamic_model_t::NALGEBRAIC; ++j)
-            fg[k++] = _dqa[0][j];
+            fg[k++] = 5.0*_dqa[0][j];
 
         // Inequality constraints: -0.11 < kappa < 0.11, -0.11 < lambda < 0.11
         _car(_q[0],_qa[0],_u[0],0.0);
