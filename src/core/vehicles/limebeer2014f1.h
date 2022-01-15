@@ -48,7 +48,7 @@ class limebeer2014f1
         static constexpr const size_t N_SS_EQNS = 15;
 
         // Factor to scale the acceleration on the fitness function
-        static constexpr const scalar acceleration_scaling = g0;
+        static constexpr const scalar acceleration_scaling = 1.0;
 
         // The content of x is: x = [kappa_fl, kappa_fr, kappa_rl, kappa_rr, psi, Fz_fl, Fz_fr, Fz_rl, Fz_rr, delta, throttle]
         static std::vector<scalar> steady_state_initial_guess()
