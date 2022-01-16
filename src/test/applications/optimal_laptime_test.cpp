@@ -88,7 +88,7 @@ TEST_F(Optimal_laptime_test, Ovaltrack_open)
     
     constexpr const size_t n = 400;
 
-    lot2016kart<CppAD::AD<scalar>>::curvilinear<Track_by_arcs>::Road_t road(ovaltrack, 2.0);
+    lot2016kart<CppAD::AD<scalar>>::curvilinear<Track_by_arcs>::Road_t road(ovaltrack, 4.0);
     lot2016kart<CppAD::AD<scalar>>::curvilinear<Track_by_arcs> car(database, road);
     car.get_chassis().get_rear_axle().enable_direct_torque();
 
@@ -128,7 +128,7 @@ TEST_F(Optimal_laptime_test, Ovaltrack_closed)
     
     constexpr const size_t n = 100;
 
-    lot2016kart<CppAD::AD<scalar>>::curvilinear<Track_by_arcs>::Road_t road(ovaltrack, 2.0);
+    lot2016kart<CppAD::AD<scalar>>::curvilinear<Track_by_arcs>::Road_t road(ovaltrack, 4.0);
     lot2016kart<CppAD::AD<scalar>>::curvilinear<Track_by_arcs> car(database, road);
     car.get_chassis().get_rear_axle().enable_direct_torque();
 
@@ -167,7 +167,7 @@ TEST_F(Optimal_laptime_test, Ovaltrack_derivative)
     
     constexpr const size_t n = 100;
 
-    lot2016kart<CppAD::AD<scalar>>::curvilinear<Track_by_arcs>::Road_t road(ovaltrack, 2.0);
+    lot2016kart<CppAD::AD<scalar>>::curvilinear<Track_by_arcs>::Road_t road(ovaltrack, 4.0);
     lot2016kart<CppAD::AD<scalar>>::curvilinear<Track_by_arcs> car(database, road);
     car.get_chassis().get_rear_axle().enable_direct_torque();
 
@@ -212,7 +212,7 @@ TEST_F(Optimal_laptime_test, Catalunya_direct)
     
     constexpr const size_t n = 500;
 
-    lot2016kart<CppAD::AD<scalar>>::curvilinear<Track_by_arcs>::Road_t road(catalunya, 2.0);
+    lot2016kart<CppAD::AD<scalar>>::curvilinear<Track_by_arcs>::Road_t road(catalunya, 4.0);
     lot2016kart<CppAD::AD<scalar>>::curvilinear<Track_by_arcs> car(database, road);
     car.get_chassis().get_rear_axle().enable_direct_torque();
 
@@ -258,7 +258,7 @@ TEST_F(Optimal_laptime_test, Catalunya_derivative)
     
     constexpr const size_t n = 500;
 
-    lot2016kart<CppAD::AD<scalar>>::curvilinear<Track_by_arcs>::Road_t road(catalunya, 2.0);
+    lot2016kart<CppAD::AD<scalar>>::curvilinear<Track_by_arcs>::Road_t road(catalunya, 4.0);
     lot2016kart<CppAD::AD<scalar>>::curvilinear<Track_by_arcs> car(database, road);
     car.get_chassis().get_rear_axle().enable_direct_torque();
 
@@ -302,7 +302,7 @@ TEST_F(Optimal_laptime_test, Catalunya_derivative_throttle)
     
     constexpr const size_t n = 500;
 
-    lot2016kart<CppAD::AD<scalar>>::curvilinear<Track_by_arcs>::Road_t road(catalunya, 2.0);
+    lot2016kart<CppAD::AD<scalar>>::curvilinear<Track_by_arcs>::Road_t road(catalunya, 4.0);
     lot2016kart<CppAD::AD<scalar>>::curvilinear<Track_by_arcs> car(database, road);
 
     // Start from the steady-state values at 50km/h-0g    

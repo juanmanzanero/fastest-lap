@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-ENUM c_Vehicle_type { LOT2016KART };
+ENUM c_Vehicle_type { LOT2016KART, LIMEBEER2014F1 };
 
 STRUCT c_Vehicle
 {

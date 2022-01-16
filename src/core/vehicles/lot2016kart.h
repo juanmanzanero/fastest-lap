@@ -221,6 +221,8 @@ struct lot2016kart_all
       curvilinear_ad(database_xml) 
     {}
 
+    using vehicle_scalar_curvilinear_a = lot2016kart<scalar>::curvilinear_a;
+
     lot2016kart<scalar>::cartesian                 cartesian_scalar;
     lot2016kart<scalar>::curvilinear_a             curvilinear_scalar;
     lot2016kart<CppAD::AD<scalar>>::cartesian      cartesian_ad;

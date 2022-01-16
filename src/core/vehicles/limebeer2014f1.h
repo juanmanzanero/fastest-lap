@@ -184,8 +184,8 @@ class limebeer2014f1
             return 
             {
                 // k_fl   k_fr   k_rl   k_rr  u          v         omega  time    n  psi
-                { -0.11, -0.11, -0.11, -0.11,  50.0*KMH, -50.0*KMH, -10.0, 0.0, -5.0, -30.0*DEG},
-                {  0.11,  0.11,  0.11,  0.11, 350.0*KMH,  50.0*KMH,  10.0, 0.0,  5.0,  30.0*DEG},
+                { -0.11, -0.11, -0.11, -0.11,  50.0*KMH, -50.0*KMH, -10.0, 0.0, -10.0, -30.0*DEG},
+                {  0.11,  0.11,  0.11,  0.11, 380.0*KMH,  50.0*KMH,  10.0, 0.0,  10.0,  30.0*DEG},
             };
         }
 
@@ -232,6 +232,8 @@ struct limebeer2014f1_all
       cartesian_ad(database_xml),
       curvilinear_ad(database_xml) 
     {}
+
+    using vehicle_scalar_curvilinear_a = limebeer2014f1<scalar>::curvilinear_a;
 
     limebeer2014f1<scalar>::cartesian                 cartesian_scalar;
     limebeer2014f1<scalar>::curvilinear_a             curvilinear_scalar;

@@ -24,7 +24,7 @@ TEST_F(F1_optimal_laptime_test, maximum_acceleration)
 
     limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_arcs> car(database, {straight, 10.0});
 
-    constexpr const size_t n = 100;
+    constexpr const size_t n = 50;
 
     // Start from the steady-state values at 50km/h-0g    
     const scalar v = 80.0*KMH;
@@ -88,44 +88,33 @@ TEST_F(F1_optimal_laptime_test, maximum_acceleration)
     }
 }
 
-/*
 TEST_F(F1_optimal_laptime_test, Ovaltrack_open)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
-    car_cartesian.get_chassis().get_rear_axle().enable_direct_torque(); 
-    car_cartesian_scalar.get_chassis().get_rear_axle().enable_direct_torque();
-
     Xml_document ovaltrack_xml("./database/ovaltrack.xml",true);
-    Track_by_arcs ovaltrack(ovaltrack_xml,0.2,true);
+    Track_by_arcs ovaltrack(ovaltrack_xml,1.0,true);
     
     constexpr const size_t n = 400;
 
-    limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_arcs>::Road_t road(ovaltrack, 2.0);
+    limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_arcs>::Road_t road(ovaltrack, 10.0);
     limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_arcs> car(database, road);
-    car.get_chassis().get_rear_axle().enable_direct_torque();
 
     // Start from the steady-state values at 50km/h-0g    
-    const scalar v = 50.0*KMH;
+    const scalar v = 100.0*KMH;
     auto ss = Steady_state(car_cartesian).solve(v,0.0,0.0); 
 
-    const scalar T = -ss.dqdt[0]*0.2;
-   
-    ss.u[1] = T;
-    
-    ss.dqdt = car_cartesian_scalar(ss.q, ss.u, 0.0);
+    Optimal_laptime opt_laptime(n, false, true, car, ss.q, ss.qa, ss.u, {1.0e2,2.0e-3});
 
-    Optimal_laptime opt_laptime(n, false, true, car, ss.q, ss.qa, ss.u, {1.0e2,2.0e-7});
-
-    std::vector<scalar> delta_saved = results.get_root_element().get_child("ovaltrack_open/delta").get_value(std::vector<scalar>());
-    std::vector<scalar> T_saved = results.get_root_element().get_child("ovaltrack_open/T").get_value(std::vector<scalar>());
-
-    EXPECT_EQ(opt_laptime.u.size(), delta_saved.size());
-
+    limebeer2014f1<scalar>::curvilinear<Track_by_arcs> car_scalar(database, {ovaltrack,10.0});
     for (size_t i = 0; i < n; ++i)
     {
-        EXPECT_NEAR(opt_laptime.u[i][0], delta_saved[i],5.0e-7);
-        EXPECT_NEAR(opt_laptime.u[i][1], T_saved[i],1.0e-2);
+
+        const scalar& L = car_scalar.get_road().track_length();
+        car_scalar(opt_laptime.q.at(i), opt_laptime.qa.at(i), opt_laptime.u.at(i),((double)i)*L/((double)n));
+        const auto& kappa_left  = car_scalar.get_chassis().get_rear_axle().template get_tire<0>().get_kappa();
+        const auto& kappa_right = car_scalar.get_chassis().get_rear_axle().template get_tire<1>().get_kappa();
+        std::cout << opt_laptime.u.at(i)[1] << ", " << kappa_left << ", " << kappa_right << ", " << opt_laptime.u.at(i)[0] << ", " << car_scalar.get_road().get_x() << ", " << car_scalar.get_road().get_y() << std::endl;
     }
 
 }
@@ -133,43 +122,33 @@ TEST_F(F1_optimal_laptime_test, Ovaltrack_open)
 
 TEST_F(F1_optimal_laptime_test, Ovaltrack_closed)
 {
-    car_cartesian.get_chassis().get_rear_axle().enable_direct_torque(); 
-    car_cartesian_scalar.get_chassis().get_rear_axle().enable_direct_torque();
-
     Xml_document ovaltrack_xml("./database/ovaltrack.xml",true);
-    Track_by_arcs ovaltrack(ovaltrack_xml,0.2,true);
+    Track_by_arcs ovaltrack(ovaltrack_xml,1.0,true);
     
     constexpr const size_t n = 100;
 
-    limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_arcs>::Road_t road(ovaltrack, 2.0);
+    limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_arcs>::Road_t road(ovaltrack, 10.0);
     limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_arcs> car(database, road);
-    car.get_chassis().get_rear_axle().enable_direct_torque();
 
     // Start from the steady-state values at 50km/h-0g    
     const scalar v = 50.0*KMH;
     auto ss = Steady_state(car_cartesian).solve(v,0.0,0.0); 
 
-    const scalar T = -ss.dqdt[0]*0.2;
-   
-    ss.u[1] = T;
-    
-    ss.dqdt = car_cartesian_scalar(ss.q, ss.u, 0.0);
+    Optimal_laptime opt_laptime(n, true, true, car, ss.q, ss.qa, ss.u, {1.0e2,2.0e-3});
 
-    Optimal_laptime opt_laptime(n, true, true, car, ss.q, ss.qa, ss.u, {1.0e2,2.0e-7});
-
-    std::vector<scalar> delta_saved = results.get_root_element().get_child("ovaltrack_closed/delta").get_value(std::vector<scalar>());
-    std::vector<scalar> T_saved = results.get_root_element().get_child("ovaltrack_closed/T").get_value(std::vector<scalar>());
-
-    EXPECT_EQ(opt_laptime.u.size(), delta_saved.size());
-
+    limebeer2014f1<scalar>::curvilinear<Track_by_arcs> car_scalar(database, {ovaltrack,10.0});
     for (size_t i = 0; i < n; ++i)
     {
-        EXPECT_NEAR(opt_laptime.u[i][0], delta_saved[i],5.0e-7);
-        EXPECT_NEAR(opt_laptime.u[i][1], T_saved[i],1.0e-2);
-    }
 
+        const scalar& L = car_scalar.get_road().track_length();
+        car_scalar(opt_laptime.q.at(i), opt_laptime.qa.at(i), opt_laptime.u.at(i),((double)i)*L/((double)n));
+        const auto& kappa_left  = car_scalar.get_chassis().get_rear_axle().template get_tire<0>().get_kappa();
+        const auto& kappa_right = car_scalar.get_chassis().get_rear_axle().template get_tire<1>().get_kappa();
+        std::cout << opt_laptime.u.at(i)[1] << ", " << kappa_left << ", " << kappa_right << ", " << opt_laptime.u.at(i)[0] << ", " << car_scalar.get_road().get_x() << ", " << car_scalar.get_road().get_y() << std::endl;
+    }
 }
 
+/*
 TEST_F(F1_optimal_laptime_test, Ovaltrack_derivative)
 {
     car_cartesian.get_chassis().get_rear_axle().enable_direct_torque(); 
@@ -210,51 +189,41 @@ TEST_F(F1_optimal_laptime_test, Ovaltrack_derivative)
 
 }
 
-
+*/
 
 
 TEST_F(F1_optimal_laptime_test, Catalunya_direct)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
-    car_cartesian.get_chassis().get_rear_axle().enable_direct_torque(); 
-    car_cartesian_scalar.get_chassis().get_rear_axle().enable_direct_torque();
-
     Xml_document catalunya_xml("./database/catalunya.xml",true);
-    Track_by_arcs catalunya(catalunya_xml,0.2,true);
+    Track_by_arcs catalunya(catalunya_xml,1.0,true);
     
     constexpr const size_t n = 500;
 
-    limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_arcs>::Road_t road(catalunya, 2.0);
+    limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_arcs>::Road_t road(catalunya, 10.0);
     limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_arcs> car(database, road);
-    car.get_chassis().get_rear_axle().enable_direct_torque();
 
     // Start from the steady-state values at 50km/h-0g    
     const scalar v = 50.0*KMH;
     auto ss = Steady_state(car_cartesian).solve(v,0.0,0.0); 
 
-    const scalar T = -ss.dqdt[0]*0.2;
-   
-    ss.u[1] = T;
+    Optimal_laptime opt_laptime(n, true, true, car, ss.q, ss.qa, ss.u, {5.0e0,8.0e-4});
 
-    ss.dqdt = car_cartesian_scalar(ss.q, ss.u, 0.0);
-
-    Optimal_laptime opt_laptime(n, true, true, car, ss.q, ss.qa, ss.u, {5.0e0,8.0e-6});
-
-    std::vector<scalar> delta_saved = results.get_root_element().get_child("catalunya/delta").get_value(std::vector<scalar>());
-    std::vector<scalar> T_saved = results.get_root_element().get_child("catalunya/T").get_value(std::vector<scalar>());
-
-    EXPECT_EQ(opt_laptime.u.size(), delta_saved.size());
-
+    limebeer2014f1<scalar>::curvilinear<Track_by_arcs> car_scalar(database, {catalunya,10.0});
     for (size_t i = 0; i < n; ++i)
     {
-        EXPECT_NEAR(opt_laptime.u[i][0], delta_saved[i],5.0e-7);
-        EXPECT_NEAR(opt_laptime.u[i][1], T_saved[i],1.0e-2);
-    }
 
+        const scalar& L = car_scalar.get_road().track_length();
+        car_scalar(opt_laptime.q.at(i), opt_laptime.qa.at(i), opt_laptime.u.at(i),((double)i)*L/((double)n));
+        const auto& kappa_left  = car_scalar.get_chassis().get_rear_axle().template get_tire<0>().get_kappa();
+        const auto& kappa_right = car_scalar.get_chassis().get_rear_axle().template get_tire<1>().get_kappa();
+        std::cout << opt_laptime.u.at(i)[1] << ", " << kappa_left << ", " << kappa_right << ", " << opt_laptime.u.at(i)[0] << ", " << car_scalar.get_road().get_x() << ", " << car_scalar.get_road().get_y() << std::endl;
+    }
 }
 
 
+/*
 TEST_F(F1_optimal_laptime_test, Catalunya_derivative)
 {
     #ifndef NDEBUG
@@ -263,39 +232,29 @@ TEST_F(F1_optimal_laptime_test, Catalunya_derivative)
 
     if ( is_valgrind ) GTEST_SKIP();
 
-    car_cartesian.get_chassis().get_rear_axle().enable_direct_torque(); 
-    car_cartesian_scalar.get_chassis().get_rear_axle().enable_direct_torque();
-
     Xml_document catalunya_xml("./database/catalunya.xml",true);
-    Track_by_arcs catalunya(catalunya_xml,0.2,true);
+    Track_by_arcs catalunya(catalunya_xml,1.0,true);
     
     constexpr const size_t n = 500;
 
-    limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_arcs>::Road_t road(catalunya, 2.0);
+    limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_arcs>::Road_t road(catalunya, 10.0);
     limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_arcs> car(database, road);
-    car.get_chassis().get_rear_axle().enable_direct_torque();
 
     // Start from the steady-state values at 50km/h-0g    
     const scalar v = 50.0*KMH;
     auto ss = Steady_state(car_cartesian).solve(v,0.0,0.0); 
 
-    const scalar T = -ss.dqdt[0]*0.2;
-   
-    ss.u[1] = T;
+    Optimal_laptime opt_laptime(n, true, false, car, ss.q, ss.qa, ss.u, {1.0e-2,400*400*1.0e-10});
 
-    ss.dqdt = car_cartesian_scalar(ss.q, ss.u, 0.0);
-
-    Optimal_laptime opt_laptime(n, true, false, car, ss.q, ss.qa, ss.u, {1.0e-2,1.0e-10});
-
-    std::vector<scalar> delta_saved = results.get_root_element().get_child("catalunya_derivative/delta").get_value(std::vector<scalar>());
-    std::vector<scalar> T_saved = results.get_root_element().get_child("catalunya_derivative/T").get_value(std::vector<scalar>());
-
-    EXPECT_EQ(opt_laptime.u.size(), delta_saved.size());
-
+    limebeer2014f1<scalar>::curvilinear<Track_by_arcs> car_scalar(database, {catalunya,10.0});
     for (size_t i = 0; i < n; ++i)
     {
-        EXPECT_NEAR(opt_laptime.u[i][0], delta_saved[i],5.0e-7);
-        EXPECT_NEAR(opt_laptime.u[i][1], T_saved[i],1.0e-2);
+
+        const scalar& L = car_scalar.get_road().track_length();
+        car_scalar(opt_laptime.q.at(i), opt_laptime.qa.at(i), opt_laptime.u.at(i),((double)i)*L/((double)n));
+        const auto& kappa_left  = car_scalar.get_chassis().get_rear_axle().template get_tire<0>().get_kappa();
+        const auto& kappa_right = car_scalar.get_chassis().get_rear_axle().template get_tire<1>().get_kappa();
+        std::cout << opt_laptime.u.at(i)[1] << ", " << kappa_left << ", " << kappa_right << ", " << opt_laptime.u.at(i)[0] << ", " << car_scalar.get_road().get_x() << ", " << car_scalar.get_road().get_y() << std::endl;
     }
 }
 

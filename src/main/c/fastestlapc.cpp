@@ -3,10 +3,13 @@
 #include<unordered_map>
 
 #include "src/core/vehicles/lot2016kart.h"
+#include "src/core/vehicles/limebeer2014f1.h"
 #include "src/core/applications/steady_state.h"
 #include "src/core/applications/optimal_laptime.h"
 
 std::unordered_map<std::string,lot2016kart_all> vehicles_lot2016kart;
+std::unordered_map<std::string,limebeer2014f1_all> vehicles_limebeer2014f1;
+
 std::unordered_map<std::string,Track_by_arcs> tracks_by_arcs;
 
 void create_vehicle(struct c_Vehicle* vehicle, const char* name, const char* database_file)
@@ -33,6 +36,15 @@ void create_vehicle(struct c_Vehicle* vehicle, const char* name, const char* dat
     {
         vehicle->type = LOT2016KART;
         auto out = vehicles_lot2016kart.insert({name,{database}});
+        if (out.second==false) 
+        {
+            throw std::runtime_error("Vehicle already exists");
+        }
+    }
+    else if ( vehicle_type == "limebeer-2014-f1" )
+    {
+        vehicle->type = LIMEBEER2014F1;
+        auto out = vehicles_limebeer2014f1.insert({name,{database}});
         if (out.second==false) 
         {
             throw std::runtime_error("Vehicle already exists");
@@ -142,34 +154,49 @@ void track_coordinates(double* x_center, double* y_center, double* x_left, doubl
     return;
 }
 
-
-void optimal_laptime(struct c_Channel* channels, struct c_Vehicle* c_vehicle, const c_Track* c_track, const double width, const int n_points, const int n_channels)
+template<typename vehicle_t>
+void compute_optimal_laptime(vehicle_t& vehicle, struct c_Channel* channels, struct c_Vehicle* c_vehicle, const c_Track* c_track, const double width, const int n_points, const int n_channels)
 {
     auto& track = tracks_by_arcs.at(c_track->name);
-    auto& car_curv = vehicles_lot2016kart.at(c_vehicle->name).curvilinear_ad;
-    auto& car_cart = vehicles_lot2016kart.at(c_vehicle->name).cartesian_ad;
-    auto& car_cart_sc = vehicles_lot2016kart.at(c_vehicle->name).cartesian_scalar;
-    auto& car_curv_sc = vehicles_lot2016kart.at(c_vehicle->name).curvilinear_scalar;
+    auto& car_curv = vehicle.curvilinear_ad;
+    auto& car_cart = vehicle.cartesian_ad;
+    auto& car_cart_sc = vehicle.cartesian_scalar;
+    auto& car_curv_sc = vehicle.curvilinear_scalar;
 
     // Set the track into the curvilinear car dynamic model
     car_curv.get_road().change_track(track,width);
     car_curv_sc.get_road().change_track(track,width);
 
     // Start from the steady-state values at 50km/h-0g    
-    const scalar v = 50.0*KMH;
+    scalar v = 50.0*KMH;
+
+    if ( c_vehicle->type == LIMEBEER2014F1 )
+        v = 150.0*KMH;
+
     auto ss = Steady_state(car_cart).solve(v,0.0,0.0); 
 
-    ss.u[1] = 0.0;
-    
-    ss.dqdt = car_cart_sc(ss.q, ss.u, 0.0);
+    if ( c_vehicle->type == LOT2016KART )
+        ss.u[1] = 0.0;
 
-    Optimal_laptime opt_laptime(n_points, true, false, car_curv, ss.q, ss.qa, ss.u, {1.0e-2,200.0*200.0*1.0e-10});
+    bool is_direct = false;
+    std::array<scalar,2> dissipations = {1.0e-2, 200*200*1.0e-10};
+
+    if ( c_vehicle->type == LIMEBEER2014F1 )
+    {
+        is_direct = true;
+        dissipations[0] = 10.0;
+        dissipations[1] = 1.0e-3;
+    }
+    
+    std::tie(ss.dqdt, std::ignore) = car_cart_sc(ss.q, ss.qa, ss.u, 0.0);
+
+    Optimal_laptime opt_laptime(n_points, true, is_direct, car_curv, ss.q, ss.qa, ss.u, dissipations);
 
     // Set outputs
     for (int i = 0; i < n_points; ++i)
     {
         const scalar& L = car_curv.get_road().track_length();
-        car_curv_sc(opt_laptime.q[i], opt_laptime.u[i], ((double)i)*L/((double)n_points));
+        car_curv_sc(opt_laptime.q[i], opt_laptime.qa[i], opt_laptime.u[i], ((double)i)*L/((double)n_points));
 
         for (int j = 0; j < n_channels; ++j)
         {
@@ -179,44 +206,66 @@ void optimal_laptime(struct c_Channel* channels, struct c_Vehicle* c_vehicle, co
             else if ( std::string(channels[j].name) == "y" )
                 channels[j].data[i] = car_curv_sc.get_road().get_y();
 
+            else if ( std::string(channels[j].name) == "s" )
+                channels[j].data[i] = ((double)i)*L/((double)n_points);
+
             else if ( std::string(channels[j].name) == "u" )
-                channels[j].data[i] = opt_laptime.q[i][lot2016kart<scalar>::curvilinear_a::Chassis_type::IU];
+                channels[j].data[i] = opt_laptime.q[i][vehicle_t::vehicle_scalar_curvilinear_a::Chassis_type::IU];
 
             else if ( std::string(channels[j].name) == "time" )
-                channels[j].data[i] = opt_laptime.q[i][lot2016kart<scalar>::curvilinear_a::Road_type::ITIME];
+                channels[j].data[i] = opt_laptime.q[i][vehicle_t::vehicle_scalar_curvilinear_a::Road_type::ITIME];
 
             else if ( std::string(channels[j].name) == "delta" )
-                channels[j].data[i] = opt_laptime.u[i][lot2016kart<scalar>::curvilinear_a::Chassis_type::Front_axle_type::ISTEERING];
+                channels[j].data[i] = opt_laptime.u[i][vehicle_t::vehicle_scalar_curvilinear_a::Chassis_type::Front_axle_type::ISTEERING];
 
             else if ( std::string(channels[j].name) == "psi" )
                 channels[j].data[i] = car_curv_sc.get_road().get_psi();
 
             else if ( std::string(channels[j].name) == "throttle" )
-                channels[j].data[i] = opt_laptime.u[i][lot2016kart<scalar>::curvilinear_a::Chassis_type::Rear_axle_type::ITORQUE];
+            {
+                if constexpr (std::is_same<vehicle_t, lot2016kart_all>::value)
+                {
+                    channels[j].data[i] = opt_laptime.u[i][vehicle_t::vehicle_scalar_curvilinear_a::Chassis_type::Rear_axle_type::ITORQUE];
+                }
 
+                else if constexpr (std::is_same<vehicle_t, limebeer2014f1_all>::value)
+                {
+                    channels[j].data[i] = opt_laptime.u[i][vehicle_t::vehicle_scalar_curvilinear_a::Chassis_type::ITHROTTLE];
+                }
+            }
             else if ( std::string(channels[j].name) == "rear_axle/left_tire/x" )
-                channels[j].data[i] = car_curv_sc.get_chassis().get_rear_axle().get_tire<0>().get_position().at(0);
+                channels[j].data[i] = car_curv_sc.get_chassis().get_rear_axle().template get_tire<0>().get_position().at(0);
 
             else if ( std::string(channels[j].name) == "rear_axle/left_tire/y" )
-                channels[j].data[i] = car_curv_sc.get_chassis().get_rear_axle().get_tire<0>().get_position().at(1);
+                channels[j].data[i] = car_curv_sc.get_chassis().get_rear_axle().template get_tire<0>().get_position().at(1);
 
             else if ( std::string(channels[j].name) == "rear_axle/right_tire/x" )
-                channels[j].data[i] = car_curv_sc.get_chassis().get_rear_axle().get_tire<1>().get_position().at(0);
+                channels[j].data[i] = car_curv_sc.get_chassis().get_rear_axle().template get_tire<1>().get_position().at(0);
 
             else if ( std::string(channels[j].name) == "rear_axle/right_tire/y" )
-                channels[j].data[i] = car_curv_sc.get_chassis().get_rear_axle().get_tire<1>().get_position().at(1);
+                channels[j].data[i] = car_curv_sc.get_chassis().get_rear_axle().template get_tire<1>().get_position().at(1);
 
             else if ( std::string(channels[j].name) == "front_axle/left_tire/x" )
-                channels[j].data[i] = car_curv_sc.get_chassis().get_front_axle().get_tire<0>().get_position().at(0);
+                channels[j].data[i] = car_curv_sc.get_chassis().get_front_axle().template get_tire<0>().get_position().at(0);
 
             else if ( std::string(channels[j].name) == "front_axle/left_tire/y" )
-                channels[j].data[i] = car_curv_sc.get_chassis().get_front_axle().get_tire<0>().get_position().at(1);
+                channels[j].data[i] = car_curv_sc.get_chassis().get_front_axle().template get_tire<0>().get_position().at(1);
 
             else if ( std::string(channels[j].name) == "front_axle/right_tire/x" )
-                channels[j].data[i] = car_curv_sc.get_chassis().get_front_axle().get_tire<1>().get_position().at(0);
+                channels[j].data[i] = car_curv_sc.get_chassis().get_front_axle().template get_tire<1>().get_position().at(0);
 
             else if ( std::string(channels[j].name) == "front_axle/right_tire/y" )
-                channels[j].data[i] = car_curv_sc.get_chassis().get_front_axle().get_tire<1>().get_position().at(1);
+                channels[j].data[i] = car_curv_sc.get_chassis().get_front_axle().template get_tire<1>().get_position().at(1);
         }
     }
+}
+
+
+void optimal_laptime(struct c_Channel* channels, struct c_Vehicle* c_vehicle, const c_Track* c_track, const double width, const int n_points, const int n_channels)
+{
+    if ( c_vehicle->type == LOT2016KART )
+        compute_optimal_laptime(vehicles_lot2016kart.at(c_vehicle->name), channels, c_vehicle, c_track, width, n_points, n_channels);
+
+    else if ( c_vehicle->type == LIMEBEER2014F1 )
+        compute_optimal_laptime(vehicles_limebeer2014f1.at(c_vehicle->name), channels, c_vehicle, c_track, width, n_points, n_channels);
 }

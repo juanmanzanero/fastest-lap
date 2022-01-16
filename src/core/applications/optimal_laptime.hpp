@@ -41,6 +41,11 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const size_t n, con
     auto [qa_lb, qa_ub] = Dynamic_model_t::optimal_laptime_algebraic_state_bounds();
     auto [c_extra_lb, c_extra_ub] = Dynamic_model_t::optimal_laptime_extra_constraints_bounds(); 
 
+    // Correct the maximum bound in N to track_width/2
+    const scalar& width = car.get_road().track_width();
+    q_lb[Dynamic_model_t::Road_type::IN] = -0.5*width;
+    q_ub[Dynamic_model_t::Road_type::IN] = +0.5*width;
+
     std::vector<scalar> x_lb(fg.get_n_variables(), -1.0e24);
     std::vector<scalar> x_ub(fg.get_n_variables(), +1.0e24);
 
@@ -198,6 +203,11 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const size_t n,
     auto [q_lb, q_ub] = Dynamic_model_t::optimal_laptime_state_bounds();
     auto [qa_lb, qa_ub] = Dynamic_model_t::optimal_laptime_algebraic_state_bounds();
     auto [c_extra_lb, c_extra_ub] = Dynamic_model_t::optimal_laptime_extra_constraints_bounds(); 
+
+    // Correct the maximum bound in N to track_width/2
+    const scalar& width = car.get_road().track_width();
+    q_lb[Dynamic_model_t::Road_type::IN] = -0.5*width;
+    q_ub[Dynamic_model_t::Road_type::IN] = +0.5*width;
 
     // Set state bounds
     std::vector<scalar> x_lb(fg.get_n_variables(), -1.0e24);
@@ -550,6 +560,10 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_derivative<is_closed>::operator
         for (size_t j = Dynamic_model_t::Road_type::ITIME+1; j < Dynamic_model_t::NSTATE; ++j)
             _q[i][j] = x[k++];
 
+        // Load algebraic states
+        for (size_t j = 0; j < Dynamic_model_t::NALGEBRAIC; ++j)
+            _qa[i][j] = x[k++];
+            
         // Load control
         for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
             _u[i][j] = x[k++];
