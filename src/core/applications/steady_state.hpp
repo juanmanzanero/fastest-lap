@@ -887,7 +887,7 @@ typename Steady_state<Dynamic_model_t>::Solve_constraints::output_type Steady_st
 {
     // The content of x is: x = [w_axle, z, phi, mu, psi, delta]
     std::array<Timeseries_t,Dynamic_model_t::N_SS_EQNS> constraints;
-    std::tie(constraints,_q,_u) = _car->steady_state_equations(x,_ax,_ay,_v);
+    std::tie(constraints,_q,_qa,_u) = _car->steady_state_equations(x,_ax,_ay,_v);
 
     return constraints;
 }
@@ -905,7 +905,7 @@ typename Steady_state<Dynamic_model_t>::Max_lat_acc_constraints::output_type Ste
     std::copy(x.data(), x.data() + Dynamic_model_t::N_SS_VARS, x_reduced.begin());
 
     std::array<Timeseries_t,Dynamic_model_t::N_SS_EQNS> constraints;
-    std::tie(constraints,_q,_u) = _car->steady_state_equations(x_reduced,ax,ay,_v);
+    std::tie(constraints,_q,_qa,_u) = _car->steady_state_equations(x_reduced,ax,ay,_v);
 
     return constraints;
 }
@@ -922,7 +922,7 @@ typename Steady_state<Dynamic_model_t>::Max_lon_acc_constraints::output_type Ste
     std::copy(x.data(), x.data() + Dynamic_model_t::N_SS_VARS, x_reduced.begin());
 
     std::array<Timeseries_t,Dynamic_model_t::N_SS_EQNS> constraints;
-    std::tie(constraints,_q,_u) = _car->steady_state_equations(x_reduced,ax,_ay,_v);
+    std::tie(constraints,_q,_qa,_u) = _car->steady_state_equations(x_reduced,ax,_ay,_v);
 
     return constraints;
 }

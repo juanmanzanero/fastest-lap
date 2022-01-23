@@ -16,6 +16,38 @@ class F1_optimal_laptime_test : public ::testing::Test
     limebeer2014f1<scalar>::cartesian car_cartesian_scalar = { database };
 };
 
+TEST_F(F1_optimal_laptime_test, Catalunya_polyseg_direct)
+{
+    if ( is_valgrind ) GTEST_SKIP();
+
+    Xml_document catalunya_xml("./database/catalunya-polyseg.xml",true);
+    Track_by_polynomial catalunya(catalunya_xml);
+    
+    constexpr const size_t n = 500;
+
+    limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial>::Road_t road(catalunya, 10.0);
+    limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial> car(database, road);
+
+    // Start from the steady-state values at 50km/h-0g    
+    const scalar v = 50.0*KMH;
+    auto ss = Steady_state(car_cartesian).solve(v,0.0,0.0); 
+
+    Optimal_laptime opt_laptime(n, true, true, car, ss.q, ss.qa, ss.u, {5.0e0,8.0e-4});
+
+    limebeer2014f1<scalar>::curvilinear<Track_by_polynomial> car_scalar(database, {catalunya,10.0});
+    for (size_t i = 0; i < n; ++i)
+    {
+
+        const scalar& L = car_scalar.get_road().track_length();
+        car_scalar(opt_laptime.q.at(i), opt_laptime.qa.at(i), opt_laptime.u.at(i),((double)i)*L/((double)n));
+        const auto& kappa_left  = car_scalar.get_chassis().get_rear_axle().template get_tire<0>().get_kappa();
+        const auto& kappa_right = car_scalar.get_chassis().get_rear_axle().template get_tire<1>().get_kappa();
+        std::cout << opt_laptime.u.at(i)[1] << ", " << kappa_left << ", " << kappa_right << ", " << opt_laptime.u.at(i)[0] << ", " << car_scalar.get_road().get_x() << ", " << car_scalar.get_road().get_y() << std::endl;
+    }
+}
+
+
+
 
 TEST_F(F1_optimal_laptime_test, maximum_acceleration)
 {

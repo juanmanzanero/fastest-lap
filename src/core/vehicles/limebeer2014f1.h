@@ -45,13 +45,13 @@ class limebeer2014f1
 
         // Steady-state computation
         static constexpr const size_t N_SS_VARS = 11;
-        static constexpr const size_t N_SS_EQNS = 15;
+        static constexpr const size_t N_SS_EQNS = 14;
 
         // Optimal-laptime computation
         static constexpr const size_t N_OL_EXTRA_CONSTRAINTS = 4;    //! The number of tire constraints: lambda_fl, lambda_fr, lambda_rl, lambda_rr
 
         // Factor to scale the acceleration on the fitness function
-        static constexpr const scalar acceleration_scaling = 1.0;
+        static constexpr const scalar acceleration_scaling = g0;
 
         // The content of x is: x = [kappa_fl, kappa_fr, kappa_rl, kappa_rr, psi, Fz_fl, Fz_fr, Fz_rl, Fz_rr, delta, throttle]
         static std::vector<scalar> steady_state_initial_guess()
@@ -73,15 +73,15 @@ class limebeer2014f1
 
         static std::pair<std::vector<scalar>,std::vector<scalar>> steady_state_variable_bounds_brake() 
         {
-            return { { -0.085, -0.085, -0.085, -0.085, -10.0*DEG, -3.0, -3.0, -3.0, -3.0, -10.0*DEG, -1.0},
+            return { { -0.170, -0.170, -0.170, -0.170, -1.0e-2*DEG, -3.0, -3.0, -3.0, -3.0, -4.0*DEG, -1.0},
                      {  0.04,  0.04,  0.04,  0.04,  10.0*DEG,  1.0,  1.0,  1.0,  1.0,  10.0*DEG,  0.5} };
         }
 
 
         static std::pair<std::vector<scalar>,std::vector<scalar>> steady_state_constraint_bounds() 
         {
-            return { {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -0.090, -0.090, -0.090, -0.090, -1.0e-10},
-                     {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,  0.090,  0.090,  0.090,  0.090, 10.0*DEG} };
+            return { {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -0.090, -0.090, -0.090, -0.090},
+                     {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,  0.090,  0.090,  0.090,  0.090} };
         }
 
         template<typename T>
@@ -106,6 +106,7 @@ class limebeer2014f1
 
         std::tuple<std::array<Timeseries_t,N_SS_EQNS>,
                    std::array<Timeseries_t,Dynamic_model_t::NSTATE>,
+                   std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC>,
                    std::array<Timeseries_t,Dynamic_model_t::NCONTROL>>
             steady_state_equations(const std::array<Timeseries_t,N_SS_VARS>& x, 
                                    const Timeseries_t& ax, 
@@ -148,10 +149,10 @@ class limebeer2014f1
             // Compute constraints
             std::array<Timeseries_t,N_SS_EQNS> constraints;
         
-            constraints[0] = dqa[0]*5.0;
-            constraints[1] = dqa[1]*1.0;
-            constraints[2] = dqa[2]*1.0;
-            constraints[3] = dqa[3]*1.0;
+            constraints[0] = dqa[0];
+            constraints[1] = dqa[1];
+            constraints[2] = dqa[2];
+            constraints[3] = dqa[3];
             constraints[4] = (dqdt[Dynamic_model_t::Chassis_type::IIDU]*sin(psi)
                             + dqdt[Dynamic_model_t::Chassis_type::IIDV]*cos(psi))/g0;
             constraints[5] = (ax - dqdt[Dynamic_model_t::Chassis_type::IIDU]*cos(psi)
@@ -167,10 +168,7 @@ class limebeer2014f1
             constraints[12] = this->get_chassis().get_rear_axle().template get_tire<0>().get_lambda();
             constraints[13] = this->get_chassis().get_rear_axle().template get_tire<1>().get_lambda();
 
-            // One final constraint: car should not counter steer in a steady state! psi.delta >= 0
-            constraints[14] = x[4]*x[9]/(10.0*DEG);
-
-            return {constraints,q,u};
+            return {constraints,q,qa,u};
         }
 
         // Optimal lap-time --------------------------------------------------------

@@ -11,6 +11,7 @@ std::unordered_map<std::string,lot2016kart_all> vehicles_lot2016kart;
 std::unordered_map<std::string,limebeer2014f1_all> vehicles_limebeer2014f1;
 
 std::unordered_map<std::string,Track_by_arcs> tracks_by_arcs;
+std::unordered_map<std::string,Track_by_polynomial> tracks_by_polynomial;
 
 void create_vehicle(struct c_Vehicle* vehicle, const char* name, const char* database_file)
 {
@@ -89,21 +90,47 @@ void create_track(struct c_Track* track, const char* name, const char* track_fil
     else
         throw std::runtime_error("Track attribute type \"" + track_type + "\" shall be \"open\" or \"closed\"");
 
+    // Read format: by-arcs or by-polynomial
+    const std::string track_format = track_xml.get_root_element().get_attribute("format");
+
     track->is_closed = is_closed;
     
-    auto out = tracks_by_arcs.insert({name,{track_xml,scale,is_closed}});
-
-    if (out.second==false) 
+    if ( track_format == "by-arcs" )
     {
-        throw std::runtime_error("Track already exists");
+        track->format = BY_ARCS;
+
+        auto out = tracks_by_arcs.insert({name,{track_xml,scale,is_closed}});
+
+        if (out.second==false) 
+        {
+            throw std::runtime_error("Track already exists");
+        }
+    }
+    else if ( track_format == "by-polynomial" )
+    {
+        track->format = BY_POLYNOMIAL;
+
+        auto out = tracks_by_polynomial.insert({name,{track_xml}});
+        
+        if (out.second==false) 
+        {
+            throw std::runtime_error("Track already exists");
+        }
     }
 }
 
 
-
-void gg_diagram(double* ay, double* ax_max, double* ax_min, struct c_Vehicle* vehicle, double v, const int n_points)
+void vehicle_equations(double* dqdt, double* dqa, double** jac_dqdt, double** jac_dqa, double*** h_dqdt, double*** h_dqa, struct c_Vehicle* vehicle, double* q, double* qa, double* u, double s)
 {
-    auto& car = vehicles_lot2016kart.at(vehicle->name).cartesian_ad;
+
+
+}
+
+
+
+template<typename vehicle_t>
+void compute_gg_diagram(vehicle_t& car, double* ay, double* ax_max, double* ax_min, double v, const int n_points)
+{
     Steady_state ss(car);
     auto [sol_max, sol_min] = ss.gg_diagram(v,n_points);
 
@@ -115,42 +142,91 @@ void gg_diagram(double* ay, double* ax_max, double* ax_min, struct c_Vehicle* ve
     }
 }
 
+void gg_diagram(double* ay, double* ax_max, double* ax_min, struct c_Vehicle* c_vehicle, double v, const int n_points)
+{
+    if ( c_vehicle->type == LOT2016KART )
+        compute_gg_diagram(vehicles_lot2016kart.at(c_vehicle->name).cartesian_ad, ay, ax_max, ax_min, v, n_points);
+
+    else if ( c_vehicle->type == LIMEBEER2014F1 )
+        compute_gg_diagram(vehicles_limebeer2014f1.at(c_vehicle->name).cartesian_ad, ay, ax_max, ax_min, v, n_points);
+}
+
+
 
 void track_coordinates(double* x_center, double* y_center, double* x_left, double* y_left, double* x_right, double* y_right, double* theta, struct c_Track* c_track, const double width, const int n_points)
 {
-    auto& track = tracks_by_arcs.at(c_track->name);
-
-    const scalar& L = track.get_total_length();
-    const scalar ds = L/((scalar)(n_points-1));
-    
-    for (int i = 0; i < n_points; ++i)
+    if ( c_track->format == BY_ARCS )
     {
-        const scalar s = ((double)i)*ds;
-
-        // Compute centerline
-        auto [r_c,v_c,a_c] = track(s);
-
-        x_center[i] = r_c[0];
-        y_center[i] = r_c[1];
-
-        // Heading angle (theta)
-        theta[i] = atan2(v_c[1],v_c[0]);
-
-        // Compute left boundary
-        auto [r_l,v_l,a_l] = track.position_at(s,width,0.0,0.0);
-
-        x_left[i] = r_l[0];
-        y_left[i] = r_l[1];
-
-        // Compute right boundary
-        auto [r_r,v_r,a_r] = track.position_at(s,-width,0.0,0.0);
-
-        x_right[i] = r_r[0];
-        y_right[i] = r_r[1];
+        auto& track = tracks_by_arcs.at(c_track->name);
+    
+        const scalar& L = track.get_total_length();
+        const scalar ds = L/((scalar)(n_points-1));
 
         
+        for (int i = 0; i < n_points; ++i)
+        {
+            const scalar s = ((double)i)*ds;
+    
+            // Compute centerline
+            auto [r_c,v_c,a_c] = track(s);
+    
+            x_center[i] = r_c[0];
+            y_center[i] = r_c[1];
+    
+            // Heading angle (theta)
+            theta[i] = atan2(v_c[1],v_c[0]);
+    
+            // Compute left boundary
+            auto [r_l,v_l,a_l] = track.position_at(s,width,0.0,0.0);
+    
+            x_left[i] = r_l[0];
+            y_left[i] = r_l[1];
+    
+            // Compute right boundary
+            auto [r_r,v_r,a_r] = track.position_at(s,-width,0.0,0.0);
+    
+            x_right[i] = r_r[0];
+            y_right[i] = r_r[1];
+    
+            
+        }
     }
-
+    else if ( c_track->format == BY_POLYNOMIAL )
+    {
+        std::string name = c_track->name;
+        auto& track = tracks_by_polynomial.at(name);
+    
+        const scalar& L = track.get_total_length();
+        const scalar ds = L/((scalar)(n_points-1));
+        
+        PRINTVARIABLE(JMT,L);
+        for (int i = 0; i < n_points; ++i)
+        {
+            const scalar s = ((double)i)*ds;
+    
+            // Compute centerline
+            auto [r_c,v_c,a_c] = track(s);
+    
+            x_center[i] = r_c[0];
+            y_center[i] = r_c[1];
+    
+            // Heading angle (theta)
+            theta[i] = atan2(v_c[1],v_c[0]);
+    
+            // Compute left boundary
+            auto [r_l] = track.position_at(s,width);
+    
+            x_left[i] = r_l[0];
+            y_left[i] = r_l[1];
+    
+            // Compute right boundary
+            auto [r_r] = track.position_at(s,-width);
+    
+            x_right[i] = r_r[0];
+            y_right[i] = r_r[1];
+        }
+    }
+    
     return;
 }
 

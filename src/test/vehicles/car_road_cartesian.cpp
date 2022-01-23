@@ -1030,3 +1030,99 @@ TEST_F(Car_road_cartesian_test, jacobian_autodiff)
             EXPECT_NEAR(Value(numerical_jacobian[i][j]), Value(dqdt0_jacobian[i + 15*j]), 2.0e-6*std::max(Value(fabs(dqdt0_jacobian[i+15*j])),1.0)) << "with i = " << i << " and j = " << j ;
         }
 }
+
+TEST_F(Car_road_cartesian_test, jacobian_autodiff_integrated_function)
+{
+    lot2016kart<CppAD::AD<double>>::cartesian car_ad(*database);
+    lot2016kart<double>::cartesian            car_sc(*database);
+    car_ad.get_chassis().get_rear_axle().enable_direct_torque(); 
+    car_sc.get_chassis().get_rear_axle().enable_direct_torque(); 
+    // Set the initial condition in a vector of scalar
+    std::vector<double> x0 = {1.0942729386749036e+02, 1.3888864656170503e+01, -2.5944758219334368e-02, 1.4399999999999999e-01, 1.7813769736939513e-02, -2.8474281872469206e-03, 6.8675368270008927e-03, 0.0000000000000000e+00, 0.0000000000000000e+00, 0.0000000000000000e+00, 0.0000000000000000e+00, 0.0000000000000000e+00, 1.8680236782072025e-03, 9.4530179243706314e-03, 0.0000000000000000e+00};
+  
+    // Fill the inputs to the operator() of the vehicle 
+    std::array<double,13> q0;
+    std::array<double,2> u0;
+    for (size_t i = 0; i < 13; ++i)
+    {
+        q0[i] = x0[i];
+    }
+    for (size_t i = 0; i < 2; ++i)
+    {
+        u0[i] = x0[i+13];
+    }
+
+    // Call operator()
+    auto solution = car_ad.equations(q0,{},u0,0.0);
+
+    // Compute the numerical Jacobian
+
+    std::array<std::array<double,13>,15> numerical_jacobian;
+
+    // derivatives w.r.t q
+    for (size_t i = 0; i < 13; ++i)
+    {
+        // Freeze u0 and add a perturbation on q0 
+        const double eps = std::max(1.0,fabs(q0[i]))*1.0e-8;
+        q0[i] += eps;
+
+        auto dqdt_eps = car_sc(q0,u0,0.0);
+
+        q0[i] -= 2*eps;
+
+        auto dqdt_meps = car_sc(q0,u0,0.0);
+
+        numerical_jacobian[i] = (dqdt_eps - dqdt_meps)*(0.5/eps);
+
+        q0[i] += eps;
+    }
+
+    // derivatives w.r.t u
+    for (size_t i = 0; i < 2; ++i)
+    {
+        // Freeze u0 and add a perturbation on q0 
+        const double eps = std::max(1.0,fabs(u0[i]))*1.0e-8;
+        u0[i] += eps;
+
+        auto dqdt_eps = car_sc(q0,u0,0.0);
+
+        u0[i] -= 2*eps;
+
+        auto dqdt_meps = car_sc(q0,u0,0.0);
+
+        numerical_jacobian[i+13] = (dqdt_eps - dqdt_meps)*(0.5/eps);
+
+        u0[i] += eps;
+    }
+
+
+    for (size_t i = 0; i < 15; ++i)
+        for (size_t j = 0; j < 13; ++j)
+        {
+            EXPECT_NEAR(numerical_jacobian[i][j], solution.jac_dqdt[j][i], 2.0e-6*std::max(fabs(solution.jac_dqdt[j][i]),1.0)) << "with i = " << i << " and j = " << j ;
+        }
+}
+
+
+TEST_F(Car_road_cartesian_test, autodifftest)
+{
+    std::vector<CppAD::AD<double>> x = {0.0, 0.0, 0.0};
+    CppAD::Independent(x);
+
+    std::vector<CppAD::AD<double>> y = {x[0]+2.0*x[1]+0.5*x[0]*x[0] + x[0]*x[2] ,x[1]+x[1]*x[1]}; 
+
+    CppAD::ADFun<double> adfun;
+    adfun.Dependent(x,y);
+
+
+    std::vector<double> x0 = {0,0,0};
+
+    auto y0 = adfun.Forward(0, x0);
+    auto dydx0 = adfun.Jacobian(x0);
+    auto d2ydx20 = adfun.Hessian(x0,0);
+
+    std::cout << y0 << std::endl;
+    std::cout << dydx0 << std::endl;
+    std::cout << d2ydx20 << std::endl;
+    std::cout << adfun.Hessian(x0,1) << std::endl;
+}

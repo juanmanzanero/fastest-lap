@@ -99,6 +99,7 @@ class lot2016kart
 
         std::tuple<std::array<Timeseries_t,N_SS_EQNS>,
                    std::array<Timeseries_t,Dynamic_model_t::NSTATE>,
+                   std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC>,
                    std::array<Timeseries_t,Dynamic_model_t::NCONTROL>>
             steady_state_equations(const std::array<Timeseries_t,N_SS_VARS>& x, 
                                    const Timeseries_t& ax, 
@@ -154,7 +155,7 @@ class lot2016kart
             constraints[10] = this->get_chassis().get_front_axle().template get_tire<0>().get_lambda();
             constraints[11] = this->get_chassis().get_front_axle().template get_tire<1>().get_lambda();
         
-            return {constraints,q,u};
+            return {constraints,q,{},u};
         }
 
 

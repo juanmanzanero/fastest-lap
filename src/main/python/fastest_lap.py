@@ -17,6 +17,7 @@ class c_Vehicle(c.Structure):
 class c_Track(c.Structure):
     _fields_ = [("name", c.c_char_p),
                 ("track_file", c.c_char_p),
+                ("format", c.c_int),
                 ("scale", c.c_double),
                 ("is_closed", c.c_bool)
                ]

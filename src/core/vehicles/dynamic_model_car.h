@@ -71,6 +71,31 @@ class Dynamic_model_car
                                                                                                           const std::array<Timeseries_t,_NCONTROL>& u,
                                                                                                           scalar t);
 
+    //! The time derivative functor + algebraic equations, their Jacobians, and Hessians
+    //! @param[in] q: state vector
+    //! @param[in] qa: constraint variables vector
+    //! @param[in] u: controls vector
+    //! @param[in] t: time/arclength
+    struct Equations
+    {
+        // Values
+        std::array<scalar,_NSTATE> dqdt;
+        std::array<scalar,NALGEBRAIC> dqa;
+
+        // Jacobians: jac[i] represents the Jacobian of the i-th variable
+        std::array<std::array<scalar,_NSTATE+NALGEBRAIC+_NCONTROL>,_NSTATE> jac_dqdt; 
+        std::array<std::array<scalar,_NSTATE+NALGEBRAIC+_NCONTROL>, NALGEBRAIC> jac_dqa;
+
+        // Hessians: hess[i] represents the Hessian of the i-th variable
+        std::array<std::array<std::array<scalar,_NSTATE+NALGEBRAIC+_NCONTROL>,_NSTATE+NALGEBRAIC+_NCONTROL>,_NSTATE> hess_dqdt;     
+        std::array<std::array<std::array<scalar,_NSTATE+NALGEBRAIC+_NCONTROL>,_NSTATE+NALGEBRAIC+_NCONTROL>,NALGEBRAIC> hess_dqa;
+    };
+
+    Equations equations(const std::array<scalar,_NSTATE>& q,
+                        const std::array<scalar,NALGEBRAIC>& qa,
+                        const std::array<scalar,_NCONTROL>& u,
+                        scalar t);
+
     std::tuple<std::string,std::array<std::string,_NSTATE>,std::array<std::string,_NCONTROL>> get_state_and_control_names() const;
 
     //! Return the chassis
