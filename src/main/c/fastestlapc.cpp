@@ -152,7 +152,6 @@ void gg_diagram(double* ay, double* ax_max, double* ax_min, struct c_Vehicle* c_
 }
 
 
-
 void track_coordinates(double* x_center, double* y_center, double* x_left, double* y_left, double* x_right, double* y_right, double* theta, struct c_Track* c_track, const double width, const int n_points)
 {
     if ( c_track->format == BY_ARCS )
@@ -230,14 +229,15 @@ void track_coordinates(double* x_center, double* y_center, double* x_left, doubl
     return;
 }
 
-template<typename vehicle_t>
-void compute_optimal_laptime(vehicle_t& vehicle, struct c_Channel* channels, struct c_Vehicle* c_vehicle, const c_Track* c_track, const double width, const int n_points, const int n_channels)
+
+template<typename vehicle_t, typename track_t>
+void compute_optimal_laptime(vehicle_t& vehicle, track_t& track, struct c_Channel* channels, struct c_Vehicle* c_vehicle, const double width, const int n_points, const int n_channels)
 {
-    auto& track = tracks_by_arcs.at(c_track->name);
-    auto& car_curv = vehicle.curvilinear_ad;
+    auto& car_curv = vehicle.template get_curvilinear_ad_car<track_t>();
+    auto& car_curv_sc = vehicle.template get_curvilinear_scalar_car<track_t>();
+
     auto& car_cart = vehicle.cartesian_ad;
     auto& car_cart_sc = vehicle.cartesian_scalar;
-    auto& car_curv_sc = vehicle.curvilinear_scalar;
 
     // Set the track into the curvilinear car dynamic model
     car_curv.get_road().change_track(track,width);
@@ -245,9 +245,6 @@ void compute_optimal_laptime(vehicle_t& vehicle, struct c_Channel* channels, str
 
     // Start from the steady-state values at 50km/h-0g    
     scalar v = 50.0*KMH;
-
-    if ( c_vehicle->type == LIMEBEER2014F1 )
-        v = 150.0*KMH;
 
     auto ss = Steady_state(car_cart).solve(v,0.0,0.0); 
 
@@ -340,8 +337,29 @@ void compute_optimal_laptime(vehicle_t& vehicle, struct c_Channel* channels, str
 void optimal_laptime(struct c_Channel* channels, struct c_Vehicle* c_vehicle, const c_Track* c_track, const double width, const int n_points, const int n_channels)
 {
     if ( c_vehicle->type == LOT2016KART )
-        compute_optimal_laptime(vehicles_lot2016kart.at(c_vehicle->name), channels, c_vehicle, c_track, width, n_points, n_channels);
-
+    {
+        if ( c_track->format == BY_ARCS )
+        {
+            compute_optimal_laptime(vehicles_lot2016kart.at(c_vehicle->name), tracks_by_arcs.at(c_track->name), 
+                                    channels, c_vehicle, width, n_points, n_channels);
+        }
+        else if ( c_track->format == BY_POLYNOMIAL )
+        {
+            compute_optimal_laptime(vehicles_lot2016kart.at(c_vehicle->name), tracks_by_polynomial.at(c_track->name), 
+                                    channels, c_vehicle, width, n_points, n_channels);
+        }
+    }
     else if ( c_vehicle->type == LIMEBEER2014F1 )
-        compute_optimal_laptime(vehicles_limebeer2014f1.at(c_vehicle->name), channels, c_vehicle, c_track, width, n_points, n_channels);
+    {
+        if ( c_track->format == BY_ARCS )
+        {
+            compute_optimal_laptime(vehicles_limebeer2014f1.at(c_vehicle->name), tracks_by_arcs.at(c_track->name), 
+                                    channels, c_vehicle, width, n_points, n_channels);
+        }
+        else if ( c_track->format == BY_POLYNOMIAL )
+        {
+            compute_optimal_laptime(vehicles_limebeer2014f1.at(c_vehicle->name), tracks_by_polynomial.at(c_track->name), 
+                                    channels, c_vehicle, width, n_points, n_channels);
+        }
+    }
 }

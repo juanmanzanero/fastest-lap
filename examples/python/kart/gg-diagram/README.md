@@ -4,7 +4,7 @@
 ```python
 # Put parent folder in the pythonpath
 import sys,os,inspect
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))))))
 import fastest_lap
 from fastest_lap import KMH
 ```
@@ -12,7 +12,7 @@ from fastest_lap import KMH
 
 ```python
 # Load vehicle
-vehicle=fastest_lap.load_vehicle("../../../database/roberto-lot-kart-2016.xml","car");
+vehicle=fastest_lap.load_vehicle("../../../../database/roberto-lot-kart-2016.xml","car");
 ```
 
 

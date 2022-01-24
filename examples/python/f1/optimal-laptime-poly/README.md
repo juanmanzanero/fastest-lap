@@ -6,7 +6,7 @@
 import sys,os,inspect
 
 import matplotlib.pyplot as plt
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))))))
 import fastest_lap
 from fastest_lap import KMH
 ```
@@ -14,19 +14,19 @@ from fastest_lap import KMH
 
 ```python
 # Load vehicle
-vehicle=fastest_lap.load_vehicle("../../../database/limebeer-2014-f1.xml","car");
+vehicle=fastest_lap.load_vehicle("../../../../database/limebeer-2014-f1.xml","car");
 ```
 
 
 ```python
 # Load track
-track=fastest_lap.load_track("../../../database/catalunya.xml","catalunya",1.0);
+track=fastest_lap.load_track("../../../../database/catalunya-polyseg.xml","catalunya",1.0);
 ```
 
 
 ```python
 # Compute optimal laptime
-data = fastest_lap.optimal_laptime(vehicle,track,12,500,["x","y","delta","throttle","u","s"]);
+data = fastest_lap.optimal_laptime(vehicle,track,12,2000,["x","y","delta","throttle","u","s"]);
 x = data[0];
 y = data[1];
 delta = data[2];
@@ -41,6 +41,8 @@ s = data[5]
 ```python
 import numpy as np
 fastest_lap.plot_optimal_laptime(np.array(x),y,track,6.0);
+plt.gca().invert_xaxis()
+
 ```
 
 
@@ -54,7 +56,7 @@ fastest_lap.plot_optimal_laptime(np.array(x),y,track,6.0);
 
 ```python
 plt.figure(figsize=(20,3))
-plt.plot(delta,color="orange");
+plt.plot(np.array(delta)*180.0/3.14,color="orange");
 ```
 
 
@@ -142,11 +144,12 @@ mer_color = fastf1.plotting.team_color('MER')
     core           INFO 	Processing timing data...
     api            INFO 	Using cached data for driver_info
     api            INFO 	Using cached data for session_status_data
+    utils          INFO 	NumExpr defaulting to 4 threads.
     api            INFO 	Using cached data for track_status_data
     api            INFO 	Using cached data for car_data
     api            INFO 	Using cached data for position_data
     api            INFO 	Using cached data for weather_data
-    core           INFO 	Loaded data for 20 drivers: ['44', '5', '14', '77', '31', '6', '7', '63', '47', '55', '22', '3', '18', '16', '9', '11', '33', '99', '4', '10']
+    core           INFO 	Loaded data for 20 drivers: ['55', '6', '5', '16', '47', '11', '31', '63', '3', '4', '22', '77', '33', '7', '9', '14', '10', '99', '18', '44']
 
 
 
@@ -155,7 +158,7 @@ mer_color = fastf1.plotting.team_color('MER')
 fig, ax = plt.subplots(figsize=(20,5))
 ax.plot(ver_tel['Distance'], ver_tel['Speed'], color=rbr_color, label='VER')
 ax.plot(ham_tel['Distance'], ham_tel['Speed'], color=mer_color, label='HAM')
-ax.plot(np.array(s)-100,np.array(u)*3.6, label="Fastest-lap")
+ax.plot(np.array(s)+110,np.array(u)*3.6, label="Fastest-lap")
 ax.set_xlabel('Distance in m')
 ax.set_ylabel('Speed in km/h')
 

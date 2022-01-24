@@ -217,17 +217,46 @@ struct lot2016kart_all
 {
     lot2016kart_all(Xml_document& database_xml)
     : cartesian_scalar(database_xml), 
-      curvilinear_scalar(database_xml),
+      curvilinear_scalar_arcs(database_xml),
+      curvilinear_scalar_poly(database_xml),
       cartesian_ad(database_xml),
-      curvilinear_ad(database_xml) 
+      curvilinear_ad_arcs(database_xml), 
+      curvilinear_ad_poly(database_xml)  
     {}
 
     using vehicle_scalar_curvilinear_a = lot2016kart<scalar>::curvilinear_a;
+    using vehicle_scalar_curvilinear_p = lot2016kart<scalar>::curvilinear_p;
+
+    // Get curvilinear AD car for the polynomial track
+    template<typename Track_type>
+    std::enable_if_t<std::is_same<Track_type,Track_by_polynomial>::value,lot2016kart<CppAD::AD<scalar>>::curvilinear_p&>
+        get_curvilinear_ad_car() { return curvilinear_ad_poly; }
+
+    // Get curvilinear AD car for the track by arcs
+    template<typename Track_type>
+    std::enable_if_t<std::is_same<Track_type,Track_by_arcs>::value,lot2016kart<CppAD::AD<scalar>>::curvilinear_a&>
+        get_curvilinear_ad_car() { return curvilinear_ad_arcs; }
+
+    // Get curvilinear scalar car for the polynomial track
+    template<typename Track_type>
+    std::enable_if_t<std::is_same<Track_type,Track_by_polynomial>::value,lot2016kart<scalar>::curvilinear_p&>
+        get_curvilinear_scalar_car() { return curvilinear_scalar_poly; }
+
+    // Get curvilinear scalar car for the track by arcs
+    template<typename Track_type>
+    std::enable_if_t<std::is_same<Track_type,Track_by_arcs>::value,lot2016kart<scalar>::curvilinear_a&>
+        get_curvilinear_scalar_car() { return curvilinear_scalar_arcs; }
+ 
+
+
 
     lot2016kart<scalar>::cartesian                 cartesian_scalar;
-    lot2016kart<scalar>::curvilinear_a             curvilinear_scalar;
+    lot2016kart<scalar>::curvilinear_a             curvilinear_scalar_arcs;
+    lot2016kart<scalar>::curvilinear_p             curvilinear_scalar_poly;
     lot2016kart<CppAD::AD<scalar>>::cartesian      cartesian_ad;
-    lot2016kart<CppAD::AD<scalar>>::curvilinear_a  curvilinear_ad;
+    lot2016kart<CppAD::AD<scalar>>::curvilinear_a  curvilinear_ad_arcs;
+    lot2016kart<CppAD::AD<scalar>>::curvilinear_p  curvilinear_ad_poly;
+
 };
 
 

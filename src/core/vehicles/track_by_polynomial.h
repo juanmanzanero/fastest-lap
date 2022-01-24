@@ -6,6 +6,9 @@
 class Track_by_polynomial
 {
  public:
+
+    Track_by_polynomial() = default;
+
     Track_by_polynomial(Xml_document& doc) : Track_by_polynomial(compute_track_polynomial(doc)) {}
 
     Track_by_polynomial(const vPolynomial& r) : _r(r), _dr(_r.derivative()), _d2r(_dr.derivative()) {}
