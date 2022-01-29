@@ -1,4 +1,4 @@
-<ovaltrack type="straight-and-curve">
+<ovaltrack type="straight-and-curve" width="20.0">
     <straight
     	length="150.0"
     />

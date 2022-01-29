@@ -152,7 +152,7 @@ void gg_diagram(double* ay, double* ax_max, double* ax_min, struct c_Vehicle* c_
 }
 
 
-void track_coordinates(double* x_center, double* y_center, double* x_left, double* y_left, double* x_right, double* y_right, double* theta, struct c_Track* c_track, const double width, const int n_points)
+void track_coordinates(double* x_center, double* y_center, double* x_left, double* y_left, double* x_right, double* y_right, double* theta, struct c_Track* c_track, const int n_points)
 {
     if ( c_track->format == BY_ARCS )
     {
@@ -176,13 +176,13 @@ void track_coordinates(double* x_center, double* y_center, double* x_left, doubl
             theta[i] = atan2(v_c[1],v_c[0]);
     
             // Compute left boundary
-            auto [r_l,v_l,a_l] = track.position_at(s,width,0.0,0.0);
+            auto [r_l,v_l,a_l] = track.position_at(s,track.get_right_track_limit(s),0.0,0.0);
     
             x_left[i] = r_l[0];
             y_left[i] = r_l[1];
     
             // Compute right boundary
-            auto [r_r,v_r,a_r] = track.position_at(s,-width,0.0,0.0);
+            auto [r_r,v_r,a_r] = track.position_at(s,-track.get_left_track_limit(s),0.0,0.0);
     
             x_right[i] = r_r[0];
             y_right[i] = r_r[1];
@@ -213,13 +213,13 @@ void track_coordinates(double* x_center, double* y_center, double* x_left, doubl
             theta[i] = atan2(v_c[1],v_c[0]);
     
             // Compute left boundary
-            auto [r_l] = track.position_at(s,width);
+            auto [r_l] = track.position_at(s,track.get_right_track_limit(s));
     
             x_left[i] = r_l[0];
             y_left[i] = r_l[1];
     
             // Compute right boundary
-            auto [r_r] = track.position_at(s,-width);
+            auto [r_r] = track.position_at(s,-track.get_left_track_limit(s));
     
             x_right[i] = r_r[0];
             y_right[i] = r_r[1];
@@ -231,7 +231,7 @@ void track_coordinates(double* x_center, double* y_center, double* x_left, doubl
 
 
 template<typename vehicle_t, typename track_t>
-void compute_optimal_laptime(vehicle_t& vehicle, track_t& track, struct c_Channel* channels, struct c_Vehicle* c_vehicle, const double width, const int n_points, const int n_channels)
+void compute_optimal_laptime(vehicle_t& vehicle, track_t& track, struct c_Channel* channels, struct c_Vehicle* c_vehicle, const int n_points, const int n_channels)
 {
     auto& car_curv = vehicle.template get_curvilinear_ad_car<track_t>();
     auto& car_curv_sc = vehicle.template get_curvilinear_scalar_car<track_t>();
@@ -240,8 +240,8 @@ void compute_optimal_laptime(vehicle_t& vehicle, track_t& track, struct c_Channe
     auto& car_cart_sc = vehicle.cartesian_scalar;
 
     // Set the track into the curvilinear car dynamic model
-    car_curv.get_road().change_track(track,width);
-    car_curv_sc.get_road().change_track(track,width);
+    car_curv.get_road().change_track(track);
+    car_curv_sc.get_road().change_track(track);
 
     // Start from the steady-state values at 50km/h-0g    
     scalar v = 50.0*KMH;
@@ -285,6 +285,9 @@ void compute_optimal_laptime(vehicle_t& vehicle, track_t& track, struct c_Channe
             else if ( std::string(channels[j].name) == "u" )
                 channels[j].data[i] = opt_laptime.q[i][vehicle_t::vehicle_scalar_curvilinear_a::Chassis_type::IU];
 
+            else if ( std::string(channels[j].name) == "v" )
+                channels[j].data[i] = opt_laptime.q[i][vehicle_t::vehicle_scalar_curvilinear_a::Chassis_type::IV];
+
             else if ( std::string(channels[j].name) == "time" )
                 channels[j].data[i] = opt_laptime.q[i][vehicle_t::vehicle_scalar_curvilinear_a::Road_type::ITIME];
 
@@ -293,6 +296,9 @@ void compute_optimal_laptime(vehicle_t& vehicle, track_t& track, struct c_Channe
 
             else if ( std::string(channels[j].name) == "psi" )
                 channels[j].data[i] = car_curv_sc.get_road().get_psi();
+
+            else if ( std::string(channels[j].name) == "omega" )
+                channels[j].data[i] = opt_laptime.q[i][vehicle_t::vehicle_scalar_curvilinear_a::Chassis_type::IOMEGA];
 
             else if ( std::string(channels[j].name) == "throttle" )
             {
@@ -334,19 +340,19 @@ void compute_optimal_laptime(vehicle_t& vehicle, track_t& track, struct c_Channe
 }
 
 
-void optimal_laptime(struct c_Channel* channels, struct c_Vehicle* c_vehicle, const c_Track* c_track, const double width, const int n_points, const int n_channels)
+void optimal_laptime(struct c_Channel* channels, struct c_Vehicle* c_vehicle, const c_Track* c_track, const int n_points, const int n_channels)
 {
     if ( c_vehicle->type == LOT2016KART )
     {
         if ( c_track->format == BY_ARCS )
         {
             compute_optimal_laptime(vehicles_lot2016kart.at(c_vehicle->name), tracks_by_arcs.at(c_track->name), 
-                                    channels, c_vehicle, width, n_points, n_channels);
+                                    channels, c_vehicle, n_points, n_channels);
         }
         else if ( c_track->format == BY_POLYNOMIAL )
         {
             compute_optimal_laptime(vehicles_lot2016kart.at(c_vehicle->name), tracks_by_polynomial.at(c_track->name), 
-                                    channels, c_vehicle, width, n_points, n_channels);
+                                    channels, c_vehicle, n_points, n_channels);
         }
     }
     else if ( c_vehicle->type == LIMEBEER2014F1 )
@@ -354,12 +360,12 @@ void optimal_laptime(struct c_Channel* channels, struct c_Vehicle* c_vehicle, co
         if ( c_track->format == BY_ARCS )
         {
             compute_optimal_laptime(vehicles_limebeer2014f1.at(c_vehicle->name), tracks_by_arcs.at(c_track->name), 
-                                    channels, c_vehicle, width, n_points, n_channels);
+                                    channels, c_vehicle, n_points, n_channels);
         }
         else if ( c_track->format == BY_POLYNOMIAL )
         {
             compute_optimal_laptime(vehicles_limebeer2014f1.at(c_vehicle->name), tracks_by_polynomial.at(c_track->name), 
-                                    channels, c_vehicle, width, n_points, n_channels);
+                                    channels, c_vehicle, n_points, n_channels);
         }
     }
 }

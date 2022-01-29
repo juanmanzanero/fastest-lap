@@ -2,9 +2,8 @@
 #define __ROAD_CURVILINEAR_HPP__
 
 template<typename Timeseries_t,typename Track_t,size_t STATE0, size_t CONTROL0>
-inline Road_curvilinear<Timeseries_t,Track_t,STATE0,CONTROL0>::Road_curvilinear(const Track_t& track, scalar w)
+inline Road_curvilinear<Timeseries_t,Track_t,STATE0,CONTROL0>::Road_curvilinear(const Track_t& track)
 : _track(track),
-  _w(w),
   _n(0.0)
 {}
 

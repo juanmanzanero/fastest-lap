@@ -25,7 +25,7 @@ TEST_F(F1_optimal_laptime_test, Catalunya_polyseg_direct)
     
     constexpr const size_t n = 500;
 
-    limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial>::Road_t road(catalunya, 10.0);
+    limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial>::Road_t road(catalunya);
     limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial> car(database, road);
 
     // Start from the steady-state values at 50km/h-0g    
@@ -34,7 +34,7 @@ TEST_F(F1_optimal_laptime_test, Catalunya_polyseg_direct)
 
     Optimal_laptime opt_laptime(n, true, true, car, ss.q, ss.qa, ss.u, {5.0e0,8.0e-4});
 
-    limebeer2014f1<scalar>::curvilinear<Track_by_polynomial> car_scalar(database, {catalunya,10.0});
+    limebeer2014f1<scalar>::curvilinear<Track_by_polynomial> car_scalar(database, {catalunya});
     for (size_t i = 0; i < n; ++i)
     {
 
@@ -54,7 +54,7 @@ TEST_F(F1_optimal_laptime_test, maximum_acceleration)
     Xml_document straight_xml("./data/straight.xml",true);
     Track_by_arcs straight(straight_xml,10.0,false);
 
-    limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_arcs> car(database, {straight, 10.0});
+    limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_arcs> car(database, {straight});
 
     constexpr const size_t n = 50;
 
@@ -129,7 +129,7 @@ TEST_F(F1_optimal_laptime_test, Ovaltrack_open)
     
     constexpr const size_t n = 400;
 
-    limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_arcs>::Road_t road(ovaltrack, 10.0);
+    limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_arcs>::Road_t road(ovaltrack);
     limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_arcs> car(database, road);
 
     // Start from the steady-state values at 50km/h-0g    
@@ -138,7 +138,7 @@ TEST_F(F1_optimal_laptime_test, Ovaltrack_open)
 
     Optimal_laptime opt_laptime(n, false, true, car, ss.q, ss.qa, ss.u, {1.0e2,2.0e-3});
 
-    limebeer2014f1<scalar>::curvilinear<Track_by_arcs> car_scalar(database, {ovaltrack,10.0});
+    limebeer2014f1<scalar>::curvilinear<Track_by_arcs> car_scalar(database, {ovaltrack});
     for (size_t i = 0; i < n; ++i)
     {
 
@@ -159,7 +159,7 @@ TEST_F(F1_optimal_laptime_test, Ovaltrack_closed)
     
     constexpr const size_t n = 100;
 
-    limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_arcs>::Road_t road(ovaltrack, 10.0);
+    limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_arcs>::Road_t road(ovaltrack);
     limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_arcs> car(database, road);
 
     // Start from the steady-state values at 50km/h-0g    
@@ -168,7 +168,7 @@ TEST_F(F1_optimal_laptime_test, Ovaltrack_closed)
 
     Optimal_laptime opt_laptime(n, true, true, car, ss.q, ss.qa, ss.u, {1.0e2,2.0e-3});
 
-    limebeer2014f1<scalar>::curvilinear<Track_by_arcs> car_scalar(database, {ovaltrack,10.0});
+    limebeer2014f1<scalar>::curvilinear<Track_by_arcs> car_scalar(database, {ovaltrack});
     for (size_t i = 0; i < n; ++i)
     {
 
@@ -233,7 +233,7 @@ TEST_F(F1_optimal_laptime_test, Catalunya_direct)
     
     constexpr const size_t n = 500;
 
-    limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_arcs>::Road_t road(catalunya, 10.0);
+    limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_arcs>::Road_t road(catalunya);
     limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_arcs> car(database, road);
 
     // Start from the steady-state values at 50km/h-0g    
@@ -242,7 +242,7 @@ TEST_F(F1_optimal_laptime_test, Catalunya_direct)
 
     Optimal_laptime opt_laptime(n, true, true, car, ss.q, ss.qa, ss.u, {5.0e0,8.0e-4});
 
-    limebeer2014f1<scalar>::curvilinear<Track_by_arcs> car_scalar(database, {catalunya,10.0});
+    limebeer2014f1<scalar>::curvilinear<Track_by_arcs> car_scalar(database, {catalunya});
     for (size_t i = 0; i < n; ++i)
     {
 
@@ -269,7 +269,7 @@ TEST_F(F1_optimal_laptime_test, Catalunya_derivative)
     
     constexpr const size_t n = 500;
 
-    limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_arcs>::Road_t road(catalunya, 10.0);
+    limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_arcs>::Road_t road(catalunya);
     limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_arcs> car(database, road);
 
     // Start from the steady-state values at 50km/h-0g    

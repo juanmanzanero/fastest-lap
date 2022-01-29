@@ -65,7 +65,7 @@ def gg_diagram(vehicle,speed,n_points):
 
 	return ay,ay_minus,ax_max,ax_min;
 
-def optimal_laptime(vehicle, track, width, n_points, channels):
+def optimal_laptime(vehicle, track, n_points, channels):
 
 	# Get channels ready to be written by C++
 	n_channels = len(channels);
@@ -75,7 +75,7 @@ def optimal_laptime(vehicle, track, width, n_points, channels):
 		c_Channels[channel].name = c.c_char_p(channels[channel].encode('utf-8'));
 		c_Channels[channel].data = c.cast((c.c_double*n_points)(),c.POINTER(c.c_double))
 
-	c_lib.optimal_laptime(c.byref(c_Channels), c.byref(vehicle), c.byref(track), c.c_double(width), c.c_int(n_points), c.c_int(n_channels));
+	c_lib.optimal_laptime(c.byref(c_Channels), c.byref(vehicle), c.byref(track), c.c_int(n_points), c.c_int(n_channels));
 
 	channels_data = [[None]*n_points for i in range(n_channels)];
 
@@ -85,7 +85,7 @@ def optimal_laptime(vehicle, track, width, n_points, channels):
 
 	return channels_data;
 
-def track_coordinates(track,width,n_points):
+def track_coordinates(track,n_points):
 	c_x_center = (c.c_double*n_points)();
 	c_y_center = (c.c_double*n_points)();
 	c_x_left   = (c.c_double*n_points)();
@@ -93,7 +93,7 @@ def track_coordinates(track,width,n_points):
 	c_x_right  = (c.c_double*n_points)();
 	c_y_right  = (c.c_double*n_points)();
 	c_theta    = (c.c_double*n_points)();
-	c_lib.track_coordinates(c_x_center, c_y_center, c_x_left, c_y_left, c_x_right, c_y_right, c_theta, c.byref(track), c.c_double(width), c.c_int(n_points));
+	c_lib.track_coordinates(c_x_center, c_y_center, c_x_left, c_y_left, c_x_right, c_y_right, c_theta, c.byref(track), c.c_int(n_points));
 
 	x_center = [None] * n_points;
 	y_center = [None] * n_points;
@@ -178,6 +178,6 @@ def plot_track(x_center, y_center, x_left, y_left, x_right, y_right, theta):
 
 	return fig;
 
-def plot_optimal_laptime(x, y, track, width):
-	fig = plot_track(*track_coordinates(track,width,1000))
+def plot_optimal_laptime(x, y, track):
+	fig = plot_track(*track_coordinates(track,1000))
 	plt.plot(x,y,linewidth=2,color="orange");

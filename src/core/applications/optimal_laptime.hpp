@@ -41,11 +41,10 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const size_t n, con
     auto [qa_lb, qa_ub] = Dynamic_model_t::optimal_laptime_algebraic_state_bounds();
     auto [c_extra_lb, c_extra_ub] = Dynamic_model_t::optimal_laptime_extra_constraints_bounds(); 
 
-    // Correct the maximum bound in N to track_width/2
-    const scalar& width = car.get_road().track_width();
-    q_lb[Dynamic_model_t::Road_type::IN] = -0.5*width;
-    q_ub[Dynamic_model_t::Road_type::IN] = +0.5*width;
-
+    // Correct the maximum bound in N to the track limits
+    const scalar& L = car.get_road().track_length();
+    const scalar ds = L/((scalar)(n));
+    
     std::vector<scalar> x_lb(fg.get_n_variables(), -1.0e24);
     std::vector<scalar> x_ub(fg.get_n_variables(), +1.0e24);
 
@@ -56,6 +55,9 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const size_t n, con
 
     for (size_t i = offset; i < n + offset; ++i)
     {
+        const scalar s = ((double)i)*ds;
+
+        // Set state and initial condition from start to ITIME
         for (size_t j = 0; j < Dynamic_model_t::Road_type::ITIME; ++j)    
         {
             x0[k] = q0[j];
@@ -66,7 +68,18 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const size_t n, con
             k++; kc++;
         }
 
-        for (size_t j = Dynamic_model_t::Road_type::ITIME+1; j < Dynamic_model_t::NSTATE; ++j)    
+        // Set state to IN. Assert that ITIME = IN - 1
+        assert(Dynamic_model_t::Road_type::ITIME == ( Dynamic_model_t::Road_type::IN - 1 ) );
+
+        x0[k] = 0.0;
+        x_lb[k] = -car.get_road().get_left_track_limit(s);
+        x_ub[k] =  car.get_road().get_right_track_limit(s);
+        c_lb[kc] = 0.0;
+        c_ub[kc] = 0.0;
+        k++; kc++;
+
+        // Set state after IN
+        for (size_t j = Dynamic_model_t::Road_type::IN+1; j < Dynamic_model_t::NSTATE; ++j)    
         {
             x0[k] = q0[j];
             x_lb[k] = q_lb[j];
@@ -171,8 +184,6 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const size_t n, con
 
     // Compute the time and arclength
     s = std::vector<scalar>(fg.get_states().size(),0.0);
-    const scalar& L = fg.get_car().get_road().track_length();
-    const scalar ds = L/((scalar)(n));
     auto dtimeds_first = fg.get_car()(fg.get_state(0),fg.get_algebraic_state(0),fg.get_control(0),0.0).first[Dynamic_model_t::Road_type::ITIME];
     auto dtimeds_prev = dtimeds_first;
     for (size_t i = 1; i < fg.get_states().size(); ++i)
@@ -205,9 +216,8 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const size_t n,
     auto [c_extra_lb, c_extra_ub] = Dynamic_model_t::optimal_laptime_extra_constraints_bounds(); 
 
     // Correct the maximum bound in N to track_width/2
-    const scalar& width = car.get_road().track_width();
-    q_lb[Dynamic_model_t::Road_type::IN] = -0.5*width;
-    q_ub[Dynamic_model_t::Road_type::IN] = +0.5*width;
+    const scalar& L = car.get_road().track_length();
+    const scalar ds = L/((scalar)(n));
 
     // Set state bounds
     std::vector<scalar> x_lb(fg.get_n_variables(), -1.0e24);
@@ -220,6 +230,8 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const size_t n,
 
     for (size_t i = offset; i < n + offset; ++i)
     {
+        const scalar s = ((double)i)*ds;
+
         // Set state before time
         for (size_t j = 0; j < Dynamic_model_t::Road_type::ITIME; ++j)    
         {
@@ -231,8 +243,18 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const size_t n,
             k++; kc++;
         }
 
-        // Set state after time
-        for (size_t j = Dynamic_model_t::Road_type::ITIME+1; j < Dynamic_model_t::NSTATE; ++j)    
+        // Set state to IN. Assert that ITIME = IN - 1
+        assert(Dynamic_model_t::Road_type::ITIME == ( Dynamic_model_t::Road_type::IN - 1 ) );
+
+        x0[k] = 0.0;
+        x_lb[k] = -car.get_road().get_left_track_limit(s);
+        x_ub[k] =  car.get_road().get_right_track_limit(s);
+        c_lb[kc] = 0.0;
+        c_ub[kc] = 0.0;
+        k++; kc++;
+
+        // Set state after the normal 
+        for (size_t j = Dynamic_model_t::Road_type::IN+1; j < Dynamic_model_t::NSTATE; ++j)    
         {
             x0[k] = q0[j];
             x_lb[k] = q_lb[j];
@@ -352,8 +374,6 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const size_t n,
 
     // Compute the time and arclength
     s = std::vector<scalar>(fg.get_states().size(),0.0);
-    const scalar& L = fg.get_car().get_road().track_length();
-    const scalar ds = L/((scalar)(n));
     auto dtimeds_first = fg.get_car()(fg.get_state(0),fg.get_algebraic_state(0),fg.get_control(0),0.0).first[Dynamic_model_t::Road_type::ITIME];
     auto dtimeds_prev = dtimeds_first;
     for (size_t i = 1; i < fg.get_states().size(); ++i)

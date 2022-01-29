@@ -11,7 +11,14 @@ class Track_by_polynomial
 
     Track_by_polynomial(Xml_document& doc) : Track_by_polynomial(compute_track_polynomial(doc)) {}
 
-    Track_by_polynomial(const vPolynomial& r) : _r(r), _dr(_r.derivative()), _d2r(_dr.derivative()) {}
+    Track_by_polynomial(const vPolynomial& r, const sPolynomial& wl, const sPolynomial& wr) 
+        : _r(r), _dr(_r.derivative()), _d2r(_dr.derivative()), _wl(wl), _wr(wr) {}
+
+    Track_by_polynomial(std::tuple<vPolynomial,sPolynomial,sPolynomial> p) : Track_by_polynomial(std::get<0>(p), std::get<1>(p), std::get<2>(p)) {}
+
+    scalar get_left_track_limit(scalar s) const { return _wl(s); }
+
+    scalar get_right_track_limit(scalar s) const { return _wr(s); }
 
     constexpr const scalar& get_total_length() const { return _r.get_right_bound(); } 
 
@@ -34,7 +41,10 @@ class Track_by_polynomial
     vPolynomial _dr;    //! Position vector derivative polynomial
     vPolynomial _d2r;   //! Position vector second derivative polynomial
 
-    static vPolynomial compute_track_polynomial(Xml_document& doc);
+    sPolynomial _wl;    //! Distance to the left track limit
+    sPolynomial _wr;    //! Distance to the right track limit
+
+    static std::tuple<vPolynomial,sPolynomial,sPolynomial> compute_track_polynomial(Xml_document& doc);
 };
 
 #include "track_by_polynomial.hpp"

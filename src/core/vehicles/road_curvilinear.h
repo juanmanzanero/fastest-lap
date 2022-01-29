@@ -13,7 +13,7 @@ class Road_curvilinear : public Road<Timeseries_t,STATE0,CONTROL0>
     using Track_type = Track_t;
 
     Road_curvilinear() = default;
-    Road_curvilinear(const Track_t& track, scalar w);
+    Road_curvilinear(const Track_t& track);
 
     enum State { ITIME = base_type::STATE_END, IN, IALPHA, STATE_END };
     enum Controls { CONTROL_END = base_type::CONTROL_END };
@@ -22,11 +22,13 @@ class Road_curvilinear : public Road<Timeseries_t,STATE0,CONTROL0>
     constexpr static size_t IIDN     = IN;
     constexpr static size_t IIDALPHA = IALPHA;
 
-    void change_track(const Track_t& track, scalar w) { _track = track; _w = w; }
+    void change_track(const Track_t& track) { _track = track; }
 
     constexpr const scalar& track_length() const { return _track.get_total_length(); } 
 
-    constexpr const scalar& track_width() const { return _w; }
+    constexpr const scalar get_left_track_limit(scalar s) const { return _track.get_left_track_limit(s); }
+
+    constexpr const scalar get_right_track_limit(scalar s) const { return _track.get_right_track_limit(s); }
 
     constexpr scalar curvature(const sVector3d& dr, const sVector3d& d2r, const scalar drnorm) const
                                                         { return cross(dr,d2r)[Z]/(drnorm*drnorm*drnorm); } 
@@ -60,7 +62,6 @@ class Road_curvilinear : public Road<Timeseries_t,STATE0,CONTROL0>
 
  private:
     Track_t _track;     //! [in] Vectorial polynomial with track coordinates
-    scalar _w;          //! [in] Track width
 
     sVector3d _r;
     sVector3d _dr;

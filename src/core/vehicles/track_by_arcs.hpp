@@ -1,7 +1,8 @@
 
 inline Track_by_arcs::Track_by_arcs()
 : n_segments(0),
-  total_length(0.0)
+  total_length(0.0),
+  _w(0.0)
 {}
 
 inline Track_by_arcs::Track_by_arcs(Xml_document& doc, const scalar scale, const bool closed) 
@@ -10,7 +11,8 @@ inline Track_by_arcs::Track_by_arcs(Xml_document& doc, const scalar scale, const
   starting_directions(n_segments,{1.0,0.0,0.0}),
   starting_arclength(n_segments,0.0),
   curvature(n_segments,0.0),
-  total_length(0.0)
+  total_length(0.0),
+  _w(0.5*scale*doc.get_root_element().get_attribute("width",scalar()))
 {
     std::vector<Xml_element> children = doc.get_root_element().get_children();
 

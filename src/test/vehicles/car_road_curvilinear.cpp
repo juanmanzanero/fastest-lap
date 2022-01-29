@@ -101,7 +101,7 @@ class Car_road_curvilinear_test : public ::testing::Test
     const scalar omega_axle = 10.0;
 
     Xml_document database = {"database/roberto-lot-kart-2016.xml", true};
-    Road_t _road = {construct_ninety_degrees_bend(), 5.0};
+    Road_t _road = {{construct_ninety_degrees_bend(), sPolynomial({0.0,1000.0},{5.0,5.0},1,false), sPolynomial({0.0,1000.0},{5.0,5.0},1,false)}};
     Dynamic_model_t _car = {database, _road};
 };
 

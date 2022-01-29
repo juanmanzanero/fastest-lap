@@ -18,7 +18,7 @@ class Track_by_arcs
     //! @param[in] closed: true if track is closed
     Track_by_arcs(Xml_document& doc, const scalar scale, const bool closed);
 
-    Track_by_arcs (Xml_document& doc, const bool closed) : Track_by_arcs(doc, 1.0, closed) {}
+    Track_by_arcs(Xml_document& doc, const bool closed) : Track_by_arcs(doc, 1.0, closed) {}
 
     //! operator(): Compute the position, velocity, and acceleration of a point in the centerline at a given arclength
     //! @param[in] s: arclength
@@ -27,6 +27,11 @@ class Track_by_arcs
     //! Compute the position, velocity, acceleration and jerk of a point in the centerline at a given arclength
     //! @param[in] s: arclength
     std::tuple<sVector3d,sVector3d,sVector3d,sVector3d> at(const scalar s) const;
+
+
+    scalar get_left_track_limit(scalar s) const { return _w; }
+
+    scalar get_right_track_limit(scalar s) const { return _w; }
 
     //! Compute the position, velocity, and acceleration of a point at a given position
     //! @param[in] s: arclength
@@ -56,6 +61,7 @@ class Track_by_arcs
     std::vector<scalar>     starting_arclength;     //! [c] The starting arclength for each segment
     std::vector<scalar>     curvature;              //! [c] The starting curvature for each segment
     scalar                  total_length;           //! [c] The track total length
+    scalar                  _w;                     //! [c] Track limit distance
     
 };
 
