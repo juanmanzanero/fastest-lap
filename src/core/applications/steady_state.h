@@ -2,7 +2,7 @@
 #define __STEADY_STATE_H__
 
 #include "lion/foundation/types.h"
-#include "lion/foundation/utils.h"
+#include "lion/foundation/utils.hpp"
 #include "lion/thirdparty/include/cppad/cppad.hpp"
 
 template<typename Dynamic_model_t>

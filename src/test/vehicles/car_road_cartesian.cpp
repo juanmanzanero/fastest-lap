@@ -1120,9 +1120,4 @@ TEST_F(Car_road_cartesian_test, autodifftest)
     auto y0 = adfun.Forward(0, x0);
     auto dydx0 = adfun.Jacobian(x0);
     auto d2ydx20 = adfun.Hessian(x0,0);
-
-    std::cout << y0 << std::endl;
-    std::cout << dydx0 << std::endl;
-    std::cout << d2ydx20 << std::endl;
-    std::cout << adfun.Hessian(x0,1) << std::endl;
 }
