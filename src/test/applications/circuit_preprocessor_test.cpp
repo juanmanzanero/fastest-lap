@@ -42,14 +42,14 @@ TEST(Circuit_preprocessor_test, catalunya_500)
     // compare centerline
     for (size_t i = 0; i < circuit.n_points; ++i)
     {
-        EXPECT_DOUBLE_EQ(circuit.r_centerline[i].x(), x[i]) << " with i = " << i; 
-        EXPECT_DOUBLE_EQ(circuit.r_centerline[i].y(), y[i]) << " with i = " << i; 
-        EXPECT_DOUBLE_EQ(circuit.theta[i], theta[i]) << " with i = " << i; 
-        EXPECT_DOUBLE_EQ(circuit.kappa[i], kappa[i]) << " with i = " << i; 
-        EXPECT_DOUBLE_EQ(circuit.nl[i], nl[i]) << " with i = " << i; 
-        EXPECT_DOUBLE_EQ(circuit.nr[i], nr[i]) << " with i = " << i; 
-        EXPECT_DOUBLE_EQ(circuit.dkappa[i], dkappa[i]) << " with i = " << i; 
-        EXPECT_DOUBLE_EQ(circuit.dnl[i], dnl[i]) << " with i = " << i; 
-        EXPECT_DOUBLE_EQ(circuit.dnr[i], dnr[i]) << " with i = " << i; 
+        EXPECT_NEAR(circuit.r_centerline[i].x(), x[i]     , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.r_centerline[i].y(), y[i]     , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.theta[i]           , theta[i] , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.kappa[i]           , kappa[i] , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.nl[i]              , nl[i]    , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.nr[i]              , nr[i]    , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.dkappa[i]          , dkappa[i], 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.dnl[i]             , dnl[i]   , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.dnr[i]             , dnr[i]   , 1.0e-8) << " with i = " << i;
     }
 }
