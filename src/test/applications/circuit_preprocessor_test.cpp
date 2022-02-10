@@ -14,7 +14,7 @@ TEST(Circuit_preprocessor_test, catalunya_500)
     Xml_document coord_left_kml("./database/google_earth/Catalunya_left.kml", true);
     Xml_document coord_right_kml("./database/google_earth/Catalunya_right.kml", true);
     
-    Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, 500, true);
+    Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, 500, true, {});
 
     Xml_document solution_saved("./database/catalunya_discrete.xml", true);
 
@@ -51,5 +51,24 @@ TEST(Circuit_preprocessor_test, catalunya_500)
         EXPECT_NEAR(circuit.dkappa[i]          , dkappa[i], 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.dnl[i]             , dnl[i]   , 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.dnr[i]             , dnr[i]   , 1.0e-8) << " with i = " << i;
+    }
+
+    // Check that the reference coordinates are recovered
+    std::vector<scalar> coord_left  = coord_left_kml.get_element("kml/Document/Placemark/LineString/coordinates").get_value(std::vector<scalar>());
+    std::vector<scalar> coord_right = coord_right_kml.get_element("kml/Document/Placemark/LineString/coordinates").get_value(std::vector<scalar>());
+
+    EXPECT_EQ(circuit.r_left_measured.size()*3, coord_left.size());
+    EXPECT_EQ(circuit.r_right_measured.size()*3, coord_right.size());
+
+    scalar theta0 = coord_right[0];
+    scalar phi0 = coord_right[1];
+
+    for (size_t i = 0; i < circuit.r_left_measured.size(); ++i)
+    {
+        scalar lon = coord_left[3*i];
+        scalar lat = coord_left[3*i+1];
+    
+        EXPECT_DOUBLE_EQ(lon, circuit.r_left_measured[i].x()/(circuit.R_earth*cos(phi0*DEG))*RAD + theta0);
+        EXPECT_DOUBLE_EQ(lat, circuit.r_left_measured[i].y()/(circuit.R_earth)*RAD + phi0);
     }
 }

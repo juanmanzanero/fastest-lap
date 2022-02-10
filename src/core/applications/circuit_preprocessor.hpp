@@ -6,7 +6,8 @@
 #include "lion/math/matrix_extensions.h"
 #include "lion/math/ipopt_cppad_handler.hpp"
 
-inline Circuit_preprocessor::Circuit_preprocessor(Xml_document& coord_left_kml, Xml_document& coord_right_kml, const size_t n, bool closed)
+inline Circuit_preprocessor::Circuit_preprocessor(Xml_document& coord_left_kml, Xml_document& coord_right_kml, const size_t n, bool closed, const Options options)
+ : _options(options)
 {
     // Get child with data for the left boundary 
     const std::vector<scalar> coord_left_raw  = coord_left_kml.get_element("kml/Document/Placemark/LineString/coordinates").get_value(std::vector<scalar>());
@@ -30,11 +31,12 @@ inline Circuit_preprocessor::Circuit_preprocessor(Xml_document& coord_left_kml, 
     for (size_t i = 0; i < n_right; ++i)
         coord_right[i] = std::array<scalar,2>({coord_right_raw[3*i],coord_right_raw[3*i+1]});
 
-    *this = Circuit_preprocessor(coord_left, coord_right, n, closed);
+    *this = Circuit_preprocessor(coord_left, coord_right, n, closed, options);
 }
 
 inline Circuit_preprocessor::Circuit_preprocessor(const std::vector<std::array<scalar,2>>& coord_left, const std::vector<std::array<scalar,2>>& coord_right, 
-    const size_t n, const bool closed)
+    const size_t n, const bool closed, const Options options)
+: _options(options), is_closed(closed)
 {
     if (closed)
         compute<true>(coord_left, coord_right, n);
@@ -68,7 +70,7 @@ inline void Circuit_preprocessor::compute(const std::vector<std::array<scalar,2>
     const scalar track_length_estimate = s_center.back() + norm(r_center.front() - r_center.back());
 
     // (4) Create the FG object
-    FG<closed> fg(n, track_length_estimate, r_left_measured, r_right_measured, r_center);
+    FG<closed> fg(n, track_length_estimate, r_left_measured, r_right_measured, r_center, _options);
     n_points = fg.get_n_points();
 
     // (5) Compute the initial condition via finite differences
@@ -184,35 +186,25 @@ inline void Circuit_preprocessor::compute(const std::vector<std::array<scalar,2>
     assert(k_ub == fg.get_n_variables());
 
     // (7) Run the optimization
-    std::string options;
-    options += "Integer print_level  5\n";
-    options += "String  sb           yes\n";
-    options += "Sparse true forward\n";
-    options += "Retape true\n";
-    options += "Numeric tol          1e-10\n";
-    options += "Numeric constr_viol_tol  1e-10\n";
-    options += "Numeric acceptable_tol  1e-8\n";
+    std::string ipopt_options;
+    ipopt_options += "Integer print_level  5\n";
+    ipopt_options += "String  sb           yes\n";
+    ipopt_options += "Sparse true forward\n";
+    ipopt_options += "Retape true\n";
+    ipopt_options += "Numeric tol          1e-10\n";
+    ipopt_options += "Numeric constr_viol_tol  1e-10\n";
+    ipopt_options += "Numeric acceptable_tol  1e-8\n";
 
     // place to return solution
     CppAD::ipopt_cppad_result<std::vector<scalar>> result;
 
     // solve the problem
-    CppAD::ipopt_cppad_solve(options, x, x_lb, x_ub, std::vector<scalar>(fg.get_n_constraints(),0.0), std::vector<scalar>(fg.get_n_constraints(),0.0), fg, result);
+    CppAD::ipopt_cppad_solve(ipopt_options, x, x_lb, x_ub, std::vector<scalar>(fg.get_n_constraints(),0.0), std::vector<scalar>(fg.get_n_constraints(),0.0), fg, result);
 
     if ( result.status != CppAD::ipopt_cppad_result<std::vector<scalar>>::success )
     {
         throw std::runtime_error("Optimization did not succeed");
     }
-
-/*
-    // Print x and y
-    for (size_t i = 0; i < n_points; ++i)
-    {
-        std::cout << result.x[1+9*i] << ", " << result.x[1+9*i+1] << ", " << result.x[1+9*i] - sin(result.x[1+9*i+2])*result.x[1+9*i+4] << ", " << result.x[1+9*i+1] + cos(result.x[1+9*i+2])*result.x[1+9*i+4] << ", "  << result.x[1+9*i] + sin(result.x[1+9*i+2])*result.x[1+9*i+5] << ", " << result.x[1+9*i+1] - cos(result.x[1+9*i+2])*result.x[1+9*i+5];
-        std::cout << ", " << result.x[1+9*i+3] ;
-        std::cout << ", " << result.x[1+9*i+6] << ", " << result.x[1+9*i+7] << ", " << result.x[1+9*i+8] << ", " << result.x[1+9*i+2] << std::endl;
-    }
-*/
 
     // Load the solution
     ds           = x[0];
@@ -313,11 +305,6 @@ inline void Circuit_preprocessor::compute(const std::vector<std::array<scalar,2>
 
     left_boundary_L2_error = sqrt(left_boundary_L2_error/track_length);
     right_boundary_L2_error = sqrt(right_boundary_L2_error/track_length);
-
-    PRINTVARIABLE(JMT,left_boundary_L2_error);
-    PRINTVARIABLE(JMT,right_boundary_L2_error);
-    PRINTVARIABLE(JMT,left_boundary_max_error);
-    PRINTVARIABLE(JMT,right_boundary_max_error);
 }
 
 inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
@@ -331,6 +318,11 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
     Xml_element root = doc_ptr->get_root_element();
 
     root.add_attribute("format","discrete");
+
+    if (is_closed)
+        root.add_attribute("type","closed");
+    else
+        root.add_attribute("type","open");
     
     // Add a header with the errors 
     auto header = root.add_child("header");
@@ -355,8 +347,17 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
     header.add_child("max_error_right").set_value(s_out.str());
     s_out.str(""); s_out.clear();
 
+    // Add optimization section
+    auto opt = root.add_child("optimization");
+    opt.add_child("cost_curvature").set_value(std::to_string(_options.eps_k));
+    opt.add_child("cost_track_limits_smoothness").set_value(std::to_string(_options.eps_n));
+    opt.add_child("cost_track_limits_errors").set_value(std::to_string(_options.eps_d));
+    opt.add_child("cost_centerline").set_value(std::to_string(_options.eps_c));
+
     // Add the GPS coordinates conversion used
     auto gps_param = root.add_child("GPS_parameters");
+    gps_param.add_comment(" x = earth_radius.cos(reference_latitude).(longitude - origin_longitude) ");
+    gps_param.add_comment(" y = earth_radius.(latitude - origin_latitude) ");
 
     s_out << theta0*RAD;
     gps_param.add_child("origin_longitude").set_value(s_out.str()).add_attribute("units","deg");
@@ -376,43 +377,29 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
 
     // Add the data
     auto data = root.add_child("data");
+    data.add_attribute("number_of_points",std::to_string(n_points));
 
     // Arc-length
     for (size_t i = 0; i < n_points-1; ++i)
-    {
-        if ( i % 6 == 0 )
-            s_out << std::endl << "\t\t";
         s_out << s[i] << ", " ;
-    }
     s_out << s.back();
-    s_out << std::endl << "        ";
 
-    data.add_child("arclength").set_value(s_out.str());
+    data.add_child("arclength").set_value(s_out.str()).add_attribute("units","m");
     s_out.str(""); s_out.clear();
 
     // Centerline
     auto centerline = data.add_child("centerline");
 
     for (size_t i = 0; i < n_points-1; ++i)
-    {
-        if ( i % 6 == 0 )
-            s_out << std::endl << "\t\t";
         s_out << r_centerline[i].x() << ", " ;
-    }
     s_out << r_centerline.back().x();
-    s_out << std::endl << "            ";
 
     centerline.add_child("x").set_value(s_out.str()).add_attribute("units","m");
     s_out.str(""); s_out.clear();
 
     for (size_t i = 0; i < n_points-1; ++i)
-    {
-        if ( i % 6 == 0 ) 
-            s_out << std::endl << "\t\t";
         s_out << r_centerline[i].y() << ", " ;
-    }
     s_out << r_centerline.back().y();
-    s_out << std::endl << "            ";
 
     centerline.add_child("y").set_value(s_out.str()).add_attribute("units","m");
     s_out.str(""); s_out.clear();
@@ -421,25 +408,15 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
     auto left = data.add_child("left_boundary");
 
     for (size_t i = 0; i < n_points-1; ++i)
-    {
-        if ( i % 6 == 0 ) 
-            s_out << std::endl << "\t\t";
         s_out << r_left[i].x() << ", " ;
-    }
     s_out << r_left.back().x();
-    s_out << std::endl << "            ";
 
     left.add_child("x").set_value(s_out.str()).add_attribute("units","m");
     s_out.str(""); s_out.clear();
 
     for (size_t i = 0; i < n_points-1; ++i)
-    {
-        if ( i % 6 == 0 ) 
-            s_out << std::endl << "\t\t";
         s_out << r_left[i].y() << ", " ;
-    }
     s_out << r_left.back().y();
-    s_out << std::endl << "            ";
 
     left.add_child("y").set_value(s_out.str()).add_attribute("units","m");
     s_out.str(""); s_out.clear();
@@ -448,25 +425,15 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
     auto right = data.add_child("right_boundary");
 
     for (size_t i = 0; i < n_points-1; ++i)
-    {
-        if ( i % 6 == 0 ) 
-            s_out << std::endl << "\t\t";
         s_out << r_right[i].x() << ", " ;
-    }
     s_out << r_right.back().x();
-    s_out << std::endl << "            ";
 
     right.add_child("x").set_value(s_out.str()).add_attribute("units","m");
     s_out.str(""); s_out.clear();
 
     for (size_t i = 0; i < n_points-1; ++i)
-    {
-        if ( i % 6 == 0 ) 
-            s_out << std::endl << "\t\t";
         s_out << r_right[i].y() << ", " ;
-    }
     s_out << r_right.back().y();
-    s_out << std::endl << "            ";
 
     right.add_child("y").set_value(s_out.str()).add_attribute("units","m");
     s_out.str(""); s_out.clear();
@@ -475,25 +442,15 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
     auto left_measured = data.add_child("left_measured_boundary");
 
     for (size_t i = 0; i < n_points-1; ++i)
-    {
-        if ( i % 6 == 0 ) 
-            s_out << std::endl << "\t\t";
         s_out << r_left_measured[i].x() << ", " ;
-    }
     s_out << r_left_measured.back().x();
-    s_out << std::endl << "            ";
 
     left_measured.add_child("x").set_value(s_out.str()).add_attribute("units","m");
     s_out.str(""); s_out.clear();
 
     for (size_t i = 0; i < n_points-1; ++i)
-    {
-        if ( i % 6 == 0 ) 
-            s_out << std::endl << "\t\t";
         s_out << r_left[i].y() << ", " ;
-    }
     s_out << r_left_measured.back().y();
-    s_out << std::endl << "            ";
 
     left_measured.add_child("y").set_value(s_out.str()).add_attribute("units","m");
     s_out.str(""); s_out.clear();
@@ -502,77 +459,47 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
     auto right_measured = data.add_child("right_measured_boundary");
 
     for (size_t i = 0; i < n_points-1; ++i)
-    {
-        if ( i % 6 == 0 ) 
-            s_out << std::endl << "\t\t";
         s_out << r_right_measured[i].x() << ", " ;
-    }
     s_out << r_right_measured.back().x();
-    s_out << std::endl << "            ";
 
     right_measured.add_child("x").set_value(s_out.str()).add_attribute("units","m");
     s_out.str(""); s_out.clear();
 
     for (size_t i = 0; i < n_points-1; ++i)
-    {
-        if ( i % 6 == 0 ) 
-            s_out << std::endl << "\t\t";
         s_out << r_right[i].y() << ", " ;
-    }
     s_out << r_right_measured.back().y();
-    s_out << std::endl << "            ";
 
     right_measured.add_child("y").set_value(s_out.str()).add_attribute("units","m");
     s_out.str(""); s_out.clear();
 
     // Theta
     for (size_t i = 0; i < n_points-1; ++i)
-    {
-        if ( i % 6 == 0 ) 
-            s_out << std::endl << "\t\t";
         s_out << theta[i] << ", " ;
-    }
     s_out << theta.back();
-    s_out << std::endl << "        ";
 
     data.add_child("theta").set_value(s_out.str()).add_attribute("units","rad");
     s_out.str(""); s_out.clear();
 
     // Kappa
     for (size_t i = 0; i < n_points-1; ++i)
-    {
-        if ( i % 6 == 0 ) 
-            s_out << std::endl << "\t\t";
         s_out << kappa[i] << ", " ;
-    }
     s_out << kappa.back();
-    s_out << std::endl << "        ";
 
     data.add_child("kappa").set_value(s_out.str()).add_attribute("units","rad");
     s_out.str(""); s_out.clear();
 
     // nl
     for (size_t i = 0; i < n_points-1; ++i)
-    {
-        if ( i % 6 == 0 ) 
-            s_out << std::endl << "\t\t";
         s_out << nl[i] << ", " ;
-    }
     s_out << nl.back();
-    s_out << std::endl << "        ";
 
     data.add_child("nl").set_value(s_out.str()).add_attribute("units","rad");
     s_out.str(""); s_out.clear();
 
     // nr
     for (size_t i = 0; i < n_points-1; ++i)
-    {
-        if ( i % 6 == 0 ) 
-            s_out << std::endl << "\t\t";
         s_out << nr[i] << ", " ;
-    }
     s_out << nr.back();
-    s_out << std::endl << "        ";
 
     data.add_child("nr").set_value(s_out.str()).add_attribute("units","rad");
     s_out.str(""); s_out.clear();
@@ -580,44 +507,27 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
 
     // dkappa
     for (size_t i = 0; i < n_points-1; ++i)
-    {
-        if ( i % 6 == 0 ) 
-            s_out << std::endl << "\t\t";
         s_out << dkappa[i] << ", " ;
-    }
     s_out << dkappa.back();
-    s_out << std::endl << "        ";
 
     data.add_child("dkappa").set_value(s_out.str()).add_attribute("units","rad");
     s_out.str(""); s_out.clear();
 
     // dnl
     for (size_t i = 0; i < n_points-1; ++i)
-    {
-        if ( i % 6 == 0 ) 
-            s_out << std::endl << "\t\t";
         s_out << dnl[i] << ", " ;
-    }
     s_out << dnl.back();
-    s_out << std::endl << "        ";
 
     data.add_child("dnl").set_value(s_out.str()).add_attribute("units","rad");
     s_out.str(""); s_out.clear();
 
     // dnr
     for (size_t i = 0; i < n_points-1; ++i)
-    {
-        if ( i % 6 == 0 ) 
-            s_out << std::endl << "\t\t";
         s_out << dnr[i] << ", " ;
-    }
     s_out << dnr.back();
-    s_out << std::endl << "        ";
 
     data.add_child("dnr").set_value(s_out.str()).add_attribute("units","rad");
     s_out.str(""); s_out.clear();
-
-    doc_ptr->print(std::cout);
 
     return doc_ptr;
 }
@@ -734,12 +644,12 @@ void Circuit_preprocessor::FG<closed>::operator()(ADvector& fg, const ADvector& 
         _dist2_center[i] = find_closest_point<CppAD::AD<scalar>>(_r_center, Vector3d<CppAD::AD<scalar>>(_q[i][IX], _q[i][IY], 0.0), true).second;
 
         // Fitness function: minimize the square of the distance to the boundaries and centerline, and control powers
-        fg[0] += 0.5*ds*_eps_d*(_dist2_left[i] + _dist2_left[i-1]);
-        fg[0] += 0.5*ds*_eps_d*(_dist2_right[i]  + _dist2_right[i-1]  );
-        fg[0] += 0.5*ds*_eps_c*(_dist2_center[i] + _dist2_center[i-1] );
-        fg[0] += 0.5*ds*_eps_k*(_u[i][IDKAPPA]*_u[i][IDKAPPA] + _u[i-1][IDKAPPA]*_u[i-1][IDKAPPA]);
-        fg[0] += 0.5*ds*_eps_n*(_u[i][IDNL]*_u[i][IDNL] + _u[i-1][IDNL]*_u[i-1][IDNL]);
-        fg[0] += 0.5*ds*_eps_n*(_u[i][IDNR]*_u[i][IDNR] + _u[i-1][IDNR]*_u[i-1][IDNR]);
+        fg[0] += 0.5*ds*_options.eps_d*(_dist2_left[i] + _dist2_left[i-1]);
+        fg[0] += 0.5*ds*_options.eps_d*(_dist2_right[i]  + _dist2_right[i-1]  );
+        fg[0] += 0.5*ds*_options.eps_c*(_dist2_center[i] + _dist2_center[i-1] );
+        fg[0] += 0.5*ds*_options.eps_k*(_u[i][IDKAPPA]*_u[i][IDKAPPA] + _u[i-1][IDKAPPA]*_u[i-1][IDKAPPA]);
+        fg[0] += 0.5*ds*_options.eps_n*(_u[i][IDNL]*_u[i][IDNL] + _u[i-1][IDNL]*_u[i-1][IDNL]);
+        fg[0] += 0.5*ds*_options.eps_n*(_u[i][IDNR]*_u[i][IDNR] + _u[i-1][IDNR]*_u[i-1][IDNR]);
 
         // Equality constraints:  q^{i} = q^{i-1} + 0.5.ds.[dqds^{i} + dqds^{i-1}]
         for (size_t j = 0; j < NSTATE; ++j)
@@ -752,18 +662,17 @@ void Circuit_preprocessor::FG<closed>::operator()(ADvector& fg, const ADvector& 
     {
         // Add the periodic element
         // Fitness function: minimize the square of the distance to the boundaries and centerline, and control powers
-        fg[0] += 0.5*ds*_eps_d*(_dist2_left[0]    + _dist2_left[_n-1] );
-        fg[0] += 0.5*ds*_eps_d*(_dist2_right[0]   + _dist2_right[_n-1]  );
-        fg[0] += 0.5*ds*_eps_c*(_dist2_center[0]  + _dist2_center[_n-1]);
-        fg[0] += 0.5*ds*_eps_k*(_u[0][IDKAPPA]*_u[0][IDKAPPA] + _u[_n-1][IDKAPPA]*_u[_n-1][IDKAPPA]);
-        fg[0] += 0.5*ds*_eps_n*(_u[0][IDNL]*_u[0][IDNL] + _u[_n-1][IDNL]*_u[_n-1][IDNL]);
-        fg[0] += 0.5*ds*_eps_n*(_u[0][IDNR]*_u[0][IDNR] + _u[_n-1][IDNR]*_u[_n-1][IDNR]);
+        fg[0] += 0.5*ds*_options.eps_d*(_dist2_left[0]    + _dist2_left[_n-1] );
+        fg[0] += 0.5*ds*_options.eps_d*(_dist2_right[0]   + _dist2_right[_n-1]  );
+        fg[0] += 0.5*ds*_options.eps_c*(_dist2_center[0]  + _dist2_center[_n-1]);
+        fg[0] += 0.5*ds*_options.eps_k*(_u[0][IDKAPPA]*_u[0][IDKAPPA] + _u[_n-1][IDKAPPA]*_u[_n-1][IDKAPPA]);
+        fg[0] += 0.5*ds*_options.eps_n*(_u[0][IDNL]*_u[0][IDNL] + _u[_n-1][IDNL]*_u[_n-1][IDNL]);
+        fg[0] += 0.5*ds*_options.eps_n*(_u[0][IDNR]*_u[0][IDNR] + _u[_n-1][IDNR]*_u[_n-1][IDNR]);
     
         // Equality constraints:  q^{i} = q^{i-1} + 0.5.ds.[dqds^{i} + dqds^{i-1}]
         // except for theta, where q^{i} = q^{i-1} + 0.5.ds.[dqds^{i} + dqds^{i-1}] - 2.pi
         for (size_t j = 0; j < NSTATE; ++j)
             fg[k++] = _q[0][j] - _q[_n-1][j] - 0.5*ds*(_dqds[_n-1][j] + _dqds[0][j]) - (j==ITHETA ? 2.0*pi : 0.0);
-    
     }
 
     // (7) Add a last constraint: the first point should be in the start line
