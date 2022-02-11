@@ -69,11 +69,8 @@ inline void Circuit_preprocessor::compute(const std::vector<std::array<scalar,2>
     const auto [s_center,r_center] = compute_averaged_centerline<closed>(r_left_measured,r_right_measured,n);
     const scalar track_length_estimate = s_center.back() + norm(r_center.front() - r_center.back());
 
-    // (4) Create the FG object
-    FG<closed> fg(n, track_length_estimate, r_left_measured, r_right_measured, r_center, _options);
-    n_points = fg.get_n_points();
-
     // (5) Compute the initial condition via finite differences
+    n_points = closed ? n : n+1;
     std::vector<scalar> x_init(n_points,0.0);
     std::vector<scalar> y_init(n_points,0.0);
     std::vector<scalar> theta_init(n_points,0.0);
@@ -97,16 +94,25 @@ inline void Circuit_preprocessor::compute(const std::vector<std::array<scalar,2>
         theta_init[i] = theta_init[i-1] + wrap_to_pi(atan2(y_init[i+1]-y_init[i],x_init[i+1]-x_init[i])-theta_init[i-1]);
     
     if (closed)
+    {
         theta_init[n-1] = theta_init[n-2] + wrap_to_pi(atan2(y_init[0]-y_init[n-1],x_init[0]-x_init[n-1])-theta_init[n-2]);
+    
+        // compute the circuit direction (clockwise/counter clockwise)
+        if ( theta_init[n-1] > theta_init[0] )
+            direction = 1.0;
+        else
+            direction = -1.0;
+    }
     else
         theta_init[n] = theta_init[n-1];
+
 
     // kappa
     for (size_t i = 0; i < n_points-1; ++i)
         kappa_init[i] = (theta_init[i+1]-theta_init[i])/(s_center[i+1]-s_center[i]);
 
     if (closed)
-        kappa_init[n-1] = (theta_init[0]- 2.0*pi - theta_init[n-1])/norm(r_center.front() - r_center.back());
+        kappa_init[n-1] = (theta_init[0] + 2.0*pi*direction - theta_init[n-1])/norm(r_center.front() - r_center.back());
     else
         kappa_init[n] = kappa_init[n-1];
 
@@ -138,6 +144,9 @@ inline void Circuit_preprocessor::compute(const std::vector<std::array<scalar,2>
         dnr_init[n] = dnr_init[n-1];
     }
 
+    // (4) Create the FG object
+    FG<closed> fg(n, track_length_estimate, r_left_measured, r_right_measured, r_center, direction, _options);
+
     // load them into an x vector
     std::vector<scalar> x(fg.get_n_variables());
     std::vector<scalar> x_lb(fg.get_n_variables());
@@ -163,20 +172,20 @@ inline void Circuit_preprocessor::compute(const std::vector<std::array<scalar,2>
         x_lb[k_lb++] = x_init[i]-100.0;
         x_lb[k_lb++] = y_init[i]-100.0;
         x_lb[k_lb++] = theta_init[i]-30.0*DEG;
-        x_lb[k_lb++] = -0.1;
+        x_lb[k_lb++] = -_options.maximum_kappa;
         x_lb[k_lb++] = 1.0;
         x_lb[k_lb++] = 1.0;
-        x_lb[k_lb++] = -2.0e-2;
+        x_lb[k_lb++] = -_options.maximum_dkappa;
         x_lb[k_lb++] = -1.0;
         x_lb[k_lb++] = -1.0;
 
         x_ub[k_ub++] = x_init[i]+100.0;
         x_ub[k_ub++] = y_init[i]+100.0;
         x_ub[k_ub++] = theta_init[i]+30.0*DEG;
-        x_ub[k_ub++] = 0.1;
+        x_ub[k_ub++] = _options.maximum_kappa;
         x_ub[k_ub++] = nl_init[i]+nr_init[i];
         x_ub[k_ub++] = nl_init[i]+nr_init[i];
-        x_ub[k_ub++] = 2.0e-2;
+        x_ub[k_ub++] = _options.maximum_dkappa;
         x_ub[k_ub++] = 1.0;
         x_ub[k_ub++] = 1.0;
     }
@@ -184,6 +193,7 @@ inline void Circuit_preprocessor::compute(const std::vector<std::array<scalar,2>
     assert(k == fg.get_n_variables());
     assert(k_lb == fg.get_n_variables());
     assert(k_ub == fg.get_n_variables());
+
 
     // (7) Run the optimization
     std::string ipopt_options;
@@ -672,7 +682,7 @@ void Circuit_preprocessor::FG<closed>::operator()(ADvector& fg, const ADvector& 
         // Equality constraints:  q^{i} = q^{i-1} + 0.5.ds.[dqds^{i} + dqds^{i-1}]
         // except for theta, where q^{i} = q^{i-1} + 0.5.ds.[dqds^{i} + dqds^{i-1}] - 2.pi
         for (size_t j = 0; j < NSTATE; ++j)
-            fg[k++] = _q[0][j] - _q[_n-1][j] - 0.5*ds*(_dqds[_n-1][j] + _dqds[0][j]) - (j==ITHETA ? 2.0*pi : 0.0);
+            fg[k++] = _q[0][j] - _q[_n-1][j] - 0.5*ds*(_dqds[_n-1][j] + _dqds[0][j]) + (j==ITHETA ? 2.0*pi*_direction : 0.0);
     }
 
     // (7) Add a last constraint: the first point should be in the start line
