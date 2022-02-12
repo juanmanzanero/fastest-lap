@@ -451,15 +451,15 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
     // Left measured boundary
     auto left_measured = data.add_child("left_measured_boundary");
 
-    for (size_t i = 0; i < n_points-1; ++i)
+    for (size_t i = 0; i < r_left_measured.size()-1; ++i)
         s_out << r_left_measured[i].x() << ", " ;
     s_out << r_left_measured.back().x();
 
     left_measured.add_child("x").set_value(s_out.str()).add_attribute("units","m");
     s_out.str(""); s_out.clear();
 
-    for (size_t i = 0; i < n_points-1; ++i)
-        s_out << r_left[i].y() << ", " ;
+    for (size_t i = 0; i < r_left_measured.size()-1; ++i)
+        s_out << r_left_measured[i].y() << ", " ;
     s_out << r_left_measured.back().y();
 
     left_measured.add_child("y").set_value(s_out.str()).add_attribute("units","m");
@@ -468,15 +468,15 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
     // Left measured boundary
     auto right_measured = data.add_child("right_measured_boundary");
 
-    for (size_t i = 0; i < n_points-1; ++i)
+    for (size_t i = 0; i < r_right_measured.size()-1; ++i)
         s_out << r_right_measured[i].x() << ", " ;
     s_out << r_right_measured.back().x();
 
     right_measured.add_child("x").set_value(s_out.str()).add_attribute("units","m");
     s_out.str(""); s_out.clear();
 
-    for (size_t i = 0; i < n_points-1; ++i)
-        s_out << r_right[i].y() << ", " ;
+    for (size_t i = 0; i < r_right_measured.size()-1; ++i)
+        s_out << r_right_measured[i].y() << ", " ;
     s_out << r_right_measured.back().y();
 
     right_measured.add_child("y").set_value(s_out.str()).add_attribute("units","m");
