@@ -6,7 +6,7 @@
 #include "lion/math/matrix_extensions.h"
 #include "lion/math/ipopt_cppad_handler.hpp"
 
-inline Circuit_preprocessor::Circuit_preprocessor(Xml_document& coord_left_kml, Xml_document& coord_right_kml, const size_t n_elements, const Options opts)
+inline Circuit_preprocessor::Circuit_preprocessor(Xml_document& coord_left_kml, Xml_document& coord_right_kml, const size_t n_el, const Options opts)
 {
     // Get child with data for the left boundary 
     const std::vector<scalar> coord_left_raw  = coord_left_kml.get_element("kml/Document/Placemark/LineString/coordinates").get_value(std::vector<scalar>());
@@ -30,7 +30,35 @@ inline Circuit_preprocessor::Circuit_preprocessor(Xml_document& coord_left_kml, 
     for (size_t i = 0; i < n_right; ++i)
         coord_right[i] = {coord_right_raw[3*i],coord_right_raw[3*i+1]};
 
-    *this = Circuit_preprocessor(coord_left, coord_right, n_elements, opts);
+    *this = Circuit_preprocessor(coord_left, coord_right, n_el, opts);
+}
+
+
+inline Circuit_preprocessor::Circuit_preprocessor(Xml_document& coord_left_kml, Xml_document& coord_right_kml, Coordinates start, Coordinates finish, const size_t n_el, const Options opts) 
+{
+    // Get child with data for the left boundary 
+    const std::vector<scalar> coord_left_raw  = coord_left_kml.get_element("kml/Document/Placemark/LineString/coordinates").get_value(std::vector<scalar>());
+    const std::vector<scalar> coord_right_raw = coord_right_kml.get_element("kml/Document/Placemark/LineString/coordinates").get_value(std::vector<scalar>());
+
+    if ( coord_left_raw.size() % 3 != 0 )
+        throw std::runtime_error("Error processing google-earth placemark: size must be multiple of 3");
+
+    if ( coord_right_raw.size() % 3 != 0 )
+        throw std::runtime_error("Error processing google-earth placemark: size must be multiple of 3");
+
+    const size_t n_left = coord_left_raw.size()/3;
+    std::vector<Coordinates> coord_left(n_left);
+
+    for (size_t i = 0; i < n_left; ++i)
+        coord_left[i] = {coord_left_raw[3*i],coord_left_raw[3*i+1]};
+
+    const size_t n_right = coord_right_raw.size()/3;
+    std::vector<Coordinates> coord_right(n_right);
+
+    for (size_t i = 0; i < n_right; ++i)
+        coord_right[i] = {coord_right_raw[3*i],coord_right_raw[3*i+1]};
+
+    *this = Circuit_preprocessor(coord_left, coord_right, start, finish, n_el, opts);
 }
 
 template<bool closed>
@@ -55,7 +83,7 @@ inline void Circuit_preprocessor::compute(const std::vector<Coordinates>& coord_
 
     // (3) Compute the centerline estimate
     const auto [s_center,r_center] = compute_averaged_centerline<closed>(r_left_measured,r_right_measured,n_elements,n_points);
-    const scalar track_length_estimate = s_center.back() + norm(r_center.front() - r_center.back());
+    const scalar track_length_estimate = s_center.back() + (closed ? norm(r_center.front() - r_center.back()) : 0.0 );
 
     // (5) Compute the initial condition via finite differences
     std::vector<scalar> x_init(n_points,0.0);
@@ -103,8 +131,8 @@ inline void Circuit_preprocessor::compute(const std::vector<Coordinates>& coord_
     // nl and nr
     for (size_t i = 0; i < n_points; ++i)
     {
-        nl_init[i] = sqrt(find_closest_point<scalar>(r_left_measured, r_center[i], closed).second);
-        nr_init[i] = sqrt(find_closest_point<scalar>(r_right_measured, r_center[i], closed).second);
+        nl_init[i] = sqrt(std::get<1>(find_closest_point<scalar>(r_left_measured, r_center[i], closed)));
+        nr_init[i] = sqrt(std::get<1>(find_closest_point<scalar>(r_right_measured, r_center[i], closed)));
     }
 
     // dkappa, dnl, and dnr
@@ -177,7 +205,6 @@ inline void Circuit_preprocessor::compute(const std::vector<Coordinates>& coord_
     assert(k == fg.get_n_variables());
     assert(k_lb == fg.get_n_variables());
     assert(k_ub == fg.get_n_variables());
-
 
     // (7) Run the optimization
     std::string ipoptoptions;
@@ -261,8 +288,8 @@ inline void Circuit_preprocessor::compute(const std::vector<Coordinates>& coord_
     track_length = n_elements*ds;
 
     // Compute the errors
-    left_boundary_max_error   = sqrt(find_closest_point<scalar>(r_left_measured,r_left.front(), closed).second);
-    right_boundary_max_error  = sqrt(find_closest_point<scalar>(r_right_measured,r_right.front(), closed).second);
+    left_boundary_max_error   = sqrt(std::get<1>(find_closest_point<scalar>(r_left_measured,r_left.front(), closed)));
+    right_boundary_max_error  = sqrt(std::get<1>(find_closest_point<scalar>(r_right_measured,r_right.front(), closed)));
     left_boundary_L2_error   = 0.0;
     right_boundary_L2_error  = 0.0;
 
@@ -271,8 +298,8 @@ inline void Circuit_preprocessor::compute(const std::vector<Coordinates>& coord_
     for (size_t i = 1; i < n_points; ++i)
     {
         // Compute current error
-        scalar current_left_error = sqrt(find_closest_point<scalar>(r_left_measured,r_left[i], closed).second); 
-        scalar current_right_error = sqrt(find_closest_point<scalar>(r_right_measured,r_right[i], closed).second); 
+        scalar current_left_error = sqrt(std::get<1>(find_closest_point<scalar>(r_left_measured,r_left[i], closed))); 
+        scalar current_right_error = sqrt(std::get<1>(find_closest_point<scalar>(r_right_measured,r_right[i], closed))); 
 
         // Compute maximum error
         left_boundary_max_error = max(current_left_error, left_boundary_max_error);
@@ -289,8 +316,8 @@ inline void Circuit_preprocessor::compute(const std::vector<Coordinates>& coord_
 
     if (closed)
     {
-        scalar current_left_error = sqrt(find_closest_point<scalar>(r_left_measured,r_left.front(), closed).second);
-        scalar current_right_error = sqrt(find_closest_point<scalar>(r_right_measured,r_right.front(), closed).second);
+        scalar current_left_error = sqrt(std::get<1>(find_closest_point<scalar>(r_left_measured,r_left.front(), closed)));
+        scalar current_right_error = sqrt(std::get<1>(find_closest_point<scalar>(r_right_measured,r_right.front(), closed)));
 
         // Compute L2 error
         left_boundary_L2_error  += 0.5*ds*(prev_left_error*prev_left_error + current_left_error*current_left_error);
@@ -561,7 +588,7 @@ inline std::pair<std::vector<scalar>, std::vector<sVector3d>> Circuit_preprocess
     // (5) Get the closest point in the left boundary to each point of the right boundary
     std::vector<sVector3d> r_left_equispaced(n_points);
     for (size_t i = 0; i < n_points; ++i)
-        r_left_equispaced[i] = find_closest_point<scalar>(r_left,r_right_equispaced[i], closed).first;
+        r_left_equispaced[i] = std::get<0>(find_closest_point<scalar>(r_left,r_right_equispaced[i], closed));
 
     // (6) Compute the centerline estimation, and close it
     std::vector<sVector3d> r_center = 0.5*(r_left_equispaced + r_right_equispaced);
@@ -586,6 +613,71 @@ inline std::pair<std::vector<scalar>, std::vector<sVector3d>> Circuit_preprocess
         s_center_equispaced.pop_back();
 
     return {s_center_equispaced, r_center_equispaced};
+}
+
+
+std::pair<std::vector<Circuit_preprocessor::Coordinates>, std::vector<Circuit_preprocessor::Coordinates>> 
+    Circuit_preprocessor::trim_coordinates
+    (const std::vector<Coordinates>& coord_left, const std::vector<Coordinates>& coord_right, Coordinates start, Coordinates finish) 
+{
+    // (1) Convert vector of coordinates to vector of sVector3d
+    std::vector<sVector3d> v_coord_left(coord_left.size());
+    std::vector<sVector3d> v_coord_right(coord_right.size());
+
+    for (size_t i = 0; i < coord_left.size(); ++i)
+        v_coord_left[i] = sVector3d(coord_left[i].longitude, coord_left[i].latitude, 0.0);
+
+    for (size_t i = 0; i < coord_right.size(); ++i)
+        v_coord_right[i] = sVector3d(coord_right[i].longitude, coord_right[i].latitude, 0.0);
+
+    sVector3d v_start  = {start.longitude, start.latitude, 0.0};
+    sVector3d v_finish = {finish.longitude, finish.latitude, 0.0};
+
+    // (2) Find the closest point to the start/finish point in the two track limits
+    auto [v_left_start,d2_left_start,i_left_start] = find_closest_point<scalar>(v_coord_left, v_start, false);
+    auto [v_right_start,d2_right_start,i_right_start] = find_closest_point<scalar>(v_coord_right, v_start, false);
+
+    auto [v_left_finish,d2_left_finish,i_left_finish] = find_closest_point<scalar>(v_coord_left, v_finish, false);
+    auto [v_right_finish,d2_right_finish,i_right_finish] = find_closest_point<scalar>(v_coord_right, v_finish, false);
+
+    // (3) Sanity checks
+
+    // Check that the provided starting point is inside the track
+    if ( dot(v_start-v_left_start,v_start-v_right_start) > -0.8*norm(v_start-v_left_start)*norm(v_start-v_right_start) )
+        throw std::runtime_error("The provided starting point does not lie within the track");
+
+    // Check that the provided finish point is inside the track
+    if ( dot(v_finish-v_left_finish,v_finish-v_right_finish) > -0.8*norm(v_finish-v_left_finish)*norm(v_finish-v_right_finish) )
+        throw std::runtime_error("The provided finishing point does not lie within the track");
+
+    // Check that i_start < i_finish
+    if ( i_left_finish[0] < i_left_start[0] )
+        throw std::runtime_error("The provided starting point is ahead of the provided finish point");
+
+    if ( i_right_finish[0] < i_right_start[0] )
+        throw std::runtime_error("The provided starting point is ahead of the provided finish point");
+    
+    // (4) Trim the left boundary
+    std::vector<Coordinates> coord_left_trim = { {v_left_start.x(), v_left_start.y()} };
+
+    size_t i_start = (i_left_start[0] == i_left_start[1] ? i_left_start[1] + 1 : i_left_start[1]);
+    size_t i_finish   = (i_left_finish[0] == i_left_finish[1] ? i_left_finish[0] - 1 : i_left_finish[0] );
+    for (size_t i = i_start; i <= i_finish; ++i)
+        coord_left_trim.push_back(coord_left[i]);
+
+    coord_left_trim.push_back({v_left_finish.x(), v_left_finish.y()});
+
+    // (4) Trim the right boundary
+    std::vector<Coordinates> coord_right_trim = { {v_right_start.x(), v_right_start.y()} };
+
+    i_start = (i_right_start[0] == i_right_start[1] ? i_right_start[1] + 1 : i_right_start[1]);
+    i_finish   = (i_right_finish[0] == i_right_finish[1] ? i_right_finish[0] - 1 : i_right_finish[0] );
+    for (size_t i = i_start; i <= i_finish; ++i)
+        coord_right_trim.push_back(coord_right[i]);
+
+    coord_right_trim.push_back({v_right_finish.x(), v_right_finish.y()});
+
+    return {coord_left_trim, coord_right_trim};
 }
 
 
@@ -621,18 +713,18 @@ void Circuit_preprocessor::FG<closed>::operator()(ADvector& fg, const ADvector& 
 
     // (4) Compute the equations for the first node
     _dqds[0] = equations(_q[0],_u[0]);
-    _dist2_left[0]   = find_closest_point<CppAD::AD<scalar>>(_r_left, Vector3d<CppAD::AD<scalar>>  (_q[0][IX] - sin(_q[0][ITHETA])*_q[0][INL], _q[0][IY] + cos(_q[0][ITHETA])*_q[0][INL], 0.0), true).second;
-    _dist2_right[0]  = find_closest_point<CppAD::AD<scalar>>(_r_right, Vector3d<CppAD::AD<scalar>> (_q[0][IX] + sin(_q[0][ITHETA])*_q[0][INR], _q[0][IY] - cos(_q[0][ITHETA])*_q[0][INR], 0.0), true).second;
-    _dist2_center[0] = find_closest_point<CppAD::AD<scalar>>(_r_center, Vector3d<CppAD::AD<scalar>>(_q[0][IX], _q[0][IY], 0.0), true).second;
+    _dist2_left[0]   = std::get<1>(find_closest_point<CppAD::AD<scalar>>(_r_left, Vector3d<CppAD::AD<scalar>>  (_q[0][IX] - sin(_q[0][ITHETA])*_q[0][INL], _q[0][IY] + cos(_q[0][ITHETA])*_q[0][INL], 0.0), true));
+    _dist2_right[0]  = std::get<1>(find_closest_point<CppAD::AD<scalar>>(_r_right, Vector3d<CppAD::AD<scalar>> (_q[0][IX] + sin(_q[0][ITHETA])*_q[0][INR], _q[0][IY] - cos(_q[0][ITHETA])*_q[0][INR], 0.0), true));
+    _dist2_center[0] = std::get<1>(find_closest_point<CppAD::AD<scalar>>(_r_center, Vector3d<CppAD::AD<scalar>>(_q[0][IX], _q[0][IY], 0.0), true));
 
     // (5) Compute the equations for the i-th node, and append the scheme equations for the i-th element
     k = 1;  // Reset the counter
     for (size_t i = 1; i < _n_points; ++i)
     {
         _dqds[i] = equations(_q[i],_u[i]);
-        _dist2_left[i]   = find_closest_point<CppAD::AD<scalar>>(_r_left, Vector3d<CppAD::AD<scalar>>  (_q[i][IX] - sin(_q[i][ITHETA])*_q[i][INL], _q[i][IY] + cos(_q[i][ITHETA])*_q[i][INL], 0.0), true).second;
-        _dist2_right[i]  = find_closest_point<CppAD::AD<scalar>>(_r_right, Vector3d<CppAD::AD<scalar>> (_q[i][IX] + sin(_q[i][ITHETA])*_q[i][INR], _q[i][IY] - cos(_q[i][ITHETA])*_q[i][INR], 0.0), true).second;
-        _dist2_center[i] = find_closest_point<CppAD::AD<scalar>>(_r_center, Vector3d<CppAD::AD<scalar>>(_q[i][IX], _q[i][IY], 0.0), true).second;
+        _dist2_left[i]   = std::get<1>(find_closest_point<CppAD::AD<scalar>>(_r_left, Vector3d<CppAD::AD<scalar>>  (_q[i][IX] - sin(_q[i][ITHETA])*_q[i][INL], _q[i][IY] + cos(_q[i][ITHETA])*_q[i][INL], 0.0), true));
+        _dist2_right[i]  = std::get<1>(find_closest_point<CppAD::AD<scalar>>(_r_right, Vector3d<CppAD::AD<scalar>> (_q[i][IX] + sin(_q[i][ITHETA])*_q[i][INR], _q[i][IY] - cos(_q[i][ITHETA])*_q[i][INR], 0.0), true));
+        _dist2_center[i] = std::get<1>(find_closest_point<CppAD::AD<scalar>>(_r_center, Vector3d<CppAD::AD<scalar>>(_q[i][IX], _q[i][IY], 0.0), true));
 
         // Fitness function: minimize the square of the distance to the boundaries and centerline, and control powers
         fg[0] += 0.5*ds*options.eps_d*(_dist2_left[i] + _dist2_left[i-1]);
@@ -646,7 +738,6 @@ void Circuit_preprocessor::FG<closed>::operator()(ADvector& fg, const ADvector& 
         for (size_t j = 0; j < NSTATE; ++j)
             fg[k++] = _q[i][j] - _q[i-1][j] - 0.5*ds*(_dqds[i-1][j] + _dqds[i][j]);
     }
-
 
     // (6) Append the scheme equations of the periodic element if the circuit is closed
     if constexpr (closed)
@@ -668,13 +759,14 @@ void Circuit_preprocessor::FG<closed>::operator()(ADvector& fg, const ADvector& 
 
     // (7) Add a last constraint: the first point should be in the start line
     const sVector3d p = _r_left.front() - _r_right.front();
-    fg[k++] = cross(p,Vector3d<CppAD::AD<scalar>>(_q.front()[IX], _q.front()[IY], 0.0)).z()/dot(p,p);
+    fg[k++] = cross(p,Vector3d<CppAD::AD<scalar>>(_q.front()[IX], _q.front()[IY], 0.0)-_r_right.front()).z()/dot(p,p);
 
     if constexpr (!closed)
     {
         // If track is open, the last point should be in the finish line
         const sVector3d p = _r_left.back() - _r_right.back();
-        fg[k++] = cross(p,Vector3d<CppAD::AD<scalar>>(_q.back()[IX], _q.back()[IY], 0.0)).z()/dot(p,p);
+        fg[k++] = cross(p,Vector3d<CppAD::AD<scalar>>(_q.back()[IX], _q.back()[IY], 0.0)-_r_right.back()).z()/dot(p,p);
+        
     }
 
     assert(k == FG::_n_constraints+1);

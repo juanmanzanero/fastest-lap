@@ -20,7 +20,8 @@ TEST(Circuit_preprocessor_test, museo_closed)
     
     Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, 100, options);
 
-    circuit.xml()->save("museo_short_discrete.xml");
+    // Call the xml() version, just to confirm there are no errors/valgrind issues
+    circuit.xml();
 
     Xml_document solution_saved("./data/museo_short_discrete.xml", true);
 
@@ -80,6 +81,58 @@ TEST(Circuit_preprocessor_test, museo_closed)
 }
 
 
+TEST(Circuit_preprocessor_test, catalunya_chicane)
+{
+    Xml_document coord_left_kml("./database/google_earth/Catalunya_left.kml", true);
+    Xml_document coord_right_kml("./database/google_earth/Catalunya_right.kml", true);
+
+    Circuit_preprocessor::Coordinates start = {2.261, 41.57455};
+    Circuit_preprocessor::Coordinates finish = {2.26325, 41.57385};
+    
+    Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, start, finish, 20, {});
+
+    circuit.xml();
+
+    Xml_document solution_saved("./data/catalunya_chicane_discrete.xml", true);
+
+    const std::vector<scalar> s     = solution_saved.get_element("circuit/data/arclength").get_value(std::vector<scalar>());
+    const std::vector<scalar> x     = solution_saved.get_element("circuit/data/centerline/x").get_value(std::vector<scalar>());
+    const std::vector<scalar> y     = solution_saved.get_element("circuit/data/centerline/y").get_value(std::vector<scalar>());
+    const std::vector<scalar> theta = solution_saved.get_element("circuit/data/theta").get_value(std::vector<scalar>());
+    const std::vector<scalar> kappa = solution_saved.get_element("circuit/data/kappa").get_value(std::vector<scalar>());
+    const std::vector<scalar> nl    = solution_saved.get_element("circuit/data/nl").get_value(std::vector<scalar>());
+    const std::vector<scalar> nr    = solution_saved.get_element("circuit/data/nr").get_value(std::vector<scalar>());
+    const std::vector<scalar> dkappa = solution_saved.get_element("circuit/data/dkappa").get_value(std::vector<scalar>());
+    const std::vector<scalar> dnl    = solution_saved.get_element("circuit/data/dnl").get_value(std::vector<scalar>());
+    const std::vector<scalar> dnr    = solution_saved.get_element("circuit/data/dnr").get_value(std::vector<scalar>());
+
+    EXPECT_EQ(circuit.n_points,21);
+    EXPECT_EQ(circuit.r_centerline.size(),21);
+    EXPECT_EQ(circuit.theta.size(),21);
+    EXPECT_EQ(circuit.kappa.size(),21);
+    EXPECT_EQ(circuit.nl.size(),21);
+    EXPECT_EQ(circuit.nr.size(),21);
+    EXPECT_EQ(circuit.dkappa.size(),21);
+    EXPECT_EQ(circuit.dnl.size(),21);
+    EXPECT_EQ(circuit.dnr.size(),21);
+
+    // compare centerline
+    for (size_t i = 0; i < circuit.n_points; ++i)
+    {
+        EXPECT_NEAR(circuit.r_centerline[i].x(), x[i]     , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.r_centerline[i].y(), y[i]     , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.theta[i]           , theta[i] , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.kappa[i]           , kappa[i] , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.nl[i]              , nl[i]    , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.nr[i]              , nr[i]    , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.dkappa[i]          , dkappa[i], 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.dnl[i]             , dnl[i]   , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.dnr[i]             , dnr[i]   , 1.0e-8) << " with i = " << i;
+    }
+}
+
+
+
 TEST(Circuit_preprocessor_test, catalunya_500)
 {
     #ifndef NDEBUG
@@ -92,6 +145,8 @@ TEST(Circuit_preprocessor_test, catalunya_500)
     Xml_document coord_right_kml("./database/google_earth/Catalunya_right.kml", true);
     
     Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, 500, {});
+
+    circuit.xml();
 
     Xml_document solution_saved("./database/catalunya_discrete.xml", true);
 
@@ -149,3 +204,6 @@ TEST(Circuit_preprocessor_test, catalunya_500)
         EXPECT_DOUBLE_EQ(lat, circuit.r_left_measured[i].y()/(circuit.R_earth)*RAD + phi0);
     }
 }
+
+
+

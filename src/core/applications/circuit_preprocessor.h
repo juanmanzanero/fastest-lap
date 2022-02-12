@@ -37,20 +37,31 @@ class Circuit_preprocessor
     Circuit_preprocessor(Xml_document& coord_left_kml, Xml_document& coord_right_kml, const size_t n_el, const Options opts);
 
     //! Constructor for open circuits, from KML
-    Circuit_preprocessor(Xml_document& coord_left_kml, Xml_document& coord_right_kml, Coordinates start_, Coordinates finish_, const size_t n_el, const Options opts);
+    Circuit_preprocessor(Xml_document& coord_left_kml, Xml_document& coord_right_kml, Coordinates start, Coordinates finish, const size_t n_el, const Options opts);
 
     //! Constructor for closed circuits
-    Circuit_preprocessor(const std::vector<Coordinates>& coord_left, const std::vector<Coordinates>& coord_right, const size_t n_el, const Options opts) 
+    Circuit_preprocessor(const std::vector<Coordinates>& coord_left, 
+                         const std::vector<Coordinates>& coord_right, 
+                         const size_t n_el, 
+                         const Options opts) 
     : options(opts), n_elements(n_el), n_points(n_el), is_closed(true), direction(0)
     {
         compute<true>(coord_left, coord_right);
     }
 
     //! Constructor for open circuits
-    Circuit_preprocessor(const std::vector<Coordinates>& coord_left, const std::vector<Coordinates>& coord_right, Coordinates start, Coordinates finish, const size_t n_el, const Options opts) 
+    Circuit_preprocessor(const std::vector<Coordinates>& coord_left, 
+                         const std::vector<Coordinates>& coord_right, 
+                         Coordinates start, 
+                         Coordinates finish, 
+                         const size_t n_el, 
+                         const Options opts) 
     : options(opts), n_elements(n_el), n_points(n_el+1), is_closed(false), direction(0)
     {
+        // Trim the coordinates to the provided start/finish points
         auto [coord_left_trim, coord_right_trim] = trim_coordinates(coord_left, coord_right, start, finish);
+
+        // Perform the computation
         compute<false>(coord_left_trim,coord_right_trim);
     }
 
@@ -117,7 +128,7 @@ class Circuit_preprocessor
            const Options opts) 
             : _n_elements(n_elements), _n_points(n_points), _n_variables(1+(NSTATE+NCONTROLS)*_n_points), 
               _n_constraints(1+NSTATE*n_elements + (closed ? 0 : 1)), _direction(direction), options(opts), _track_length(track_length), _ds(_track_length/n_elements), _r_left(r_left), _r_right(r_right), _r_center(r_center), _q(_n_points), _u(_n_points), _dqds(_n_points),
-              _dist2_left(n_elements), _dist2_right(n_elements), _dist2_center(n_elements) {(void)_ds;}
+              _dist2_left(_n_points), _dist2_right(_n_points), _dist2_center(_n_points) {(void)_ds;}
 
         void operator()(ADvector& fg, const ADvector& x);
 
@@ -165,6 +176,7 @@ class Circuit_preprocessor
     static std::pair<std::vector<Coordinates>, std::vector<Coordinates>> trim_coordinates(const std::vector<Coordinates>& coord_left, 
                                                                                           const std::vector<Coordinates>& coord_right,
                                                                                           Coordinates start, Coordinates finish);
+
 };
 
 #include "circuit_preprocessor.hpp"
