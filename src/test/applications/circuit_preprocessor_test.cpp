@@ -18,7 +18,7 @@ TEST(Circuit_preprocessor_test, museo_closed)
     options.maximum_kappa = 1.0;
     options.maximum_dkappa = 1.0;
     
-    Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, 100, true, options);
+    Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, 100, options);
 
     circuit.xml()->save("museo_short_discrete.xml");
 
@@ -91,7 +91,7 @@ TEST(Circuit_preprocessor_test, catalunya_500)
     Xml_document coord_left_kml("./database/google_earth/Catalunya_left.kml", true);
     Xml_document coord_right_kml("./database/google_earth/Catalunya_right.kml", true);
     
-    Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, 500, true, {});
+    Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, 500, {});
 
     Xml_document solution_saved("./database/catalunya_discrete.xml", true);
 

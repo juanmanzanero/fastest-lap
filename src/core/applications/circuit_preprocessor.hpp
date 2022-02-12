@@ -6,8 +6,7 @@
 #include "lion/math/matrix_extensions.h"
 #include "lion/math/ipopt_cppad_handler.hpp"
 
-inline Circuit_preprocessor::Circuit_preprocessor(Xml_document& coord_left_kml, Xml_document& coord_right_kml, const size_t n, bool closed, const Options options)
- : _options(options)
+inline Circuit_preprocessor::Circuit_preprocessor(Xml_document& coord_left_kml, Xml_document& coord_right_kml, const size_t n_elements, const Options opts)
 {
     // Get child with data for the left boundary 
     const std::vector<scalar> coord_left_raw  = coord_left_kml.get_element("kml/Document/Placemark/LineString/coordinates").get_value(std::vector<scalar>());
@@ -20,38 +19,27 @@ inline Circuit_preprocessor::Circuit_preprocessor(Xml_document& coord_left_kml, 
         throw std::runtime_error("Error processing google-earth placemark: size must be multiple of 3");
 
     const size_t n_left = coord_left_raw.size()/3;
-    std::vector<std::array<scalar,2>> coord_left(n_left);
+    std::vector<Coordinates> coord_left(n_left);
 
     for (size_t i = 0; i < n_left; ++i)
-        coord_left[i] = std::array<scalar,2>({coord_left_raw[3*i],coord_left_raw[3*i+1]});
+        coord_left[i] = {coord_left_raw[3*i],coord_left_raw[3*i+1]};
 
     const size_t n_right = coord_right_raw.size()/3;
-    std::vector<std::array<scalar,2>> coord_right(n_right);
+    std::vector<Coordinates> coord_right(n_right);
 
     for (size_t i = 0; i < n_right; ++i)
-        coord_right[i] = std::array<scalar,2>({coord_right_raw[3*i],coord_right_raw[3*i+1]});
+        coord_right[i] = {coord_right_raw[3*i],coord_right_raw[3*i+1]};
 
-    *this = Circuit_preprocessor(coord_left, coord_right, n, closed, options);
-}
-
-inline Circuit_preprocessor::Circuit_preprocessor(const std::vector<std::array<scalar,2>>& coord_left, const std::vector<std::array<scalar,2>>& coord_right, 
-    const size_t n, const bool closed, const Options options)
-: _options(options), is_closed(closed)
-{
-    if (closed)
-        compute<true>(coord_left, coord_right, n);
-    else
-        compute<false>(coord_left, coord_right, n);
+    *this = Circuit_preprocessor(coord_left, coord_right, n_elements, opts);
 }
 
 template<bool closed>
-inline void Circuit_preprocessor::compute(const std::vector<std::array<scalar,2>>& coord_left, const std::vector<std::array<scalar,2>>& coord_right, 
-    const size_t n)
+inline void Circuit_preprocessor::compute(const std::vector<Coordinates>& coord_left, const std::vector<Coordinates>& coord_right) 
 {
     // (1) Get reference latitude (arbitrarily, that of the first right curve)
-    phi_ref = coord_right.front()[LAT]*DEG;
-    phi0    = coord_right.front()[LAT]*DEG;
-    theta0  = coord_right.front()[LON]*DEG;
+    phi_ref = coord_right.front().latitude*DEG;
+    phi0    = coord_right.front().latitude*DEG;
+    theta0  = coord_right.front().longitude*DEG;
 
     x0   = theta0*R_earth*cos(phi_ref);
     y0   = phi0*R_earth;
@@ -59,18 +47,17 @@ inline void Circuit_preprocessor::compute(const std::vector<std::array<scalar,2>
     // (2) Transform coordinates to cartesian (x,y)
     r_left_measured = std::vector<sVector3d>(coord_left.size(),{0.0,0.0,0.0});
     for (size_t i = 0; i < coord_left.size(); ++i)
-        r_left_measured[i] = sVector3d((coord_left[i][LON]*DEG-theta0)*R_earth*cos(phi_ref), (coord_left[i][LAT]*DEG-phi0)*R_earth, 0.0);
+        r_left_measured[i] = sVector3d((coord_left[i].longitude*DEG-theta0)*R_earth*cos(phi_ref), (coord_left[i].latitude*DEG-phi0)*R_earth, 0.0);
 
     r_right_measured = std::vector<sVector3d>(coord_right.size(),{0.0,0.0,0.0});
     for (size_t i = 0; i < coord_right.size(); ++i)
-        r_right_measured[i] = sVector3d((coord_right[i][LON]*DEG-theta0)*R_earth*cos(phi_ref), (coord_right[i][LAT]*DEG-phi0)*R_earth, 0.0);
+        r_right_measured[i] = sVector3d((coord_right[i].longitude*DEG-theta0)*R_earth*cos(phi_ref), (coord_right[i].latitude*DEG-phi0)*R_earth, 0.0);
 
     // (3) Compute the centerline estimate
-    const auto [s_center,r_center] = compute_averaged_centerline<closed>(r_left_measured,r_right_measured,n);
+    const auto [s_center,r_center] = compute_averaged_centerline<closed>(r_left_measured,r_right_measured,n_elements,n_points);
     const scalar track_length_estimate = s_center.back() + norm(r_center.front() - r_center.back());
 
     // (5) Compute the initial condition via finite differences
-    n_points = closed ? n : n+1;
     std::vector<scalar> x_init(n_points,0.0);
     std::vector<scalar> y_init(n_points,0.0);
     std::vector<scalar> theta_init(n_points,0.0);
@@ -95,16 +82,13 @@ inline void Circuit_preprocessor::compute(const std::vector<std::array<scalar,2>
     
     if (closed)
     {
-        theta_init[n-1] = theta_init[n-2] + wrap_to_pi(atan2(y_init[0]-y_init[n-1],x_init[0]-x_init[n-1])-theta_init[n-2]);
+        theta_init[n_elements-1] = theta_init[n_elements-2] + wrap_to_pi(atan2(y_init[0]-y_init[n_elements-1],x_init[0]-x_init[n_elements-1])-theta_init[n_elements-2]);
     
         // compute the circuit direction (clockwise/counter clockwise)
-        if ( theta_init[n-1] > theta_init[0] )
-            direction = 1.0;
-        else
-            direction = -1.0;
+        direction = ( theta_init[n_elements-1] > theta_init[0] ? COUNTERCLOCKWISE : CLOCKWISE );
     }
     else
-        theta_init[n] = theta_init[n-1];
+        theta_init[n_elements] = theta_init[n_elements-1];
 
 
     // kappa
@@ -112,9 +96,9 @@ inline void Circuit_preprocessor::compute(const std::vector<std::array<scalar,2>
         kappa_init[i] = (theta_init[i+1]-theta_init[i])/(s_center[i+1]-s_center[i]);
 
     if (closed)
-        kappa_init[n-1] = (theta_init[0] + 2.0*pi*direction - theta_init[n-1])/norm(r_center.front() - r_center.back());
+        kappa_init[n_elements-1] = (theta_init[0] + 2.0*pi*direction - theta_init[n_elements-1])/norm(r_center.front() - r_center.back());
     else
-        kappa_init[n] = kappa_init[n-1];
+        kappa_init[n_elements] = kappa_init[n_elements-1];
 
     // nl and nr
     for (size_t i = 0; i < n_points; ++i)
@@ -133,19 +117,19 @@ inline void Circuit_preprocessor::compute(const std::vector<std::array<scalar,2>
 
     if (closed)
     {
-        dkappa_init[n-1] = (kappa_init[0] - kappa_init[n-1])/norm(r_center.front()-r_center.back());
-        dnl_init[n-1] = (nl_init[0] - nl_init[n-1])/norm(r_center.front()-r_center.back());
-        dnr_init[n-1] = (nr_init[0] - nr_init[n-1])/norm(r_center.front()-r_center.back());
+        dkappa_init[n_elements-1] = (kappa_init[0] - kappa_init[n_elements-1])/norm(r_center.front()-r_center.back());
+        dnl_init[n_elements-1] = (nl_init[0] - nl_init[n_elements-1])/norm(r_center.front()-r_center.back());
+        dnr_init[n_elements-1] = (nr_init[0] - nr_init[n_elements-1])/norm(r_center.front()-r_center.back());
     }
     else
     {
-        dkappa_init[n] = dkappa_init[n-1];
-        dnl_init[n] = dnl_init[n-1];
-        dnr_init[n] = dnr_init[n-1];
+        dkappa_init[n_elements] = dkappa_init[n_elements-1];
+        dnl_init[n_elements] = dnl_init[n_elements-1];
+        dnr_init[n_elements] = dnr_init[n_elements-1];
     }
 
     // (4) Create the FG object
-    FG<closed> fg(n, track_length_estimate, r_left_measured, r_right_measured, r_center, direction, _options);
+    FG<closed> fg(n_elements, n_points, track_length_estimate, r_left_measured, r_right_measured, r_center, direction, options);
 
     // load them into an x vector
     std::vector<scalar> x(fg.get_n_variables());
@@ -154,9 +138,9 @@ inline void Circuit_preprocessor::compute(const std::vector<std::array<scalar,2>
     size_t k = 0;
     size_t k_ub = 0;
     size_t k_lb = 0;
-    x[k++] = track_length_estimate/n;
-    x_lb[k_lb++] = 0.9*track_length_estimate/n;
-    x_ub[k_ub++] = 1.11*track_length_estimate/n;
+    x[k++] = track_length_estimate/n_elements;
+    x_lb[k_lb++] = 0.9*track_length_estimate/n_elements;
+    x_ub[k_ub++] = 1.11*track_length_estimate/n_elements;
     for (size_t i = 0; i < n_points; ++i)
     {
         x[k++] = x_init[i];
@@ -172,20 +156,20 @@ inline void Circuit_preprocessor::compute(const std::vector<std::array<scalar,2>
         x_lb[k_lb++] = x_init[i]-100.0;
         x_lb[k_lb++] = y_init[i]-100.0;
         x_lb[k_lb++] = theta_init[i]-30.0*DEG;
-        x_lb[k_lb++] = -_options.maximum_kappa;
+        x_lb[k_lb++] = -options.maximum_kappa;
         x_lb[k_lb++] = 1.0;
         x_lb[k_lb++] = 1.0;
-        x_lb[k_lb++] = -_options.maximum_dkappa;
+        x_lb[k_lb++] = -options.maximum_dkappa;
         x_lb[k_lb++] = -1.0;
         x_lb[k_lb++] = -1.0;
 
         x_ub[k_ub++] = x_init[i]+100.0;
         x_ub[k_ub++] = y_init[i]+100.0;
         x_ub[k_ub++] = theta_init[i]+30.0*DEG;
-        x_ub[k_ub++] = _options.maximum_kappa;
+        x_ub[k_ub++] = options.maximum_kappa;
         x_ub[k_ub++] = nl_init[i]+nr_init[i];
         x_ub[k_ub++] = nl_init[i]+nr_init[i];
-        x_ub[k_ub++] = _options.maximum_dkappa;
+        x_ub[k_ub++] = options.maximum_dkappa;
         x_ub[k_ub++] = 1.0;
         x_ub[k_ub++] = 1.0;
     }
@@ -196,20 +180,20 @@ inline void Circuit_preprocessor::compute(const std::vector<std::array<scalar,2>
 
 
     // (7) Run the optimization
-    std::string ipopt_options;
-    ipopt_options += "Integer print_level  5\n";
-    ipopt_options += "String  sb           yes\n";
-    ipopt_options += "Sparse true forward\n";
-    ipopt_options += "Retape true\n";
-    ipopt_options += "Numeric tol          1e-10\n";
-    ipopt_options += "Numeric constr_viol_tol  1e-10\n";
-    ipopt_options += "Numeric acceptable_tol  1e-8\n";
+    std::string ipoptoptions;
+    ipoptoptions += "Integer print_level  5\n";
+    ipoptoptions += "String  sb           yes\n";
+    ipoptoptions += "Sparse true forward\n";
+    ipoptoptions += "Retape true\n";
+    ipoptoptions += "Numeric tol          1e-10\n";
+    ipoptoptions += "Numeric constr_viol_tol  1e-10\n";
+    ipoptoptions += "Numeric acceptable_tol  1e-8\n";
 
     // place to return solution
     CppAD::ipopt_cppad_result<std::vector<scalar>> result;
 
     // solve the problem
-    CppAD::ipopt_cppad_solve(ipopt_options, x, x_lb, x_ub, std::vector<scalar>(fg.get_n_constraints(),0.0), std::vector<scalar>(fg.get_n_constraints(),0.0), fg, result);
+    CppAD::ipopt_cppad_solve(ipoptoptions, x, x_lb, x_ub, std::vector<scalar>(fg.get_n_constraints(),0.0), std::vector<scalar>(fg.get_n_constraints(),0.0), fg, result);
 
     if ( result.status != CppAD::ipopt_cppad_result<std::vector<scalar>>::success )
     {
@@ -274,7 +258,7 @@ inline void Circuit_preprocessor::compute(const std::vector<std::array<scalar,2>
         dnr[i]    = result.x[idnr];
     }
 
-    track_length = n*ds;
+    track_length = n_elements*ds;
 
     // Compute the errors
     left_boundary_max_error   = sqrt(find_closest_point<scalar>(r_left_measured,r_left.front(), closed).second);
@@ -359,10 +343,10 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
 
     // Add optimization section
     auto opt = root.add_child("optimization");
-    opt.add_child("cost_curvature").set_value(std::to_string(_options.eps_k));
-    opt.add_child("cost_track_limits_smoothness").set_value(std::to_string(_options.eps_n));
-    opt.add_child("cost_track_limits_errors").set_value(std::to_string(_options.eps_d));
-    opt.add_child("cost_centerline").set_value(std::to_string(_options.eps_c));
+    opt.add_child("cost_curvature").set_value(std::to_string(options.eps_k));
+    opt.add_child("cost_track_limits_smoothness").set_value(std::to_string(options.eps_n));
+    opt.add_child("cost_track_limits_errors").set_value(std::to_string(options.eps_d));
+    opt.add_child("cost_centerline").set_value(std::to_string(options.eps_c));
 
     // Add the GPS coordinates conversion used
     auto gps_param = root.add_child("GPS_parameters");
@@ -544,11 +528,8 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
 
 template<bool closed>
 inline std::pair<std::vector<scalar>, std::vector<sVector3d>> Circuit_preprocessor::compute_averaged_centerline
-    (std::vector<sVector3d> r_left, std::vector<sVector3d> r_right, const size_t n)
+    (std::vector<sVector3d> r_left, std::vector<sVector3d> r_right, const size_t n_elements, const size_t n_points)
 {
-    // (1) Compute the number of points: n for closed circuits, n+1 for open circuits
-    const size_t n_points = (closed ? n : n+1);
-
     // (2) If closed, add the first point as last point to close the track (needed to construct a polynomial version)
     if constexpr (closed)
     {
@@ -567,7 +548,7 @@ inline std::pair<std::vector<scalar>, std::vector<sVector3d>> Circuit_preprocess
         s_right[i] = s_right[i-1] + norm(r_right[i]-r_right[i-1]);
 
     // (4) Project the right boundary into equally-spaced nodes
-    std::vector<scalar> s_right_equispaced = linspace(0.0,s_right.back(),n+1);
+    std::vector<scalar> s_right_equispaced = linspace(0.0,s_right.back(),n_elements+1);
     if constexpr (closed)
         s_right_equispaced.pop_back();
 
@@ -587,20 +568,20 @@ inline std::pair<std::vector<scalar>, std::vector<sVector3d>> Circuit_preprocess
     if constexpr (closed)
         r_center.push_back(r_center.front());
 
-    std::vector<scalar> s_center(n+1);
+    std::vector<scalar> s_center(n_elements+1);
 
-    for (size_t i = 1; i < n+1; ++i)
+    for (size_t i = 1; i < n_elements+1; ++i)
         s_center[i] = s_center[i-1] + norm(r_center[i] - r_center[i-1]);
 
     // (6) Transform the centerline to equally-spaced points
-    std::vector<scalar> s_center_equispaced = linspace(0.0,s_center.back(),n+1);
+    std::vector<scalar> s_center_equispaced = linspace(0.0,s_center.back(),n_elements+1);
     Polynomial<sVector3d> track_center(s_center, r_center, 1); 
     std::vector<sVector3d> r_center_equispaced(n_points);
 
     for (size_t i = 0; i < n_points; ++i)
         r_center_equispaced[i] = track_center(s_center_equispaced[i]);
 
-    // (7) Remove the closing point from the arc-length (so that it has the same dimension as r_center_equispaced, n)
+    // (7) Remove the closing point from the arc-length (so that it has the same dimension as r_center_equispaced, n_elements)
     if constexpr (closed)
         s_center_equispaced.pop_back();
 
@@ -654,12 +635,12 @@ void Circuit_preprocessor::FG<closed>::operator()(ADvector& fg, const ADvector& 
         _dist2_center[i] = find_closest_point<CppAD::AD<scalar>>(_r_center, Vector3d<CppAD::AD<scalar>>(_q[i][IX], _q[i][IY], 0.0), true).second;
 
         // Fitness function: minimize the square of the distance to the boundaries and centerline, and control powers
-        fg[0] += 0.5*ds*_options.eps_d*(_dist2_left[i] + _dist2_left[i-1]);
-        fg[0] += 0.5*ds*_options.eps_d*(_dist2_right[i]  + _dist2_right[i-1]  );
-        fg[0] += 0.5*ds*_options.eps_c*(_dist2_center[i] + _dist2_center[i-1] );
-        fg[0] += 0.5*ds*_options.eps_k*(_u[i][IDKAPPA]*_u[i][IDKAPPA] + _u[i-1][IDKAPPA]*_u[i-1][IDKAPPA]);
-        fg[0] += 0.5*ds*_options.eps_n*(_u[i][IDNL]*_u[i][IDNL] + _u[i-1][IDNL]*_u[i-1][IDNL]);
-        fg[0] += 0.5*ds*_options.eps_n*(_u[i][IDNR]*_u[i][IDNR] + _u[i-1][IDNR]*_u[i-1][IDNR]);
+        fg[0] += 0.5*ds*options.eps_d*(_dist2_left[i] + _dist2_left[i-1]);
+        fg[0] += 0.5*ds*options.eps_d*(_dist2_right[i]  + _dist2_right[i-1]  );
+        fg[0] += 0.5*ds*options.eps_c*(_dist2_center[i] + _dist2_center[i-1] );
+        fg[0] += 0.5*ds*options.eps_k*(_u[i][IDKAPPA]*_u[i][IDKAPPA] + _u[i-1][IDKAPPA]*_u[i-1][IDKAPPA]);
+        fg[0] += 0.5*ds*options.eps_n*(_u[i][IDNL]*_u[i][IDNL] + _u[i-1][IDNL]*_u[i-1][IDNL]);
+        fg[0] += 0.5*ds*options.eps_n*(_u[i][IDNR]*_u[i][IDNR] + _u[i-1][IDNR]*_u[i-1][IDNR]);
 
         // Equality constraints:  q^{i} = q^{i-1} + 0.5.ds.[dqds^{i} + dqds^{i-1}]
         for (size_t j = 0; j < NSTATE; ++j)
@@ -672,17 +653,17 @@ void Circuit_preprocessor::FG<closed>::operator()(ADvector& fg, const ADvector& 
     {
         // Add the periodic element
         // Fitness function: minimize the square of the distance to the boundaries and centerline, and control powers
-        fg[0] += 0.5*ds*_options.eps_d*(_dist2_left[0]    + _dist2_left[_n-1] );
-        fg[0] += 0.5*ds*_options.eps_d*(_dist2_right[0]   + _dist2_right[_n-1]  );
-        fg[0] += 0.5*ds*_options.eps_c*(_dist2_center[0]  + _dist2_center[_n-1]);
-        fg[0] += 0.5*ds*_options.eps_k*(_u[0][IDKAPPA]*_u[0][IDKAPPA] + _u[_n-1][IDKAPPA]*_u[_n-1][IDKAPPA]);
-        fg[0] += 0.5*ds*_options.eps_n*(_u[0][IDNL]*_u[0][IDNL] + _u[_n-1][IDNL]*_u[_n-1][IDNL]);
-        fg[0] += 0.5*ds*_options.eps_n*(_u[0][IDNR]*_u[0][IDNR] + _u[_n-1][IDNR]*_u[_n-1][IDNR]);
+        fg[0] += 0.5*ds*options.eps_d*(_dist2_left[0]    + _dist2_left[_n_elements-1] );
+        fg[0] += 0.5*ds*options.eps_d*(_dist2_right[0]   + _dist2_right[_n_elements-1]  );
+        fg[0] += 0.5*ds*options.eps_c*(_dist2_center[0]  + _dist2_center[_n_elements-1]);
+        fg[0] += 0.5*ds*options.eps_k*(_u[0][IDKAPPA]*_u[0][IDKAPPA] + _u[_n_elements-1][IDKAPPA]*_u[_n_elements-1][IDKAPPA]);
+        fg[0] += 0.5*ds*options.eps_n*(_u[0][IDNL]*_u[0][IDNL] + _u[_n_elements-1][IDNL]*_u[_n_elements-1][IDNL]);
+        fg[0] += 0.5*ds*options.eps_n*(_u[0][IDNR]*_u[0][IDNR] + _u[_n_elements-1][IDNR]*_u[_n_elements-1][IDNR]);
     
         // Equality constraints:  q^{i} = q^{i-1} + 0.5.ds.[dqds^{i} + dqds^{i-1}]
         // except for theta, where q^{i} = q^{i-1} + 0.5.ds.[dqds^{i} + dqds^{i-1}] - 2.pi
         for (size_t j = 0; j < NSTATE; ++j)
-            fg[k++] = _q[0][j] - _q[_n-1][j] - 0.5*ds*(_dqds[_n-1][j] + _dqds[0][j]) + (j==ITHETA ? 2.0*pi*_direction : 0.0);
+            fg[k++] = _q[0][j] - _q[_n_elements-1][j] - 0.5*ds*(_dqds[_n_elements-1][j] + _dqds[0][j]) + (j==ITHETA ? 2.0*pi*_direction : 0.0);
     }
 
     // (7) Add a last constraint: the first point should be in the start line
