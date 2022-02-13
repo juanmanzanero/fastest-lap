@@ -1,12 +1,12 @@
 # Fastest-lap 🏁🏎
-Fastest-lap is an optimal laptime simulator, written in C++, and with a python API.
+Fastest-lap is a vehicle dynamics simulator. It can be used to understand vehicle dynamics, to learn about driving techniques, to design car prototypes, or just for fun!
 
 [![MacOS](https://github.com/juanmanzanero/fastest-lap/actions/workflows/macos.yml/badge.svg)](https://github.com/juanmanzanero/fastest-lap/actions/workflows/macos.yml)
 [![Linux](https://github.com/juanmanzanero/fastest-lap/actions/workflows/linux.yml/badge.svg)](https://github.com/juanmanzanero/fastest-lap/actions/workflows/linux.yml)
 [![Windows](https://github.com/juanmanzanero/fastest-lap/actions/workflows/windows.yml/badge.svg)](https://github.com/juanmanzanero/fastest-lap/actions/workflows/windows.yml)
 
 <p align="center">
-  <img src="https://pbs.twimg.com/media/FEJF_KaWYAEjS86?format=png&name=900x900" />
+  <img src="https://pbs.twimg.com/media/FLbX1kTWQAArl-O?format=jpg&name=large" />
 </p>
 
 ### What can be done
@@ -26,25 +26,25 @@ Fastest-lap is an optimal laptime simulator, written in C++, and with a python A
 
 ### The approach
 
-The core of the software is a C++ library, that can be used through a Python API. Full documentation is not yet available but some examples can be found in [examples/python][examples-python]
+The core of the software is a C++ library, that can be used through a Python API. Full documentation is not yet available but some examples can be found in [examples/python][examples-python]. Fastest-lap is very efficient, being able to compute a full optimal lap in less than 1 minute.
 
 [examples-python]:https://github.com/juanmanzanero/fastest-lap/tree/main/examples/python
 
 ### Dynamic models
 
-The only model implemented to date, is a [Go-Kart model][link2] with 6DOF (x,y,z + yaw, pitch and roll). More models will be implemented.
-
-The default parameters used can be found in [./database/roberto-lot-2016-kart.xml][database]
+The code implements two car models:
+  * A [3DOF car model][link8] (longitudinal, lateral, and yaw), currently used for F1 simulations. The default parameters used can be found in [./database/limebeer-2014-f1.xml][database-f1]
+  * A [6DOF car model][link2] (longitudinal, lateral, vertial, yaw, pitch and roll), currently used for Go-kart simulations. The default parameters used can be found in [./database/roberto-lot-2016-kart.xml][database]
 
 [database]:https://github.com/juanmanzanero/fastest-lap/blob/main/database/roberto-lot-kart-2016.xml
+[database-f1]:https://github.com/juanmanzanero/fastest-lap/blob/main/database/limebeer-2014-f1.xml
 
 ### Circuits
 
-Circuits are modeled following [Peter De Buck´s][dymos] approach: connecting straights by circumference arcs.
+Circuits are modeled from paths created from google earth, for example, the right track limit of Catalunya is included in this repository ([database/google_earth/Catalunya_right.kml][catalunya_right.kml]). Circuits are then preprocessed with a tool included herein to extract a reference line, its curvature, and the distance to the left/right track limits ([database/catalunya_discrete.xml][catalunya_discrete]).
 
-[dymos]:https://github.com/OpenMDAO/dymos
-
-
+[catalunya_right.kml]:https://github.com/juanmanzanero/fastest-lap/blob/main/database/google_earth/Catalunya_right.kml
+[catalunya_discrete]:https://github.com/juanmanzanero/fastest-lap/blob/main/database/catalunya_discrete.xml
 ### Dependencies
 
 Fastest-lap uses several open-source libraries:
@@ -78,7 +78,6 @@ The canonical steps to compile a CMake project are: (assume ```$FASTESTLAP``` is
   ```
   -DCMAKE_BUILD_TYPE=Debug/Release
   -DCMAKE_INSTALL_PREFIX=/path/to/install/dir
-  -DCHECK_BOUNDS=Yes/No
   -DCODE_COVERAGE=Yes/No: enables code coverage (if so, use with -DCMAKE_BUILD_TYPE=Debug)
   -DBUILD_DOC=Yes/No: builds doxygen documentation
   ```
@@ -108,7 +107,7 @@ The canonical steps to compile a CMake project are: (assume ```$FASTESTLAP``` is
 [5] [Kelly, Daniel P., and Robin S. Sharp. "Time-optimal control of the race car: a numerical method to emulate the ideal driver." Vehicle System Dynamics 48.12 (2010): 1461-1474.][link5]<br/>
 [6] [Piccinini, Mattia. "Path planning and control of self-driving vehicles at the limits of handling"][link6]<br/>
 [7] [Casanova, D. "On minimum time vehicle manoeuvring: the theoretical optimal lap"][link7]<br/>
-
+[8] [Perantoni, G. et al. "Optimal Control for a Formula One Car with Variable Parameters"][link8]<br/>
 
 [link1]:https://www.tandfonline.com/doi/abs/10.1080/00423114.2016.1213861
 [link2]:https://www.tandfonline.com/doi/abs/10.1080/00423114.2015.1125514
@@ -117,4 +116,6 @@ The canonical steps to compile a CMake project are: (assume ```$FASTESTLAP``` is
 [link5]:https://www.tandfonline.com/doi/abs/10.1080/00423110903514236
 [link6]:https://www.researchgate.net/publication/336880897_Path_Planning_and_Control_of_Self-Driving_Vehicles_at_the_Limits_of_Handling
 [link7]:https://dspace.lib.cranfield.ac.uk/handle/1826/1091
+[link8]:https://web.archive.org/web/20200320055720id_/https://ora.ox.ac.uk/objects/uuid:ce1a7106-0a2c-41af-8449-41541220809f/download_file?safe_filename=Perantoni%2Band%2BLimebeer%252C%2BOptimal%2Bcontrol%2Bfor%2Ba%2BFormula%2BOne%2Bcar%2Bwith%2Bvariable%2Bparameters.pdf&file_format=application%2Fpdf&type_of_work=Journal+article
+
 
