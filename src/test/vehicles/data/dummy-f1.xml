@@ -1,0 +1,98 @@
+<!--
+  This model represents the dynamics of a f1 car using a 3DOF chassis
+  Reference: https://www.tandfonline.com/doi/abs/10.1080/00423114.2014.889315
+
+  (*) This parameter does not belong to the model. 
+      Taken from "[Roberto Lot] - Minimum time optimal control
+                                  simulation of a GP2 race car"
+           
+-->
+<vehicle type="limebeer-2014-f1">
+    <front-axle model="axle-car"> 
+        <track units="m">0.0</track>
+        <inertia units="kg.m2">0.0</inertia>   <!-- (*) -->
+        <smooth_throttle_coeff>0.0</smooth_throttle_coeff>
+        <brakes>
+            <max_torque units="N.m">0.0</max_torque>
+        </brakes>
+    </front-axle>
+
+    <rear-axle>
+        <track units="m">0.0</track>
+        <inertia units="kg.m2">0.0</inertia>   <!-- (*) -->
+        <smooth_throttle_coeff>0.0</smooth_throttle_coeff>
+        <differential_stiffness units="N.m.s/rad">0.0</differential_stiffness>
+        <brakes>
+            <max_torque units="N.m">0.0</max_torque>
+        </brakes>
+        <engine>
+            <maximum-power units="kW">0.0</maximum-power>
+        </engine>
+    </rear-axle>
+
+    <chassis>
+        <mass units="kg">0.0</mass>
+
+        <!-- 
+            Inertia matrix: this 3DOF model only uses Izz
+        -->
+        <inertia units="kg.m">
+             0.0  0.0  0.0
+             0.0  0.0  0.0
+             0.0  0.0  0.0
+        </inertia>
+
+        <aerodynamics>
+            <rho units="kg/m3">0.0</rho>
+            <area units="m2">0.0</area>
+            <cd>0.0</cd>
+            <cl>0.0</cl>
+        </aerodynamics>
+
+        <com units="m">0.0 0.0 0.0</com>
+        <front_axle units="m">0.0 0.0 0.0</front_axle>
+        <rear_axle units="m">0.0 0.0 0.0</rear_axle>
+        <pressure_center units="m">0.0 0.0 0.0</pressure_center>
+        <brake_bias>0.0</brake_bias>
+        <roll_balance_coefficient>0.0</roll_balance_coefficient>
+        <Fz_max_ref2>0.0</Fz_max_ref2>
+    </chassis>
+
+    <front-tire model="tire-pacejka-simple" type="normal">
+        <radius units="m">0.0</radius> 
+        <radial-stiffness>0.0</radial-stiffness>
+        <radial-damping>0.0</radial-damping>
+        <Fz-max-ref2>0.0</Fz-max-ref2>
+        <reference-load-1 units="N">0.0</reference-load-1> 
+        <reference-load-2 units="N">0.0</reference-load-2> 
+        <mu-x-max-1>0.0</mu-x-max-1>
+        <mu-x-max-2>0.0</mu-x-max-2>
+        <kappa-max-1>0.0</kappa-max-1>
+        <kappa-max-2>0.0</kappa-max-2>
+        <mu-y-max-1>0.0</mu-y-max-1>
+        <mu-y-max-2>0.0</mu-y-max-2>
+        <lambda-max-1 units="deg">0.0</lambda-max-1>
+        <lambda-max-2 units="deg">0.0</lambda-max-2>
+        <Qx>0.0</Qx>
+        <Qy>0.0</Qy>
+    </front-tire>
+
+    <rear-tire model="tire-pacejka-simple" type="normal">
+        <radius units="m">0.0</radius> 
+        <radial-stiffness>0.0</radial-stiffness>
+        <radial-damping>0.0</radial-damping>
+        <Fz-max-ref2>0.0</Fz-max-ref2>
+        <reference-load-1 units="N">0.0</reference-load-1> 
+        <reference-load-2 units="N">0.0</reference-load-2> 
+        <mu-x-max-1>0.0</mu-x-max-1>
+        <mu-x-max-2>0.0</mu-x-max-2>
+        <kappa-max-1>0.0</kappa-max-1>
+        <kappa-max-2>0.0</kappa-max-2>
+        <mu-y-max-1>0.0</mu-y-max-1>
+        <mu-y-max-2>0.0</mu-y-max-2>
+        <lambda-max-1 units="deg">0.0</lambda-max-1>
+        <lambda-max-2 units="deg">0.0</lambda-max-2>
+        <Qx>0.0</Qx>
+        <Qy>0.0</Qy>
+    </rear-tire>
+</vehicle>

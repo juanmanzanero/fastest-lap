@@ -22,12 +22,6 @@ class c_Track(c.Structure):
                 ("is_closed", c.c_bool)
                ]
 
-class c_Channel(c.Structure):
-    _fields_ = [("data", c.POINTER(c.c_double)),
-                ("name", c.c_char_p) 
-               ]
-
-
 def load_vehicle(database_file,name):
 	name = c.c_char_p((name).encode('utf-8'))
 	database_file = c.c_char_p((database_file).encode('utf-8'))
@@ -69,19 +63,20 @@ def optimal_laptime(vehicle, track, n_points, channels):
 
 	# Get channels ready to be written by C++
 	n_channels = len(channels);
-	c_Channels = ((c_Channel)*n_channels)();
+	c_channels_name = ((c.c_char_p)*n_channels)();
+	c_channels_data = (c.POINTER(c.c_double)*n_channels)()
 
 	for channel in range(0,n_channels):
-		c_Channels[channel].name = c.c_char_p(channels[channel].encode('utf-8'));
-		c_Channels[channel].data = c.cast((c.c_double*n_points)(),c.POINTER(c.c_double))
+		c_channels_name[channel] = c.c_char_p(channels[channel].encode('utf-8'));
+		c_channels_data[channel] = ((c.c_double)*n_points)()
 
-	c_lib.optimal_laptime(c.byref(c_Channels), c.byref(vehicle), c.byref(track), c.c_int(n_points), c.c_int(n_channels));
+	c_lib.optimal_laptime(c.byref(c_channels_data), c.byref(vehicle), c.byref(track), c.c_int(n_points), c.c_int(n_channels), c.byref(c_channels_name));
 
 	channels_data = [[None]*n_points for i in range(n_channels)];
 
 	for i in range(n_points):
 		for j in range(n_channels):
-			channels_data[j][i] = c_Channels[j].data[i];
+			channels_data[j][i] = c_channels_data[j][i];
 
 	return channels_data;
 

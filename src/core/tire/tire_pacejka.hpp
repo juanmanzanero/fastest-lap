@@ -25,6 +25,30 @@ inline Tire_pacejka<Timeseries_t,Pacejka_model,STATE0,CONTROL0>::Tire_pacejka(co
     _model.initialise();
 }
 
+template<typename Timeseries_t, typename Pacejka_model, size_t STATE0, size_t CONTROL0>
+template<typename T>
+void Tire_pacejka<Timeseries_t,Pacejka_model,STATE0,CONTROL0>::set_parameter(const std::string& parameter, const T value)
+{
+    // Look for the parameter in the class
+    if ( parameter.find(base_type::get_path()) == 0 )
+    {
+        auto found = ::set_parameter(get_parameters(), parameter, base_type::get_path(), value);
+
+        // Look for the parameter in the model
+        if ( !found )
+            found = ::set_parameter(_model.get_parameters(), parameter, base_type::get_path(), value);
+
+        if ( !found )
+            base_type::set_parameter(parameter, value);
+
+        _model.initialise();
+    }
+    else
+        throw std::runtime_error(std::string("Parameter \"") + parameter + "\" was not found in Tire_pacejka");
+}
+
+
+
 
 template<typename Timeseries_t, typename Pacejka_model, size_t STATE0, size_t CONTROL0>
 inline void Tire_pacejka<Timeseries_t,Pacejka_model,STATE0,CONTROL0>::update(Timeseries_t Fz, Timeseries_t kappa)
@@ -145,8 +169,8 @@ inline Timeseries_t Pacejka_standard_model::force_combined_lateral_magic(Timeser
 inline void Pacejka_simple_model::initialise()
 {
     // Transform lambda_max_{1,2} to rad
-    _lambda_max1 = _lambda_max1*DEG; 
-    _lambda_max2 = _lambda_max2*DEG; 
+    _lambda_max1 = _lambda_max1_deg*DEG; 
+    _lambda_max2 = _lambda_max2_deg*DEG; 
 
     // Compute Sx and Sy
     _Sx = pi/(2.0*atan(_Qx));

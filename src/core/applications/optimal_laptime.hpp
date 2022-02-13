@@ -161,7 +161,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const size_t n, con
     
     for (size_t i = 0; i < fg.get_states().size(); ++i)
         for (size_t j = 0; j < Dynamic_model_t::NALGEBRAIC; ++j)
-            qa[i][j] = Value(fg.get_state(i)[j]);
+            qa[i][j] = Value(fg.get_algebraic_state(i)[j]);
 
     u = {fg.get_controls().size(),{{}}};
     
@@ -296,7 +296,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const size_t n,
     // options
     std::string options;
     // turn off any printing
-    options += "Integer print_level  5\n";
+    options += "Integer print_level  0\n";
     options += "String  sb           yes\n";
     options += "Sparse true forward\n";
     options += "Numeric tol          1e-6\n";
@@ -334,7 +334,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const size_t n,
     
     for (size_t i = 0; i < fg.get_states().size(); ++i)
         for (size_t j = 0; j < Dynamic_model_t::NALGEBRAIC; ++j)
-            qa[i][j] = Value(fg.get_state(i)[j]);
+            qa[i][j] = Value(fg.get_algebraic_state(i)[j]);
 
     u = {fg.get_controls().size(),{{}}};
     

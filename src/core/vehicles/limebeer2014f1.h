@@ -255,7 +255,18 @@ struct limebeer2014f1_all
     template<typename Track_type>
     std::enable_if_t<std::is_same<Track_type,Track_by_arcs>::value,limebeer2014f1<scalar>::curvilinear_a&>
         get_curvilinear_scalar_car() { return curvilinear_scalar_arcs; }
- 
+
+    template<typename T>
+    void set_parameter(const std::string& parameter, const T value)
+    {
+        cartesian_scalar.set_parameter(parameter, value);
+        curvilinear_scalar_arcs.set_parameter(parameter, value);
+        curvilinear_scalar_poly.set_parameter(parameter, value);
+
+        cartesian_ad.set_parameter(parameter, value);
+        curvilinear_ad_arcs.set_parameter(parameter, value);
+        curvilinear_ad_poly.set_parameter(parameter, value);
+    }
 
     limebeer2014f1<scalar>::cartesian                 cartesian_scalar;
     limebeer2014f1<scalar>::curvilinear_a             curvilinear_scalar_arcs;

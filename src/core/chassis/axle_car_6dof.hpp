@@ -19,6 +19,8 @@ Axle_car_6dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::
   _delta(0.0),
   _beta({0.0,0.0})
 {
+    base_type::_path = path;
+
     read_parameters(database, path, get_parameters());
     _y_tire = {-0.5*_track, 0.5*_track};
     // Construct the specific parameters of the axle

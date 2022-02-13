@@ -5,10 +5,15 @@
 
 template<typename Timeseries_t>
 inline Engine<Timeseries_t>::Engine(Xml_document& database, const std::string& path, const bool only_max_power)
-: _only_max_power(only_max_power),
-  _maximum_power(only_max_power ? database.get_element(path+"maximum-power").get_value(double())*1.0e3 : 0.0 ) 
+: _path(path),
+  _only_max_power(only_max_power),
+  _maximum_power(0.0) 
 {
-    if ( !_only_max_power )
+    if ( _only_max_power )
+    {
+        read_parameters(database, path, get_parameters());
+    }
+    else
     {
         _gear_ratio = database.get_element(path+"gear-ratio").get_value(double());
     
@@ -28,7 +33,7 @@ inline Timeseries_t Engine<Timeseries_t>::operator()(const Timeseries_t throttle
         return throttle_percentage;
 
     else if ( _only_max_power )
-        return throttle_percentage*_maximum_power/angular_speed;
+        return throttle_percentage*(_maximum_power*1.0e3)/angular_speed;
 
     else
     {

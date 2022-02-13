@@ -125,6 +125,8 @@ class Axle_car_3dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
              const std::string& path=""
             );
 
+    template<typename T>
+    bool set_parameter(const std::string& parameter, const T value);
 
     //! Updates the axle: compute dkappa_left and dkappa_right, plus the equivalent force+torque at the axle center
     //! @param[in] Fz_left: the normal force of the left tire

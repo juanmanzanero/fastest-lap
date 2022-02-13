@@ -145,6 +145,9 @@ struct Pacejka_simple_model
     scalar _kappa_max1;     //! [c] slip coefficient for the friction peak at load 1
     scalar _kappa_max2;     //! [c] slip coefficient for the friction peak at load 2
 
+    scalar _lambda_max1_deg;     //! [c] slip angle for the friction peak at load 1 [deg]
+    scalar _lambda_max2_deg;     //! [c] slip angle for the friction peak at load 2 [deg]
+
     scalar _lambda_max1;     //! [c] slip angle for the friction peak at load 1
     scalar _lambda_max2;     //! [c] slip angle for the friction peak at load 2
 
@@ -165,8 +168,8 @@ struct Pacejka_simple_model
         { "mu-y-max-2", _mu_y_max2 },
         { "kappa-max-1", _kappa_max1 },
         { "kappa-max-2", _kappa_max2 },
-        { "lambda-max-1", _lambda_max1 },
-        { "lambda-max-2", _lambda_max2 },
+        { "lambda-max-1", _lambda_max1_deg },
+        { "lambda-max-2", _lambda_max2_deg },
         { "Qx", _Qx },
         { "Qy", _Qy } 
     };}
@@ -199,6 +202,9 @@ class Tire_pacejka : public Tire<Timeseries_t, STATE0,CONTROL0>
                  Xml_document& database,
                  const std::string& path="" 
                 );
+
+    template<typename T>
+    void set_parameter(const std::string& parameter, const T value);
 
     //! Calls Tire::update(x0,v0,omega) of the base class, and calls update_self()
     //! This updates the tire dynamics and tire forces

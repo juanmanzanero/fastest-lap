@@ -8,6 +8,7 @@ template<typename Timeseries_t, size_t STATE0, size_t CONTROL0>
 inline Tire<Timeseries_t,STATE0,CONTROL0>::Tire(const std::string& name, Xml_document& database, 
                   const std::string& path)
 : _name(name),
+  _path(path),
   _type(get_type(database.get_element(path).get_attribute("type"))),
   _frame(),
   _omega(0.0),
@@ -20,6 +21,22 @@ inline Tire<Timeseries_t,STATE0,CONTROL0>::Tire(const std::string& name, Xml_doc
   _T(Vector3d<Timeseries_t>(0.0))
 {
     read_parameters(database, path, get_parameters());
+}
+
+
+template<typename Timeseries_t, size_t STATE0, size_t CONTROL0>
+template<typename T>
+void Tire<Timeseries_t,STATE0,CONTROL0>::set_parameter(const std::string& parameter, const T value)
+{
+    if ( parameter.find(_path) == 0 )
+    {
+        const auto found = ::set_parameter(get_parameters(), parameter, _path, value); 
+
+        if ( !found )    
+            throw std::runtime_error(std::string("Parameter \"") + parameter + "\" was not found in Tire");
+    }
+    else
+        throw std::runtime_error(std::string("Parameter \"") + parameter + "\" was not found in Tire");
 }
 
 

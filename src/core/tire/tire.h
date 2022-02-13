@@ -37,6 +37,9 @@ class Tire
          Xml_document& database,
          const std::string& path="");
 
+    template<typename T>
+    void set_parameter(const std::string& parameter, const T value);
+
     //! Return the tire carcass radial stiffness [N/m]
     //! To be implemented by children classes
     constexpr scalar get_radial_stiffness() const;
@@ -105,6 +108,9 @@ class Tire
     //! Get the torque projected on the parent frame
     Vector3d<Timeseries_t> get_torque_in_parent() const { return _frame.get_rotation_matrix()*_T; }
 
+    //! Get the database path
+    const std::string& get_path() const { return _path; }
+
     //! Print the tire
     //! @param[inout] os: output stream
     std::ostream& print(std::ostream& os) const;
@@ -123,6 +129,7 @@ class Tire
     Timeseries_t lambda() const { return -_v[1]/_v[0]; }
 
     std::string _name;  //! [c] A string to identify the tire (e.g. front left)
+    std::string _path;  //! [c] Path to the database node
     Type        _type;  //! [c] Tire type: normal or lateral_only
 
     Frame<Timeseries_t>  _frame;  //! [in] A frame with origin in the tire road contact point 

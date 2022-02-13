@@ -40,6 +40,8 @@ inline Chassis_car_6dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::Ch
 {}
 
 
+
+
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
 inline void Chassis_car_6dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_state
  (Timeseries_t u, Timeseries_t v, Timeseries_t omega, Timeseries_t z, Timeseries_t dz, Timeseries_t mu, Timeseries_t dmu, Timeseries_t phi, Timeseries_t dphi)

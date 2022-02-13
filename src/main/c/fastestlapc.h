@@ -32,24 +32,21 @@ STRUCT c_Track
     bool is_closed;
 };
 
-STRUCT c_Channel
-{
-    double* data;
-    char*   name;
-};
-
 
 // Factories -----------------------------------------------------------------------------------------------------------
 void create_vehicle(struct c_Vehicle* vehicle, const char* name, const char* database_file);
 
 void create_track(struct c_Track* track, const char* name, const char* track_file, const double scale);
 
+// Modifyers -----------------------------------------------------------------------------------------------------------
+void set_parameter(struct c_Vehicle* vehicle, const char* parameter, const double value);
+
 // Applications --------------------------------------------------------------------------------------------------------
 void vehicle_equations(double* dqdt, double* dqa, struct c_Vehicle* vehicle, double* q, double* qa, double* u, double s);
 
 void gg_diagram(double* ay, double* ax_max, double* ax_min, struct c_Vehicle* vehicle, double v, const int n_points);
 
-void optimal_laptime(struct c_Channel* channels, struct c_Vehicle* c_vehicle, const struct c_Track* c_track, const int n_points, const int n_channels);
+void optimal_laptime(double** channels_data, struct c_Vehicle* c_vehicle, const struct c_Track* c_track, const int n_points, const int n_channels, const char** channels_name);
 
 void track_coordinates(double* x_center, double* y_center, double* x_left, double* y_left, double* x_right, double* y_right, double* theta, struct c_Track* c_track, const int n_points);
 

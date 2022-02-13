@@ -62,6 +62,10 @@ class Chassis
     //! Copy assignment
     Chassis& operator=(const Chassis& other);
 
+    //! Modifyer to set a parameter
+    template<typename T>
+    void set_parameter(const std::string& parameter, const T value);
+
     //! Set state: longitudinal/lateral velocities and yaw speed
     //! @param[in] u: longitudinal velocity in road frame [m/s]
     //! @param[in] v: lateral velocity in road frame [m/s]

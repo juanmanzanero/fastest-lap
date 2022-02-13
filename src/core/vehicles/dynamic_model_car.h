@@ -51,6 +51,10 @@ class Dynamic_model_car
     Dynamic_model_car(Xml_document& database, const RoadModel_t& road = RoadModel_t()) 
         : _chassis(database), _road(road) {};
 
+    //! Modifyer to set a parameter
+    template<typename T>
+    void set_parameter(const std::string& parameter, const T value) { get_chassis().set_parameter(parameter,value); }
+
     //! The time derivative functor, dqdt = operator()(q,u,t)
     //! Only enabled if the dynamic model has no algebraic equations
     //! @param[in] q: state vector

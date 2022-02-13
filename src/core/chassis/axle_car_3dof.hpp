@@ -23,6 +23,8 @@ Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::
   _engine(),
   _delta(0.0)
 {
+    base_type::_path = path;
+
     read_parameters(database, path, get_parameters());
     _y_tire = {-0.5*_track, 0.5*_track};
 
@@ -52,6 +54,55 @@ Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::
     std::get<RIGHT>(base_type::_tires).get_frame().set_origin(get_tire_position(RIGHT), get_tire_velocity(RIGHT));
 }
 
+
+template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t> typename Axle_mode, size_t STATE0, size_t CONTROL0>
+template<typename T>
+inline bool Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::set_parameter(const std::string& parameter, const T value)
+{
+    bool found = false;
+    // Check if the parameter goes to this object
+    if ( parameter.find(base_type::_path) == 0 )
+    {
+        // Find the parameter in the database
+        found = ::set_parameter(get_parameters(), parameter, base_type::_path, value); 
+
+        // If found, update the tires frames in case the parameter modified was their position
+        if ( found )
+        {
+            _y_tire = {-0.5*_track, 0.5*_track};
+            std::get<LEFT>(base_type::_tires).get_frame().set_origin(get_tire_position(LEFT), get_tire_velocity(LEFT));
+            std::get<RIGHT>(base_type::_tires).get_frame().set_origin(get_tire_position(RIGHT), get_tire_velocity(RIGHT));
+        }
+
+        // If not found, look for the brakes
+        if ( !found )
+            if ( parameter.find(base_type::_path + "brakes/") == 0 ) 
+            {
+                _brakes.set_parameter(parameter, value);
+                found = true;
+            }
+
+        // If not found, look for the engine
+        if constexpr ( std::is_same<Axle_mode<0,0>, POWERED<0,0>>::value )
+            if ( !found )
+                if ( parameter.find(base_type::_path + "engine/") == 0 )
+                {
+                    _engine.set_parameter(parameter, value);
+                    found = true;
+                }
+
+        // If not found, look for the parameter in the parent class
+        if ( !found )
+            found = base_type::set_parameter(parameter, value);
+    }
+    else
+    {
+        // Look for the parameter in the parent class
+        found = base_type::set_parameter(parameter, value);
+    }
+           
+    return found;
+}
 
 template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t> typename Axle_mode, size_t STATE0, size_t CONTROL0>
 void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::update

@@ -75,6 +75,32 @@ inline Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>& Chassis<Tim
     return *this;
 }
 
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
+template<typename T>
+void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_parameter(const std::string& parameter, const T value)
+{
+    // Check if the parameter goes to this object
+    if ( parameter.find("vehicle/chassis/") == 0 )
+    {
+        // Find the parameter in the database
+        const auto found = ::set_parameter(get_parameters(), parameter, "vehicle/chassis/", value); 
+
+        // If not found, throw an exception
+        if ( !found )
+            throw std::runtime_error("Parameter \"" + parameter + "\" was not found");
+    }
+    else
+    {
+        // Look for the parameter in front axle
+        auto found = get_front_axle().set_parameter(parameter, value);
+
+        if ( !found )
+            found = get_rear_axle().set_parameter(parameter, value);
+    
+        if ( !found )
+            throw std::runtime_error("Parameter \"" + parameter + "\" was not found");
+    }
+}
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
 void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_state(Timeseries_t u, Timeseries_t v, Timeseries_t omega)

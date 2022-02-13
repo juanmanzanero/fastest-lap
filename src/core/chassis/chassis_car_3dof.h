@@ -81,6 +81,10 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
     //! @param[in] rear_right_tire_type: Type of the rear right tire type
     Chassis_car_3dof(Xml_document& database);
 
+    //! Modifyer to set a parameter from the database
+    template<typename T>
+    void set_parameter(const std::string& parameter, const T value);
+
     //! Update the chassis: update the axles to get forces and compute accelerations
     //! @param[in] x: x-coordinate of the road frame [m]
     //! @param[in] y: y-coordinate of the road frame [m]
