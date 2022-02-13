@@ -20,19 +20,23 @@ vehicle=fastest_lap.load_vehicle("../../../../database/limebeer-2014-f1.xml","ca
 
 ```python
 # Load track
-track=fastest_lap.load_track("../../../../database/catalunya.xml","catalunya",1.0);
+track=fastest_lap.load_track("../../../../database/catalunya_discrete_1000.xml","catalunya",1.0);
 ```
 
 
 ```python
 # Compute optimal laptime
-data = fastest_lap.optimal_laptime(vehicle,track,12,500,["x","y","delta","throttle","u","s"]);
-x = data[0];
-y = data[1];
-delta = data[2];
+data = fastest_lap.optimal_laptime(vehicle,track,1000,["x","y","delta","throttle","u","s","time","psi","omega","v"]);
+x        = data[0];
+y        = data[1];
+delta    = data[2];
 throttle = data[3];
-u = data[4]
-s = data[5]
+u        = data[4]
+s        = data[5]
+time     = data[6]
+psi      = data[7]
+omega    = data[8]
+v        = data[9]
 ```
 
 ## GPS
@@ -40,7 +44,7 @@ s = data[5]
 
 ```python
 import numpy as np
-fastest_lap.plot_optimal_laptime(np.array(x),y,track,6.0);
+fastest_lap.plot_optimal_laptime(np.array(x),y,track);
 plt.gca().invert_xaxis()
 
 ```
@@ -56,7 +60,7 @@ plt.gca().invert_xaxis()
 
 ```python
 plt.figure(figsize=(20,3))
-plt.plot(delta,color="orange");
+plt.plot(np.array(delta)*180.0/3.14,color="orange");
 ```
 
 
@@ -112,7 +116,7 @@ fastf1.Cache.enable_cache('.')  # replace with your cache directory
 fastf1.plotting.setup_mpl()
 
 # load a session and its telemetry data
-quali = fastf1.get_session(2021, 'Spanish Grand Prix', 'Q')
+quali = fastf1.get_session(2020, 'Spanish Grand Prix', 'Q')
 laps = quali.load_laps(with_telemetry=True)
 
 
@@ -149,7 +153,7 @@ mer_color = fastf1.plotting.team_color('MER')
     api            INFO 	Using cached data for car_data
     api            INFO 	Using cached data for position_data
     api            INFO 	Using cached data for weather_data
-    core           INFO 	Loaded data for 20 drivers: ['5', '99', '4', '3', '55', '47', '7', '10', '44', '11', '31', '18', '22', '77', '33', '16', '14', '6', '63', '9']
+    core           INFO 	Loaded data for 20 drivers: ['77', '3', '18', '26', '10', '23', '6', '33', '5', '44', '55', '31', '4', '8', '11', '7', '63', '20', '16', '99']
 
 
 
@@ -158,7 +162,7 @@ mer_color = fastf1.plotting.team_color('MER')
 fig, ax = plt.subplots(figsize=(20,5))
 ax.plot(ver_tel['Distance'], ver_tel['Speed'], color=rbr_color, label='VER')
 ax.plot(ham_tel['Distance'], ham_tel['Speed'], color=mer_color, label='HAM')
-ax.plot(np.array(s)-100,np.array(u)*3.6, label="Fastest-lap")
+ax.plot(np.array(s)-180.0,np.array(u)*3.6, label="Fastest-lap")
 ax.set_xlabel('Distance in m')
 ax.set_ylabel('Speed in km/h')
 
@@ -178,4 +182,66 @@ plt.show()
 
 ```python
 
+fig, ax = plt.subplots(figsize=(20,4))
+ax.plot(ver_tel['Distance'], ver_tel['Throttle'], color=rbr_color, label='VER')
+ax.plot(ham_tel['Distance'], ham_tel['Throttle'], color=mer_color, label='HAM')
+ax.plot(np.array(s)-180,np.array(throttle)*100, label="Fastest-lap")
+ax.set_xlabel('Distance in m')
+ax.set_ylabel('Throttle')
+plt.ylim((-10,110))
+
+ax.legend()
+plt.suptitle(f"Fastest Lap Comparison \n "
+             f"{quali.weekend.name} {quali.weekend.year} Qualifying")
+
+plt.show()
+```
+
+
+    
+![png](output_14_0.png)
+    
+
+
+
+```python
+import numpy as np
+from math import fabs, pi, sin, cos
+
+
+psi_computed = np.zeros(len(psi))
+psi_computed[0] = psi[0]
+x_computed = np.zeros(len(x))
+x_computed[0] = x[0]
+y_computed = np.zeros(len(x))
+y_computed[0] = y[0]
+for i in range(1,len(time)):
+    psi_computed[i] = psi_computed[i-1] + 0.5*(omega[i]+omega[i-1])*(time[i]-time[i-1])
+    x_computed[i] = x_computed[i-1] + 0.5*(u[i]*cos(psi_computed[i])+u[i-1]*cos(psi_computed[i-1])-v[i]*sin(psi_computed[i])-v[i-1]*sin(psi_computed[i-1]))*(time[i]-time[i-1])
+    y_computed[i] = y_computed[i-1] + 0.5*(u[i]*sin(psi_computed[i])+u[i-1]*sin(psi_computed[i-1])+v[i]*cos(psi_computed[i])+v[i-1]*cos(psi_computed[i-1]))*(time[i]-time[i-1])
+    
+for i in range(len(psi)):
+    if ( psi_computed[i] > psi[i] + 1.8*np.pi):
+        psi_computed[i] = psi_computed[i] - 2.0*np.pi;
+
+plt.figure(figsize=(30,3));
+plt.plot(time,psi);
+plt.plot(time,psi_computed);
+plt.plot(time,2.0*np.array(omega));
+plt.show()
+plt.figure(figsize=(30,3));
+plt.plot(time,(np.array(psi_computed)-np.array(psi))*180.0/3.14);
+plt.ylim(-10,10);
+plt.figure(figsize=(30,3));
+plt.plot(time,x);
+plt.plot(time,x_computed)
+plt.plot(time,y);
+plt.plot(time,y_computed)
+plt.figure(figsize=(30,3));
+plt.plot(time,np.array(x_computed)-np.array(x))
+plt.plot(time,np.array(y_computed)-np.array(y))
+plt.figure(figsize=(30,30))
+plt.plot(x,y)
+plt.plot(x_computed,y_computed)
+plt.gca().set_aspect('equal')
 ```

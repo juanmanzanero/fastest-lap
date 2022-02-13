@@ -2,7 +2,7 @@
 #define __TRACK_BY_POLYNOMIAL_H__
 
 #include "lion/io/Xml_document.h"
-//#include "src/core/applications/circuit_preprocessor.h"
+#include "src/core/applications/circuit_preprocessor.h"
 
 class Track_by_polynomial
 {
@@ -10,15 +10,15 @@ class Track_by_polynomial
 
     Track_by_polynomial() = default;
 
-    Track_by_polynomial(Xml_document& doc) : Track_by_polynomial(compute_track_polynomial(doc)) {}
-
-//    Track_by_polynomial(const Circuit_preprocessor& circuit_preprocessor) {}
+    Track_by_polynomial(Xml_document& doc);
 
     Track_by_polynomial(const vPolynomial& r, const sPolynomial& wl, const sPolynomial& wr) 
         : _r(r), _dr(_r.derivative()), _d2r(_dr.derivative()), _wl(wl), _wr(wr) {}
 
     Track_by_polynomial(const vPolynomial& r, const vPolynomial& dr, const vPolynomial& d2r, const sPolynomial& wl, const sPolynomial& wr)
         : _r(r), _dr(dr), _d2r(d2r), _wl(wl), _wr(wr) {}
+
+    Track_by_polynomial(const Circuit_preprocessor& circuit_preprocessor);
 
     Track_by_polynomial(std::tuple<vPolynomial,sPolynomial,sPolynomial> p) : Track_by_polynomial(std::get<0>(p), std::get<1>(p), std::get<2>(p)) {}
 

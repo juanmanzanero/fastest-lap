@@ -33,6 +33,9 @@ class Circuit_preprocessor
         scalar maximum_dkappa = 2.0e-2;
     };
 
+    //! Constructor from Xml file
+    Circuit_preprocessor(Xml_document& doc);
+
     //! Constructor for closed circuits, from KML
     Circuit_preprocessor(Xml_document& coord_left_kml, Xml_document& coord_right_kml, const size_t n_el, const Options opts);
 
@@ -78,7 +81,7 @@ class Circuit_preprocessor
     scalar phi0;    
     scalar theta0;  
     scalar phi_ref; 
-    constexpr static const scalar R_earth = 6378388.0;
+    scalar R_earth = 6378388.0;
 
     std::vector<sVector3d> r_left;
     std::vector<sVector3d> r_left_measured;     

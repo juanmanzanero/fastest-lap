@@ -204,6 +204,3 @@ TEST(Circuit_preprocessor_test, catalunya_500)
         EXPECT_DOUBLE_EQ(lat, circuit.r_left_measured[i].y()/(circuit.R_earth)*RAD + phi0);
     }
 }
-
-
-

@@ -43,12 +43,17 @@ class Optimal_laptime
             const std::array<scalar,Dynamic_model_t::NCONTROL>& u0, 
             const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations);
 
+    //! Export to XML
+    std::unique_ptr<Xml_document> xml() const;
 
     // Outputs
     std::vector<scalar> s;                                           //! Arclengths
     std::vector<std::array<scalar,Dynamic_model_t::NSTATE>> q;       //! All state vectors
     std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>> qa;  //! All algebraic variables vectors
     std::vector<std::array<scalar,Dynamic_model_t::NCONTROL>> u;     //! All control vectors
+
+    std::array<std::string,Dynamic_model_t::NSTATE> q_names;
+    std::array<std::string,Dynamic_model_t::NCONTROL> u_names;
     double laptime;
 
  private:

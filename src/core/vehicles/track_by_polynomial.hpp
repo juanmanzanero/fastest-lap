@@ -1,6 +1,70 @@
 #ifndef __TRACK_BY_POLYNOMIAL_HPP__
 #define __TRACK_BY_POLYNOMIAL_HPP__
 
+
+inline Track_by_polynomial::Track_by_polynomial(Xml_document& doc)
+{
+    if ( doc.get_root_element().get_attribute("format") == "by-polynomial" )
+        *this = Track_by_polynomial(compute_track_polynomial(doc));
+    
+    else if ( doc.get_root_element().get_attribute("format") == "discrete" )
+    {
+        Circuit_preprocessor circuit(doc);
+        *this = Track_by_polynomial(circuit);
+    }
+    else
+        throw std::runtime_error("Format is not recognized. Options are \"by-polynomial\" and \"discrete\"");
+}
+
+
+inline Track_by_polynomial::Track_by_polynomial(const Circuit_preprocessor& circuit)
+{
+    auto s = circuit.s;
+    auto r_centerline = circuit.r_centerline;
+    auto theta = circuit.theta;
+    auto kappa = circuit.kappa;
+    auto nl = circuit.nl;
+    auto nr = circuit.nr;
+
+    if ( circuit.is_closed ) 
+    { 
+        s.push_back(circuit.track_length);
+        r_centerline.push_back(r_centerline.front());
+        theta.push_back(theta.front());
+        kappa.push_back(kappa.front());
+        nl.push_back(nl.front());
+        nr.push_back(nr.front());
+    }
+
+    // Rotate 180 around +X (flip Y)
+    for (size_t i = 0; i < r_centerline.size(); ++i)
+    {
+        r_centerline[i].y() *= -1.0;
+        theta[i] *= -1.0;
+        kappa[i] *= -1.0;
+    }
+
+    // Compute dr = (cos(theta), sin(theta), 0.0)
+    std::vector<sVector3d> dr(theta.size());
+    
+    for (size_t i = 0; i < theta.size(); ++i)
+        dr[i] = sVector3d(cos(theta[i]),sin(theta[i]),0.0);
+
+    // Compute d2r = kappa.(-sin(theta), cos(theta), 0.0)
+    std::vector<sVector3d> d2r(theta.size());
+
+    for (size_t i = 0; i < theta.size(); ++i)
+        d2r[i] = kappa[i]*sVector3d(-sin(theta[i]), cos(theta[i]), 0.0);
+    
+    
+    // Construct the polynomials
+    _r   = {s,r_centerline,1,false};
+    _dr  = {s,dr,1,false};
+    _d2r = {s,d2r,1,false};
+    _wl  = {s,nl,1,false};
+    _wr  = {s,nr,1,false};
+}
+
 inline std::tuple<vPolynomial,sPolynomial,sPolynomial> Track_by_polynomial::compute_track_polynomial(Xml_document& doc)   
 {
     auto xml_segments = doc.get_root_element().get_children();

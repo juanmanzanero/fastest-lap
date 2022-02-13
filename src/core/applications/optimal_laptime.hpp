@@ -19,6 +19,8 @@ inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const size_t n, const b
             compute_derivative<false>(n,car,q0,qa0,u0,dissipations);
     }
 
+    // Get state and control names
+    std::tie(std::ignore, q_names, u_names) = car.get_state_and_control_names();
 }
 
 
@@ -121,7 +123,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const size_t n, con
     // options
     std::string options;
     // turn off any printing
-    options += "Integer print_level  5\n";
+    options += "Integer print_level  0\n";
     options += "String  sb           yes\n";
     options += "Sparse true forward\n";
     options += "Numeric tol          1e-10\n";
@@ -147,21 +149,6 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const size_t n, con
         x_final[i] = result.x[i];
 
     fg(fg_final,x_final);
-/*  
-    for (size_t i = 0; i < n+offset; ++i)
-    {
-        fg.get_car()(fg.get_state(i), fg.get_control(i), 0.0);
-        std::cout << fg.get_control(i)[0] << ", " << fg.get_control(i)[1] << std::endl;
-    }
-
-    std::cout << "Positions" << std::endl;
-    for (size_t i = 0; i < n+offset; ++i)
-    {
-        const scalar& L = fg.get_car().get_road().track_length();
-        fg.get_car()(fg.get_state(i), fg.get_control(i), ((double)i)*L/((double)n));
-        std::cout << fg.get_car().get_road().get_x() << ", " << fg.get_car().get_road().get_y() << std::endl;
-    }
-*/
 
     // Export the solution
     q = {fg.get_states().size(),{{}}};
@@ -336,23 +323,6 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const size_t n,
 
     fg(fg_final,x_final);
   
-/*
-
-    for (size_t i = 0; i < n+offset; ++i)
-    {
-        fg.get_car()(fg.get_state(i), fg.get_control(i), 0.0);
-        std::cout << fg.get_control(i)[0] << ", " << fg.get_control(i)[1] << std::endl;
-    }
-
-    std::cout << "Positions" << std::endl;
-    for (size_t i = 0; i < n+offset; ++i)
-    {
-        const scalar& L = fg.get_car().get_road().track_length();
-        fg.get_car()(fg.get_state(i), fg.get_control(i), ((double)i)*L/((double)n));
-        std::cout << fg.get_car().get_road().get_x() << ", " << fg.get_car().get_road().get_y() << std::endl;
-    }
-*/
-
     // Export the solution
     q = {fg.get_states().size(),{{}}};
     
@@ -388,6 +358,52 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const size_t n,
 }
 
 
+template<typename Dynamic_model_t>
+std::unique_ptr<Xml_document> Optimal_laptime<Dynamic_model_t>::xml() const 
+{
+    std::ostringstream s_out;
+    s_out.precision(17);
+    std::unique_ptr<Xml_document> doc_ptr(std::make_unique<Xml_document>());
+
+    doc_ptr->create_root_element("optimal_laptime");
+
+    auto root = doc_ptr->get_root_element();
+
+    // Save arclength
+    for (size_t j = 0; j < s.size()-1; ++j)
+        s_out << s[j] << ", ";
+
+    s_out << s.back();
+
+    root.add_child("arclength").set_value(s_out.str());
+    s_out.str(""); s_out.clear();
+
+    // Save state
+    for (size_t i = 0; i < Dynamic_model_t::NSTATE; ++i)
+    {
+        for (size_t j = 0; j < q.size()-1; ++j)
+            s_out << q[j][i] << ", " ;
+
+        s_out << q.back()[i];
+
+        root.add_child(q_names[i]).set_value(s_out.str());
+        s_out.str(""); s_out.clear();
+    }
+
+    // Save controls
+    for (size_t i = 0; i < Dynamic_model_t::NCONTROL; ++i)
+    {
+        for (size_t j = 0; j < u.size()-1; ++j)
+            s_out << u[j][i] << ", " ;
+
+        s_out << u.back()[i];
+
+        root.add_child(u_names[i]).set_value(s_out.str());
+        s_out.str(""); s_out.clear();
+    }
+
+    return doc_ptr;
+}
 
 
 template<typename Dynamic_model_t>

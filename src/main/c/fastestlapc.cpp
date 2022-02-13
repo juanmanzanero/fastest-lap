@@ -106,7 +106,7 @@ void create_track(struct c_Track* track, const char* name, const char* track_fil
             throw std::runtime_error("Track already exists");
         }
     }
-    else if ( track_format == "by-polynomial" )
+    else if ( track_format == "by-polynomial" || track_format == "discrete")
     {
         track->format = BY_POLYNOMIAL;
 

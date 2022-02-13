@@ -86,6 +86,16 @@ TEST_F(limebeer2014f1_test, indexes)
     EXPECT_EQ(Road_t::IIDPSI               , 9);
 }
 
+TEST_F(limebeer2014f1_test, variable_names)
+{
+    limebeer2014f1<double>::curvilinear_p car_sc(database);
+
+    auto [s_names, q_names, u_names] = car_sc.get_state_and_control_names();
+
+    std::cout << q_names << std::endl;
+    std::cout << u_names << std::endl;
+}
+
 
 TEST_F(limebeer2014f1_test, jacobian_autodiff)
 {

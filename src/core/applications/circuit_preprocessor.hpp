@@ -61,6 +61,122 @@ inline Circuit_preprocessor::Circuit_preprocessor(Xml_document& coord_left_kml, 
     *this = Circuit_preprocessor(coord_left, coord_right, start, finish, n_el, opts);
 }
 
+
+inline Circuit_preprocessor::Circuit_preprocessor(Xml_document& doc)
+{
+    Xml_element root = doc.get_root_element();
+
+    if ( root.get_attribute("format") != "discrete" )
+        throw std::runtime_error("Track should be of type \"discrete\"");
+
+    if ( root.get_attribute("type") == "closed" )
+        is_closed = true;
+    else if ( root.get_attribute("type") == "open" )
+        is_closed = false;
+    else
+        throw std::runtime_error("Incorrect track type, should be \"open\" or \"closed\"");
+
+    // Get a header with the errors 
+    auto header = root.get_child("header");
+
+    track_length             = header.get_child("track_length").get_value(scalar());
+    left_boundary_L2_error   = header.get_child("L2_error_left").get_value(scalar());
+    right_boundary_L2_error  = header.get_child("L2_error_right").get_value(scalar());
+    left_boundary_max_error  = header.get_child("max_error_left").get_value(scalar());
+    right_boundary_max_error = header.get_child("max_error_right").get_value(scalar());
+    
+
+    // Get optimization section
+    auto opt               = root.get_child("optimization");
+    options.eps_k          = opt.get_child("cost_curvature").get_value(scalar());
+    options.eps_n          = opt.get_child("cost_track_limits_smoothness").get_value(scalar());
+    options.eps_d          = opt.get_child("cost_track_limits_errors").get_value(scalar());
+    options.eps_c          = opt.get_child("cost_centerline").get_value(scalar());
+    options.maximum_kappa  = opt.get_child("maximum_kappa").get_value(scalar());
+    options.maximum_dkappa = opt.get_child("maximum_dkappa").get_value(scalar());
+    
+
+    // Get the GPS coordinates conversion used
+    auto gps_param = root.get_child("GPS_parameters");
+    theta0         = gps_param.get_child("origin_longitude").get_value(scalar())*DEG;
+    phi0           = gps_param.get_child("origin_latitude").get_value(scalar())*DEG;
+    R_earth        = gps_param.get_child("earth_radius").get_value(scalar());
+    phi_ref        = gps_param.get_child("reference_latitude").get_value(scalar())*DEG;
+
+    // Get the data
+    auto data = root.get_child("data");
+    n_points = std::stoi(data.get_attribute("number_of_points"));
+    n_elements = (is_closed ? n_points : n_points - 1);
+
+    // Arc-length
+    s = data.get_child("arclength").get_value(std::vector<scalar>());
+
+    // Centerline
+    std::vector<scalar> x = data.get_child("centerline/x").get_value(std::vector<scalar>());
+    std::vector<scalar> y = data.get_child("centerline/y").get_value(std::vector<scalar>());
+
+    r_centerline = std::vector<sVector3d>(n_points);
+    for (size_t i = 0; i < n_points; ++i)
+        r_centerline[i] = sVector3d(x[i], y[i], 0.0);
+
+    // Left boundary
+    x = data.get_child("left_boundary/x").get_value(std::vector<scalar>());
+    y = data.get_child("left_boundary/y").get_value(std::vector<scalar>());
+
+    r_left = std::vector<sVector3d>(n_points);
+    for (size_t i = 0; i < n_points; ++i)
+        r_left[i] = sVector3d(x[i], y[i], 0.0);
+    
+    // Right boundary
+    x = data.get_child("right_boundary/x").get_value(std::vector<scalar>());
+    y = data.get_child("right_boundary/y").get_value(std::vector<scalar>());
+
+    r_right = std::vector<sVector3d>(n_points);
+    for (size_t i = 0; i < n_points; ++i)
+        r_right[i] = sVector3d(x[i], y[i], 0.0);
+    
+    // Left measured boundary
+    x = data.get_child("left_measured_boundary/x").get_value(std::vector<scalar>());
+    y = data.get_child("left_measured_boundary/y").get_value(std::vector<scalar>());
+
+    assert(x.size() == y.size());
+
+    r_left_measured = std::vector<sVector3d>(x.size());
+    for (size_t i = 0; i < x.size(); ++i)
+        r_left_measured[i] = sVector3d(x[i], y[i], 0.0);
+    
+    // Right measured boundary
+    x = data.get_child("right_measured_boundary/x").get_value(std::vector<scalar>());
+    y = data.get_child("right_measured_boundary/y").get_value(std::vector<scalar>());
+
+    assert(x.size() == y.size());
+
+    r_right_measured = std::vector<sVector3d>(x.size());
+    for (size_t i = 0; i < x.size(); ++i)
+        r_right_measured[i] = sVector3d(x[i], y[i], 0.0);
+    
+    // Theta
+    theta = data.get_child("theta").get_value(std::vector<scalar>());
+
+    // Kappa
+    kappa = data.get_child("kappa").get_value(std::vector<scalar>());
+
+    // nl
+    nl = data.get_child("nl").get_value(std::vector<scalar>());
+
+    // nr
+    nr = data.get_child("nr").get_value(std::vector<scalar>());
+
+    // dkappa
+    dkappa = data.get_child("dkappa").get_value(std::vector<scalar>());
+
+    // dnl
+    dnl = data.get_child("dnl").get_value(std::vector<scalar>());
+
+    // dnr
+    dnr = data.get_child("dnr").get_value(std::vector<scalar>());
+}
+
 template<bool closed>
 inline void Circuit_preprocessor::compute(const std::vector<Coordinates>& coord_left, const std::vector<Coordinates>& coord_right) 
 {
@@ -208,7 +324,7 @@ inline void Circuit_preprocessor::compute(const std::vector<Coordinates>& coord_
 
     // (7) Run the optimization
     std::string ipoptoptions;
-    ipoptoptions += "Integer print_level  5\n";
+    ipoptoptions += "Integer print_level  0\n";
     ipoptoptions += "String  sb           yes\n";
     ipoptoptions += "Sparse true forward\n";
     ipoptoptions += "Retape true\n";
@@ -374,6 +490,9 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
     opt.add_child("cost_track_limits_smoothness").set_value(std::to_string(options.eps_n));
     opt.add_child("cost_track_limits_errors").set_value(std::to_string(options.eps_d));
     opt.add_child("cost_centerline").set_value(std::to_string(options.eps_c));
+    opt.add_child("maximum_kappa").set_value(std::to_string(options.maximum_kappa));
+    opt.add_child("maximum_dkappa").set_value(std::to_string(options.maximum_dkappa));
+
 
     // Add the GPS coordinates conversion used
     auto gps_param = root.add_child("GPS_parameters");
@@ -616,7 +735,7 @@ inline std::pair<std::vector<scalar>, std::vector<sVector3d>> Circuit_preprocess
 }
 
 
-std::pair<std::vector<Circuit_preprocessor::Coordinates>, std::vector<Circuit_preprocessor::Coordinates>> 
+inline std::pair<std::vector<Circuit_preprocessor::Coordinates>, std::vector<Circuit_preprocessor::Coordinates>> 
     Circuit_preprocessor::trim_coordinates
     (const std::vector<Coordinates>& coord_left, const std::vector<Coordinates>& coord_right, Coordinates start, Coordinates finish) 
 {
