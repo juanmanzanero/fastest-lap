@@ -29,6 +29,146 @@ inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const size_t n, const b
 
 
 template<typename Dynamic_model_t>
+inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const std::vector<scalar>& s_, const bool is_closed, const bool is_direct,
+    const Dynamic_model_t& car, const std::array<scalar,Dynamic_model_t::NSTATE>& q0, const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& qa0,
+    const std::array<scalar,Dynamic_model_t::NCONTROL>& u0, const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations)
+{
+    s = s_;
+    if ( s.size() <= 1 )
+        throw std::runtime_error("Provide at least two values of arclength");
+
+    // (1) Compute number of elements and points
+    n_points = s.size();
+    n_elements = (is_closed ? n_points : n_points - 1);
+
+    // (2) Verify the vector or arclength
+    const scalar& L = car.get_road().track_length();
+
+    if (is_closed)
+    {
+        if (std::abs(s.front()) > 1.0e-12)
+            throw std::runtime_error("In closed circuits, s[0] should be 0.0");
+
+        if (s.back() > L - 1.0e-10)
+            throw std::runtime_error("In closed circuits, s[end] should be < track_length");
+    }
+    else
+    {
+        if (s[0] < -1.0e-12)
+            throw std::runtime_error("s[0] must be >= 0");
+
+        if (s.back() > L)
+            throw std::runtime_error("s[end] must be <= L");
+    }
+
+    // If closed, replace the initial and final arclength by 0,L
+    if (is_closed)
+    {   
+        s.front() = 0.0;
+        s.back()  = L;
+    }
+        
+    // (3) Set the initial condition
+    q  = std::vector<std::array<scalar,Dynamic_model_t::NSTATE>>(n_points,q0);
+    qa = std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>>(n_points,qa0);
+    u  = std::vector<std::array<scalar,Dynamic_model_t::NCONTROL>>(n_points,u0);
+
+    // (4) Compute
+    compute(is_closed, is_direct, car, dissipations);
+}
+
+template<typename Dynamic_model_t>
+inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const scalar s_start, const scalar s_finish, const size_t n, const bool is_direct,
+    const Dynamic_model_t& car, const std::array<scalar,Dynamic_model_t::NSTATE>& q0, const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& qa0,
+    const std::array<scalar,Dynamic_model_t::NCONTROL>& u0, const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations)
+{
+    // (1) Check inputs
+    if (s_start < -1.0e-12)
+        throw std::runtime_error("s_start must be >= 0");
+
+    const scalar& L = car.get_road().track_length();
+    if (s.back() > L)
+        throw std::runtime_error("s_finish must be <= L");
+
+    // (2) Compute number of points
+    n_elements = n;
+    n_points   = n+1;
+
+    // (3) Construct arclength
+    s = linspace(s_start, s_finish, n+1); 
+
+    // (4) Set the initial condition
+    q  = std::vector<std::array<scalar,Dynamic_model_t::NSTATE>>(n_points,q0);
+    qa = std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>>(n_points,qa0);
+    u  = std::vector<std::array<scalar,Dynamic_model_t::NCONTROL>>(n_points,u0);
+
+    // (5) Compute
+    compute(false, is_direct, car, dissipations);
+}
+
+
+template<typename Dynamic_model_t>
+inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const std::vector<scalar>& s_, const bool is_closed, const bool is_direct,
+    const Dynamic_model_t& car, const std::vector<std::array<scalar,Dynamic_model_t::NSTATE>>& q0, 
+    const std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>>& qa0,
+    const std::vector<std::array<scalar,Dynamic_model_t::NCONTROL>>& u0, 
+    const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations)
+{
+    s = s_;
+    if ( s.size() <= 1 )
+        throw std::runtime_error("Provide at least two values of arclength");
+
+    // (1) Compute number of elements and points
+    n_points = s.size();
+    n_elements = (is_closed ? n_points : n_points - 1);
+
+    // (2) Verify the vector or arclength
+    const scalar& L = car.get_road().track_length();
+
+    if (is_closed)
+    {
+        if (std::abs(s.front()) > 1.0e-12)
+            throw std::runtime_error("In closed circuits, s[0] should be 0.0");
+
+        if (s.back() > L - 1.0e-10)
+            throw std::runtime_error("In closed circuits, s[end] should be < track_length");
+    }
+    else
+    {
+        if (s[0] < -1.0e-12)
+            throw std::runtime_error("s[0] must be >= 0");
+
+        if (s.back() > L)
+            throw std::runtime_error("s[end] must be <= L");
+    }
+
+    // If closed, replace the initial and final arclength by 0,L
+    if (is_closed)
+    {   
+        s.front() = 0.0;
+        s.back()  = L;
+    }
+
+    // (3) Set the initial condition
+    if ( q0.size() != n_points )
+        throw std::runtime_error("q0 must have size of n_points");
+
+    if ( qa0.size() != n_points )
+        throw std::runtime_error("qa0 must have size of n_points");
+
+    if ( u0.size() != n_points )
+        throw std::runtime_error("u0 must have size of n_points");
+
+    q  = q0;
+    qa = qa0;
+    u  = u0;
+
+    // (4) Compute
+    compute(is_closed, is_direct, car, dissipations);
+}
+
+
+template<typename Dynamic_model_t>
 inline void Optimal_laptime<Dynamic_model_t>::compute(const bool is_closed, const bool is_direct, const Dynamic_model_t& car, const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations)
 {
     if ( is_direct )

@@ -41,14 +41,14 @@ class Optimal_laptime
     //! @param[in] q0:    initial condition (+state at the first point)
     //! @param[in] qa0:   initial algebraic condition
     //! @param[in] u0:    initial control variables
-    Optimal_laptime(const std::vector<scalar>& s,  
+    Optimal_laptime(const std::vector<scalar>& s_,  
                     const bool is_closed,
                     const bool is_direct,
                     const Dynamic_model_t& car, 
                     const std::array<scalar,Dynamic_model_t::NSTATE>& q0, 
                     const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& qa0,
                     const std::array<scalar,Dynamic_model_t::NCONTROL>& u0, 
-                    const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations) {};
+                    const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations);
 
     //! Constructor with given start and finish arclength, only for open track simulations
     //! @param[in] s_start: initial arclength
@@ -68,7 +68,7 @@ class Optimal_laptime
                     const std::array<scalar,Dynamic_model_t::NSTATE>& q0, 
                     const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& qa0,
                     const std::array<scalar,Dynamic_model_t::NCONTROL>& u0, 
-                    const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations) {};
+                    const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations);
 
     //! Constructor with distribution of arclength and initial conditions
     //! If closed simulation, s[0] shall be 0, and s[end] shall be < track_length
@@ -86,7 +86,7 @@ class Optimal_laptime
                     const std::vector<std::array<scalar,Dynamic_model_t::NSTATE>>& q0, 
                     const std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>>& qa0,
                     const std::vector<std::array<scalar,Dynamic_model_t::NCONTROL>>& u0, 
-                    const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations) {};
+                    const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations);
 
     void compute(const bool is_closed, const bool is_direct, const Dynamic_model_t& car, const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations);
 

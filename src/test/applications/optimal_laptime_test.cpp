@@ -277,8 +277,8 @@ TEST_F(Optimal_laptime_test, Catalunya_derivative)
 
     for (size_t i = 0; i < n; ++i)
     {
-        EXPECT_NEAR(opt_laptime.u[i][0], delta_saved[i],5.0e-7);
-        EXPECT_NEAR(opt_laptime.u[i][1], T_saved[i],1.0e-2);
+        EXPECT_NEAR(opt_laptime.u[i][0], delta_saved[i],5.0e-6);
+        EXPECT_NEAR(opt_laptime.u[i][1], T_saved[i],2.0e-2);
     }
 }
 
