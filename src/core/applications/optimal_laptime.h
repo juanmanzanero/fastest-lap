@@ -14,10 +14,14 @@ class Optimal_laptime
     using Timeseries_t = typename Dynamic_model_t::Timeseries_type;
     static_assert(std::is_same<Timeseries_t,CppAD::AD<scalar>>::value == true);
 
-    //! Constructor
+    //! Constructor with equally spaced mesh of n points and uniform initial condition (q0,qa0,u0)
     //! @param[in] n:     number of discretization points
+    //! @param[in] is_closed: compute closed or open track simulations
+    //! @param[in] is_direct: to use direct or derivative controls
     //! @param[in] car:   vehicle
-    //! @param[in] q0:    initial condition (state at the first point)
+    //! @param[in] q0:    initial condition (+state at the first point)
+    //! @param[in] qa0:   initial algebraic condition
+    //! @param[in] u0:    initial control variables
     Optimal_laptime(const size_t n, 
                     const bool is_closed,
                     const bool is_direct,
@@ -27,26 +31,79 @@ class Optimal_laptime
                     const std::array<scalar,Dynamic_model_t::NCONTROL>& u0, 
                     const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations);
 
-    template<bool is_closed>
-    void compute_direct(const size_t n, 
-            const Dynamic_model_t& car, 
-            const std::array<scalar,Dynamic_model_t::NSTATE>& q0, 
-            const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& qa0,
-            const std::array<scalar,Dynamic_model_t::NCONTROL>& u0, 
-            const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations);
+    //! Constructor with given arclength distribution. 
+    //! If closed simulation, s[0] shall be 0, and s[end] shall be < track_length
+    //! The number of points, n, will be infered from the length of s
+    //! @param[in] s: vector of arclength where the points will be computed
+    //! @param[in] is_closed: compute closed or open track simulations
+    //! @param[in] is_direct: to use direct or derivative controls
+    //! @param[in] car:   vehicle
+    //! @param[in] q0:    initial condition (+state at the first point)
+    //! @param[in] qa0:   initial algebraic condition
+    //! @param[in] u0:    initial control variables
+    Optimal_laptime(const std::vector<scalar>& s,  
+                    const bool is_closed,
+                    const bool is_direct,
+                    const Dynamic_model_t& car, 
+                    const std::array<scalar,Dynamic_model_t::NSTATE>& q0, 
+                    const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& qa0,
+                    const std::array<scalar,Dynamic_model_t::NCONTROL>& u0, 
+                    const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations) {};
+
+    //! Constructor with given start and finish arclength, only for open track simulations
+    //! @param[in] s_start: initial arclength
+    //! @param[in] s_finish: final arclength
+    //! @param[in] n: number of elements
+    //! @param[in] is_closed: compute closed or open track simulations
+    //! @param[in] is_direct: to use direct or derivative controls
+    //! @param[in] car:   vehicle
+    //! @param[in] q0:    initial condition (+state at the first point)
+    //! @param[in] qa0:   initial algebraic condition
+    //! @param[in] u0:    initial control variables
+    Optimal_laptime(const scalar s_start,
+                    const scalar s_finish,
+                    const size_t n, 
+                    const bool is_direct,
+                    const Dynamic_model_t& car, 
+                    const std::array<scalar,Dynamic_model_t::NSTATE>& q0, 
+                    const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& qa0,
+                    const std::array<scalar,Dynamic_model_t::NCONTROL>& u0, 
+                    const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations) {};
+
+    //! Constructor with distribution of arclength and initial conditions
+    //! If closed simulation, s[0] shall be 0, and s[end] shall be < track_length
+    //! @param[in] s: vector of arclengths
+    //! @param[in] is_closed: compute closed or open track simulations
+    //! @param[in] is_direct: to use direct or derivative controls
+    //! @param[in] car:   vehicle
+    //! @param[in] q0:    vector of initial conditions 
+    //! @param[in] qa0:   vector of algebraic initial conditions
+    //! @param[in] u0:    vector of control variables
+    Optimal_laptime(const std::vector<scalar>& s,
+                    const bool is_closed,
+                    const bool is_direct,
+                    const Dynamic_model_t& car, 
+                    const std::vector<std::array<scalar,Dynamic_model_t::NSTATE>>& q0, 
+                    const std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>>& qa0,
+                    const std::vector<std::array<scalar,Dynamic_model_t::NCONTROL>>& u0, 
+                    const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations) {};
+
+    void compute(const bool is_closed, const bool is_direct, const Dynamic_model_t& car, const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations);
 
     template<bool is_closed>
-    void compute_derivative(const size_t n, 
-            const Dynamic_model_t& car, 
-            const std::array<scalar,Dynamic_model_t::NSTATE>& q0, 
-            const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& qa0,
-            const std::array<scalar,Dynamic_model_t::NCONTROL>& u0, 
-            const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations);
+    void compute_direct(const Dynamic_model_t& car, 
+                        const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations);
+
+    template<bool is_closed>
+    void compute_derivative(const Dynamic_model_t& car, 
+                            const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations);
 
     //! Export to XML
     std::unique_ptr<Xml_document> xml() const;
 
     // Outputs
+    size_t n_elements;
+    size_t n_points;
     std::vector<scalar> s;                                           //! Arclengths
     std::vector<std::array<scalar,Dynamic_model_t::NSTATE>> q;       //! All state vectors
     std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>> qa;  //! All algebraic variables vectors
@@ -65,16 +122,18 @@ class Optimal_laptime
         using ADvector = std::vector<CppAD::AD<scalar>>;
 
      protected:
-        FG(const size_t n, 
+        FG(const size_t n_elements, 
+           const size_t n_points,
            const size_t n_variables,
            const size_t n_constraints,
-           const size_t n_points,
            const Dynamic_model_t& car, 
+           const std::vector<scalar>& s,
            const std::array<scalar,Dynamic_model_t::NSTATE>& q0, 
            const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& qa0, 
            const std::array<scalar,Dynamic_model_t::NCONTROL>& u0,
            const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations
-          ) : _n(n), _car(car), _q0(q0), _qa0(qa0), _u0(u0), _dissipations(dissipations), _n_variables(n_variables),
+          ) : _n_elements(n_elements), _n_points(n_points), _car(car), _s(s), _q0(q0), 
+              _qa0(qa0), _u0(u0), _dissipations(dissipations), _n_variables(n_variables),
               _n_constraints(n_constraints), _q(n_points,{0.0}), _qa(n_points), _u(n_points,{0.0}), _dqdt(n_points,{0.0}), _dqa(n_points) {}
 
      public:
@@ -97,8 +156,11 @@ class Optimal_laptime
         Dynamic_model_t& get_car() { return _car; }
 
      protected:
-        size_t _n;                          //! [c] Number of discretization points
+        size_t _n_elements;                 //! [c] Number of discretization elements
+        size_t _n_points;                   //! [c] Number of discretization points
         Dynamic_model_t _car;               //! Vehicle
+
+        std::vector<scalar> _s;                                                 //! [c] Vector of arclengths
         std::array<scalar,Dynamic_model_t::NSTATE> _q0;        //! [c] State vector for the initial node
         std::array<scalar,Dynamic_model_t::NALGEBRAIC> _qa0;   //! [c] Algebraic state vector for the initial node
         std::array<scalar,Dynamic_model_t::NCONTROL> _u0;      //! [c] Control vector for the initial node
@@ -121,14 +183,19 @@ class Optimal_laptime
      public:
         using ADvector = typename FG::ADvector;
 
-        FG_direct(const size_t n, 
-           const Dynamic_model_t& car, 
-           const std::array<scalar,Dynamic_model_t::NSTATE>& q0, 
-           const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& qa0, 
-           const std::array<scalar,Dynamic_model_t::NCONTROL>& u0,
-           const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations
-          ) : FG(n,n*(Dynamic_model_t::NCONTROL + Dynamic_model_t::NSTATE + Dynamic_model_t::NALGEBRAIC - 1),n*(Dynamic_model_t::NSTATE + Dynamic_model_t::NALGEBRAIC - 1 + Dynamic_model_t::N_OL_EXTRA_CONSTRAINTS), 
-                 (is_closed ? n : n+1), car, q0, qa0, u0, dissipations) {}
+        FG_direct(const size_t n_elements, 
+                  const size_t n_points,
+                  const Dynamic_model_t& car, 
+                  const std::vector<scalar>& s,
+                  const std::array<scalar,Dynamic_model_t::NSTATE>& q0, 
+                  const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& qa0, 
+                  const std::array<scalar,Dynamic_model_t::NCONTROL>& u0,
+                  const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations
+          ) : FG(n_elements, 
+                 n_points,
+                 n_elements*(Dynamic_model_t::NCONTROL + Dynamic_model_t::NSTATE + Dynamic_model_t::NALGEBRAIC - 1),
+                 n_elements*(Dynamic_model_t::NSTATE + Dynamic_model_t::NALGEBRAIC - 1 + Dynamic_model_t::N_OL_EXTRA_CONSTRAINTS), 
+                 car, s, q0, qa0, u0, dissipations) {}
 
         void operator()(ADvector& fg, const ADvector& x);
     };
@@ -141,14 +208,20 @@ class Optimal_laptime
      public:
         using ADvector = typename FG::ADvector;
 
-        FG_derivative(const size_t n, 
-           const Dynamic_model_t& car, 
-           const std::array<scalar,Dynamic_model_t::NSTATE>& q0, 
-           const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& qa0, 
-           const std::array<scalar,Dynamic_model_t::NCONTROL>& u0,
-           const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations
-          ) : FG(n,n*(Dynamic_model_t::NSTATE+Dynamic_model_t::NALGEBRAIC-1+2*Dynamic_model_t::NCONTROL),n*(Dynamic_model_t::NSTATE+Dynamic_model_t::NALGEBRAIC-1+Dynamic_model_t::N_OL_EXTRA_CONSTRAINTS)+n*Dynamic_model_t::NCONTROL, 
-                 (is_closed ? n : n+1), car, q0, qa0, u0, dissipations), _dudt((is_closed ? n : n+1),{0.0}) {}
+        FG_derivative(const size_t n_elements, 
+                      const size_t n_points,
+                      const Dynamic_model_t& car, 
+                      const std::vector<scalar>& s,
+                      const std::array<scalar,Dynamic_model_t::NSTATE>& q0, 
+                      const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& qa0, 
+                      const std::array<scalar,Dynamic_model_t::NCONTROL>& u0,
+                      const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations
+          ) : FG(n_elements, 
+                 n_points,
+                 n_elements*(Dynamic_model_t::NSTATE+Dynamic_model_t::NALGEBRAIC-1+2*Dynamic_model_t::NCONTROL),
+                 n_elements*(Dynamic_model_t::NSTATE+Dynamic_model_t::NALGEBRAIC-1+Dynamic_model_t::N_OL_EXTRA_CONSTRAINTS)
+                    +n_elements*Dynamic_model_t::NCONTROL, 
+                 car, s, q0, qa0, u0, dissipations), _dudt(n_points,{0.0}) {}
 
         void operator()(ADvector& fg, const ADvector& x);
      private:
