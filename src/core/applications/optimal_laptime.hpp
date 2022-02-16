@@ -173,7 +173,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
 
     // Export the solution
     assert(fg.get_states().size() == n_points);
-    assert(fg.get_algebraic_state().size() == n_points);
+    assert(fg.get_algebraic_states().size() == n_points);
     assert(fg.get_controls().size() == n_points);
 
     q = std::vector<std::array<scalar,Dynamic_model_t::NSTATE>>(n_points);
@@ -346,7 +346,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
   
     // Export the solution
     assert(fg.get_states().size() == n_points);
-    assert(fg.get_algebraic_state().size() == n_points);
+    assert(fg.get_algebraic_states().size() == n_points);
     assert(fg.get_controls().size() == n_points);
 
     q = std::vector<std::array<scalar,Dynamic_model_t::NSTATE>>(n_points);
