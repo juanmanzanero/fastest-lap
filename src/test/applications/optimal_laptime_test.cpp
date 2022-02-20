@@ -179,21 +179,84 @@ TEST_F(Optimal_laptime_test, Ovaltrack_derivative)
 
     Optimal_laptime opt_laptime(n, true, false, car, ss.q, ss.qa, ss.u, {1.0e-3,2.0e-9});
 
-    std::vector<scalar> delta_saved = results.get_root_element().get_child("ovaltrack_derivative/delta").get_value(std::vector<scalar>());
-    std::vector<scalar> T_saved = results.get_root_element().get_child("ovaltrack_derivative/T").get_value(std::vector<scalar>());
+    // Check the results with a saved simulation
+    Xml_document opt_saved("data/ovaltrack_derivative.xml", true);
 
-    EXPECT_EQ(opt_laptime.u.size(), delta_saved.size());
-
+    // omega axle
+    auto omega_axle_saved = opt_saved.get_element("optimal_laptime/axle-omega").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
-    {
-        EXPECT_NEAR(opt_laptime.u[i][0], delta_saved[i],5.0e-7);
-        EXPECT_NEAR(opt_laptime.u[i][1], T_saved[i],1.0e-2);
-    }
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::Rear_axle_t::IOMEGA_AXLE], omega_axle_saved[i], 1.0e-6);
 
+    // u
+    auto u_saved = opt_saved.get_element("optimal_laptime/u").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::Chassis_t::IU], u_saved[i], 1.0e-6);
 
+    // v
+    auto v_saved = opt_saved.get_element("optimal_laptime/v").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::Chassis_t::IV], v_saved[i], 1.0e-6);
+
+    // omega
+    auto omega_saved = opt_saved.get_element("optimal_laptime/omega").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::Chassis_t::IOMEGA], omega_saved[i], 1.0e-6);
+
+    // z
+    auto z_saved = opt_saved.get_element("optimal_laptime/z").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::Chassis_t::IZ], z_saved[i], 1.0e-6);
+
+    // phi
+    auto phi_saved = opt_saved.get_element("optimal_laptime/phi").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::Chassis_t::IPHI], phi_saved[i], 1.0e-6);
+
+    // mu
+    auto mu_saved = opt_saved.get_element("optimal_laptime/mu").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::Chassis_t::IMU], mu_saved[i], 1.0e-6);
+
+    // dzdt
+    auto dzdt_saved = opt_saved.get_element("optimal_laptime/dzdt").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::Chassis_t::IDZ], dzdt_saved[i], 1.0e-6);
+
+    // dphidt
+    auto dphidt_saved = opt_saved.get_element("optimal_laptime/dphidt").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::Chassis_t::IDPHI], dphidt_saved[i], 1.0e-6);
+
+    // dmudt
+    auto dmudt_saved = opt_saved.get_element("optimal_laptime/dmudt").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::Chassis_t::IDMU], dmudt_saved[i], 1.0e-6);
+
+    // time
+    auto time_saved = opt_saved.get_element("optimal_laptime/time").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::curvilinear_a::Road_t::ITIME], time_saved[i], 1.0e-6);
+
+    // n
+    auto n_saved = opt_saved.get_element("optimal_laptime/n").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::curvilinear_a::Road_t::IN], n_saved[i], 1.0e-6);
+
+    // alpha
+    auto alpha_saved = opt_saved.get_element("optimal_laptime/alpha").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::curvilinear_a::Road_t::IALPHA], alpha_saved[i], 1.0e-6);
+
+    // delta
+    auto delta_saved = opt_saved.get_element("optimal_laptime/delta").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.u[i][lot2016kart<scalar>::Front_axle_t::ISTEERING], delta_saved[i], 1.0e-6);
+
+    // torque
+    auto torque_saved = opt_saved.get_element("optimal_laptime/torque").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.u[i][lot2016kart<scalar>::Rear_axle_t::ITORQUE], torque_saved[i], 1.0e-6);
 }
-
-
 
 
 TEST_F(Optimal_laptime_test, Catalunya_direct)
@@ -270,16 +333,83 @@ TEST_F(Optimal_laptime_test, Catalunya_derivative)
 
     Optimal_laptime opt_laptime(n, true, false, car, ss.q, ss.qa, ss.u, {1.0e-2,1.0e-10});
 
-    std::vector<scalar> delta_saved = results.get_root_element().get_child("catalunya_derivative/delta").get_value(std::vector<scalar>());
-    std::vector<scalar> T_saved = results.get_root_element().get_child("catalunya_derivative/T").get_value(std::vector<scalar>());
+    // Check the results with a saved simulation
+    Xml_document opt_saved("data/catalunya_derivative.xml", true);
 
-    EXPECT_EQ(opt_laptime.u.size(), delta_saved.size());
-
+    // omega axle
+    auto omega_axle_saved = opt_saved.get_element("optimal_laptime/axle-omega").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
-    {
-        EXPECT_NEAR(opt_laptime.u[i][0], delta_saved[i],5.0e-6);
-        EXPECT_NEAR(opt_laptime.u[i][1], T_saved[i],2.0e-2);
-    }
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::Rear_axle_t::IOMEGA_AXLE], omega_axle_saved[i], 1.0e-6);
+
+    // u
+    auto u_saved = opt_saved.get_element("optimal_laptime/u").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::Chassis_t::IU], u_saved[i], 1.0e-6);
+
+    // v
+    auto v_saved = opt_saved.get_element("optimal_laptime/v").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::Chassis_t::IV], v_saved[i], 1.0e-6);
+
+    // omega
+    auto omega_saved = opt_saved.get_element("optimal_laptime/omega").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::Chassis_t::IOMEGA], omega_saved[i], 1.0e-6);
+
+    // z
+    auto z_saved = opt_saved.get_element("optimal_laptime/z").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::Chassis_t::IZ], z_saved[i], 1.0e-6);
+
+    // phi
+    auto phi_saved = opt_saved.get_element("optimal_laptime/phi").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::Chassis_t::IPHI], phi_saved[i], 1.0e-6);
+
+    // mu
+    auto mu_saved = opt_saved.get_element("optimal_laptime/mu").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::Chassis_t::IMU], mu_saved[i], 1.0e-6);
+
+    // dzdt
+    auto dzdt_saved = opt_saved.get_element("optimal_laptime/dzdt").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::Chassis_t::IDZ], dzdt_saved[i], 1.0e-6);
+
+    // dphidt
+    auto dphidt_saved = opt_saved.get_element("optimal_laptime/dphidt").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::Chassis_t::IDPHI], dphidt_saved[i], 1.0e-6);
+
+    // dmudt
+    auto dmudt_saved = opt_saved.get_element("optimal_laptime/dmudt").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::Chassis_t::IDMU], dmudt_saved[i], 1.0e-6);
+
+    // time
+    auto time_saved = opt_saved.get_element("optimal_laptime/time").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::curvilinear_a::Road_t::ITIME], time_saved[i], 1.0e-6);
+
+    // n
+    auto n_saved = opt_saved.get_element("optimal_laptime/n").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::curvilinear_a::Road_t::IN], n_saved[i], 1.0e-6);
+
+    // alpha
+    auto alpha_saved = opt_saved.get_element("optimal_laptime/alpha").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::curvilinear_a::Road_t::IALPHA], alpha_saved[i], 1.0e-6);
+
+    // delta
+    auto delta_saved = opt_saved.get_element("optimal_laptime/delta").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.u[i][lot2016kart<scalar>::Front_axle_t::ISTEERING], delta_saved[i], 1.0e-6);
+
+    // torque
+    auto torque_saved = opt_saved.get_element("optimal_laptime/torque").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.u[i][lot2016kart<scalar>::Rear_axle_t::ITORQUE], torque_saved[i], 1.0e-6);
 }
 
 TEST_F(Optimal_laptime_test, Catalunya_derivative_throttle)
@@ -313,14 +443,81 @@ TEST_F(Optimal_laptime_test, Catalunya_derivative_throttle)
 
     Optimal_laptime opt_laptime(n, true, false, car, ss.q, ss.qa, ss.u, {1.0e-2,200*200.0*1.0e-10});
 
-    std::vector<scalar> delta_saved = results.get_root_element().get_child("catalunya_derivative_throttle/delta").get_value(std::vector<scalar>());
-    std::vector<scalar> T_saved = results.get_root_element().get_child("catalunya_derivative_throttle/T").get_value(std::vector<scalar>());
+    // Check the results with a saved simulation
+    Xml_document opt_saved("data/catalunya_derivative_throttle.xml", true);
 
-    EXPECT_EQ(opt_laptime.u.size(), delta_saved.size());
-
+    // omega axle
+    auto omega_axle_saved = opt_saved.get_element("optimal_laptime/axle-omega").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
-    {
-        EXPECT_NEAR(opt_laptime.u[i][0], delta_saved[i],6.0e-7);
-        EXPECT_NEAR(opt_laptime.u[i][1], T_saved[i],1.0e-2);
-    }
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::Rear_axle_t::IOMEGA_AXLE], omega_axle_saved[i], 1.0e-6);
+
+    // u
+    auto u_saved = opt_saved.get_element("optimal_laptime/u").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::Chassis_t::IU], u_saved[i], 1.0e-6);
+
+    // v
+    auto v_saved = opt_saved.get_element("optimal_laptime/v").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::Chassis_t::IV], v_saved[i], 1.0e-6);
+
+    // omega
+    auto omega_saved = opt_saved.get_element("optimal_laptime/omega").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::Chassis_t::IOMEGA], omega_saved[i], 1.0e-6);
+
+    // z
+    auto z_saved = opt_saved.get_element("optimal_laptime/z").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::Chassis_t::IZ], z_saved[i], 1.0e-6);
+
+    // phi
+    auto phi_saved = opt_saved.get_element("optimal_laptime/phi").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::Chassis_t::IPHI], phi_saved[i], 1.0e-6);
+
+    // mu
+    auto mu_saved = opt_saved.get_element("optimal_laptime/mu").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::Chassis_t::IMU], mu_saved[i], 1.0e-6);
+
+    // dzdt
+    auto dzdt_saved = opt_saved.get_element("optimal_laptime/dzdt").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::Chassis_t::IDZ], dzdt_saved[i], 1.0e-6);
+
+    // dphidt
+    auto dphidt_saved = opt_saved.get_element("optimal_laptime/dphidt").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::Chassis_t::IDPHI], dphidt_saved[i], 1.0e-6);
+
+    // dmudt
+    auto dmudt_saved = opt_saved.get_element("optimal_laptime/dmudt").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::Chassis_t::IDMU], dmudt_saved[i], 1.0e-6);
+
+    // time
+    auto time_saved = opt_saved.get_element("optimal_laptime/time").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::curvilinear_a::Road_t::ITIME], time_saved[i], 1.0e-6);
+
+    // n
+    auto n_saved = opt_saved.get_element("optimal_laptime/n").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::curvilinear_a::Road_t::IN], n_saved[i], 1.0e-6);
+
+    // alpha
+    auto alpha_saved = opt_saved.get_element("optimal_laptime/alpha").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::curvilinear_a::Road_t::IALPHA], alpha_saved[i], 1.0e-6);
+
+    // delta
+    auto delta_saved = opt_saved.get_element("optimal_laptime/delta").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.u[i][lot2016kart<scalar>::Front_axle_t::ISTEERING], delta_saved[i], 1.0e-6);
+
+    // torque
+    auto torque_saved = opt_saved.get_element("optimal_laptime/torque").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.u[i][lot2016kart<scalar>::Rear_axle_t::ITORQUE], torque_saved[i], 1.0e-6);
 }

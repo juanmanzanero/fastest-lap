@@ -10,6 +10,7 @@ template<typename Dynamic_model_t>
 class Optimal_laptime
 {
  public:
+
     //! This class will only support vehicles with automatic differentiation
     using Timeseries_t = typename Dynamic_model_t::Timeseries_type;
     static_assert(std::is_same<Timeseries_t,CppAD::AD<scalar>>::value == true);

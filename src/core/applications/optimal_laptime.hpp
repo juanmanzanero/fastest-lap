@@ -460,9 +460,9 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
     options += "Integer print_level  0\n";
     options += "String  sb           yes\n";
     options += "Sparse true forward\n";
-    options += "Numeric tol          1e-6\n";
-    options += "Numeric constr_viol_tol  1e-6\n";
-    options += "Numeric acceptable_tol  1e-6\n";
+    options += "Numeric tol          1e-10\n";
+    options += "Numeric constr_viol_tol  1e-10\n";
+    options += "Numeric acceptable_tol  1e-8\n";
 
     // place to return solution
     CppAD::ipopt::solve_result<std::vector<scalar>> result;
