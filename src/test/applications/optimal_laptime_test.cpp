@@ -185,7 +185,7 @@ TEST_F(Optimal_laptime_test, Ovaltrack_derivative)
     // omega axle
     auto omega_axle_saved = opt_saved.get_element("optimal_laptime/axle-omega").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
-        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::Rear_axle_t::IOMEGA_AXLE], omega_axle_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::Rear_axle_t::IOMEGA_AXLE], omega_axle_saved[i], 5.0e-5);
 
     // u
     auto u_saved = opt_saved.get_element("optimal_laptime/u").get_value(std::vector<scalar>());
@@ -255,7 +255,7 @@ TEST_F(Optimal_laptime_test, Ovaltrack_derivative)
     // torque
     auto torque_saved = opt_saved.get_element("optimal_laptime/torque").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
-        EXPECT_NEAR(opt_laptime.u[i][lot2016kart<scalar>::Rear_axle_t::ITORQUE], torque_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.u[i][lot2016kart<scalar>::Rear_axle_t::ITORQUE], torque_saved[i], 5.0e-5);
 }
 
 
@@ -339,7 +339,7 @@ TEST_F(Optimal_laptime_test, Catalunya_derivative)
     // omega axle
     auto omega_axle_saved = opt_saved.get_element("optimal_laptime/axle-omega").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
-        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::Rear_axle_t::IOMEGA_AXLE], omega_axle_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::Rear_axle_t::IOMEGA_AXLE], omega_axle_saved[i], 5.0e-5);
 
     // u
     auto u_saved = opt_saved.get_element("optimal_laptime/u").get_value(std::vector<scalar>());
@@ -409,7 +409,7 @@ TEST_F(Optimal_laptime_test, Catalunya_derivative)
     // torque
     auto torque_saved = opt_saved.get_element("optimal_laptime/torque").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
-        EXPECT_NEAR(opt_laptime.u[i][lot2016kart<scalar>::Rear_axle_t::ITORQUE], torque_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.u[i][lot2016kart<scalar>::Rear_axle_t::ITORQUE], torque_saved[i], 5.0e-5);
 }
 
 TEST_F(Optimal_laptime_test, Catalunya_derivative_throttle)
@@ -449,7 +449,7 @@ TEST_F(Optimal_laptime_test, Catalunya_derivative_throttle)
     // omega axle
     auto omega_axle_saved = opt_saved.get_element("optimal_laptime/axle-omega").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
-        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::Rear_axle_t::IOMEGA_AXLE], omega_axle_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.q[i][lot2016kart<scalar>::Rear_axle_t::IOMEGA_AXLE], omega_axle_saved[i], 5.0e-5);
 
     // u
     auto u_saved = opt_saved.get_element("optimal_laptime/u").get_value(std::vector<scalar>());
@@ -519,5 +519,5 @@ TEST_F(Optimal_laptime_test, Catalunya_derivative_throttle)
     // torque
     auto torque_saved = opt_saved.get_element("optimal_laptime/torque").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
-        EXPECT_NEAR(opt_laptime.u[i][lot2016kart<scalar>::Rear_axle_t::ITORQUE], torque_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.u[i][lot2016kart<scalar>::Rear_axle_t::ITORQUE], torque_saved[i], 5.0e-5);
 }
