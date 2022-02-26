@@ -34,6 +34,7 @@ TEST_F(F1_optimal_laptime_test, Catalunya_discrete)
     auto ss = Steady_state(car_cartesian).solve(v,0.0,0.0); 
 
     Optimal_laptime opt_laptime(n, true, true, car, ss.q, ss.qa, ss.u, {5.0e0,8.0e-4});
+    opt_laptime.xml();
 
     // Check the results with a saved simulation
     Xml_document opt_saved("data/f1_optimal_laptime_catalunya_discrete.xml", true);

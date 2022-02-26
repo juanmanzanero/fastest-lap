@@ -31,25 +31,50 @@ class Circuit_preprocessor
 
         scalar maximum_kappa = 0.1;
         scalar maximum_dkappa = 2.0e-2;
+        scalar maximum_dn     = 1.0;
+        scalar maximum_distance_find = 50.0;
     };
 
     //! Constructor from Xml file
     Circuit_preprocessor(Xml_document& doc);
 
     //! Constructor for closed circuits, from KML
-    Circuit_preprocessor(Xml_document& coord_left_kml, Xml_document& coord_right_kml, const size_t n_el, const Options opts);
+    Circuit_preprocessor(Xml_document& coord_left_kml, 
+                         Xml_document& coord_right_kml, 
+                         const size_t n_el, 
+                         const Options opts);
+
+    //! Constructor for closed circuits, from KML, with mesh size
+    Circuit_preprocessor(Xml_document& coord_left_kml, 
+                         Xml_document& coord_right_kml, 
+                         const std::vector<std::pair<Coordinates,scalar>>& ds_breakpoints, 
+                         const Options opts
+                        );
 
     //! Constructor for open circuits, from KML
-    Circuit_preprocessor(Xml_document& coord_left_kml, Xml_document& coord_right_kml, Coordinates start, Coordinates finish, const size_t n_el, const Options opts);
+    Circuit_preprocessor(Xml_document& coord_left_kml, 
+                         Xml_document& coord_right_kml, 
+                         Coordinates start, 
+                         Coordinates finish, 
+                         const size_t n_el, 
+                         const Options opts
+                        );
 
-    //! Constructor for closed circuits
+    //! Constructor for closed circuits, from vector of coordinates
     Circuit_preprocessor(const std::vector<Coordinates>& coord_left, 
                          const std::vector<Coordinates>& coord_right, 
                          const size_t n_el, 
                          const Options opts) 
     : options(opts), n_elements(n_el), n_points(n_el), is_closed(true), direction(0)
     {
-        compute<true>(coord_left, coord_right);
+        // (1) Compute the centerline and preprocess inputs
+        transform_coordinates<true>(coord_left, coord_right);
+
+        // (3) Compute the centerline estimate
+        const auto [s_center,r_center] = compute_averaged_centerline<true>(r_left_measured,r_right_measured,n_elements,n_points,options);
+
+        // (3) Perform the optimization
+        compute<true>(s_center, r_center);
     }
 
     //! Constructor for open circuits
@@ -61,21 +86,27 @@ class Circuit_preprocessor
                          const Options opts) 
     : options(opts), n_elements(n_el), n_points(n_el+1), is_closed(false), direction(0)
     {
-        // Trim the coordinates to the provided start/finish points
+        // (1) Trim the coordinates to the provided start/finish points
         auto [coord_left_trim, coord_right_trim] = trim_coordinates(coord_left, coord_right, start, finish);
 
-        // Perform the computation
-        compute<false>(coord_left_trim,coord_right_trim);
+        // (2) Compute the centerline and preprocess inputs
+        transform_coordinates<false>(coord_left_trim, coord_right_trim);
+
+        // (3) Compute the centerline estimate
+        const auto [s_center,r_center] = compute_averaged_centerline<false>(r_left_measured,r_right_measured,n_elements,n_points,options);
+
+        // (4) Perform the optimization
+        compute<false>(s_center, r_center);
     }
 
-    // Inputs ------------------------------------:
+    // Inputs ------------------------------------:-
     Options     options;
     size_t      n_elements;
     size_t      n_points;
     bool        is_closed;
     int         direction;      
 
-    // Outputs -----------------------------------:
+    // Outputs -----------------------------------:-
     scalar x0;      
     scalar y0;      
     scalar phi0;    
@@ -110,7 +141,10 @@ class Circuit_preprocessor
  private:
 
     template<bool closed>
-    void compute(const std::vector<Coordinates>& coord_left, const std::vector<Coordinates>& coord_right);
+    void transform_coordinates(const std::vector<Coordinates>& coord_left, const std::vector<Coordinates>& coord_right);
+
+    template<bool closed>
+    void compute(const std::vector<scalar>& s_center, const std::vector<sVector3d>& r_center);
 
     template<bool closed>
     class FG
@@ -174,12 +208,23 @@ class Circuit_preprocessor
     static std::pair<std::vector<scalar>, std::vector<sVector3d>> compute_averaged_centerline(std::vector<sVector3d> r_left, 
                                                                                               std::vector<sVector3d> r_right, 
                                                                                               const size_t n_elements,
-                                                                                              const size_t n_points);
+                                                                                              const size_t n_points,
+                                                                                              const Options& options);
+    
+    template<bool closed>
+    static std::pair<std::vector<scalar>, std::vector<sVector3d>> compute_averaged_centerline(std::vector<sVector3d> r_left,
+                                                                                             std::vector<sVector3d> r_right,
+                                                                                             const std::vector<std::pair<sVector3d,scalar>>& ds_breakpoints,
+                                                                                             const Options& options);
 
     static std::pair<std::vector<Coordinates>, std::vector<Coordinates>> trim_coordinates(const std::vector<Coordinates>& coord_left, 
                                                                                           const std::vector<Coordinates>& coord_right,
                                                                                           Coordinates start, Coordinates finish);
 
+    template<bool closed>
+    static scalar compute_ds_for_coordinates(const sVector3d point, const std::vector<sVector3d>& r_curve, const std::vector<std::pair<sVector3d,scalar>>& ds_breakpoints);
+
+    static size_t who_is_ahead(std::array<size_t,2>& i_p1, std::array<size_t,2>& i_p2, const sVector3d& p1, const sVector3d& p2, const sVector3d& p_ref);
 };
 
 #include "circuit_preprocessor.hpp"

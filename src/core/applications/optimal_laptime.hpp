@@ -334,15 +334,26 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
         for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
             u[i][j] = Value(fg.get_control(i)[j]);
 
-    // Compute the time
+    // Compute the time, x, y, and psi
+    x_coord = std::vector<scalar>(fg.get_states().size());
+    y_coord = std::vector<scalar>(fg.get_states().size());
+    psi = std::vector<scalar>(fg.get_states().size());
+
     const scalar& L = car.get_road().track_length();
     auto dtimeds_first = fg.get_car()(fg.get_state(0),fg.get_algebraic_state(0),fg.get_control(0),0.0).first[Dynamic_model_t::Road_type::ITIME];
     auto dtimeds_prev = dtimeds_first;
+    x_coord.front() = Value(fg.get_car().get_road().get_x());
+    y_coord.front() = Value(fg.get_car().get_road().get_y());
+    psi.front() = Value(fg.get_car().get_road().get_psi());
     for (size_t i = 1; i < fg.get_states().size(); ++i)
     {
         const auto dtimeds = fg.get_car()(fg.get_state(i),fg.get_algebraic_state(i),fg.get_control(i),s[i]).first[Dynamic_model_t::Road_type::ITIME];
         q[i][Dynamic_model_t::Road_type::ITIME] = q[i-1][Dynamic_model_t::Road_type::ITIME] + Value(0.5*(s[i]-s[i-1])*(dtimeds + dtimeds_prev));
         dtimeds_prev = dtimeds;
+
+        x_coord[i] = Value(fg.get_car().get_road().get_x());
+        y_coord[i] = Value(fg.get_car().get_road().get_y());
+        psi[i]     = Value(fg.get_car().get_road().get_psi());
     }
 
     laptime = q.back()[Dynamic_model_t::Road_type::ITIME];
@@ -507,16 +518,28 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
         for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
             u[i][j] = Value(fg.get_control(i)[j]);
 
-    // Compute the time
+    // Compute the time, x, y, and psi
+    x_coord = std::vector<scalar>(fg.get_states().size());
+    y_coord = std::vector<scalar>(fg.get_states().size());
+    psi = std::vector<scalar>(fg.get_states().size());
+
     const scalar& L = car.get_road().track_length();
     auto dtimeds_first = fg.get_car()(fg.get_state(0),fg.get_algebraic_state(0),fg.get_control(0),0.0).first[Dynamic_model_t::Road_type::ITIME];
     auto dtimeds_prev = dtimeds_first;
+    x_coord.front() = Value(fg.get_car().get_road().get_x());
+    y_coord.front() = Value(fg.get_car().get_road().get_y());
+    psi.front() = Value(fg.get_car().get_road().get_psi());
     for (size_t i = 1; i < fg.get_states().size(); ++i)
     {
         const auto dtimeds = fg.get_car()(fg.get_state(i),fg.get_algebraic_state(i),fg.get_control(i),s[i]).first[Dynamic_model_t::Road_type::ITIME];
         q[i][Dynamic_model_t::Road_type::ITIME] = q[i-1][Dynamic_model_t::Road_type::ITIME] + Value(0.5*(s[i]-s[i-1])*(dtimeds + dtimeds_prev));
         dtimeds_prev = dtimeds;
+
+        x_coord[i] = Value(fg.get_car().get_road().get_x());
+        y_coord[i] = Value(fg.get_car().get_road().get_y());
+        psi[i]     = Value(fg.get_car().get_road().get_psi());
     }
+
 
     laptime = q.back()[Dynamic_model_t::Road_type::ITIME];
 
@@ -568,6 +591,34 @@ std::unique_ptr<Xml_document> Optimal_laptime<Dynamic_model_t>::xml() const
         root.add_child(u_names[i]).set_value(s_out.str());
         s_out.str(""); s_out.clear();
     }
+
+    // Save x, y, and psi if they are not contained
+    for (size_t j = 0; j < q.size()-1; ++j)
+        s_out << x_coord[j] << ", " ;
+
+    s_out << x_coord.back();
+    root.add_child("x").set_value(s_out.str());
+    s_out.str(""); s_out.clear();
+
+    for (size_t j = 0; j < q.size()-1; ++j)
+        s_out << y_coord[j] << ", " ;
+
+    s_out << y_coord.back();
+    root.add_child("y").set_value(s_out.str());
+    s_out.str(""); s_out.clear();
+
+    for (size_t j = 0; j < q.size()-1; ++j)
+        s_out << psi[j] << ", " ;
+
+    s_out << psi.back();
+    root.add_child("psi").set_value(s_out.str());
+    s_out.str(""); s_out.clear();
+
+
+
+
+
+    
 
     return doc_ptr;
 }

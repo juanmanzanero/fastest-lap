@@ -109,6 +109,9 @@ class Optimal_laptime
     std::vector<std::array<scalar,Dynamic_model_t::NSTATE>> q;       //! All state vectors
     std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>> qa;  //! All algebraic variables vectors
     std::vector<std::array<scalar,Dynamic_model_t::NCONTROL>> u;     //! All control vectors
+    std::vector<scalar> x_coord;
+    std::vector<scalar> y_coord;
+    std::vector<scalar> psi;
 
     std::array<std::string,Dynamic_model_t::NSTATE> q_names;
     std::array<std::string,Dynamic_model_t::NCONTROL> u_names;
