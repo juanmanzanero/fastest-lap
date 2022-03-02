@@ -1,0 +1,136 @@
+<!--
+  This model represents the dynamics of a go-kart
+  Reference: https://eprints.soton.ac.uk/385883/
+-->
+<vehicle type="roberto-lot-kart-2016">
+    <front-axle model="axle-car">
+        <track units="m">1.055</track>
+        <stiffness>
+            <chassis>17.7e3</chassis>
+            <antiroll>0.0</antiroll>
+        </stiffness>
+        <beta-steering>
+            <left>-0.058</left>
+            <right>0.058</right>
+        </beta-steering>
+    </front-axle> 
+
+    <rear-axle model="axle-car">
+        <track units="m">1.2</track>
+        <stiffness>
+            <chassis>60.0e3</chassis>
+            <antiroll>0.0</antiroll>
+        </stiffness>
+        <inertia>0.2</inertia>
+        <smooth_throttle_coeff> 0.01 </smooth_throttle_coeff>
+        <brakes>
+            <max_torque units="N.m">200.0</max_torque>
+        </brakes>
+        <engine>
+            <maximum-power units="kW"> 6.61949 </maximum-power>
+            <gear-ratio>8.15</gear-ratio>
+            <power-data>
+                14.828 17.724 22.138 26.552 29.31  32.897 35.931
+                38.414 40.207 42.138 44.483 46.276 44.897 42    
+                39.655 36.207 33.31  30.276 27.103 24.207 20.345 
+            </power-data>
+            <rpm-data>
+                10049.296 10225.352 10478.873 10774.648 10943.662 11169.014 11535.211 11929.577 
+                12197.183 12464.789 12690.141 12971.831 13183.099 13366.197 13507.042 13647.887 
+                13746.479 13816.901 13859.155 13901.408 14007.042 
+            </rpm-data>
+        </engine>
+    </rear-axle>
+
+    <chassis model="chassis-car">
+        <com>0.0 0.0 -0.25</com>
+        <front_axle>0.645 0.0 0.111</front_axle>
+        <rear_axle>-0.4 0.0 0.111</rear_axle>
+        <mass>300.0</mass>
+        <inertia>
+            20.0  0.0  5.0
+             0.0 15.0  0.0
+             5.0  0.0 25.0
+        </inertia>
+        <aerodynamics>
+            <rho>1.2</rho>
+            <cd> 0.7 </cd>
+            <cl> 0.0 </cl>
+            <area units="m2"> 1.0 </area>
+        </aerodynamics>
+    </chassis>
+
+    <rear-tire model="tire-pacejka" type="normal">
+        <radius>0.139</radius> 
+        <radial-stiffness>61.3e3</radial-stiffness>
+        <radial-damping>1.0e3</radial-damping>
+        <nominal-vertical-load>560</nominal-vertical-load>
+        <lambdaFz0>1.6</lambdaFz0>
+        <Fz-max-ref2> 1.0 </Fz-max-ref2>
+        <longitudinal>
+            <pure>
+                <pCx1>2.3</pCx1>
+                <pDx1>0.9</pDx1>
+                <pEx1>0.95</pEx1>
+                <pKx1>20.0</pKx1>
+                <pKx2>1.0</pKx2>
+                <pKx3>-0.5</pKx3>
+            </pure>
+            <combined>
+                <rBx1>14.0</rBx1>
+                <rCx1>1.0</rCx1>    <!-- This one I am not 100% sure -->
+            </combined>
+        </longitudinal>
+        <lateral>
+            <pure>
+                <pCy1>2.3</pCy1>
+                <pDy1>1.25</pDy1>
+                <pEy1>0.9</pEy1>
+                <pKy1>37.6</pKy1> <!-- I have changed its sign -->
+                <pKy2>1.6</pKy2>
+                <pKy4>2.0</pKy4>
+            </pure>
+            <combined>
+                <rBy1>12.0</rBy1>
+                <rCy1>0.6</rCy1>
+            </combined>
+        </lateral>
+    </rear-tire>
+
+    <front-tire model="tire-pacejka" type="only lateral">
+        <radius>0.139</radius> 
+        <radial-stiffness>64.5e3</radial-stiffness>
+        <radial-damping>1.0e3</radial-damping>
+        <nominal-vertical-load>560</nominal-vertical-load>
+        <lambdaFz0>1.6</lambdaFz0>
+        <Fz-max-ref2> 1.0 </Fz-max-ref2>
+        <longitudinal>
+            <pure>
+                <pCx1>0.0</pCx1>
+                <pDx1>0.0</pDx1>
+                <pEx1>0.0</pEx1>
+                <pKx1>0.0</pKx1>
+                <pKx2>0.0</pKx2>
+                <pKx3>0.0</pKx3>
+            </pure>
+            <combined>
+                <rBx1>0.0</rBx1>
+                <rCx1>0.0</rCx1> 
+            </combined>
+        </longitudinal>
+        <lateral>
+            <pure>
+                <pCy1>2.13</pCy1>
+                <pDy1>1.30</pDy1>
+                <pEy1>0.8</pEy1>
+                <pKy1>34.1</pKy1> <!-- I have changed its sign -->
+                <pKy2>1.6</pKy2>
+                <pKy4>2.0</pKy4>
+            </pure>
+            <combined>
+                <rBy1>0.0</rBy1>
+                <rCy1>0.0</rCy1>
+            </combined>
+        </lateral>
+    </front-tire>
+</vehicle>

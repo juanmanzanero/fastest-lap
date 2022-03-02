@@ -33,6 +33,10 @@ class Circuit_preprocessor
         scalar maximum_dkappa = 2.0e-2;
         scalar maximum_dn     = 1.0;
         scalar maximum_distance_find = 50.0;
+
+        scalar adaption_aspect_ratio_max = 1.2;
+
+        int print_level = 0;
     };
 
     //! Constructor from Xml file
@@ -72,6 +76,37 @@ class Circuit_preprocessor
 
         // (3) Compute the centerline estimate
         const auto [s_center,r_center] = compute_averaged_centerline<true>(r_left_measured,r_right_measured,n_elements,n_points,options);
+
+        // (3) Perform the optimization
+        compute<true>(s_center, r_center);
+    }
+
+    //! Constructor for closed circuits, from vector of coordinates
+    Circuit_preprocessor(const std::vector<Coordinates>& coord_left, 
+                         const std::vector<Coordinates>& coord_right, 
+                         const std::vector<std::pair<Coordinates,scalar>>& ds_breakpoints, 
+                         const Options opts) 
+    : options(opts), n_elements(0), n_points(0), is_closed(true), direction(0)
+    {
+        // (1) Compute the centerline and preprocess inputs
+        transform_coordinates<true>(coord_left, coord_right);
+
+        // transform the ds_breakpoints to sVector
+        std::vector<std::pair<sVector3d,scalar>> ds_breakpoints_v3d(ds_breakpoints.size());
+
+        for (size_t i = 0; i < ds_breakpoints.size(); ++i)
+        {
+            ds_breakpoints_v3d[i].first = sVector3d((ds_breakpoints[i].first.longitude*DEG-theta0)*R_earth*cos(phi_ref), 
+                                                    (ds_breakpoints[i].first.latitude*DEG-phi0)*R_earth, 
+                                                    0.0);
+            ds_breakpoints_v3d[i].second = ds_breakpoints[i].second;
+        }
+
+        // (3) Compute the centerline estimate
+        const auto [s_center,r_center] = compute_averaged_centerline<true>(r_left_measured,r_right_measured,ds_breakpoints_v3d,options);
+
+        n_points   = s_center.size();
+        n_elements = n_points;
 
         // (3) Perform the optimization
         compute<true>(s_center, r_center);
@@ -120,7 +155,6 @@ class Circuit_preprocessor
     std::vector<sVector3d> r_right_measured;    
     std::vector<sVector3d> r_centerline;
 
-    scalar ds;
     std::vector<scalar> s;
     std::vector<scalar> theta;
     std::vector<scalar> kappa;
@@ -157,15 +191,15 @@ class Circuit_preprocessor
 
         FG(const size_t n_elements, 
            const size_t n_points,
-           const scalar track_length, 
+           const std::vector<scalar>& element_ds,
            const std::vector<sVector3d>& r_left, 
            const std::vector<sVector3d>& r_right, 
            const std::vector<sVector3d>& r_center, 
            int direction, 
            const Options opts) 
             : _n_elements(n_elements), _n_points(n_points), _n_variables(1+(NSTATE+NCONTROLS)*_n_points), 
-              _n_constraints(1+NSTATE*n_elements + (closed ? 0 : 1)), _direction(direction), options(opts), _track_length(track_length), _ds(_track_length/n_elements), _r_left(r_left), _r_right(r_right), _r_center(r_center), _q(_n_points), _u(_n_points), _dqds(_n_points),
-              _dist2_left(_n_points), _dist2_right(_n_points), _dist2_center(_n_points) {(void)_ds;}
+              _n_constraints(1+NSTATE*n_elements + (closed ? 0 : 1)), _direction(direction), options(opts), _ds(element_ds), _r_left(r_left), _r_right(r_right), _r_center(r_center), _q(_n_points), _u(_n_points), _dqds(_n_points),
+              _dist2_left(_n_points), _dist2_right(_n_points), _dist2_center(_n_points) {}
 
         void operator()(ADvector& fg, const ADvector& x);
 
@@ -187,8 +221,7 @@ class Circuit_preprocessor
         int _direction;
 
         Options options;
-        scalar _track_length;
-        scalar _ds;
+        std::vector<scalar> _ds;
 
         std::vector<sVector3d> _r_left;
         std::vector<sVector3d> _r_right;

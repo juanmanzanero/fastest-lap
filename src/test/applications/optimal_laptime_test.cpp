@@ -525,6 +525,10 @@ TEST_F(Optimal_laptime_test, Catalunya_derivative_throttle)
 
 TEST_F(Optimal_laptime_test, Vendrell)
 {
+    Xml_document database = {"./database/rental-kart.xml", true};
+    lot2016kart<CppAD::AD<scalar>>::cartesian car_cartesian = { database };
+    lot2016kart<scalar>::cartesian car_cartesian_scalar = { database };
+
     car_cartesian.get_chassis().get_rear_axle().enable_direct_torque(); 
     car_cartesian_scalar.get_chassis().get_rear_axle().enable_direct_torque();
 
