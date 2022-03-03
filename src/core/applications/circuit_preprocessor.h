@@ -42,50 +42,42 @@ class Circuit_preprocessor
     //! Constructor from Xml file
     Circuit_preprocessor(Xml_document& doc);
 
-    //! Constructor for closed circuits, from KML
+    //! Any constructor from KML
+    template<typename ... Args>
     Circuit_preprocessor(Xml_document& coord_left_kml, 
-                         Xml_document& coord_right_kml, 
-                         const size_t n_el, 
-                         const Options opts);
+                         Xml_document& coord_right_kml,
+                         Options opts,
+                         Args&&... args)
+    {
+        // (1) Read the KML files and transform to vector of coordinates
+        auto [coord_left, coord_right] = read_kml(coord_left_kml,coord_right_kml);
 
-    //! Constructor for closed circuits, from KML, with mesh size
-    Circuit_preprocessor(Xml_document& coord_left_kml, 
-                         Xml_document& coord_right_kml, 
-                         const std::vector<std::pair<Coordinates,scalar>>& ds_breakpoints, 
-                         const Options opts
-                        );
+        // (2) Call the proper implementation from vector of coordinates 
+        *this = Circuit_preprocessor(coord_left, coord_right, opts, std::forward<Args>(args)...);
+    }
 
-    //! Constructor for open circuits, from KML
-    Circuit_preprocessor(Xml_document& coord_left_kml, 
-                         Xml_document& coord_right_kml, 
-                         Coordinates start, 
-                         Coordinates finish, 
-                         const size_t n_el, 
-                         const Options opts
-                        );
-
-    //! Constructor for closed circuits, from vector of coordinates
+    //! Constructor for closed circuits, from number of elements
     Circuit_preprocessor(const std::vector<Coordinates>& coord_left, 
                          const std::vector<Coordinates>& coord_right, 
-                         const size_t n_el, 
-                         const Options opts) 
+                         const Options opts, 
+                         const size_t n_el) 
     : options(opts), n_elements(n_el), n_points(n_el), is_closed(true), direction(0)
     {
         // (1) Compute the centerline and preprocess inputs
         transform_coordinates<true>(coord_left, coord_right);
 
         // (3) Compute the centerline estimate
-        const auto [s_center,r_center] = compute_averaged_centerline<true>(r_left_measured,r_right_measured,n_elements,n_points,options);
+        const auto [s_center,r_center,track_length_estimate] = compute_averaged_centerline<true>(r_left_measured,r_right_measured,n_elements,n_points,options);
 
         // (3) Perform the optimization
-        compute<true>(s_center, r_center);
+        compute<true>(s_center, r_center, track_length_estimate);
     }
 
-    //! Constructor for closed circuits, from vector of coordinates
+    //! Constructor for closed circuits, from mesh size given as breakpoints along the circuit
     Circuit_preprocessor(const std::vector<Coordinates>& coord_left, 
                          const std::vector<Coordinates>& coord_right, 
-                         const std::vector<std::pair<Coordinates,scalar>>& ds_breakpoints, 
-                         const Options opts) 
+                         const Options opts, 
+                         const std::vector<std::pair<Coordinates,scalar>>& ds_breakpoints) 
     : options(opts), n_elements(0), n_points(0), is_closed(true), direction(0)
     {
         // (1) Compute the centerline and preprocess inputs
@@ -103,22 +95,45 @@ class Circuit_preprocessor
         }
 
         // (3) Compute the centerline estimate
-        const auto [s_center,r_center] = compute_averaged_centerline<true>(r_left_measured,r_right_measured,ds_breakpoints_v3d,options);
+        const auto [s_center,r_center,track_length_estimate] = compute_averaged_centerline<true>(r_left_measured,r_right_measured,ds_breakpoints_v3d,options);
 
         n_points   = s_center.size();
         n_elements = n_points;
 
         // (3) Perform the optimization
-        compute<true>(s_center, r_center);
+        compute<true>(s_center, r_center, track_length_estimate);
     }
+
+    //! Constructor for closed circuits, from mesh size given as breakpoints along the circuit
+    Circuit_preprocessor(const std::vector<Coordinates>& coord_left, 
+                         const std::vector<Coordinates>& coord_right, 
+                         const Options opts, 
+                         const std::vector<scalar>& s_distribution,
+                         const std::vector<scalar>& ds_distribution)
+    : options(opts), n_elements(0), n_points(0), is_closed(true), direction(0)
+    {
+        // (1) Compute the centerline and preprocess inputs
+        transform_coordinates<true>(coord_left, coord_right);
+
+        // (2) Compute the centerline estimate
+        const auto [s_center,r_center,track_length_estimate] = compute_averaged_centerline<true>(r_left_measured,r_right_measured,s_distribution,ds_distribution,options);
+
+        n_points   = s_center.size();
+        n_elements = n_points;
+
+        // (3) Perform the optimization
+        compute<true>(s_center, r_center, track_length_estimate);
+    }
+
+
 
     //! Constructor for open circuits
     Circuit_preprocessor(const std::vector<Coordinates>& coord_left, 
                          const std::vector<Coordinates>& coord_right, 
+                         const Options opts, 
                          Coordinates start, 
                          Coordinates finish, 
-                         const size_t n_el, 
-                         const Options opts) 
+                         const size_t n_el) 
     : options(opts), n_elements(n_el), n_points(n_el+1), is_closed(false), direction(0)
     {
         // (1) Trim the coordinates to the provided start/finish points
@@ -128,10 +143,10 @@ class Circuit_preprocessor
         transform_coordinates<false>(coord_left_trim, coord_right_trim);
 
         // (3) Compute the centerline estimate
-        const auto [s_center,r_center] = compute_averaged_centerline<false>(r_left_measured,r_right_measured,n_elements,n_points,options);
+        const auto [s_center,r_center,track_length_estimate] = compute_averaged_centerline<false>(r_left_measured,r_right_measured,n_elements,n_points,options);
 
         // (4) Perform the optimization
-        compute<false>(s_center, r_center);
+        compute<false>(s_center, r_center, track_length_estimate);
     }
 
     // Inputs ------------------------------------:-
@@ -178,7 +193,7 @@ class Circuit_preprocessor
     void transform_coordinates(const std::vector<Coordinates>& coord_left, const std::vector<Coordinates>& coord_right);
 
     template<bool closed>
-    void compute(const std::vector<scalar>& s_center, const std::vector<sVector3d>& r_center);
+    void compute(const std::vector<scalar>& s_center, const std::vector<sVector3d>& r_center, const scalar track_length_estimate);
 
     template<bool closed>
     class FG
@@ -236,19 +251,32 @@ class Circuit_preprocessor
         std::vector<CppAD::AD<scalar>> _dist2_center;
     };
 
+    std::pair<std::vector<Coordinates>,std::vector<Coordinates>> read_kml(Xml_document& coord_left_kml, Xml_document& coord_right_kml);
 
+    //! Compute the averaged centerline between r_left and r_right with given number of elements
     template<bool closed>
-    static std::pair<std::vector<scalar>, std::vector<sVector3d>> compute_averaged_centerline(std::vector<sVector3d> r_left, 
+    static std::tuple<std::vector<scalar>, std::vector<sVector3d>, scalar> compute_averaged_centerline(std::vector<sVector3d> r_left, 
                                                                                               std::vector<sVector3d> r_right, 
                                                                                               const size_t n_elements,
                                                                                               const size_t n_points,
                                                                                               const Options& options);
     
+    //! Compute the averaged centerline between r_left and r_right with given arclength size breakpoints along the circuit
     template<bool closed>
-    static std::pair<std::vector<scalar>, std::vector<sVector3d>> compute_averaged_centerline(std::vector<sVector3d> r_left,
+    static std::tuple<std::vector<scalar>, std::vector<sVector3d>, scalar> compute_averaged_centerline(std::vector<sVector3d> r_left,
                                                                                              std::vector<sVector3d> r_right,
                                                                                              const std::vector<std::pair<sVector3d,scalar>>& ds_breakpoints,
                                                                                              const Options& options);
+
+    //! Compute the averaged centerline between r_left and r_right with given arclength given as ds = f(s)
+    template<bool closed>
+    static std::tuple<std::vector<scalar>, std::vector<sVector3d>, scalar> compute_averaged_centerline(std::vector<sVector3d> r_left,
+                                                                                              std::vector<sVector3d> r_right,
+                                                                                              const std::vector<scalar>& s_distribution,
+                                                                                              const std::vector<scalar>& ds_distribution,
+                                                                                              const Options& options);
+
+
 
     static std::pair<std::vector<Coordinates>, std::vector<Coordinates>> trim_coordinates(const std::vector<Coordinates>& coord_left, 
                                                                                           const std::vector<Coordinates>& coord_right,

@@ -4,6 +4,8 @@
 TEST(Track_by_polynomial_test, evaluation_at_nodes)
 {
     Xml_document catalunya = {"./database/catalunya_discrete.xml", true};
+     
+    const auto arclength = catalunya.get_element("circuit/data/arclength").get_value(std::vector<scalar>());
 
     const Circuit_preprocessor circuit(catalunya);
     
@@ -13,7 +15,8 @@ TEST(Track_by_polynomial_test, evaluation_at_nodes)
     scalar ds = track.get_total_length()/circuit.n_elements;
     for (size_t i = 0; i < circuit.n_points; ++i)
     {
-        auto [r,dr,d2r] = track(i*ds);
+        EXPECT_NEAR(arclength[i],i*ds,1.0e-14*ds*circuit.n_points);
+        auto [r,dr,d2r] = track(arclength[i]);
         EXPECT_NEAR(r.x(), circuit.r_centerline[i].x(), 2.0e-13);
         EXPECT_NEAR(r.y(), -circuit.r_centerline[i].y(), 2.0e-13);
 

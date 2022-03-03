@@ -553,7 +553,7 @@ TEST_F(Optimal_laptime_test, Vendrell)
 
     Optimal_laptime opt_laptime(n, true, false, car, ss.q, ss.qa, ss.u, {1.0e-2,200*200.0*1.0e-10});
 
-    opt_laptime.xml()->save("vendrell_optimal.xml");
+    opt_laptime.xml();
 
     // Check the results with a saved simulation
     Xml_document opt_saved("data/vendrell_optimal.xml", true);

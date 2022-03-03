@@ -6,7 +6,8 @@
 #include "lion/math/matrix_extensions.h"
 #include "lion/math/ipopt_cppad_handler.hpp"
 
-inline Circuit_preprocessor::Circuit_preprocessor(Xml_document& coord_left_kml, Xml_document& coord_right_kml, const size_t n_el, const Options opts)
+inline std::pair<std::vector<Circuit_preprocessor::Coordinates>,std::vector<Circuit_preprocessor::Coordinates>>
+    Circuit_preprocessor::read_kml(Xml_document& coord_left_kml, Xml_document& coord_right_kml)
 {
     // Get child with data for the left boundary 
     const std::vector<scalar> coord_left_raw  = coord_left_kml.get_element("kml/Document/Placemark/LineString/coordinates").get_value(std::vector<scalar>());
@@ -30,64 +31,7 @@ inline Circuit_preprocessor::Circuit_preprocessor(Xml_document& coord_left_kml, 
     for (size_t i = 0; i < n_right; ++i)
         coord_right[i] = {coord_right_raw[3*i],coord_right_raw[3*i+1]};
 
-    *this = Circuit_preprocessor(coord_left, coord_right, n_el, opts);
-}
-
-
-inline Circuit_preprocessor::Circuit_preprocessor(Xml_document& coord_left_kml, Xml_document& coord_right_kml, 
-    const std::vector<std::pair<Coordinates,scalar>>& ds_breakpoints, const Options opts)
-{
-    // Get child with data for the left boundary 
-    const std::vector<scalar> coord_left_raw  = coord_left_kml.get_element("kml/Document/Placemark/LineString/coordinates").get_value(std::vector<scalar>());
-    const std::vector<scalar> coord_right_raw = coord_right_kml.get_element("kml/Document/Placemark/LineString/coordinates").get_value(std::vector<scalar>());
-
-    if ( coord_left_raw.size() % 3 != 0 )
-        throw std::runtime_error("Error processing google-earth placemark: size must be multiple of 3");
-
-    if ( coord_right_raw.size() % 3 != 0 )
-        throw std::runtime_error("Error processing google-earth placemark: size must be multiple of 3");
-
-    const size_t n_left = coord_left_raw.size()/3;
-    std::vector<Coordinates> coord_left(n_left);
-
-    for (size_t i = 0; i < n_left; ++i)
-        coord_left[i] = {coord_left_raw[3*i],coord_left_raw[3*i+1]};
-
-    const size_t n_right = coord_right_raw.size()/3;
-    std::vector<Coordinates> coord_right(n_right);
-
-    for (size_t i = 0; i < n_right; ++i)
-        coord_right[i] = {coord_right_raw[3*i],coord_right_raw[3*i+1]};
-
-    *this = Circuit_preprocessor(coord_left, coord_right, ds_breakpoints, opts);
-}
-
-
-inline Circuit_preprocessor::Circuit_preprocessor(Xml_document& coord_left_kml, Xml_document& coord_right_kml, Coordinates start, Coordinates finish, const size_t n_el, const Options opts) 
-{
-    // Get child with data for the left boundary 
-    const std::vector<scalar> coord_left_raw  = coord_left_kml.get_element("kml/Document/Placemark/LineString/coordinates").get_value(std::vector<scalar>());
-    const std::vector<scalar> coord_right_raw = coord_right_kml.get_element("kml/Document/Placemark/LineString/coordinates").get_value(std::vector<scalar>());
-
-    if ( coord_left_raw.size() % 3 != 0 )
-        throw std::runtime_error("Error processing google-earth placemark: size must be multiple of 3");
-
-    if ( coord_right_raw.size() % 3 != 0 )
-        throw std::runtime_error("Error processing google-earth placemark: size must be multiple of 3");
-
-    const size_t n_left = coord_left_raw.size()/3;
-    std::vector<Coordinates> coord_left(n_left);
-
-    for (size_t i = 0; i < n_left; ++i)
-        coord_left[i] = {coord_left_raw[3*i],coord_left_raw[3*i+1]};
-
-    const size_t n_right = coord_right_raw.size()/3;
-    std::vector<Coordinates> coord_right(n_right);
-
-    for (size_t i = 0; i < n_right; ++i)
-        coord_right[i] = {coord_right_raw[3*i],coord_right_raw[3*i+1]};
-
-    *this = Circuit_preprocessor(coord_left, coord_right, start, finish, n_el, opts);
+    return {coord_left, coord_right};
 }
 
 
@@ -229,10 +173,8 @@ inline void Circuit_preprocessor::transform_coordinates(const std::vector<Coordi
 
 
 template<bool closed>
-inline void Circuit_preprocessor::compute(const std::vector<scalar>& s_center, const std::vector<sVector3d>& r_center)
+inline void Circuit_preprocessor::compute(const std::vector<scalar>& s_center, const std::vector<sVector3d>& r_center, const scalar track_length_estimate)
 {
-    const scalar track_length_estimate = s_center.back() + (closed ? norm(r_center.front() - r_center.back()) : 0.0);
-
     // (1) Compute the initial condition via finite differences
     std::vector<scalar> x_init(n_points,0.0);
     std::vector<scalar> y_init(n_points,0.0);
@@ -416,10 +358,10 @@ inline void Circuit_preprocessor::compute(const std::vector<scalar>& s_center, c
     const auto& NCONTROLS = FG<closed>::NCONTROLS;
     
     for (size_t i = 1; i < n_points; ++i)
-        s[i] = s[i-1] + element_ds[i-1]*x.front();
+        s[i] = s[i-1] + element_ds[i-1]*result.x[0];
 
-    track_length = s.back() + (closed ? element_ds.back()*x.front() : 0.0);
-
+    track_length = s.back() + (closed ? element_ds.back()*result.x[0] : 0.0);
+    
     for (size_t i = 0; i < n_points; ++i)
     {
         // Get indexes
@@ -723,7 +665,7 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
 }
 
 template<bool closed>
-inline std::pair<std::vector<scalar>, std::vector<sVector3d>> Circuit_preprocessor::compute_averaged_centerline
+inline std::tuple<std::vector<scalar>, std::vector<sVector3d>, scalar> Circuit_preprocessor::compute_averaged_centerline
     (std::vector<sVector3d> r_left, std::vector<sVector3d> r_right, const size_t n_elements, const size_t n_points,
      const Options& options)
 {
@@ -765,6 +707,8 @@ inline std::pair<std::vector<scalar>, std::vector<sVector3d>> Circuit_preprocess
     for (size_t i = 1; i < n_elements+1; ++i)
         s_center[i] = s_center[i-1] + norm(r_center[i] - r_center[i-1]);
 
+    const scalar track_length_estimate = s_center.back();
+
     // (6) Transform the centerline to equally-spaced points
     std::vector<scalar> s_center_equispaced = linspace(0.0,s_center.back(),n_elements+1);
     Polynomial<sVector3d> track_center(s_center, r_center, 1); 
@@ -777,12 +721,12 @@ inline std::pair<std::vector<scalar>, std::vector<sVector3d>> Circuit_preprocess
     if constexpr (closed)
         s_center_equispaced.pop_back();
 
-    return {s_center_equispaced, r_center_equispaced};
+    return {s_center_equispaced, r_center_equispaced, track_length_estimate};
 }
 
 
 template<bool closed>
-std::pair<std::vector<scalar>, std::vector<sVector3d>> Circuit_preprocessor::compute_averaged_centerline
+std::tuple<std::vector<scalar>, std::vector<sVector3d>, scalar> Circuit_preprocessor::compute_averaged_centerline
     (std::vector<sVector3d> r_left, std::vector<sVector3d> r_right, const std::vector<std::pair<sVector3d,scalar>>& ds_breakpoints, 
      const Options& options)
 {
@@ -884,6 +828,8 @@ std::pair<std::vector<scalar>, std::vector<sVector3d>> Circuit_preprocessor::com
         r_center_mesh[s_center_mesh.size()-6+i] = track_center(s_center_mesh[s_center_mesh.size()-6+i]);
     }
 
+    const scalar track_length_estimate = s_center_mesh.back();
+
     // (7) Remove the closing point
     if constexpr (closed)
     {
@@ -891,7 +837,126 @@ std::pair<std::vector<scalar>, std::vector<sVector3d>> Circuit_preprocessor::com
         r_center_mesh.pop_back();
     }
 
-    return {s_center_mesh, r_center_mesh};
+    return {s_center_mesh, r_center_mesh, track_length_estimate};
+}
+
+
+template<bool closed>
+std::tuple<std::vector<scalar>, std::vector<sVector3d>, scalar> Circuit_preprocessor::compute_averaged_centerline
+    (std::vector<sVector3d> r_left, std::vector<sVector3d> r_right, const std::vector<scalar>& s_distribution, const std::vector<scalar>& ds_distribution,
+     const Options& options)
+{
+    // (1) Construct a polynomial with the ds = f(s)
+    sPolynomial f_ds(s_distribution,ds_distribution,1,false);
+
+    // (2) If closed, add the first point as last point to close the track (needed to construct a polynomial version)
+    if constexpr (closed)
+        r_right.push_back(r_right.front());
+
+    // (3) Compute the approximated arclength
+    std::vector<scalar> s_right(r_right.size());
+
+    for (size_t i = 1; i < r_right.size(); ++i)
+        s_right[i] = s_right[i-1] + norm(r_right[i]-r_right[i-1]);
+
+    // (4) Project the right boundary into elements with the ds_breakpoints
+    Polynomial<sVector3d> track_right(s_right, r_right, 1); 
+    std::vector<scalar> s_right_mesh = {0.0};
+    std::vector<sVector3d> r_right_mesh = { track_right(s_right_mesh[0]) };
+
+    scalar ds_prev = f_ds(0.0);
+    while ( s_right_mesh.back() < s_right.back() )
+    {
+        scalar ds = (s_right_mesh.back() < s_distribution.back() ? f_ds(s_right_mesh.back()) : ds_distribution.back());
+
+        // Restrict the maximum aspect ratio of adjacent cells
+        if ( ds > options.adaption_aspect_ratio_max*ds_prev )
+            ds = options.adaption_aspect_ratio_max*ds_prev;
+        else if ( ds < ds_prev/options.adaption_aspect_ratio_max )
+            ds = ds_prev/options.adaption_aspect_ratio_max;
+
+        s_right_mesh.push_back(s_right_mesh.back() + ds);
+        r_right_mesh.push_back(track_right(min(s_right_mesh.back(),s_right.back())));
+
+        ds_prev = ds;
+    }
+
+    // Squash the last 6 elements to equally-spaced nodes
+    scalar ds = (s_right.back() - s_right_mesh[s_right_mesh.size() - 7])/6.0;
+
+    for (size_t i = 0; i < 6; ++i)
+    {
+        s_right_mesh[s_right_mesh.size()-6+i] = s_right_mesh[s_right_mesh.size()-7] + (i+1)*ds;
+        r_right_mesh[s_right_mesh.size()-6+i] = track_right(s_right_mesh[s_right_mesh.size()-6+i]);
+    }
+
+    if constexpr (closed)
+    {
+        s_right_mesh.pop_back();
+        r_right_mesh.pop_back();
+    }
+
+    const size_t n_points = s_right_mesh.size();
+    const size_t n_elements = (closed ? n_points : n_points - 1);
+
+    // (5) Get the closest point in the left boundary to each point of the right boundary
+    std::vector<sVector3d> r_left_mesh(n_points);
+    std::array<size_t,2> i_left = {0,0};
+    for (size_t i = 0; i < n_points; ++i)
+        std::tie(r_left_mesh[i],std::ignore,i_left) 
+            = find_closest_point<scalar>(r_left,r_right_mesh[i], closed, min(i_left[0],i_left[1]), options.maximum_distance_find);
+
+    // (6) Compute the centerline estimation, and close it
+    std::vector<sVector3d> r_center = 0.5*(r_left_mesh + r_right_mesh);
+    if constexpr (closed)
+        r_center.push_back(r_center.front());
+
+    std::vector<scalar> s_center(n_elements+1);
+
+    for (size_t i = 1; i < n_elements+1; ++i)
+        s_center[i] = s_center[i-1] + norm(r_center[i] - r_center[i-1]);
+
+    // (6) Transform the centerline to mesh points
+    Polynomial<sVector3d> track_center(s_center, r_center, 1); 
+    std::vector<scalar> s_center_mesh = {0.0};
+    std::vector<sVector3d> r_center_mesh = {track_center(s_center_mesh[0])};
+
+    ds_prev = f_ds(0.0);
+    while ( s_center_mesh.back() < s_center.back() )
+    {
+        scalar ds = (s_center_mesh.back() < s_distribution.back() ? f_ds(s_center_mesh.back()) : ds_distribution.back());
+
+        // Restrict the maximum aspect ratio of adjacent cells
+        if ( ds > options.adaption_aspect_ratio_max*ds_prev )
+            ds = options.adaption_aspect_ratio_max*ds_prev;
+        else if ( ds < ds_prev/options.adaption_aspect_ratio_max )
+            ds = ds_prev/options.adaption_aspect_ratio_max;
+
+        s_center_mesh.push_back(s_center_mesh.back() + ds);
+        r_center_mesh.push_back(track_center(min(s_center_mesh.back(),s_center.back())));
+
+        ds_prev = ds;
+    }
+
+    // Squash the last 6 elements to equally-spaced nodes
+    ds = (s_center.back() - s_center_mesh[s_center_mesh.size() - 7])/6.0;
+
+    for (size_t i = 0; i < 6; ++i)
+    {
+        s_center_mesh[s_center_mesh.size()-6+i] = s_center_mesh[s_center_mesh.size()-7] + (i+1)*ds;
+        r_center_mesh[s_center_mesh.size()-6+i] = track_center(s_center_mesh[s_center_mesh.size()-6+i]);
+    }
+
+    const scalar track_length_estimate = s_center_mesh.back();
+
+    // (7) Remove the closing point
+    if constexpr (closed)
+    {
+        s_center_mesh.pop_back();
+        r_center_mesh.pop_back();
+    }
+
+    return {s_center_mesh, r_center_mesh, track_length_estimate};
 }
 
 

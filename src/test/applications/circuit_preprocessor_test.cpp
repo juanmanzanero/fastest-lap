@@ -19,9 +19,9 @@ TEST(Circuit_preprocessor_test, museo_closed)
     options.maximum_kappa = 1.0;
     options.maximum_dkappa = 1.0;
     
-    Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, 100, options);
+    Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, options, 100);
 
-    // Call the xml() version, just to confirm there are no errors/valgrind issues
+    // Call the xml() method, just to confirm there are no errors/valgrind issues
     circuit.xml();
 
     Xml_document solution_saved("./data/museo_short_discrete.xml", true);
@@ -90,7 +90,7 @@ TEST(Circuit_preprocessor_test, catalunya_chicane)
     Circuit_preprocessor::Coordinates start = {2.261, 41.57455};
     Circuit_preprocessor::Coordinates finish = {2.26325, 41.57385};
     
-    Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, start, finish, 20, {});
+    Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, {}, start, finish, 20);
 
     circuit.xml();
 
@@ -144,7 +144,7 @@ TEST(Circuit_preprocessor_test, catalunya_500)
     Xml_document coord_left_kml("./database/google_earth/Catalunya_left.kml", true);
     Xml_document coord_right_kml("./database/google_earth/Catalunya_right.kml", true);
     
-    Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, 500, {});
+    Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, {}, 500);
 
     circuit.xml();
 
@@ -174,15 +174,15 @@ TEST(Circuit_preprocessor_test, catalunya_500)
     // compare centerline
     for (size_t i = 0; i < circuit.n_points; ++i)
     {
-        EXPECT_NEAR(circuit.r_centerline[i].x(), x[i]     , 2.0e-7) << " with i = " << i;
-        EXPECT_NEAR(circuit.r_centerline[i].y(), y[i]     , 2.0e-7) << " with i = " << i;
+        EXPECT_NEAR(circuit.r_centerline[i].x(), x[i]     , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.r_centerline[i].y(), y[i]     , 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.theta[i]           , theta[i] , 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.kappa[i]           , kappa[i] , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.nl[i]              , nl[i]    , 2.0e-7) << " with i = " << i;
-        EXPECT_NEAR(circuit.nr[i]              , nr[i]    , 2.0e-7) << " with i = " << i;
+        EXPECT_NEAR(circuit.nl[i]              , nl[i]    , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.nr[i]              , nr[i]    , 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.dkappa[i]          , dkappa[i], 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.dnl[i]             , dnl[i]   , 4.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.dnr[i]             , dnr[i]   , 4.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.dnl[i]             , dnl[i]   , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.dnr[i]             , dnr[i]   , 1.0e-8) << " with i = " << i;
     }
 
     // Check that the reference coordinates are recovered
@@ -228,7 +228,7 @@ TEST(Circuit_preprocessor_test, catalunya_adapted)
       {{2.263173649148178,41.57388038009333}, 10.0} 
     };
 
-    Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, ds_breakpoints, {});
+    Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, {}, ds_breakpoints);
 
     circuit.xml();
 
@@ -313,9 +313,9 @@ TEST(Circuit_preprocessor_test, vendrell)
     options.maximum_dkappa = 4.0;
     options.maximum_dn = 2.0;
     
-    Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, 500, options);
+    Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, options, 500);
 
-    // Call the xml() version, just to confirm there are no errors/valgrind issues
+    // Call the xml() method, just to confirm there are no errors/valgrind issues
     circuit.xml();
 
     Xml_document solution_saved("./database/vendrell.xml", true);
