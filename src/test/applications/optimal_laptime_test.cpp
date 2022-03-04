@@ -40,7 +40,7 @@ TEST_F(Optimal_laptime_test, maximum_acceleration)
     
     ss.dqdt = car_cartesian_scalar(ss.q, ss.u, 0.0);
 
-    Optimal_laptime opt_laptime(n, false, true, car, ss.q, ss.qa, ss.u, {0.0, 4.0e-5});
+    Optimal_laptime opt_laptime(n, false, true, car, ss.q, ss.qa, ss.u, {0.0, 4.0e-5}, {});
 
 
     // Check that the car accelerates
@@ -98,7 +98,7 @@ TEST_F(Optimal_laptime_test, Ovaltrack_open)
     
     ss.dqdt = car_cartesian_scalar(ss.q, ss.u, 0.0);
 
-    Optimal_laptime opt_laptime(n, false, true, car, ss.q, ss.qa, ss.u, {1.0e2,2.0e-7});
+    Optimal_laptime opt_laptime(n, false, true, car, ss.q, ss.qa, ss.u, {1.0e2,2.0e-7}, {});
 
     std::vector<scalar> delta_saved = results.get_root_element().get_child("ovaltrack_open/delta").get_value(std::vector<scalar>());
     std::vector<scalar> T_saved = results.get_root_element().get_child("ovaltrack_open/T").get_value(std::vector<scalar>());
@@ -138,7 +138,7 @@ TEST_F(Optimal_laptime_test, Ovaltrack_closed)
     
     ss.dqdt = car_cartesian_scalar(ss.q, ss.u, 0.0);
 
-    Optimal_laptime opt_laptime(n, true, true, car, ss.q, ss.qa, ss.u, {1.0e2,2.0e-7});
+    Optimal_laptime opt_laptime(n, true, true, car, ss.q, ss.qa, ss.u, {1.0e2,2.0e-7}, {});
 
     std::vector<scalar> delta_saved = results.get_root_element().get_child("ovaltrack_closed/delta").get_value(std::vector<scalar>());
     std::vector<scalar> T_saved = results.get_root_element().get_child("ovaltrack_closed/T").get_value(std::vector<scalar>());
@@ -177,7 +177,7 @@ TEST_F(Optimal_laptime_test, Ovaltrack_derivative)
     
     ss.dqdt = car_cartesian_scalar(ss.q, ss.u, 0.0);
 
-    Optimal_laptime opt_laptime(n, true, false, car, ss.q, ss.qa, ss.u, {1.0e-3,2.0e-9});
+    Optimal_laptime opt_laptime(n, true, false, car, ss.q, ss.qa, ss.u, {1.0e-3,2.0e-9}, {});
 
     // Check the results with a saved simulation
     Xml_document opt_saved("data/ovaltrack_derivative.xml", true);
@@ -285,7 +285,7 @@ TEST_F(Optimal_laptime_test, Catalunya_direct)
 
     ss.dqdt = car_cartesian_scalar(ss.q, ss.u, 0.0);
 
-    Optimal_laptime opt_laptime(n, true, true, car, ss.q, ss.qa, ss.u, {5.0e0,8.0e-6});
+    Optimal_laptime opt_laptime(n, true, true, car, ss.q, ss.qa, ss.u, {5.0e0,8.0e-6}, {});
 
     std::vector<scalar> delta_saved = results.get_root_element().get_child("catalunya/delta").get_value(std::vector<scalar>());
     std::vector<scalar> T_saved = results.get_root_element().get_child("catalunya/T").get_value(std::vector<scalar>());
@@ -331,7 +331,7 @@ TEST_F(Optimal_laptime_test, Catalunya_derivative)
 
     ss.dqdt = car_cartesian_scalar(ss.q, ss.u, 0.0);
 
-    Optimal_laptime opt_laptime(n, true, false, car, ss.q, ss.qa, ss.u, {1.0e-2,1.0e-10});
+    Optimal_laptime opt_laptime(n, true, false, car, ss.q, ss.qa, ss.u, {1.0e-2,1.0e-10}, {});
 
     // Check the results with a saved simulation
     Xml_document opt_saved("data/catalunya_derivative.xml", true);
@@ -441,7 +441,7 @@ TEST_F(Optimal_laptime_test, Catalunya_derivative_throttle)
 
     ss.dqdt = car_cartesian_scalar(ss.q, ss.u, 0.0);
 
-    Optimal_laptime opt_laptime(n, true, false, car, ss.q, ss.qa, ss.u, {1.0e-2,200*200.0*1.0e-10});
+    Optimal_laptime opt_laptime(n, true, false, car, ss.q, ss.qa, ss.u, {1.0e-2,200*200.0*1.0e-10}, {});
 
     // Check the results with a saved simulation
     Xml_document opt_saved("data/catalunya_derivative_throttle.xml", true);
@@ -551,7 +551,7 @@ TEST_F(Optimal_laptime_test, Vendrell)
 
     ss.dqdt = car_cartesian_scalar(ss.q, ss.u, 0.0);
 
-    Optimal_laptime opt_laptime(n, true, false, car, ss.q, ss.qa, ss.u, {1.0e-2,200*200.0*1.0e-10});
+    Optimal_laptime opt_laptime(n, true, false, car, ss.q, ss.qa, ss.u, {1.0e-2,200*200.0*1.0e-10}, {});
 
     opt_laptime.xml();
 

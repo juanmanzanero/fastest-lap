@@ -11,6 +11,12 @@ class Optimal_laptime
 {
  public:
 
+    struct Options
+    {
+        size_t print_level = 0;
+    };
+    
+
     //! This class will only support vehicles with automatic differentiation
     using Timeseries_t = typename Dynamic_model_t::Timeseries_type;
     static_assert(std::is_same<Timeseries_t,CppAD::AD<scalar>>::value == true);
@@ -30,7 +36,8 @@ class Optimal_laptime
                     const std::array<scalar,Dynamic_model_t::NSTATE>& q0, 
                     const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& qa0,
                     const std::array<scalar,Dynamic_model_t::NCONTROL>& u0, 
-                    const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations);
+                    const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations,
+                    const Options opts);
 
     //! Constructor with given arclength distribution. 
     //! If closed simulation, s[0] shall be 0, and s[end] shall be < track_length
@@ -49,7 +56,8 @@ class Optimal_laptime
                     const std::array<scalar,Dynamic_model_t::NSTATE>& q0, 
                     const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& qa0,
                     const std::array<scalar,Dynamic_model_t::NCONTROL>& u0, 
-                    const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations);
+                    const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations,
+                    const Options opts);
 
     //! Constructor with given start and finish arclength, only for open track simulations
     //! @param[in] s_start: initial arclength
@@ -69,7 +77,8 @@ class Optimal_laptime
                     const std::array<scalar,Dynamic_model_t::NSTATE>& q0, 
                     const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& qa0,
                     const std::array<scalar,Dynamic_model_t::NCONTROL>& u0, 
-                    const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations);
+                    const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations,
+                    const Options opts);
 
     //! Constructor with distribution of arclength and initial conditions
     //! If closed simulation, s[0] shall be 0, and s[end] shall be < track_length
@@ -87,7 +96,8 @@ class Optimal_laptime
                     const std::vector<std::array<scalar,Dynamic_model_t::NSTATE>>& q0, 
                     const std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>>& qa0,
                     const std::vector<std::array<scalar,Dynamic_model_t::NCONTROL>>& u0, 
-                    const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations);
+                    const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations,
+                    const Options opts);
 
     void compute(const bool is_closed, const bool is_direct, const Dynamic_model_t& car, const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations);
 
@@ -101,6 +111,8 @@ class Optimal_laptime
 
     //! Export to XML
     std::unique_ptr<Xml_document> xml() const;
+
+    Options options;
 
     // Outputs
     size_t n_elements;

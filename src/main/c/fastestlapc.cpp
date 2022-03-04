@@ -271,7 +271,7 @@ void compute_optimal_laptime(vehicle_t& vehicle, track_t& track, double** channe
     
     std::tie(ss.dqdt, std::ignore) = car_cart_sc(ss.q, ss.qa, ss.u, 0.0);
 
-    Optimal_laptime opt_laptime(n_points, true, is_direct, car_curv, ss.q, ss.qa, ss.u, dissipations);
+    Optimal_laptime opt_laptime(n_points, true, is_direct, car_curv, ss.q, ss.qa, ss.u, dissipations, {});
 
     // Set outputs
     for (int i = 0; i < n_points; ++i)

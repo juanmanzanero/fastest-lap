@@ -1,8 +1,12 @@
 #include "lion/thirdparty/include/cppad/ipopt/solve.hpp"
 
 template<typename Dynamic_model_t>
-inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const size_t n, const bool is_closed, const bool is_direct, const Dynamic_model_t& car, const std::array<scalar,Dynamic_model_t::NSTATE>& q0, 
-        const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& qa0, const std::array<scalar,Dynamic_model_t::NCONTROL>& u0, const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations) 
+inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const size_t n, const bool is_closed, const bool is_direct, 
+    const Dynamic_model_t& car, const std::array<scalar,Dynamic_model_t::NSTATE>& q0, 
+    const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& qa0, 
+    const std::array<scalar,Dynamic_model_t::NCONTROL>& u0, const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations,
+    const Options opts) 
+: options(opts)
 {
     // (1) Compute number of elements and points
     n_elements = n;
@@ -31,7 +35,9 @@ inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const size_t n, const b
 template<typename Dynamic_model_t>
 inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const std::vector<scalar>& s_, const bool is_closed, const bool is_direct,
     const Dynamic_model_t& car, const std::array<scalar,Dynamic_model_t::NSTATE>& q0, const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& qa0,
-    const std::array<scalar,Dynamic_model_t::NCONTROL>& u0, const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations)
+    const std::array<scalar,Dynamic_model_t::NCONTROL>& u0, const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations,
+    const Options opts)
+: options(opts)
 {
     s = s_;
     if ( s.size() <= 1 )
@@ -80,7 +86,9 @@ inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const std::vector<scala
 template<typename Dynamic_model_t>
 inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const scalar s_start, const scalar s_finish, const size_t n, const bool is_direct,
     const Dynamic_model_t& car, const std::array<scalar,Dynamic_model_t::NSTATE>& q0, const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& qa0,
-    const std::array<scalar,Dynamic_model_t::NCONTROL>& u0, const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations)
+    const std::array<scalar,Dynamic_model_t::NCONTROL>& u0, const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations,
+    const Options opts)
+: options(opts)
 {
     // (1) Check inputs
     if (s_start < -1.0e-12)
@@ -112,7 +120,9 @@ inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const std::vector<scala
     const Dynamic_model_t& car, const std::vector<std::array<scalar,Dynamic_model_t::NSTATE>>& q0, 
     const std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>>& qa0,
     const std::vector<std::array<scalar,Dynamic_model_t::NCONTROL>>& u0, 
-    const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations)
+    const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations,
+    const Options opts)
+: options(opts)
 {
     s = s_;
     if ( s.size() <= 1 )
@@ -142,11 +152,10 @@ inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const std::vector<scala
             throw std::runtime_error("s[end] must be <= L");
     }
 
-    // If closed, replace the initial and final arclength by 0,L
+    // If closed, replace the initial arclength by 0
     if (is_closed)
     {   
         s.front() = 0.0;
-        s.back()  = L;
     }
 
     // (3) Set the initial condition
@@ -282,20 +291,22 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
     assert(kc == fg.get_n_constraints());
 
     // options
-    std::string options;
+    std::string ipoptoptions;
     // turn off any printing
-    options += "Integer print_level  0\n";
-    options += "String  sb           yes\n";
-    options += "Sparse true forward\n";
-    options += "Numeric tol          1e-10\n";
-    options += "Numeric constr_viol_tol  1e-10\n";
-    options += "Numeric acceptable_tol  1e-8\n";
+    ipoptoptions += "Integer print_level  ";
+    ipoptoptions += std::to_string(options.print_level);
+    ipoptoptions += "\n";
+    ipoptoptions += "String  sb           yes\n";
+    ipoptoptions += "Sparse true forward\n";
+    ipoptoptions += "Numeric tol          1e-10\n";
+    ipoptoptions += "Numeric constr_viol_tol  1e-10\n";
+    ipoptoptions += "Numeric acceptable_tol  1e-8\n";
 
     // place to return solution
     CppAD::ipopt::solve_result<std::vector<scalar>> result;
 
     // solve the problem
-    CppAD::ipopt::solve<std::vector<scalar>, FG_direct<is_closed>>(options, x0, x_lb, x_ub, c_lb, c_ub, fg, result);
+    CppAD::ipopt::solve<std::vector<scalar>, FG_direct<is_closed>>(ipoptoptions, x0, x_lb, x_ub, c_lb, c_ub, fg, result);
 
     if ( result.status != CppAD::ipopt::solve_result<std::vector<scalar>>::success )
     {
@@ -466,20 +477,22 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
     assert(kc == fg.get_n_constraints());
 
     // options
-    std::string options;
+    std::string ipoptoptions;
     // turn off any printing
-    options += "Integer print_level  0\n";
-    options += "String  sb           yes\n";
-    options += "Sparse true forward\n";
-    options += "Numeric tol          1e-10\n";
-    options += "Numeric constr_viol_tol  1e-10\n";
-    options += "Numeric acceptable_tol  1e-8\n";
+    ipoptoptions += "Integer print_level  ";
+    ipoptoptions += std::to_string(options.print_level);
+    ipoptoptions += "\n";
+    ipoptoptions += "String  sb           yes\n";
+    ipoptoptions += "Sparse true forward\n";
+    ipoptoptions += "Numeric tol          1e-10\n";
+    ipoptoptions += "Numeric constr_viol_tol  1e-10\n";
+    ipoptoptions += "Numeric acceptable_tol  1e-8\n";
 
     // place to return solution
     CppAD::ipopt::solve_result<std::vector<scalar>> result;
 
     // solve the problem
-    CppAD::ipopt::solve<std::vector<scalar>, FG_derivative<is_closed>>(options, x0, x_lb, x_ub, c_lb, c_ub, fg, result);
+    CppAD::ipopt::solve<std::vector<scalar>, FG_derivative<is_closed>>(ipoptoptions, x0, x_lb, x_ub, c_lb, c_ub, fg, result);
 
     if ( result.status != CppAD::ipopt::solve_result<std::vector<scalar>>::success )
     {
