@@ -135,6 +135,9 @@ class Axle_car_3dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
     //! @param[in] brake_bias: the brake bias in [0,1]
     void update(Timeseries_t Fz_left, Timeseries_t Fz_right, Timeseries_t throttle, Timeseries_t brake_bias);
 
+    //! Get the track
+    const scalar& get_track() const { return _track; }
+
     //! Get the steering angle [rad]
     const Timeseries_t& get_steering_angle() const { return _delta; }
 

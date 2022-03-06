@@ -182,8 +182,9 @@ class lot2016kart
             return {{},{}};
         }
 
-        static std::pair<std::vector<scalar>,std::vector<scalar>> optimal_laptime_extra_constraints_bounds()
+        std::pair<std::vector<scalar>,std::vector<scalar>> optimal_laptime_extra_constraints_bounds(const scalar s) const
         {
+            (void)s;
             return {{-0.11,-0.11,-0.11,-0.11,-0.11,-0.11},{0.11,0.11,0.11,0.11,0.11,0.11}};
         }
 

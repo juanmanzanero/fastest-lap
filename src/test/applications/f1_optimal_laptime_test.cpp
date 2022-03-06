@@ -205,6 +205,7 @@ TEST_F(F1_optimal_laptime_test, Catalunya_polyseg_direct)
     auto ss = Steady_state(car_cartesian).solve(v,0.0,0.0); 
 
     Optimal_laptime opt_laptime(n, true, true, car, ss.q, ss.qa, ss.u, {5.0e0,8.0e-4}, {});
+    opt_laptime.xml();
 
     // Check the results with a saved simulation
     Xml_document opt_saved("data/f1_optimal_laptime_catalunya_polyseg.xml", true);
@@ -379,6 +380,7 @@ TEST_F(F1_optimal_laptime_test, Ovaltrack_open)
     auto ss = Steady_state(car_cartesian).solve(v,0.0,0.0); 
 
     Optimal_laptime opt_laptime(n, false, true, car, ss.q, ss.qa, ss.u, {1.0e2,2.0e-3}, {});
+    opt_laptime.xml();
 
     // Check the results with a saved simulation
     Xml_document opt_saved("data/f1_ovaltrack_open.xml", true);
@@ -460,6 +462,8 @@ TEST_F(F1_optimal_laptime_test, Ovaltrack_closed)
     auto ss = Steady_state(car_cartesian).solve(v,0.0,0.0); 
 
     Optimal_laptime opt_laptime(n, true, true, car, ss.q, ss.qa, ss.u, {1.0e2,2.0e-3}, {});
+
+    opt_laptime.xml();
 
     // Check the results with a saved simulation
     Xml_document opt_saved("data/f1_ovaltrack_closed.xml", true);

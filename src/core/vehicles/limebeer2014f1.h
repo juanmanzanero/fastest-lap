@@ -48,7 +48,8 @@ class limebeer2014f1
         static constexpr const size_t N_SS_EQNS = 14;
 
         // Optimal-laptime computation
-        static constexpr const size_t N_OL_EXTRA_CONSTRAINTS = 4;    //! The number of tire constraints: lambda_fl, lambda_fr, lambda_rl, lambda_rr
+        static constexpr const size_t N_OL_EXTRA_CONSTRAINTS = 6;    //! The number of tire constraints: lambda_fl, lambda_fr, lambda_rl, lambda_rr
+                                                                     //! + the real track limits: -wL < n + sign(n).t.cos(alpha) < wR
 
         // Factor to scale the acceleration on the fitness function
         static constexpr const scalar acceleration_scaling = g0;
@@ -192,23 +193,33 @@ class limebeer2014f1
             return {{-3.0,-3.0,-3.0,-3.0},{1.0,1.0,1.0,1.0}};
         }
 
-        static std::pair<std::vector<scalar>,std::vector<scalar>> optimal_laptime_extra_constraints_bounds()
+        std::pair<std::vector<scalar>,std::vector<scalar>> optimal_laptime_extra_constraints_bounds(const scalar s) const
         {
-            return {{-0.11,-0.11,-0.11,-0.11},{0.11,0.11,0.11,0.11}};
+            const auto wl = this->get_road().get_left_track_limit(s);
+            const auto wr = this->get_road().get_right_track_limit(s);
+            return 
+            {
+                {-0.11,-0.11,-0.11,-0.11,-wl,-wl},
+                {0.11,0.11,0.11,0.11,wr,wr}
+            };
         }
 
         std::array<Timeseries_t,N_OL_EXTRA_CONSTRAINTS> optimal_laptime_extra_constraints() const
         {
+            const auto& n = this->get_road().get_n();
+            const auto& alpha = this->get_road().get_alpha();
+            const auto& track = this->get_chassis().get_front_axle().get_track();
+    
             return 
             {
                 this->get_chassis().get_front_axle().template get_tire<0>().get_lambda(),
                 this->get_chassis().get_front_axle().template get_tire<1>().get_lambda(),
                 this->get_chassis().get_rear_axle().template get_tire<0>().get_lambda(),
-                this->get_chassis().get_rear_axle().template get_tire<1>().get_lambda() 
+                this->get_chassis().get_rear_axle().template get_tire<1>().get_lambda(),
+                n + 0.5*track*cos(alpha),
+                n - 0.5*track*cos(alpha),
             };
         }
-
- 
     };
 
  public:
