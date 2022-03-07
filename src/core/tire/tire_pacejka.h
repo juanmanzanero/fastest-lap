@@ -247,8 +247,8 @@ class Tire_pacejka : public Tire<Timeseries_t, STATE0,CONTROL0>
     //! @param[out] q: the vehicle state names
     //! @param[out] u: the vehicle control names
     template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_control_names(std::array<std::string,NSTATE>& q, 
-                                     std::array<std::string,NCONTROL>& u) const {};
+    static void set_state_and_control_names(std::array<std::string,NSTATE>& q, 
+                                     std::array<std::string,NCONTROL>& u) {};
 
     static std::string type() { return "tire_pacejka"; }
 

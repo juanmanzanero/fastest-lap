@@ -149,13 +149,13 @@ typename Dynamic_model_car<Timeseries_t,Chassis_t,RoadModel_t,_NSTATE,_NCONTROL>
 
 
 template<typename Timeseries_t, typename Chassis_t, typename RoadModel_t, size_t _NSTATE, size_t _NCONTROL>
-std::tuple<std::string,std::array<std::string,_NSTATE>,std::array<std::string,_NCONTROL>> Dynamic_model_car<Timeseries_t,Chassis_t,RoadModel_t,_NSTATE,_NCONTROL>::get_state_and_control_names() const
+std::tuple<std::string,std::array<std::string,_NSTATE>,std::array<std::string,_NCONTROL>> Dynamic_model_car<Timeseries_t,Chassis_t,RoadModel_t,_NSTATE,_NCONTROL>::get_state_and_control_names() 
 {
     std::string key_name;
     std::array<std::string,NSTATE> q_names;
     std::array<std::string,NCONTROL> u_names;
-    _road.set_state_and_control_names(key_name,q_names,u_names);
-    _chassis.set_state_and_control_names(q_names,u_names);
+    RoadModel_t::set_state_and_control_names(key_name,q_names,u_names);
+    Chassis_t::set_state_and_control_names(q_names,u_names);
 
     return {key_name,q_names,u_names};
 }

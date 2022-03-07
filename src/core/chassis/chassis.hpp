@@ -149,10 +149,10 @@ void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_state_and
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
 template<size_t NSTATE, size_t NCONTROL>
-void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_state_and_control_names(std::array<std::string,NSTATE>& q, std::array<std::string,NCONTROL>& u) const
+void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_state_and_control_names(std::array<std::string,NSTATE>& q, std::array<std::string,NCONTROL>& u) 
 {
-    get_front_axle().set_state_and_control_names(q,u);
-    get_rear_axle().set_state_and_control_names(q,u);
+    FrontAxle_t::set_state_and_control_names(q,u);
+    RearAxle_t::set_state_and_control_names(q,u);
 
     // u
     q[IU] = "u";

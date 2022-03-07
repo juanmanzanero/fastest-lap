@@ -46,7 +46,7 @@ void Road_cartesian<Timeseries_t,STATE0,CONTROL0>::set_state_and_controls(const 
 
 template<typename Timeseries_t,size_t STATE0, size_t CONTROL0>
 template<size_t NSTATE, size_t NCONTROL>
-void Road_cartesian<Timeseries_t,STATE0,CONTROL0>::set_state_and_control_names(std::string& key_name, std::array<std::string,NSTATE>& q, std::array<std::string,NCONTROL>& u) const
+void Road_cartesian<Timeseries_t,STATE0,CONTROL0>::set_state_and_control_names(std::string& key_name, std::array<std::string,NSTATE>& q, std::array<std::string,NCONTROL>& u) 
 {
     key_name = "time";
 

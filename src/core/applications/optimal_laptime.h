@@ -99,13 +99,15 @@ class Optimal_laptime
                     const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations,
                     const Options opts);
 
-    void compute(const bool is_closed, const bool is_direct, const Dynamic_model_t& car, const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations);
+    Optimal_laptime(Xml_document& doc);
 
-    template<bool is_closed>
+    void compute(const bool is_direct, const Dynamic_model_t& car, const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations);
+
+    template<bool isClosed>
     void compute_direct(const Dynamic_model_t& car, 
                         const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations);
 
-    template<bool is_closed>
+    template<bool isClosed>
     void compute_derivative(const Dynamic_model_t& car, 
                             const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations);
 
@@ -115,6 +117,7 @@ class Optimal_laptime
     Options options;
 
     // Outputs
+    bool is_closed;
     size_t n_elements;
     size_t n_points;
     std::vector<scalar> s;                                           //! Arclengths

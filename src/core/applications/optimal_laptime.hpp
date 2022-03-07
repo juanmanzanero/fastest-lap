@@ -1,12 +1,12 @@
 #include "lion/thirdparty/include/cppad/ipopt/solve.hpp"
 
 template<typename Dynamic_model_t>
-inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const size_t n, const bool is_closed, const bool is_direct, 
+inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const size_t n, const bool is_closed_, const bool is_direct, 
     const Dynamic_model_t& car, const std::array<scalar,Dynamic_model_t::NSTATE>& q0, 
     const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& qa0, 
     const std::array<scalar,Dynamic_model_t::NCONTROL>& u0, const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations,
     const Options opts) 
-: options(opts)
+: options(opts), is_closed(is_closed_)
 {
     // (1) Compute number of elements and points
     n_elements = n;
@@ -28,16 +28,16 @@ inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const size_t n, const b
     u  = std::vector<std::array<scalar,Dynamic_model_t::NCONTROL>>(n_points,u0);
 
     // (4) Compute
-    compute(is_closed, is_direct, car, dissipations);
+    compute(is_direct, car, dissipations);
 }
 
 
 template<typename Dynamic_model_t>
-inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const std::vector<scalar>& s_, const bool is_closed, const bool is_direct,
+inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const std::vector<scalar>& s_, const bool is_closed_, const bool is_direct,
     const Dynamic_model_t& car, const std::array<scalar,Dynamic_model_t::NSTATE>& q0, const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& qa0,
     const std::array<scalar,Dynamic_model_t::NCONTROL>& u0, const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations,
     const Options opts)
-: options(opts)
+: options(opts), is_closed(is_closed_)
 {
     s = s_;
     if ( s.size() <= 1 )
@@ -80,7 +80,7 @@ inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const std::vector<scala
     u  = std::vector<std::array<scalar,Dynamic_model_t::NCONTROL>>(n_points,u0);
 
     // (4) Compute
-    compute(is_closed, is_direct, car, dissipations);
+    compute(is_direct, car, dissipations);
 }
 
 template<typename Dynamic_model_t>
@@ -116,13 +116,13 @@ inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const scalar s_start, c
 
 
 template<typename Dynamic_model_t>
-inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const std::vector<scalar>& s_, const bool is_closed, const bool is_direct,
+inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const std::vector<scalar>& s_, const bool is_closed_, const bool is_direct,
     const Dynamic_model_t& car, const std::vector<std::array<scalar,Dynamic_model_t::NSTATE>>& q0, 
     const std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>>& qa0,
     const std::vector<std::array<scalar,Dynamic_model_t::NCONTROL>>& u0, 
     const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations,
     const Options opts)
-: options(opts)
+: options(opts), is_closed(is_closed_)
 {
     s = s_;
     if ( s.size() <= 1 )
@@ -173,12 +173,60 @@ inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const std::vector<scala
     u  = u0;
 
     // (4) Compute
-    compute(is_closed, is_direct, car, dissipations);
+    compute(is_direct, car, dissipations);
+}
+
+template<typename Dynamic_model_t>
+inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(Xml_document& doc)
+{
+    Xml_element root = doc.get_root_element();
+
+    if ( root.get_attribute("type") == "closed" )
+        is_closed = true;
+    else if ( root.get_attribute("type") == "open" )
+        is_closed = false;
+    else
+        throw std::runtime_error("Incorrect track type, should be \"open\" or \"closed\"");
+
+    std::tie(std::ignore, q_names, u_names) = Dynamic_model_t::get_state_and_control_names();
+
+    // Get the data
+    n_points = std::stoi(root.get_attribute("n_points"));
+    n_elements = (is_closed ? n_points : n_points - 1);
+
+    laptime = root.get_child("laptime").get_value(scalar());
+
+    s = root.get_child("arclength").get_value(std::vector<scalar>());
+
+    // Get state
+    q = std::vector<std::array<scalar,Dynamic_model_t::NSTATE>>(n_points);
+    for (size_t i = 0; i < Dynamic_model_t::NSTATE; ++i)
+    {
+        std::vector<scalar> data_in = root.get_child(q_names[i]).get_value(std::vector<scalar>());
+        for (size_t j = 0; j < n_points; ++j)
+            q[j][i] = data_in[j];
+    }
+
+    // Get algebraic states (TODO)
+
+    // Get controls
+    u = std::vector<std::array<scalar,Dynamic_model_t::NCONTROLS>>(n_points);
+    for (size_t i = 0; i < Dynamic_model_t::NCONTROLS; ++i)
+    {
+        std::vector<scalar> data_in = root.get_child(u_names[i]).get_value(std::vector<scalar>());
+        for (size_t j = 0; j < n_points; ++j)
+            u[j][i] = data_in[j];
+    }
+
+    // Get x
+    x_coord = root.get_child("x").get_value(std::vector<scalar>());
+    y_coord = root.get_child("y").get_value(std::vector<scalar>());
+    psi     = root.get_child("psi").get_value(std::vector<scalar>());
 }
 
 
 template<typename Dynamic_model_t>
-inline void Optimal_laptime<Dynamic_model_t>::compute(const bool is_closed, const bool is_direct, const Dynamic_model_t& car, const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations)
+inline void Optimal_laptime<Dynamic_model_t>::compute(const bool is_direct, const Dynamic_model_t& car, const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations)
 {
     if ( is_direct )
     {
@@ -196,15 +244,15 @@ inline void Optimal_laptime<Dynamic_model_t>::compute(const bool is_closed, cons
     }
 
     // Get state and control names
-    std::tie(std::ignore, q_names, u_names) = car.get_state_and_control_names();
+    std::tie(std::ignore, q_names, u_names) = Dynamic_model_t::get_state_and_control_names();
 }
 
 
 template<typename Dynamic_model_t>
-template<bool is_closed>
+template<bool isClosed>
 inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model_t& car, const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations) 
 {
-    FG_direct<is_closed> fg(n_elements,n_points,car,s,q.front(),qa.front(),u.front(),dissipations);
+    FG_direct<isClosed> fg(n_elements,n_points,car,s,q.front(),qa.front(),u.front(),dissipations);
     typename std::vector<scalar> x0(fg.get_n_variables(),0.0);
 
     // Set minimum and maximum variables
@@ -219,7 +267,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
 
     // Fill x0 with the initial condition as state vector, and zero controls
     size_t k = 0;
-    constexpr const size_t offset = is_closed ? 0 : 1;
+    constexpr const size_t offset = isClosed ? 0 : 1;
 
     for (size_t i = offset; i < n_points; ++i)
     {
@@ -307,7 +355,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
     }
 
     // Add the periodic element if track is closed
-    if constexpr (is_closed)
+    if constexpr (isClosed)
     {
         // Equality constraints: --------------- 
         for (size_t j = 0; j < Dynamic_model_t::Road_type::ITIME; ++j)
@@ -363,7 +411,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
     CppAD::ipopt::solve_result<std::vector<scalar>> result;
 
     // solve the problem
-    CppAD::ipopt::solve<std::vector<scalar>, FG_direct<is_closed>>(ipoptoptions, x0, x_lb, x_ub, c_lb, c_ub, fg, result);
+    CppAD::ipopt::solve<std::vector<scalar>, FG_direct<isClosed>>(ipoptoptions, x0, x_lb, x_ub, c_lb, c_ub, fg, result);
 
     if ( result.status != CppAD::ipopt::solve_result<std::vector<scalar>>::success )
     {
@@ -426,15 +474,15 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
 
     laptime = q.back()[Dynamic_model_t::Road_type::ITIME];
 
-    if (is_closed)
+    if (isClosed)
         laptime += Value(0.5*(L-s.back())*(dtimeds_prev*dtimeds_first));
 }
 
 template<typename Dynamic_model_t>
-template<bool is_closed>
+template<bool isClosed>
 inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_model_t& car, const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations) 
 {
-    FG_derivative<is_closed> fg(n_elements,n_points,car,s,q.front(),qa.front(),u.front(),dissipations);
+    FG_derivative<isClosed> fg(n_elements,n_points,car,s,q.front(),qa.front(),u.front(),dissipations);
     typename std::vector<scalar> x0(fg.get_n_variables(),0.0);
 
     // Set minimum and maximum variables
@@ -448,7 +496,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
 
     // Fill x0 with the initial condition as state vector, and zero controls
     size_t k = 0;
-    constexpr const size_t offset = is_closed ? 0 : 1;
+    constexpr const size_t offset = isClosed ? 0 : 1;
 
     for (size_t i = offset; i < n_points; ++i)
     {
@@ -554,7 +602,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
     }
 
     // Add the periodic element if track is closed
-    if constexpr (is_closed)
+    if constexpr (isClosed)
     {
         // Equality constraints: --------------- 
         for (size_t j = 0; j < Dynamic_model_t::Road_type::ITIME; ++j)
@@ -617,7 +665,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
     CppAD::ipopt::solve_result<std::vector<scalar>> result;
 
     // solve the problem
-    CppAD::ipopt::solve<std::vector<scalar>, FG_derivative<is_closed>>(ipoptoptions, x0, x_lb, x_ub, c_lb, c_ub, fg, result);
+    CppAD::ipopt::solve<std::vector<scalar>, FG_derivative<isClosed>>(ipoptoptions, x0, x_lb, x_ub, c_lb, c_ub, fg, result);
 
     if ( result.status != CppAD::ipopt::solve_result<std::vector<scalar>>::success )
     {
@@ -680,7 +728,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
 
     laptime = q.back()[Dynamic_model_t::Road_type::ITIME];
 
-    if (is_closed)
+    if (isClosed)
         laptime += Value(0.5*(L-s.back())*(dtimeds_prev+dtimeds_first));
 }
 
@@ -695,12 +743,21 @@ std::unique_ptr<Xml_document> Optimal_laptime<Dynamic_model_t>::xml() const
     doc_ptr->create_root_element("optimal_laptime");
 
     auto root = doc_ptr->get_root_element();
+    
+    root.add_attribute("n_points",std::to_string(n_points));
+    
+    if ( is_closed )
+        root.add_attribute("type", "closed");
+    else
+        root.add_attribute("type", "open");
 
     // Save arclength
     for (size_t j = 0; j < s.size()-1; ++j)
         s_out << s[j] << ", ";
 
     s_out << s.back();
+
+    root.add_child("laptime").set_value(std::to_string(laptime));
 
     root.add_child("arclength").set_value(s_out.str());
     s_out.str(""); s_out.clear();
@@ -756,8 +813,8 @@ std::unique_ptr<Xml_document> Optimal_laptime<Dynamic_model_t>::xml() const
 
 
 template<typename Dynamic_model_t>
-template<bool is_closed>
-inline void Optimal_laptime<Dynamic_model_t>::FG_direct<is_closed>::operator()(FG_direct<is_closed>::ADvector& fg, const Optimal_laptime<Dynamic_model_t>::FG_direct<is_closed>::ADvector& x)
+template<bool isClosed>
+inline void Optimal_laptime<Dynamic_model_t>::FG_direct<isClosed>::operator()(FG_direct<isClosed>::ADvector& fg, const Optimal_laptime<Dynamic_model_t>::FG_direct<isClosed>::ADvector& x)
 {
     auto& _n_points      = FG::_n_points;
     auto& _car           = FG::_car;
@@ -779,7 +836,7 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_direct<is_closed>::operator()(F
     // Load the state and control vectors
     size_t k = 0;
 
-    if constexpr (!is_closed)
+    if constexpr (!isClosed)
     {
         // Load the state in the first position
         for (size_t j = 0; j < Dynamic_model_t::NSTATE; ++j)
@@ -794,7 +851,7 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_direct<is_closed>::operator()(F
             _u[0][j] = _u0[j];
     }
 
-    constexpr const size_t offset = (is_closed ? 0 : 1);
+    constexpr const size_t offset = (isClosed ? 0 : 1);
 
     for (size_t i = offset; i < _n_points; ++i)
     {
@@ -864,7 +921,7 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_direct<is_closed>::operator()(F
 
     // Add the periodic element if track is closed
     const scalar& L = _car.get_road().track_length();
-    if constexpr (is_closed)
+    if constexpr (isClosed)
     {
         // Fitness function: integral of time
         fg[0] += 0.5*(L-_s.back())*(_dqdt.front()[Dynamic_model_t::Road_type::ITIME] + _dqdt.back()[Dynamic_model_t::Road_type::ITIME]);
@@ -903,8 +960,8 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_direct<is_closed>::operator()(F
 
 
 template<typename Dynamic_model_t>
-template<bool is_closed>
-inline void Optimal_laptime<Dynamic_model_t>::FG_derivative<is_closed>::operator()(FG_derivative<is_closed>::ADvector& fg, const Optimal_laptime<Dynamic_model_t>::FG_derivative<is_closed>::ADvector& x)
+template<bool isClosed>
+inline void Optimal_laptime<Dynamic_model_t>::FG_derivative<isClosed>::operator()(FG_derivative<isClosed>::ADvector& fg, const Optimal_laptime<Dynamic_model_t>::FG_derivative<isClosed>::ADvector& x)
 {
     auto& _n_points      = FG::_n_points;
     auto& _car           = FG::_car;
@@ -925,7 +982,7 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_derivative<is_closed>::operator
     // Load the state and control vectors
     size_t k = 0;
 
-    if constexpr (!is_closed)
+    if constexpr (!isClosed)
     {
         // Load the state in the first position
         for (size_t j = 0; j < Dynamic_model_t::NSTATE; ++j)
@@ -944,7 +1001,7 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_derivative<is_closed>::operator
             _dudt[0][j] = 0.0;
     }
 
-    constexpr const size_t offset = (is_closed ? 0 : 1);
+    constexpr const size_t offset = (isClosed ? 0 : 1);
 
     for (size_t i = offset; i < _n_points; ++i)
     {
@@ -1016,7 +1073,7 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_derivative<is_closed>::operator
 
     // Add the periodic element if track is closed
     const scalar& L = _car.get_road().track_length();
-    if constexpr (is_closed)
+    if constexpr (isClosed)
     {
         // Fitness function: integral of time
         fg[0] += 0.5*(L-_s.back())*(_dqdt.front()[Dynamic_model_t::Road_type::ITIME] + _dqdt.back()[Dynamic_model_t::Road_type::ITIME]);

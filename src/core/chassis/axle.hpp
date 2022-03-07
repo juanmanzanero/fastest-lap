@@ -73,12 +73,12 @@ void Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>::get_state_derivative(std::a
 
 template<typename Timeseries_t, typename Tires_tuple, size_t STATE0, size_t CONTROL0>
 template<size_t NSTATE, size_t NCONTROL>
-void Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>::set_state_and_control_names(std::array<std::string,NSTATE>& q, std::array<std::string,NCONTROL>& u) const
+void Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>::set_state_and_control_names(std::array<std::string,NSTATE>& q, std::array<std::string,NCONTROL>& u) 
 {
-    std::get<0>(_tires).set_state_and_control_names(q,u);
+    std::tuple_element<0,Tires_tuple>::type::set_state_and_control_names(q,u); 
     
     if constexpr (NTIRES == 2)
-        std::get<1>(_tires).set_state_and_control_names(q,u);
+        std::tuple_element<1,Tires_tuple>::type::set_state_and_control_names(q,u); 
 }
 
 

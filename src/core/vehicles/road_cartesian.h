@@ -25,7 +25,7 @@ class Road_cartesian : public Road<Timeseries_t,STATE0,CONTROL0>
     void set_state_and_controls(const Timeseries_t t, const std::array<Timeseries_t,NSTATE>& q, const std::array<Timeseries_t,NCONTROL>& u);
 
     template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_control_names(std::string& key_name, std::array<std::string,NSTATE>& q, std::array<std::string,NCONTROL>& u) const;
+    static void set_state_and_control_names(std::string& key_name, std::array<std::string,NSTATE>& q, std::array<std::string,NCONTROL>& u);
 
  private:
     Timeseries_t _dx;
