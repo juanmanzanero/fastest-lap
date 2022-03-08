@@ -525,6 +525,8 @@ TEST_F(Optimal_laptime_test, Catalunya_derivative_throttle)
 
 TEST_F(Optimal_laptime_test, Vendrell)
 {
+    if ( is_valgrind ) GTEST_SKIP();
+
     Xml_document database = {"./database/rental-kart.xml", true};
     lot2016kart<CppAD::AD<scalar>>::cartesian car_cartesian = { database };
     lot2016kart<scalar>::cartesian car_cartesian_scalar = { database };

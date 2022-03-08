@@ -128,8 +128,6 @@ class Optimal_laptime
     std::vector<scalar> y_coord;
     std::vector<scalar> psi;
 
-    std::array<std::string,Dynamic_model_t::NSTATE> q_names;
-    std::array<std::string,Dynamic_model_t::NCONTROL> u_names;
     double laptime;
 
  private:

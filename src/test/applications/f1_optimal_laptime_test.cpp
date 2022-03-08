@@ -104,7 +104,7 @@ TEST_F(F1_optimal_laptime_test, Catalunya_adapted)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
-    Xml_document catalunya_xml("./data/catalunya_adapted.xml",true);
+    Xml_document catalunya_xml("./database/catalunya_adapted.xml",true);
     Circuit_preprocessor catalunya_pproc(catalunya_xml);
     Track_by_polynomial catalunya(catalunya_pproc);
     
@@ -119,7 +119,7 @@ TEST_F(F1_optimal_laptime_test, Catalunya_adapted)
 
     const size_t n = s.size();
 
-    Optimal_laptime opt_laptime(s, true, true, car, {n,ss.q}, {n,ss.qa}, {n,ss.u}, {5.0e0,8.0e-4}, {});
+    Optimal_laptime opt_laptime(s, true, true, car, {n,ss.q}, {n,ss.qa}, {n,ss.u}, {50.0e0,20.0*8.0e-4}, {});
     opt_laptime.xml();
 
     // Check the results with a saved simulation
@@ -185,6 +185,25 @@ TEST_F(F1_optimal_laptime_test, Catalunya_adapted)
     for (size_t i = 0; i < n; ++i)
         EXPECT_NEAR(opt_laptime.u[i][limebeer2014f1<scalar>::Chassis_t::ITHROTTLE], throttle_saved[i], 1.0e-6);
 
+    // Fz_fl
+    auto Fz_fl_saved = opt_saved.get_element("optimal_laptime/Fz_fl").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.qa[i][limebeer2014f1<scalar>::Chassis_t::IFZFL], Fz_fl_saved[i], 1.0e-6);
+
+    // Fz_fr
+    auto Fz_fr_saved = opt_saved.get_element("optimal_laptime/Fz_fr").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.qa[i][limebeer2014f1<scalar>::Chassis_t::IFZFR], Fz_fr_saved[i], 1.0e-6);
+
+    // Fz_rl
+    auto Fz_rl_saved = opt_saved.get_element("optimal_laptime/Fz_rl").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.qa[i][limebeer2014f1<scalar>::Chassis_t::IFZRL], Fz_rl_saved[i], 1.0e-6);
+
+    // Fz_rr
+    auto Fz_rr_saved = opt_saved.get_element("optimal_laptime/Fz_rr").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.qa[i][limebeer2014f1<scalar>::Chassis_t::IFZRR], Fz_rr_saved[i], 1.0e-6);
 }
 
 

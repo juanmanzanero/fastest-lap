@@ -100,7 +100,8 @@ class Dynamic_model_car
                         const std::array<scalar,_NCONTROL>& u,
                         scalar t);
 
-    static std::tuple<std::string,std::array<std::string,_NSTATE>,std::array<std::string,_NCONTROL>> get_state_and_control_names();
+    static std::tuple<std::string,std::array<std::string,_NSTATE>,std::array<std::string,Chassis_t::NALGEBRAIC>,std::array<std::string,_NCONTROL>> 
+        get_state_and_control_names();
 
     //! Return the chassis
     constexpr const Chassis_t& get_chassis() const { return _chassis; }

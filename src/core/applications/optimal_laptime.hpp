@@ -188,7 +188,7 @@ inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(Xml_document& doc)
     else
         throw std::runtime_error("Incorrect track type, should be \"open\" or \"closed\"");
 
-    std::tie(std::ignore, q_names, u_names) = Dynamic_model_t::get_state_and_control_names();
+    const auto [key_name, q_names, qa_names, u_names] = Dynamic_model_t::get_state_and_control_names();
 
     // Get the data
     n_points = std::stoi(root.get_attribute("n_points"));
@@ -207,7 +207,14 @@ inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(Xml_document& doc)
             q[j][i] = data_in[j];
     }
 
-    // Get algebraic states (TODO)
+    // Get algebraic states
+    qa = std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>>(n_points);
+    for (size_t i = 0; i < Dynamic_model_t::NALGEBRAIC; ++i)
+    {
+        std::vector<scalar> data_in = root.get_child(qa_names[i]).get_value(std::vector<scalar>());
+        for (size_t j = 0; j < n_points; ++j)
+            qa[j][i] = data_in[j];
+    }
 
     // Get controls
     u = std::vector<std::array<scalar,Dynamic_model_t::NCONTROLS>>(n_points);
@@ -242,9 +249,6 @@ inline void Optimal_laptime<Dynamic_model_t>::compute(const bool is_direct, cons
         else
             compute_derivative<false>(car,dissipations);
     }
-
-    // Get state and control names
-    std::tie(std::ignore, q_names, u_names) = Dynamic_model_t::get_state_and_control_names();
 }
 
 
@@ -736,6 +740,8 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
 template<typename Dynamic_model_t>
 std::unique_ptr<Xml_document> Optimal_laptime<Dynamic_model_t>::xml() const 
 {
+    const auto [key_name, q_names, qa_names, u_names] = Dynamic_model_t::get_state_and_control_names();
+
     std::ostringstream s_out;
     s_out.precision(17);
     std::unique_ptr<Xml_document> doc_ptr(std::make_unique<Xml_document>());
@@ -771,6 +777,19 @@ std::unique_ptr<Xml_document> Optimal_laptime<Dynamic_model_t>::xml() const
         s_out << q.back()[i];
 
         root.add_child(q_names[i]).set_value(s_out.str());
+        s_out.str(""); s_out.clear();
+    }
+
+
+    // Save algebraic state
+    for (size_t i = 0; i < Dynamic_model_t::NALGEBRAIC; ++i)
+    {
+        for (size_t j = 0; j < qa.size()-1; ++j)
+            s_out << qa[j][i] << ", " ;
+
+        s_out << qa.back()[i];
+
+        root.add_child(qa_names[i]).set_value(s_out.str());
         s_out.str(""); s_out.clear();
     }
 
