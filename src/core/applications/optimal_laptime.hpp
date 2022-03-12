@@ -71,7 +71,6 @@ inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const std::vector<scala
     if (is_closed)
     {   
         s.front() = 0.0;
-        s.back()  = L;
     }
         
     // (3) Set the initial condition
@@ -217,8 +216,8 @@ inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(Xml_document& doc)
     }
 
     // Get controls
-    u = std::vector<std::array<scalar,Dynamic_model_t::NCONTROLS>>(n_points);
-    for (size_t i = 0; i < Dynamic_model_t::NCONTROLS; ++i)
+    u = std::vector<std::array<scalar,Dynamic_model_t::NCONTROL>>(n_points);
+    for (size_t i = 0; i < Dynamic_model_t::NCONTROL; ++i)
     {
         std::vector<scalar> data_in = root.get_child(u_names[i]).get_value(std::vector<scalar>());
         for (size_t j = 0; j < n_points; ++j)
@@ -396,8 +395,19 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
 
     }
 
-    assert(k == fg.get_n_variables());
-    assert(kc == fg.get_n_constraints());
+    if ( k != fg.get_n_variables() )
+    {
+        std::ostringstream s_out;
+        s_out << "k(=" << k << ") != fg.get_n_variables()(=" << fg.get_n_variables() << ")" ;
+        throw std::runtime_error(s_out.str());
+    }
+    
+    if ( kc != fg.get_n_constraints() )
+    {
+        std::ostringstream s_out;
+        s_out << "kc(=" << kc << ") != fg.get_n_constraints()(=" << fg.get_n_constraints() << ")" ;
+        throw std::runtime_error(s_out.str());
+    }
 
     // options
     std::string ipoptoptions;
@@ -460,7 +470,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
     psi = std::vector<scalar>(fg.get_states().size());
 
     const scalar& L = car.get_road().track_length();
-    auto dtimeds_first = fg.get_car()(fg.get_state(0),fg.get_algebraic_state(0),fg.get_control(0),0.0).first[Dynamic_model_t::Road_type::ITIME];
+    auto dtimeds_first = fg.get_car()(fg.get_state(0),fg.get_algebraic_state(0),fg.get_control(0),s[0]).first[Dynamic_model_t::Road_type::ITIME];
     auto dtimeds_prev = dtimeds_first;
     x_coord.front() = Value(fg.get_car().get_road().get_x());
     y_coord.front() = Value(fg.get_car().get_road().get_y());
