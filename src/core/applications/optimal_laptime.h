@@ -11,6 +11,18 @@ class Optimal_laptime
 {
  public:
 
+    template<bool is_direct>
+    static constexpr const size_t n_variables_per_point = Dynamic_model_t::NSTATE-1 
+                                     + Dynamic_model_t::NCONTROL 
+                                     + Dynamic_model_t::NALGEBRAIC
+                                     + (is_direct ? 0 : Dynamic_model_t::NCONTROL);
+
+    template<bool is_direct>
+    static constexpr const size_t n_constraints_per_element = Dynamic_model_t::NSTATE - 1 
+                                     + Dynamic_model_t::NALGEBRAIC
+                                     + Dynamic_model_t::N_OL_EXTRA_CONSTRAINTS
+                                     + (is_direct ? 0 : Dynamic_model_t::NCONTROL);
+
     struct Options
     {
         size_t print_level = 0;
@@ -39,47 +51,6 @@ class Optimal_laptime
                     const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations,
                     const Options opts);
 
-    //! Constructor with given arclength distribution. 
-    //! If closed simulation, s[0] shall be 0, and s[end] shall be < track_length
-    //! The number of points, n, will be infered from the length of s
-    //! @param[in] s: vector of arclength where the points will be computed
-    //! @param[in] is_closed: compute closed or open track simulations
-    //! @param[in] is_direct: to use direct or derivative controls
-    //! @param[in] car:   vehicle
-    //! @param[in] q0:    initial condition (+state at the first point)
-    //! @param[in] qa0:   initial algebraic condition
-    //! @param[in] u0:    initial control variables
-    Optimal_laptime(const std::vector<scalar>& s_,  
-                    const bool is_closed,
-                    const bool is_direct,
-                    const Dynamic_model_t& car, 
-                    const std::array<scalar,Dynamic_model_t::NSTATE>& q0, 
-                    const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& qa0,
-                    const std::array<scalar,Dynamic_model_t::NCONTROL>& u0, 
-                    const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations,
-                    const Options opts);
-
-    //! Constructor with given start and finish arclength, only for open track simulations
-    //! @param[in] s_start: initial arclength
-    //! @param[in] s_finish: final arclength
-    //! @param[in] n: number of elements
-    //! @param[in] is_closed: compute closed or open track simulations
-    //! @param[in] is_direct: to use direct or derivative controls
-    //! @param[in] car:   vehicle
-    //! @param[in] q0:    initial condition (+state at the first point)
-    //! @param[in] qa0:   initial algebraic condition
-    //! @param[in] u0:    initial control variables
-    Optimal_laptime(const scalar s_start,
-                    const scalar s_finish,
-                    const size_t n, 
-                    const bool is_direct,
-                    const Dynamic_model_t& car, 
-                    const std::array<scalar,Dynamic_model_t::NSTATE>& q0, 
-                    const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& qa0,
-                    const std::array<scalar,Dynamic_model_t::NCONTROL>& u0, 
-                    const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations,
-                    const Options opts);
-
     //! Constructor with distribution of arclength and initial conditions
     //! If closed simulation, s[0] shall be 0, and s[end] shall be < track_length
     //! @param[in] s: vector of arclengths
@@ -99,9 +70,24 @@ class Optimal_laptime
                     const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations,
                     const Options opts);
 
+    //! Warm-start constructor
+    Optimal_laptime(const std::vector<scalar>& s,
+                    const bool is_closed,
+                    const bool is_direct,
+                    const Dynamic_model_t& car, 
+                    const std::vector<std::array<scalar,Dynamic_model_t::NSTATE>>& q0, 
+                    const std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>>& qa0,
+                    const std::vector<std::array<scalar,Dynamic_model_t::NCONTROL>>& u0, 
+                    const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations,
+                    const std::vector<scalar>& zl,
+                    const std::vector<scalar>& zu,
+                    const std::vector<scalar>& lambda,
+                    const Options opts);
+
+
     Optimal_laptime(Xml_document& doc);
 
-    void compute(const bool is_direct, const Dynamic_model_t& car, const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations);
+    void compute(const Dynamic_model_t& car, const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations);
 
     template<bool isClosed>
     void compute_direct(const Dynamic_model_t& car, 
@@ -118,6 +104,8 @@ class Optimal_laptime
 
     // Outputs
     bool is_closed;
+    bool is_direct;
+    bool warm_start;
     size_t n_elements;
     size_t n_points;
     std::vector<scalar> s;                                           //! Arclengths
@@ -127,6 +115,13 @@ class Optimal_laptime
     std::vector<scalar> x_coord;
     std::vector<scalar> y_coord;
     std::vector<scalar> psi;
+
+    struct 
+    {
+        std::vector<scalar> zl;
+        std::vector<scalar> zu;
+        std::vector<scalar> lambda;
+    } optimization_data;
 
     double laptime;
 
@@ -210,8 +205,8 @@ class Optimal_laptime
                   const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations
           ) : FG(n_elements, 
                  n_points,
-                 n_elements*(Dynamic_model_t::NCONTROL + Dynamic_model_t::NSTATE + Dynamic_model_t::NALGEBRAIC - 1),
-                 n_elements*(Dynamic_model_t::NSTATE + Dynamic_model_t::NALGEBRAIC - 1 + Dynamic_model_t::N_OL_EXTRA_CONSTRAINTS), 
+                 n_elements*n_variables_per_point<true>,
+                 n_elements*n_constraints_per_element<true>, 
                  car, s, q0, qa0, u0, dissipations) {}
 
         void operator()(ADvector& fg, const ADvector& x);
@@ -235,9 +230,8 @@ class Optimal_laptime
                       const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations
           ) : FG(n_elements, 
                  n_points,
-                 n_elements*(Dynamic_model_t::NSTATE+Dynamic_model_t::NALGEBRAIC-1+2*Dynamic_model_t::NCONTROL),
-                 n_elements*(Dynamic_model_t::NSTATE+Dynamic_model_t::NALGEBRAIC-1+Dynamic_model_t::N_OL_EXTRA_CONSTRAINTS)
-                    +n_elements*Dynamic_model_t::NCONTROL, 
+                 n_elements*n_variables_per_point<false>,
+                 n_elements*n_constraints_per_element<false>,
                  car, s, q0, qa0, u0, dissipations), _dudt(n_points,{0.0}) {}
 
         void operator()(ADvector& fg, const ADvector& x);
