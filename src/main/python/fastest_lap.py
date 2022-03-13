@@ -22,12 +22,13 @@ class c_Track(c.Structure):
                 ("is_closed", c.c_bool)
                ]
 
-def load_vehicle(database_file,name):
+def load_vehicle(name,vehicle_type,database_file):
 	name = c.c_char_p((name).encode('utf-8'))
 	database_file = c.c_char_p((database_file).encode('utf-8'))
+	vehicle_type = c.c_char_p((vehicle_type).encode('utf-8'))
 
 	vehicle = c_Vehicle()
-	c_lib.create_vehicle(c.byref(vehicle),name,database_file)
+	c_lib.create_vehicle(c.byref(vehicle),name,vehicle_type,database_file)
 
 	return vehicle;
 
@@ -39,6 +40,25 @@ def load_track(track_file,name,scale):
 	c_lib.create_track(c.byref(track),c_name,c_track_file,c.c_double(scale));
 
 	return track;
+
+def set_scalar_parameter(vehicle,parameter_name,parameter_value):
+	parameter_name = c.c_char_p((parameter_name).encode('utf-8'));
+	c_lib.set_scalar_parameter(vehicle,parameter_name,c.c_double(parameter_value))
+	return vehicle;
+
+def set_vector_parameter(vehicle,parameter_name,parameter_value):
+	parameter_name = c.c_char_p((parameter_name).encode('utf-8'));
+	c_parameter_value = (c.c_double*3)(parameter_value[0],parameter_value[1],parameter_value[2]);
+	c_lib.set_vector_parameter(vehicle,parameter_name,c_parameter_value)
+	return vehicle;
+
+def set_matrix_parameter(vehicle,parameter_name,parameter_value):
+	parameter_name = c.c_char_p((parameter_name).encode('utf-8'));
+	c_parameter_value = (c.c_double*9)(parameter_value[0],parameter_value[1],parameter_value[2],  
+	                                   parameter_value[3],parameter_value[4],parameter_value[5],  
+	                                   parameter_value[6],parameter_value[7],parameter_value[8]); 
+	c_lib.set_matrix_parameter(vehicle,parameter_name,c_parameter_value)
+	return vehicle;
 
 def gg_diagram(vehicle,speed,n_points):
 	ay_c = (c.c_double*n_points)();

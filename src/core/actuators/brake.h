@@ -14,6 +14,11 @@ class Brake
     Brake() = default;
 
     //! Constructor: brake from maximum decceleration, wheel radius, and vehicle mass
+    Brake(const std::string& path) :
+        _path(path), _Tmax(0.0) 
+    {}  
+
+    //! Constructor: brake from maximum decceleration, wheel radius, and vehicle mass
     Brake(Xml_document& database, const std::string& path) :
         _path(path), _Tmax(0.0) 
     {

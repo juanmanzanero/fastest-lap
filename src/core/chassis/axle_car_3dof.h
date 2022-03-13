@@ -110,7 +110,11 @@ class Axle_car_3dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
     enum Tires : size_t { LEFT, RIGHT };
 
     //! Default constructor
-    Axle_car_3dof() = default;
+    Axle_car_3dof(const std::string& name, 
+             const Tire_left_t& tire_l,
+             const Tire_right_t& tire_r,
+             const std::string& path=""
+            );
 
     //! Constructor
     //! @param[in] name: name given to the axle for identification (e.g. front, rear)

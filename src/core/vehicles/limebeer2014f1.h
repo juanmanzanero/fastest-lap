@@ -40,7 +40,7 @@ class limebeer2014f1
         using Road_t          = Road_type;
         using Dynamic_model_t = Dynamic_model_car<Timeseries_t,Chassis_t, Road_type, Road_type::STATE_END, Road_type::CONTROL_END>;
 
-        Dynamic_model() {}
+        Dynamic_model(const Road_t& road = Road_t()) : Dynamic_model_t(road) {}
         Dynamic_model(Xml_document& database, const Road_t& road = Road_t()) : Dynamic_model_t(database,road) {}
 
         // Steady-state computation
@@ -242,6 +242,15 @@ struct limebeer2014f1_all
       cartesian_ad(database_xml),
       curvilinear_ad_arcs(database_xml), 
       curvilinear_ad_poly(database_xml)  
+    {}
+
+    limebeer2014f1_all()
+    : cartesian_scalar(), 
+      curvilinear_scalar_arcs(),
+      curvilinear_scalar_poly(),
+      cartesian_ad(),
+      curvilinear_ad_arcs(), 
+      curvilinear_ad_poly()  
     {}
 
     using vehicle_scalar_curvilinear_a = limebeer2014f1<scalar>::curvilinear_a;

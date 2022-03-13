@@ -14,19 +14,19 @@ from fastest_lap import KMH
 
 ```python
 # Load vehicle
-vehicle=fastest_lap.load_vehicle("../../../../database/roberto-lot-kart-2016.xml","car");
+vehicle=fastest_lap.load_vehicle("car","roberto-lot-kart-2016","../../../../database/roberto-lot-kart-2016.xml");
 ```
 
 
 ```python
 # Load track
-track=fastest_lap.load_track("../../../../database/catalunya.xml","catalunya",0.2);
+track=fastest_lap.load_track("../../../../database/vendrell.xml","catalunya",0.2);
 ```
 
 
 ```python
 # Compute optimal laptime
-data = fastest_lap.optimal_laptime(vehicle,track,4,500,["x","y","delta","throttle"]);
+data = fastest_lap.optimal_laptime(vehicle,track,500,["x","y","delta","throttle"]);
 x = data[0];
 y = data[1];
 delta = data[2];
@@ -37,8 +37,8 @@ throttle = data[3];
 
 
 ```python
-fastest_lap.plot_optimal_laptime(x,y,track,2);
-plt.gca().invert_xaxis();
+fastest_lap.plot_optimal_laptime(x,y,track);
+plt.gca().invert_yaxis();
 ```
 
 

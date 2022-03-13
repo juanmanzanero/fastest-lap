@@ -338,6 +338,8 @@ TEST_F(F1_optimal_laptime_test, Catalunya_chicane)
 
 TEST_F(F1_optimal_laptime_test, Catalunya_warm_start)
 {
+    if ( is_valgrind ) GTEST_SKIP();
+
     Xml_document catalunya_xml("./database/catalunya_adapted.xml",true);
     Circuit_preprocessor catalunya_pproc(catalunya_xml);
     Track_by_polynomial catalunya(catalunya_pproc);
@@ -442,7 +444,6 @@ TEST_F(F1_optimal_laptime_test, Catalunya_warm_start)
     for (size_t i = 0; i < n; ++i)
         EXPECT_NEAR(opt_laptime.qa[i][limebeer2014f1<scalar>::Chassis_t::IFZRR], Fz_rr_saved[i], 1.0e-6);
 }
-
 
 TEST_F(F1_optimal_laptime_test, Catalunya_chicane_warm_start)
 {

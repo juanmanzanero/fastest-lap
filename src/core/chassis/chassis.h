@@ -45,6 +45,12 @@ class Chassis
     //! Default constructor
     Chassis() = default;
 
+    //! Empty constructor
+    Chassis(const FrontAxle_t& front_axle, 
+            const RearAxle_t& rear_axle,
+            const std::string& path=""
+           );
+
     //! Constructor from axles and mechanical/geometrical parameters
     //! @param[in] front_axle: Front axle object
     //! @param[in] rear_axle: Rear axle object

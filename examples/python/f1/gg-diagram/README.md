@@ -12,7 +12,7 @@ from fastest_lap import KMH
 
 ```python
 # Load vehicle
-vehicle=fastest_lap.load_vehicle("../../../../database/limebeer-2014-f1.xml","car");
+vehicle=fastest_lap.load_vehicle("car","limebeer-2014-f1","../../../../database/limebeer-2014-f1.xml");
 ```
 
 
@@ -25,10 +25,14 @@ vehicle=fastest_lap.load_vehicle("../../../../database/limebeer-2014-f1.xml","ca
 
 ```python
 import matplotlib.pyplot as plt
-plt.plot(ay,ax_max);
-plt.plot(ay,ax_min);
-plt.plot(ay_minus,ax_max);
-plt.plot(ay_minus,ax_min);
+import mplcyberpunk
+
+plt.style.use("cyberpunk")
+plt.plot(ay,ax_max,color='#FE53BB');
+plt.plot(ay,ax_min,color='#FE53BB');
+plt.plot(ay_minus,ax_max,color='#FE53BB');
+plt.plot(ay_minus,ax_min,color='#FE53BB');
+mplcyberpunk.add_glow_effects()
 ```
 
 

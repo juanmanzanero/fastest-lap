@@ -14,13 +14,13 @@ from fastest_lap import KMH
 
 ```python
 # Load vehicle
-vehicle=fastest_lap.load_vehicle("../../../../database/limebeer-2014-f1.xml","car");
+vehicle=fastest_lap.load_vehicle("car","limebeer-2014-f1","../../../../database/limebeer-2014-f1.xml");
 ```
 
 
 ```python
 # Load track
-track=fastest_lap.load_track("../../../../database/catalunya_discrete_1000.xml","catalunya",1.0);
+track=fastest_lap.load_track("../../../../database/catalunya_adapted.xml","catalunya",1.0);
 ```
 
 
@@ -153,7 +153,7 @@ mer_color = fastf1.plotting.team_color('MER')
     api            INFO 	Using cached data for car_data
     api            INFO 	Using cached data for position_data
     api            INFO 	Using cached data for weather_data
-    core           INFO 	Loaded data for 20 drivers: ['77', '3', '18', '26', '10', '23', '6', '33', '5', '44', '55', '31', '4', '8', '11', '7', '63', '20', '16', '99']
+    core           INFO 	Loaded data for 20 drivers: ['23', '5', '6', '33', '7', '3', '4', '10', '8', '20', '31', '26', '77', '55', '11', '99', '18', '16', '44', '63']
 
 
 
@@ -244,4 +244,39 @@ plt.figure(figsize=(30,30))
 plt.plot(x,y)
 plt.plot(x_computed,y_computed)
 plt.gca().set_aspect('equal')
+```
+
+
+    
+![png](output_15_0.png)
+    
+
+
+
+    
+![png](output_15_1.png)
+    
+
+
+
+    
+![png](output_15_2.png)
+    
+
+
+
+    
+![png](output_15_3.png)
+    
+
+
+
+    
+![png](output_15_4.png)
+    
+
+
+
+```python
+
 ```

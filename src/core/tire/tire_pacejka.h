@@ -87,33 +87,33 @@ struct Pacejka_standard_model
     // ===============================
     // At the moment I will only include the parameters from Lot, Roberto, and Nicola Dal Bianco. 
     // "Lap time optimisation of a racing go-kart."
-    scalar _Fz0;        //! [c] Nominal load [N]
-    scalar _lambdaFz0;  //! [c] Nominal load scaling
-    scalar _Fz0prime;   //! [c] Fz0.lambdaFz0
+    scalar _Fz0 = 0.0;        //! [c] Nominal load [N]
+    scalar _lambdaFz0 = 0.0;  //! [c] Nominal load scaling
+    scalar _Fz0prime = 0.0;   //! [c] Fz0.lambdaFz0
 
     // Pure slip longitudinal parameters
-    scalar _pCx1;    //! [c] Cx
-    scalar _pDx1;    //! [c] mu_x
-    scalar _pEx1;    //! [c] Ex
-    scalar _pKx1;    //! [c] Bx base parameter
-    scalar _pKx2;    //! [c] Linear effect of delta(Fz) in Bx
-    scalar _pKx3;    //! [c] Exponential effect of delta(Fz) in Bx
+    scalar _pCx1 = 0.0;    //! [c] Cx
+    scalar _pDx1 = 0.0;    //! [c] mu_x
+    scalar _pEx1 = 0.0;    //! [c] Ex
+    scalar _pKx1 = 0.0;    //! [c] Bx base parameter
+    scalar _pKx2 = 0.0;    //! [c] Linear effect of delta(Fz) in Bx
+    scalar _pKx3 = 0.0;    //! [c] Exponential effect of delta(Fz) in Bx
     
     // Pure slip lateral parameters
-    scalar _pCy1;    //! [c] Cy
-    scalar _pDy1;    //! [c] mu_y
-    scalar _pEy1;    //! [c] Ey
-    scalar _pKy1;    //! [c] By base parameter
-    scalar _pKy2;    //! [c] Effect of Fz/Fz0
-    scalar _pKy4;    //! [c] Always 2.0
+    scalar _pCy1 = 0.0;    //! [c] Cy
+    scalar _pDy1 = 0.0;    //! [c] mu_y
+    scalar _pEy1 = 0.0;    //! [c] Ey
+    scalar _pKy1 = 0.0;    //! [c] By base parameter
+    scalar _pKy2 = 0.0;    //! [c] Effect of Fz/Fz0
+    scalar _pKy4 = 0.0;    //! [c] Always 2.0
      
     // Combined slip longitudinal parameters
-    scalar _rBx1;   //! [c] Coefficient inside the atan 
-    scalar _rCx1;   //! [c] Coefficient outside the atan
+    scalar _rBx1 = 0.0;   //! [c] Coefficient inside the atan 
+    scalar _rCx1 = 0.0;   //! [c] Coefficient outside the atan
 
     // Combined slip lateral parameters
-    scalar _rBy1;   //! [c] Coefficient inside the atan
-    scalar _rCy1;   //! [c] Coefficient outside the atan
+    scalar _rBy1 = 0.0;   //! [c] Coefficient inside the atan
+    scalar _rCy1 = 0.0;   //! [c] Coefficient outside the atan
 
 };
 
@@ -133,29 +133,29 @@ struct Pacejka_simple_model
     Timeseries_t force_combined_lateral_magic(Timeseries_t kappa, Timeseries_t lambda, Timeseries_t Fz) const;
 
     // Constants
-    scalar _Fz1;            //! [c] Reference load 1
-    scalar _Fz2;            //! [c] Reference load 2
+    scalar _Fz1 = 0.0;            //! [c] Reference load 1
+    scalar _Fz2 = 0.0;            //! [c] Reference load 2
     
-    scalar _mu_x_max1;      //! [c] peak longitudinal friction coefficient at load 1
-    scalar _mu_x_max2;      //! [c] peak longitudinal friction coefficient at load 2
+    scalar _mu_x_max1 = 0.0;      //! [c] peak longitudinal friction coefficient at load 1
+    scalar _mu_x_max2 = 0.0;      //! [c] peak longitudinal friction coefficient at load 2
 
-    scalar _mu_y_max1;      //! [c] peak lateral friction coefficient at load 1
-    scalar _mu_y_max2;      //! [c] peak lateral friction coefficient at load 2
+    scalar _mu_y_max1 = 0.0;      //! [c] peak lateral friction coefficient at load 1
+    scalar _mu_y_max2 = 0.0;      //! [c] peak lateral friction coefficient at load 2
 
-    scalar _kappa_max1;     //! [c] slip coefficient for the friction peak at load 1
-    scalar _kappa_max2;     //! [c] slip coefficient for the friction peak at load 2
+    scalar _kappa_max1 = 0.0;     //! [c] slip coefficient for the friction peak at load 1
+    scalar _kappa_max2 = 0.0;     //! [c] slip coefficient for the friction peak at load 2
 
-    scalar _lambda_max1_deg;     //! [c] slip angle for the friction peak at load 1 [deg]
-    scalar _lambda_max2_deg;     //! [c] slip angle for the friction peak at load 2 [deg]
+    scalar _lambda_max1_deg = 0.0;     //! [c] slip angle for the friction peak at load 1 [deg]
+    scalar _lambda_max2_deg = 0.0;     //! [c] slip angle for the friction peak at load 2 [deg]
 
-    scalar _lambda_max1;     //! [c] slip angle for the friction peak at load 1
-    scalar _lambda_max2;     //! [c] slip angle for the friction peak at load 2
+    scalar _lambda_max1 = 0.0;     //! [c] slip angle for the friction peak at load 1
+    scalar _lambda_max2 = 0.0;     //! [c] slip angle for the friction peak at load 2
 
-    scalar _Qx;             //! [c] longitudinal shape factor
-    scalar _Qy;             //! [c] lateral shape factor
+    scalar _Qx = 0.0;             //! [c] longitudinal shape factor
+    scalar _Qy = 0.0;             //! [c] lateral shape factor
 
-    scalar _Sx;             //! [c] pi/(2.atan(Qx))
-    scalar _Sy;             //! [c] pi/(2.atan(Qy))
+    scalar _Sx = 0.0;             //! [c] pi/(2.atan(Qx))
+    scalar _Sy = 0.0;             //! [c] pi/(2.atan(Qy))
 
     //! Database parameters to be read from an XML element
     std::vector<Database_parameter> get_parameters() { return 
@@ -192,6 +192,10 @@ class Tire_pacejka : public Tire<Timeseries_t, STATE0,CONTROL0>
 
     //! Default constructor
     Tire_pacejka() = default;
+
+    //! Empty constructor
+    Tire_pacejka(const std::string& name, const std::string& path) : base_type(name,path), _model(), _kt(0.0),
+        _ct(0.0), _Fz_max_ref2(1.0), _Smagic(0.0), _Fmagic(0.0) {}
 
     //! Constructor
     //! @param[in] name: name of the tire

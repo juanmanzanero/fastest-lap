@@ -17,6 +17,10 @@ class Engine
     //! Proper constructor from parameters + engine path
     Engine(Xml_document& database, const std::string& path, const bool only_max_power);
 
+    //! Default constructor from engine path
+    Engine(const std::string& path, const bool only_max_power) 
+        : _path(path), _gear_ratio(1.0), _direct_torque(false), _only_max_power(only_max_power), _maximum_power(0.0) {}
+
     // Set parameter    
     template<typename T>
     void set_parameter(const std::string& parameter, const T value)

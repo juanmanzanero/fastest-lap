@@ -13,7 +13,7 @@ std::unordered_map<std::string,limebeer2014f1_all> vehicles_limebeer2014f1;
 std::unordered_map<std::string,Track_by_arcs> tracks_by_arcs;
 std::unordered_map<std::string,Track_by_polynomial> tracks_by_polynomial;
 
-void create_vehicle(struct c_Vehicle* vehicle, const char* name, const char* database_file)
+void create_vehicle(struct c_Vehicle* vehicle, const char* name, const char* vehicle_type, const char* database_file)
 {
     const std::string s_database = database_file;
 
@@ -27,29 +27,60 @@ void create_vehicle(struct c_Vehicle* vehicle, const char* name, const char* dat
     memcpy(vehicle->database_file, database_file, strlen(database_file));
     vehicle->database_file[strlen(database_file)] = '\0';
 
-    // Open the database as Xml
-    Xml_document database = { database_file, true }; 
-
-    // Get vehicle type from the database file
-    const std::string vehicle_type = database.get_root_element().get_attribute("type");
-
-    if ( vehicle_type == "roberto-lot-kart-2016" )
+    if ( std::string(vehicle_type) == "roberto-lot-kart-2016" )
     {
         vehicle->type = LOT2016KART;
+
+        // Open the database as Xml
+        Xml_document database = { database_file, true }; 
+
+        // Get vehicle type from the database file
+        const std::string vehicle_type_db = database.get_root_element().get_attribute("type");
+
+        if ( vehicle_type_db != std::string(vehicle_type) )
+            throw std::runtime_error("vehicle type read from the database is not \"roberto-lot-kart-2016\"");
+
+
+
         auto out = vehicles_lot2016kart.insert({name,{database}});
         if (out.second==false) 
         {
             throw std::runtime_error("Vehicle already exists");
         }
     }
-    else if ( vehicle_type == "limebeer-2014-f1" )
+    else if ( std::string(vehicle_type) == "limebeer-2014-f1" )
     {
         vehicle->type = LIMEBEER2014F1;
-        auto out = vehicles_limebeer2014f1.insert({name,{database}});
-        if (out.second==false) 
+        
+        if ( strlen(database_file) > 0 )
         {
-            throw std::runtime_error("Vehicle already exists");
+            // Open the database as Xml
+            Xml_document database = { database_file, true }; 
+
+            // Get vehicle type from the database file
+            const std::string vehicle_type_db = database.get_root_element().get_attribute("type");
+
+            if ( vehicle_type_db != std::string(vehicle_type) )
+                throw std::runtime_error("vehicle type read from the database is not \"limebeer-2014-f1\"");
+
+            auto out = vehicles_limebeer2014f1.insert({name,{database}});
+
+            if (out.second==false) 
+            {
+                throw std::runtime_error("Vehicle already exists");
+            }        
         }
+        else
+        {
+            // Construct a default car
+            auto out = vehicles_limebeer2014f1.insert({name,{}});
+
+            if (out.second==false) 
+            {
+                throw std::runtime_error("Vehicle already exists");
+            }
+        }
+
     }
     else
     {
@@ -119,13 +150,44 @@ void create_track(struct c_Track* track, const char* name, const char* track_fil
     }
 }
 
-void set_parameter(struct c_Vehicle* c_vehicle, const char* parameter, const double value)
+void delete_vehicle(struct c_Vehicle* c_vehicle)
+{
+    if ( c_vehicle->type == LIMEBEER2014F1 )
+        vehicles_limebeer2014f1.erase(c_vehicle->name);
+
+    else if ( c_vehicle->type == LOT2016KART )
+        vehicles_lot2016kart.erase(c_vehicle->name);
+    
+    else
+        throw std::runtime_error("Vehicle type is not recognized");
+}
+
+void set_scalar_parameter(struct c_Vehicle* c_vehicle, const char* parameter, const double value)
 {
     if ( c_vehicle->type == LIMEBEER2014F1 )
     {
         vehicles_limebeer2014f1.at(c_vehicle->name).set_parameter(parameter, value);
     }
 }
+
+void set_vector_parameter(struct c_Vehicle* c_vehicle, const char* parameter, const double value[3])
+{
+    if ( c_vehicle->type == LIMEBEER2014F1 )
+    {
+        sVector3d v_value = { value[0], value[1], value[2] };
+        vehicles_limebeer2014f1.at(c_vehicle->name).set_parameter(parameter, v_value);
+    }
+}
+
+void set_matrix_parameter(struct c_Vehicle* c_vehicle, const char* parameter, const double value[9])
+{
+    if ( c_vehicle->type == LIMEBEER2014F1 )
+    {
+        sMatrix3x3 m_value = { value[0], value[1], value[2], value[3], value[4], value[5], value[6], value[7], value[8] };
+        vehicles_limebeer2014f1.at(c_vehicle->name).set_parameter(parameter, m_value);
+    }
+}
+
 
 
 void vehicle_equations(double* dqdt, double* dqa, double** jac_dqdt, double** jac_dqa, double*** h_dqdt, double*** h_dqa, struct c_Vehicle* vehicle, double* q, double* qa, double* u, double s)

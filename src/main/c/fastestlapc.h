@@ -34,12 +34,18 @@ STRUCT c_Track
 
 
 // Factories -----------------------------------------------------------------------------------------------------------
-void create_vehicle(struct c_Vehicle* vehicle, const char* name, const char* database_file);
+void create_vehicle(struct c_Vehicle* vehicle, const char* name, const char* vehicle_type, const char* database_file);
 
 void create_track(struct c_Track* track, const char* name, const char* track_file, const double scale);
 
+void delete_vehicle(struct c_Vehicle* vehicle);
+
 // Modifyers -----------------------------------------------------------------------------------------------------------
-void set_parameter(struct c_Vehicle* vehicle, const char* parameter, const double value);
+void set_scalar_parameter(struct c_Vehicle* vehicle, const char* parameter, const double value);
+
+void set_vector_parameter(struct c_Vehicle* vehicle, const char* parameter, const double value[3]);
+
+void set_matrix_parameter(struct c_Vehicle* vehicle, const char* parameter, const double value[9]);
 
 // Applications --------------------------------------------------------------------------------------------------------
 void vehicle_equations(double* dqdt, double* dqa, struct c_Vehicle* vehicle, double* q, double* qa, double* u, double s);

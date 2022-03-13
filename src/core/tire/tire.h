@@ -28,6 +28,10 @@ class Tire
     //! Default constructor
     Tire() = default;
 
+    //! Empty constructor
+    Tire(const std::string& name, const std::string& path="") : _name(name), _path(path), _type(NORMAL), _frame(),
+        _omega(0.0), _w(0.0), _dw(0.0), _v(0.0,0.0,0.0), _kappa(0.0), _lambda(0.0), _F(0.0,0.0,0.0), _T(0.0,0.0,0.0) {}
+
     //! Constructor
     //! @param[in] name: name of the tire
     //! @param[in] parameters: map containing tire parameters

@@ -59,7 +59,7 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
     constexpr static size_t NALGEBRAIC = ALGEBRAIC_END;
 
     //! Default constructor
-    Chassis_car_3dof() = default;
+    Chassis_car_3dof();
 
     //! Constructor from axles and extra parameters
     //! @param[in] front_axle: Front axle

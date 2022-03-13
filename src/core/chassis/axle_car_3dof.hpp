@@ -4,6 +4,58 @@
 template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t> typename Axle_mode, size_t STATE0, size_t CONTROL0>
 Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::Axle_car_3dof(const std::string& name,
                            const Tire_left_t& tire_l, const Tire_right_t& tire_r,
+                           const std::string& path)
+: Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,STATE0,CONTROL0>(name, {tire_l, tire_r}),
+  _track(0.0),
+  _y_tire({0.0,0.0}),
+  _I(0.0),
+  _differential_stiffness(0.0),
+  _throttle_smooth_pos(0.0),
+  _kappa_left(0.0),
+  _kappa_right(0.0),
+  _dkappa_left(0.0),
+  _dkappa_right(0.0),
+  _torque_left(0.0),
+  _torque_right(0.0),
+  _throttle(0.0),
+  _brakes(),
+  _engine(),
+  _delta(0.0)
+{
+    base_type::_path = path;
+
+    _y_tire = {-0.5*_track, 0.5*_track};
+
+    // Construct the brakes
+    _brakes = Brake<Timeseries_t>(path + "brakes/");
+
+    // Construct the specific parameters of the axle
+    if constexpr ( std::is_same<Axle_mode<0,0>, POWERED<0,0>>::value )
+    {
+        // Construct engine and brakes
+        _engine = Engine<Timeseries_t>(path + "engine/", true);
+    }
+    else if constexpr ( std::is_same<Axle_mode<0,0>, STEERING<0,0>>::value )
+    {
+        // Prepare the tires frames to have one rotation (the steering)
+        if ( std::get<LEFT>(Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,STATE0,CONTROL0>::_tires).get_frame().get_rotation_angles().size() != 0 )
+            throw std::runtime_error("Left tire frame must have zero rotations");
+
+        if ( std::get<RIGHT>(Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,STATE0,CONTROL0>::_tires).get_frame().get_rotation_angles().size() != 0 )
+            throw std::runtime_error("Right tire frame must have zero rotations");
+
+        std::get<LEFT>(base_type::_tires).get_frame().add_rotation(0.0, 0.0, Z);
+        std::get<RIGHT>(base_type::_tires).get_frame().add_rotation(0.0, 0.0, Z);
+    }
+
+    std::get<LEFT>(base_type::_tires).get_frame().set_origin(get_tire_position(LEFT), get_tire_velocity(LEFT));
+    std::get<RIGHT>(base_type::_tires).get_frame().set_origin(get_tire_position(RIGHT), get_tire_velocity(RIGHT));
+}
+
+
+template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t> typename Axle_mode, size_t STATE0, size_t CONTROL0>
+Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::Axle_car_3dof(const std::string& name,
+                           const Tire_left_t& tire_l, const Tire_right_t& tire_r,
                            Xml_document& database,
                            const std::string& path)
 : Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,STATE0,CONTROL0>(name, {tire_l, tire_r}),

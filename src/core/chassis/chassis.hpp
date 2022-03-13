@@ -3,8 +3,7 @@
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
 inline Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::Chassis(
-    const FrontAxle_t& front_axle, const RearAxle_t& rear_axle,
-    Xml_document& database, const std::string& path)
+    const FrontAxle_t& front_axle, const RearAxle_t& rear_axle, const std::string& path)
 : _inertial_frame(),
   _road_frame(Frame<Timeseries_t>(Vector3d<Timeseries_t>(0.0), Vector3d<Timeseries_t>(0.0), {0.0}, {0.0}, {Z}, _inertial_frame)),
   _chassis_frame(Frame<Timeseries_t>(Vector3d<Timeseries_t>(0.0), Vector3d<Timeseries_t>(0.0), {}, {}, {}, _road_frame)),
@@ -13,11 +12,19 @@ inline Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::Chassis(
   _F(Vector3d<Timeseries_t>(0.0)),
   _T(Vector3d<Timeseries_t>(0.0))
 {
-    read_parameters(database, path, get_parameters());
-
     // Set the front and rear axles new frames parents
     _front_axle.get_frame().set_parent(_chassis_frame); 
     _rear_axle.get_frame().set_parent(_chassis_frame); 
+}
+
+
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
+inline Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::Chassis(
+    const FrontAxle_t& front_axle, const RearAxle_t& rear_axle,
+    Xml_document& database, const std::string& path)
+: Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::Chassis(front_axle, rear_axle, path)
+{
+    read_parameters(database, path, get_parameters());
 }
 
 

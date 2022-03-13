@@ -2,6 +2,30 @@
 #define __CHASSIS_CAR_3DOF_HPP__
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
+inline Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::Chassis_car_3dof()
+: base_type(FrontAxle_t("front axle",
+            typename FrontAxle_t::Tire_left_type("front left tire", "vehicle/front-tire/"),
+            typename FrontAxle_t::Tire_right_type("front right tire", "vehicle/front-tire/"),
+            "vehicle/front-axle/"),
+            RearAxle_t("rear axle", 
+            typename RearAxle_t::Tire_left_type("rear left tire", "vehicle/rear-tire/"),
+            typename RearAxle_t::Tire_right_type("rear right tire", "vehicle/rear-tire/"),
+            "vehicle/rear-axle/"),
+            "vehicle/chassis/")
+{
+    // Chassis frame must have zero rotations
+    if ( base_type::get_chassis_frame().get_rotation_angles().size() != 0 )
+        throw std::runtime_error("Chassis frame must have cero rotations for Chassis_car_3dof");
+
+    // Set chassis frame position and velocity (it does not matter before calling update())
+    base_type::get_chassis_frame().set_origin({0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}); 
+
+    // Set axles frame position and velocity
+    base_type::get_front_axle().get_frame().set_origin(get_front_axle_position(), get_front_axle_velocity());
+    base_type::get_rear_axle().get_frame().set_origin(get_rear_axle_position(), get_rear_axle_velocity());
+}
+
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
 inline Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::Chassis_car_3dof(const FrontAxle_t& front_axle, 
                                                          const RearAxle_t& rear_axle,
                                                          Xml_document& database,

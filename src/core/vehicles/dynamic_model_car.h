@@ -39,7 +39,7 @@ class Dynamic_model_car
     constexpr static size_t NCONTROL  = _NCONTROL; 
 
     //! Default constructor
-    Dynamic_model_car() = default;
+    Dynamic_model_car(const RoadModel_t& road = RoadModel_t() ) : _chassis(), _road(road) {}
 
     //! Constructor from parameter map and tire types
     //! @param[in] parameters: parameters map

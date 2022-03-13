@@ -275,14 +275,12 @@ TEST_F(limebeer2014f1_test, jacobian_autodiff_random)
 
 TEST_F(limebeer2014f1_test, set_parameter)
 {
-    Xml_document dummy_database("./data/dummy-f1.xml",true);
-
     Xml_document catalunya_xml("./database/catalunya_discrete.xml",true);
     Track_by_polynomial catalunya(catalunya_xml);
     
 
     limebeer2014f1<scalar>::curvilinear<Track_by_polynomial>::Road_t road(catalunya);
-    limebeer2014f1<scalar>::curvilinear<Track_by_polynomial> car(dummy_database, road);
+    limebeer2014f1<scalar>::curvilinear<Track_by_polynomial> car(road);
     limebeer2014f1<scalar>::curvilinear<Track_by_polynomial> car_correct(database, road);
 
     car.set_parameter("vehicle/front-axle/track", 1.46);
