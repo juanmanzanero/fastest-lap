@@ -19,23 +19,27 @@ std::pair<std::array<Timeseries_t,_NSTATE>,std::array<Timeseries_t,Chassis_t::NA
     std::array<Timeseries_t,NSTATE> dqdt;
     std::array<Timeseries_t,NALGEBRAIC> dqa;
 
-    // (1) Set state and controls
+    // (1) Set the variable parameters
+    for (auto const& [name, value] : _variable_parameters )
+        set_parameter(name, value(t));
+
+    // (2) Set state and controls
     _chassis.set_state_and_controls(q,qa,u);
     _road.set_state_and_controls(t,q,u);
 
-    // (2) Update
+    // (3) Update
     _road.update(_chassis.get_u(), _chassis.get_v(), _chassis.get_omega());
     _chassis.update(_road.get_x(), _road.get_y(), _road.get_psi());
 
-    // (3) Get time derivative
+    // (4) Get time derivative
     _chassis.get_state_derivative(dqdt);
     _road.get_state_derivative(dqdt);
 
-    // (4) Get algebraic constraints from the chassis
+    // (5) Get algebraic constraints from the chassis
     if constexpr (NALGEBRAIC != 0)
         _chassis.get_algebraic_constraints(dqa);
 
-    // (5) Scale the temporal parameter to curvilinear if needed
+    // (6) Scale the temporal parameter to curvilinear if needed
     for (auto it = dqdt.begin(); it != dqdt.end(); ++it)
         (*it) *= _road.get_dtimedt();
 

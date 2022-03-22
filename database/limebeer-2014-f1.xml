@@ -49,10 +49,26 @@
             <cl> 3.0 </cl>
         </aerodynamics>
 
-        <com units="m"> 0.0 0.0 -0.3 </com>
-        <front_axle units="m"> 1.8 0.0 -0.33 </front_axle>
-        <rear_axle units="m"> -1.6 0.0 -0.33 </rear_axle>
-        <pressure_center units="m"> -0.1 0.0 -0.3 </pressure_center>
+        <com units="m"> 
+            <x> 0.0 </x>
+            <y> 0.0 </y>
+            <z> -0.3 </z> 
+        </com>
+        <front_axle units="m"> 
+            <x>  1.8  </x> 
+            <y>  0.0  </y> 
+            <z> -0.33 </z> 
+        </front_axle>
+        <rear_axle units="m"> 
+            <x> -1.6  </x> 
+            <y>  0.0  </y> 
+            <z> -0.33 </z> 
+        </rear_axle>
+        <pressure_center units="m"> 
+            <x> -0.1 </x> 
+            <y>  0.0 </y> 
+            <z> -0.3 </z>
+        </pressure_center>
         <brake_bias> 0.6 </brake_bias>
         <roll_balance_coefficient> 0.5 </roll_balance_coefficient>
         <Fz_max_ref2> 1.0 </Fz_max_ref2>

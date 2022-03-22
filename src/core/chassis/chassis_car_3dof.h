@@ -210,10 +210,18 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
     
     std::vector<Database_parameter> get_parameters() { return 
     { 
-        { "com", _x_com },
-        { "pressure_center", _x_aero },
-        { "front_axle", _x_front_axle },
-        { "rear_axle", _x_rear_axle },
+        { "com/x", _x_com.x() },
+        { "com/y", _x_com.y() },
+        { "com/z", _x_com.z() },
+        { "front_axle/x", _x_front_axle.x() },
+        { "front_axle/y", _x_front_axle.y() },
+        { "front_axle/z", _x_front_axle.z() },
+        { "rear_axle/x", _x_rear_axle.x() },
+        { "rear_axle/y", _x_rear_axle.y() },
+        { "rear_axle/z", _x_rear_axle.z() }, 
+        { "pressure_center/x", _x_aero.x() },
+        { "pressure_center/y", _x_aero.y() },
+        { "pressure_center/z", _x_aero.z() },
         { "brake_bias", _brake_bias_0 },
         { "roll_balance_coefficient", _roll_balance_coeff},
         { "Fz_max_ref2", _Fz_max_ref2 }

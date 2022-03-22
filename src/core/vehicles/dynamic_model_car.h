@@ -49,11 +49,14 @@ class Dynamic_model_car
     //! @param[in] rear_right_tire_type: type of the rear right tire 
     //! @param[in] road: the road
     Dynamic_model_car(Xml_document& database, const RoadModel_t& road = RoadModel_t()) 
-        : _chassis(database), _road(road) {};
+        : _chassis(database), _road(road), _variable_parameters() {};
 
     //! Modifyer to set a parameter
     template<typename T>
     void set_parameter(const std::string& parameter, const T value) { get_chassis().set_parameter(parameter,value); }
+
+    //! Add a variable parameter
+    void add_variable_parameter(const std::string& parameter_name, const sPolynomial& parameter_value) { _variable_parameters[parameter_name] = parameter_value; }
 
     //! The time derivative functor, dqdt = operator()(q,u,t)
     //! Only enabled if the dynamic model has no algebraic equations
@@ -115,6 +118,8 @@ class Dynamic_model_car
  private:
     Chassis_t _chassis;    //! The chassis
     RoadModel_t _road;     //! The road
+
+    std::map<std::string,sPolynomial> _variable_parameters;
 };
 
 #include "dynamic_model_car.hpp"
