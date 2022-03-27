@@ -227,7 +227,7 @@ void get_vector_table_variable(double* data, const int n, const char* name_c)
     // Check input consistency
     const auto& table_data = item->second;
 
-    if ( table_data.size() != n )
+    if ( table_data.size() != static_cast<size_t>(n) )
         throw std::runtime_error(std::string("Incorrect input size for variable \"") + name + "\". Input: " 
             + std::to_string(n) + ", should be " + std::to_string(table_data.size()));
 
