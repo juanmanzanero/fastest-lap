@@ -43,13 +43,13 @@ def load_track(track_file,name,scale):
 
 def set_scalar_parameter(vehicle,parameter_name,parameter_value):
 	parameter_name = c.c_char_p((parameter_name).encode('utf-8'));
-	c_lib.set_scalar_parameter(vehicle,parameter_name,c.c_double(parameter_value))
+	c_lib.set_scalar_parameter(c.byref(vehicle),parameter_name,c.c_double(parameter_value))
 	return vehicle;
 
 def set_vector_parameter(vehicle,parameter_name,parameter_value):
 	parameter_name = c.c_char_p((parameter_name).encode('utf-8'));
 	c_parameter_value = (c.c_double*3)(parameter_value[0],parameter_value[1],parameter_value[2]);
-	c_lib.set_vector_parameter(vehicle,parameter_name,c_parameter_value)
+	c_lib.set_vector_parameter(c.byref(vehicle),parameter_name,c_parameter_value)
 	return vehicle;
 
 def set_matrix_parameter(vehicle,parameter_name,parameter_value):
@@ -57,7 +57,7 @@ def set_matrix_parameter(vehicle,parameter_name,parameter_value):
 	c_parameter_value = (c.c_double*9)(parameter_value[0],parameter_value[1],parameter_value[2],  
 	                                   parameter_value[3],parameter_value[4],parameter_value[5],  
 	                                   parameter_value[6],parameter_value[7],parameter_value[8]); 
-	c_lib.set_matrix_parameter(vehicle,parameter_name,c_parameter_value)
+	c_lib.set_matrix_parameter(c.byref(vehicle),parameter_name,c_parameter_value)
 	return vehicle;
 
 def gg_diagram(vehicle,speed,n_points):
@@ -79,18 +79,19 @@ def gg_diagram(vehicle,speed,n_points):
 
 	return ay,ay_minus,ax_max,ax_min;
 
-def optimal_laptime(vehicle, track, n_points, channels):
+def optimal_laptime(vehicle, track, n_points, channels, options):
 
 	# Get channels ready to be written by C++
 	n_channels = len(channels);
 	c_channels_name = ((c.c_char_p)*n_channels)();
 	c_channels_data = (c.POINTER(c.c_double)*n_channels)()
+	c_options = c.c_char_p((options).encode('utf-8'));
 
 	for channel in range(0,n_channels):
 		c_channels_name[channel] = c.c_char_p(channels[channel].encode('utf-8'));
 		c_channels_data[channel] = ((c.c_double)*n_points)()
 
-	c_lib.optimal_laptime(c.byref(c_channels_data), c.byref(vehicle), c.byref(track), c.c_int(n_points), c.c_int(n_channels), c.byref(c_channels_name));
+	c_lib.optimal_laptime(c.byref(c_channels_data), c.byref(vehicle), c.byref(track), c.c_int(n_points), c.c_int(n_channels), c.byref(c_channels_name), c_options);
 
 	channels_data = [[None]*n_points for i in range(n_channels)];
 

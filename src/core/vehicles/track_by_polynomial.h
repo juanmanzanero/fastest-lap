@@ -42,6 +42,8 @@ class Track_by_polynomial
         };
     }
 
+    const Circuit_preprocessor& get_preprocessor() const { return _preprocessor; }
+
  private:
     vPolynomial _r;     //! Position vector polynomial
     vPolynomial _dr;    //! Position vector derivative polynomial
@@ -49,6 +51,8 @@ class Track_by_polynomial
 
     sPolynomial _wl;    //! Distance to the left track limit
     sPolynomial _wr;    //! Distance to the right track limit
+
+    Circuit_preprocessor _preprocessor;     //! Save the preprocessor used to compute this track
 
     static std::tuple<vPolynomial,sPolynomial,sPolynomial> compute_track_polynomial(Xml_document& doc);
 };

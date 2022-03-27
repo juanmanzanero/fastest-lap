@@ -190,7 +190,7 @@ class limebeer2014f1
 
         static std::pair<std::vector<scalar>,std::vector<scalar>> optimal_laptime_algebraic_state_bounds()
         {
-            return {{-3.0,-3.0,-3.0,-3.0},{1.0,1.0,1.0,1.0}};
+            return {{-3.0,-3.0,-3.0,-3.0},{-0.01,-0.01,-0.01,-0.01}};
         }
 
         std::pair<std::vector<scalar>,std::vector<scalar>> optimal_laptime_extra_constraints_bounds(const scalar s) const
@@ -220,6 +220,7 @@ class limebeer2014f1
                 n - 0.5*track*cos(alpha),
             };
         }
+
     };
 
  public:
@@ -237,62 +238,49 @@ struct limebeer2014f1_all
 {
     limebeer2014f1_all(Xml_document& database_xml)
     : cartesian_scalar(database_xml), 
-      curvilinear_scalar_arcs(database_xml),
       curvilinear_scalar_poly(database_xml),
       cartesian_ad(database_xml),
-      curvilinear_ad_arcs(database_xml), 
       curvilinear_ad_poly(database_xml)  
     {}
 
     limebeer2014f1_all()
     : cartesian_scalar(), 
-      curvilinear_scalar_arcs(),
       curvilinear_scalar_poly(),
       cartesian_ad(),
-      curvilinear_ad_arcs(), 
       curvilinear_ad_poly()  
     {}
 
-    using vehicle_scalar_curvilinear_a = limebeer2014f1<scalar>::curvilinear_a;
-    using vehicle_scalar_curvilinear_p = limebeer2014f1<scalar>::curvilinear_p;
+    using vehicle_scalar_curvilinear = limebeer2014f1<scalar>::curvilinear_p;
+    using vehicle_ad_curvilinear = limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p;
 
     // Get curvilinear AD car for the polynomial track
-    template<typename Track_type>
-    std::enable_if_t<std::is_same<Track_type,Track_by_polynomial>::value,limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p&>
-        get_curvilinear_ad_car() { return curvilinear_ad_poly; }
-
-    // Get curvilinear AD car for the track by arcs
-    template<typename Track_type>
-    std::enable_if_t<std::is_same<Track_type,Track_by_arcs>::value,limebeer2014f1<CppAD::AD<scalar>>::curvilinear_a&>
-        get_curvilinear_ad_car() { return curvilinear_ad_arcs; }
+    limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p& get_curvilinear_ad_car() { return curvilinear_ad_poly; }
 
     // Get curvilinear scalar car for the polynomial track
-    template<typename Track_type>
-    std::enable_if_t<std::is_same<Track_type,Track_by_polynomial>::value,limebeer2014f1<scalar>::curvilinear_p&>
-        get_curvilinear_scalar_car() { return curvilinear_scalar_poly; }
-
-    // Get curvilinear scalar car for the track by arcs
-    template<typename Track_type>
-    std::enable_if_t<std::is_same<Track_type,Track_by_arcs>::value,limebeer2014f1<scalar>::curvilinear_a&>
-        get_curvilinear_scalar_car() { return curvilinear_scalar_arcs; }
+    limebeer2014f1<scalar>::curvilinear_p& get_curvilinear_scalar_car() { return curvilinear_scalar_poly; }
 
     template<typename T>
     void set_parameter(const std::string& parameter, const T value)
     {
         cartesian_scalar.set_parameter(parameter, value);
-        curvilinear_scalar_arcs.set_parameter(parameter, value);
         curvilinear_scalar_poly.set_parameter(parameter, value);
 
         cartesian_ad.set_parameter(parameter, value);
-        curvilinear_ad_arcs.set_parameter(parameter, value);
         curvilinear_ad_poly.set_parameter(parameter, value);
     }
 
+    void add_variable_parameter(const std::string& parameter_name, const sPolynomial& parameter_value)
+    {
+        cartesian_scalar.add_variable_parameter(parameter_name, parameter_value);
+        curvilinear_scalar_poly.add_variable_parameter(parameter_name, parameter_value);
+
+        cartesian_ad.add_variable_parameter(parameter_name, parameter_value);
+        curvilinear_ad_poly.add_variable_parameter(parameter_name, parameter_value);
+    }
+
     limebeer2014f1<scalar>::cartesian                 cartesian_scalar;
-    limebeer2014f1<scalar>::curvilinear_a             curvilinear_scalar_arcs;
     limebeer2014f1<scalar>::curvilinear_p             curvilinear_scalar_poly;
     limebeer2014f1<CppAD::AD<scalar>>::cartesian      cartesian_ad;
-    limebeer2014f1<CppAD::AD<scalar>>::curvilinear_a  curvilinear_ad_arcs;
     limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p  curvilinear_ad_poly;
 };
 

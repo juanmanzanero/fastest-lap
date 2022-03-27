@@ -26,12 +26,17 @@ class Optimal_laptime
     struct Options
     {
         size_t print_level = 0;
+        size_t maximum_iterations = 3000;
+        bool   throw_if_fail = true;
     };
     
 
     //! This class will only support vehicles with automatic differentiation
     using Timeseries_t = typename Dynamic_model_t::Timeseries_type;
     static_assert(std::is_same<Timeseries_t,CppAD::AD<scalar>>::value == true);
+
+    //! Default constructor
+    Optimal_laptime() = default;
 
     //! Constructor with equally spaced mesh of n points and uniform initial condition (q0,qa0,u0)
     //! @param[in] n:     number of discretization points
@@ -103,6 +108,7 @@ class Optimal_laptime
     Options options;
 
     // Outputs
+    bool success;
     bool is_closed;
     bool is_direct;
     bool warm_start;

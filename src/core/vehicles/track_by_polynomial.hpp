@@ -63,6 +63,9 @@ inline Track_by_polynomial::Track_by_polynomial(const Circuit_preprocessor& circ
     _d2r = {s,d2r,1,false};
     _wl  = {s,nl,1,false};
     _wr  = {s,nr,1,false};
+
+    // Save the preprocessor
+    _preprocessor = circuit;
 }
 
 inline std::tuple<vPolynomial,sPolynomial,sPolynomial> Track_by_polynomial::compute_track_polynomial(Xml_document& doc)   

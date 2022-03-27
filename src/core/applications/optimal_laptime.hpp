@@ -435,6 +435,9 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
     ipoptoptions += "Integer print_level  ";
     ipoptoptions += std::to_string(options.print_level);
     ipoptoptions += "\n";
+    ipoptoptions += "Integer max_iter ";
+    ipoptoptions += std::to_string(options.maximum_iterations);
+    ipoptoptions += "\n";
     ipoptoptions += "String  sb           yes\n";
     ipoptoptions += "Sparse true forward\n";
     ipoptoptions += "Numeric tol          1e-10\n";
@@ -452,7 +455,9 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
             optimization_data.lambda, optimization_data.zl, optimization_data.zu, fg, result);
     
 
-    if ( result.status != CppAD::ipopt_cppad_result<std::vector<scalar>>::success )
+    success = result.status == CppAD::ipopt_cppad_result<std::vector<scalar>>::success; 
+
+    if ( !success && options.throw_if_fail )
     {
         throw std::runtime_error("Optimization did not succeed");
     }

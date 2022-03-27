@@ -39,6 +39,9 @@ class Circuit_preprocessor
         int print_level = 0;
     };
 
+    //! Default constructor
+    Circuit_preprocessor() = default;
+
     //! Constructor from Xml file
     Circuit_preprocessor(Xml_document& doc);
 

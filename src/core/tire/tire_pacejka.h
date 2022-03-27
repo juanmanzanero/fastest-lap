@@ -157,6 +157,8 @@ struct Pacejka_simple_model
     scalar _Sx = 0.0;             //! [c] pi/(2.atan(Qx))
     scalar _Sy = 0.0;             //! [c] pi/(2.atan(Qy))
 
+    scalar _mu_min = 1.0;         //! [c] Minimum value for any friction coefficient
+
     //! Database parameters to be read from an XML element
     std::vector<Database_parameter> get_parameters() { return 
     { 

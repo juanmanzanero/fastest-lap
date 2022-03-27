@@ -114,7 +114,6 @@ class Dynamic_model_car
     constexpr const RoadModel_t& get_road() const { return _road; }
     constexpr       RoadModel_t& get_road()       { return _road; }
 
-
  private:
     Chassis_t _chassis;    //! The chassis
     RoadModel_t _road;     //! The road
