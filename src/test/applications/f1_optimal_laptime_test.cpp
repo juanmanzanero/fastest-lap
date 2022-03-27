@@ -121,7 +121,7 @@ TEST_F(F1_optimal_laptime_test, Catalunya_adapted)
     const size_t n = s.size();
 
     Optimal_laptime opt_laptime(s, true, true, car, {n,ss.q}, {n,ss.qa}, {n,ss.u}, {50.0e0,20.0*8.0e-4}, {});
-    opt_laptime.xml()->save("f1_optimal_laptime_catalunya_adapted.xml");
+    opt_laptime.xml();
 
     // Check the results with a saved simulation
     Xml_document opt_saved("data/f1_optimal_laptime_catalunya_adapted.xml", true);
@@ -231,7 +231,7 @@ TEST_F(F1_optimal_laptime_test, Catalunya_variable_parameter)
     const size_t n = s.size();
 
     Optimal_laptime opt_laptime(s, true, true, car, {n,ss.q}, {n,ss.qa}, {n,ss.u}, {50.0e0,20.0*8.0e-4}, {});
-    opt_laptime.xml()->save("f1_optimal_laptime_catalunya_variable_parameter.xml");
+    opt_laptime.xml();
 
     // Check the results with a saved simulation
     Xml_document opt_saved("data/f1_optimal_laptime_catalunya_variable_parameter.xml", true);
@@ -473,7 +473,7 @@ TEST_F(F1_optimal_laptime_test, Catalunya_warm_start)
     Optimal_laptime opt_laptime(s, true, true, car, opt_laptime_saved.q, opt_laptime_saved.qa, opt_laptime_saved.u, {50.0e0,20.0*8.0e-4}, 
         opt_laptime_saved.optimization_data.zl, opt_laptime_saved.optimization_data.zu, opt_laptime_saved.optimization_data.lambda, opts);
 
-    opt_laptime.xml()->save("f1_optimal_laptime_catalunya_warmstart.xml");
+    opt_laptime.xml();
 
     // Check the results with a saved simulation
 
@@ -611,7 +611,7 @@ TEST_F(F1_optimal_laptime_test, Catalunya_chicane_warm_start)
 
     Optimal_laptime opt_laptime(s, false, true, car, q, qa, u, {50.0e0,20.0*8.0e-4}, zl, zu, lambda, opts);
 
-    opt_laptime.xml()->save("f1_optimal_laptime_catalunya_chicane_warmstart.xml");
+    opt_laptime.xml();
 
     // Check the results with a saved simulation
     Xml_document opt_chicane_saved("data/f1_optimal_laptime_catalunya_chicane.xml", true);
@@ -713,6 +713,8 @@ TEST_F(F1_optimal_laptime_test, maximum_acceleration)
     auto ss = Steady_state(car_cartesian).solve(v,0.0,0.0); 
 
     Optimal_laptime opt_laptime(n, false, true, car, ss.q, ss.qa, ss.u, {0.0, 4.0e-7}, {});
+
+    opt_laptime.xml();
 
     // Check that the car accelerates
     constexpr const size_t IU = limebeer2014f1<scalar>::curvilinear<Track_by_arcs>::Chassis_type::IU;
