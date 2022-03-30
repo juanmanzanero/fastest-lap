@@ -2,6 +2,7 @@
 #define __AXLE_H__
 
 #include "lion/frame/frame.h"
+#include "lion/io/Xml_document.h"
 
 //!         A generic axle class
 //!         --------------------

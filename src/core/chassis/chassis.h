@@ -5,6 +5,7 @@
 #include "lion/frame/frame.h"
 #include <map>
 #include "lion/io/database_parameters.h"
+#include "lion/io/Xml_document.h"
 
 //!   Generic chassis type
 //!   --------------------
