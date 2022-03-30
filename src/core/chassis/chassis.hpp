@@ -109,6 +109,18 @@ void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_parameter
     }
 }
 
+
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
+void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::fill_xml(Xml_document& doc) const
+{
+    // Write the parameters of this class
+    ::write_parameters(doc, "vehicle/chassis/", get_parameters());
+
+    // Write the parameters of the axles
+    _front_axle.fill_xml(doc);
+    _rear_axle.fill_xml(doc); 
+}
+
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
 void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_state(Timeseries_t u, Timeseries_t v, Timeseries_t omega)
 {

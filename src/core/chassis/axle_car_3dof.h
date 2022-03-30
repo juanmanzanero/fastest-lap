@@ -200,6 +200,8 @@ class Axle_car_3dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
 
     static std::string type() { return "axle_car_3dof"; }
 
+    void fill_xml(Xml_document& doc) const;
+
  private:
     // Geometry
     scalar _track;                      //! [c] Distance between the two tires [m]
@@ -237,7 +239,7 @@ class Axle_car_3dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
     Timeseries_t _delta;                //! [in] Steering angle [rad]
 
     template<typename T = Axle_mode<0,0>>
-    std::enable_if_t<std::is_same<T,POWERED<0,0>>::value,std::vector<Database_parameter>> 
+    std::enable_if_t<std::is_same<T,POWERED<0,0>>::value,std::vector<Database_parameter_mutable>> 
     get_parameters() { return 
     { 
         { "track", _track },
@@ -247,13 +249,33 @@ class Axle_car_3dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
     };}
 
     template<typename T = Axle_mode<0,0>>
-    std::enable_if_t<std::is_same<T,STEERING<0,0>>::value,std::vector<Database_parameter>> 
+    std::enable_if_t<std::is_same<T,POWERED<0,0>>::value,std::vector<Database_parameter_const>> 
+    get_parameters() const { return 
+    { 
+        { "track", _track },
+        { "inertia", _I },
+        { "smooth_throttle_coeff", _throttle_smooth_pos },
+        { "differential_stiffness", _differential_stiffness }
+    };}
+
+    template<typename T = Axle_mode<0,0>>
+    std::enable_if_t<std::is_same<T,STEERING<0,0>>::value,std::vector<Database_parameter_mutable>> 
     get_parameters() { return 
     { 
         { "track", _track },
         { "inertia", _I },
         { "smooth_throttle_coeff", _throttle_smooth_pos }
     };}
+
+    template<typename T = Axle_mode<0,0>>
+    std::enable_if_t<std::is_same<T,STEERING<0,0>>::value,std::vector<Database_parameter_const>> 
+    get_parameters() const { return 
+    { 
+        { "track", _track },
+        { "inertia", _I },
+        { "smooth_throttle_coeff", _throttle_smooth_pos }
+    };}
+
 };
 
 #include "axle_car_3dof.hpp"

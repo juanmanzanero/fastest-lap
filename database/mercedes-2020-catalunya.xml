@@ -1,0 +1,97 @@
+<!--
+  This model represents the dynamics of a f1 car using a 3DOF chassis
+
+  The parameters were estimated after a minimization of the error w.r.t. 
+    Lewis Hamilton's fastest lap in Spanish Grand Prix qualifying
+-->
+<vehicle type="limebeer-2014-f1">
+    <chassis>
+        <mass>746</mass>
+        <inertia>0, 0, 0, 0, 0, 0, 0, 0, 500</inertia>
+        <aerodynamics>
+            <rho>1.2</rho>
+            <cd>0.99517464341370898</cd>
+            <cl>2.9658746844902901</cl>
+            <area>1.5</area>
+        </aerodynamics>
+        <com>
+            <x>0</x>
+            <y>0</y>
+            <z>-0.31494541318942298</z>
+        </com>
+        <front_axle>
+            <x>2.0215318733873717</x>
+            <y>0</y>
+            <z>-0.33000000000000002</z>
+        </front_axle>
+        <rear_axle>
+            <x>-1.704468126612628</x>
+            <y>0</y>
+            <z>-0.33000000000000002</z>
+        </rear_axle>
+        <pressure_center>
+            <x>-0.092445764597144334</x>
+            <y>0</y>
+            <z>-0.286467839282602</z>
+        </pressure_center>
+        <brake_bias>0.57415530188439001</brake_bias>
+        <roll_balance_coefficient>0.51703141280030995</roll_balance_coefficient>
+        <Fz_max_ref2>1</Fz_max_ref2>
+    </chassis>
+    <front-tire model="tire-pacejka-simple" type="normal">
+        <radius>0.33000000000000002</radius>
+        <radial-stiffness>0</radial-stiffness>
+        <radial-damping>0</radial-damping>
+        <Fz-max-ref2>0</Fz-max-ref2>
+        <reference-load-1>2000</reference-load-1>
+        <reference-load-2>6000</reference-load-2>
+        <mu-x-max-1>2.344172480181673</mu-x-max-1>
+        <mu-x-max-2>1.939793463050753</mu-x-max-2>
+        <mu-y-max-1>2.344172480181673</mu-y-max-1>
+        <mu-y-max-2>1.939793463050753</mu-y-max-2>
+        <kappa-max-1>0.11</kappa-max-1>
+        <kappa-max-2>0.10000000000000001</kappa-max-2>
+        <lambda-max-1>9</lambda-max-1>
+        <lambda-max-2>8</lambda-max-2>
+        <Qx>1.8999999999999999</Qx>
+        <Qy>1.8999999999999999</Qy>
+    </front-tire>
+    <front-axle model="axle-car">
+        <brakes>
+            <max_torque>4058.4165862285522</max_torque>
+        </brakes>
+        <track>1.5855319148936171</track>
+        <inertia>1</inertia>
+        <smooth_throttle_coeff>1.0000000000000001e-05</smooth_throttle_coeff>
+    </front-axle>
+    <rear-tire model="tire-pacejka-simple" type="normal">
+        <radius>0.33000000000000002</radius>
+        <radial-stiffness>0</radial-stiffness>
+        <radial-damping>0</radial-damping>
+        <Fz-max-ref2>0</Fz-max-ref2>
+        <reference-load-1>2000</reference-load-1>
+        <reference-load-2>6000</reference-load-2>
+        <mu-x-max-1>2.5708770894824622</mu-x-max-1>
+        <mu-x-max-2>1.881083434041342</mu-x-max-2>
+        <mu-y-max-1>2.5708770894824622</mu-y-max-1>
+        <mu-y-max-2>1.881083434041342</mu-y-max-2>
+        <kappa-max-1>0.11</kappa-max-1>
+        <kappa-max-2>0.10000000000000001</kappa-max-2>
+        <lambda-max-1>9</lambda-max-1>
+        <lambda-max-2>8</lambda-max-2>
+        <Qx>1.8999999999999999</Qx>
+        <Qy>1.8999999999999999</Qy>
+    </rear-tire>
+    <rear-axle>
+        <brakes>
+            <max_torque>4058.4165862285522</max_torque>
+        </brakes>
+        <engine>
+            <maximum-power>623.70098986461448</maximum-power>
+        </engine>
+        <track>1.5855319148936171</track>
+        <inertia>1.55</inertia>
+        <smooth_throttle_coeff>1.0000000000000001e-05</smooth_throttle_coeff>
+        <differential_stiffness>617.92558959020255</differential_stiffness>
+    </rear-axle>
+</vehicle>

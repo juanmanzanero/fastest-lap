@@ -48,6 +48,18 @@ void Tire_pacejka<Timeseries_t,Pacejka_model,STATE0,CONTROL0>::set_parameter(con
 }
 
 
+template<typename Timeseries_t, typename Pacejka_model, size_t STATE0, size_t CONTROL0>
+void Tire_pacejka<Timeseries_t,Pacejka_model,STATE0,CONTROL0>::fill_xml(Xml_document& doc) const
+{
+    // Write the parameters of the parent 
+    base_type::fill_xml(doc);
+
+    // Write the owned parameters
+    ::write_parameters(doc, base_type::get_path(), get_parameters());
+
+    // Write the parameters of the model
+    ::write_parameters(doc, base_type::get_path(), _model.get_parameters());
+}
 
 
 template<typename Timeseries_t, typename Pacejka_model, size_t STATE0, size_t CONTROL0>

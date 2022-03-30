@@ -42,6 +42,8 @@ void clear_tables();
 void clear_tables_by_prefix(const char* prefix_c);
 
 // Getters -------------------------------------------------------------------------------------------------------------
+int get_vector_table_variable_size(const char* name_c);
+
 void get_vector_table_variable(double* data, const int n, const char* name_c);
 
 // Modifyers -----------------------------------------------------------------------------------------------------------

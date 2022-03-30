@@ -83,6 +83,8 @@ class Axle
                                      std::array<std::string,NCONTROL>& u);
 
     static std::string type() { return "axle"; }
+    
+    void fill_xml(Xml_document& doc) const;
  private:
     Frame<Timeseries_t> _frame; //! Frame<Timeseries_t> on the axle center
 

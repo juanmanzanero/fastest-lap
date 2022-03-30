@@ -213,6 +213,23 @@ void create_track(struct c_Track* track, const char* name, const char* track_fil
 }
 
 
+int get_vector_table_variable_size(const char* name_c)
+{
+    std::string name(name_c);
+
+    // Look for the item in the table
+    const auto& item = table_vector.find(name);
+
+    // Check that it was found
+    if ( item == table_vector.end() )
+        throw std::runtime_error(std::string("Variable \"") + name + "\" does not exists in the vector table");
+
+    const auto& table_data = item->second;
+    
+    return table_data.size();
+}
+
+
 void get_vector_table_variable(double* data, const int n, const char* name_c)
 {
     std::string name(name_c);

@@ -72,6 +72,9 @@ class Chassis
     template<typename T>
     void set_parameter(const std::string& parameter, const T value);
 
+    //! Fill the corresponding nodes of an xml document
+    void fill_xml(Xml_document& doc) const;
+
     //! Set state: longitudinal/lateral velocities and yaw speed
     //! @param[in] u: longitudinal velocity in road frame [m/s]
     //! @param[in] v: lateral velocity in road frame [m/s]
@@ -192,15 +195,14 @@ class Chassis
     FrontAxle_t _front_axle; //! Front axle
     RearAxle_t  _rear_axle;  //! Rear axle
 
-    std::vector<Database_parameter> get_parameters() { return 
-    { 
+    DECLARE_PARAMS(
         { "mass", _m },
         { "inertia", _I },
         { "aerodynamics/rho", _rho },
         { "aerodynamics/cd", _cd },
         { "aerodynamics/cl", _cl },
         { "aerodynamics/area", _A }
-    };}
+    ); 
 
  protected:
 

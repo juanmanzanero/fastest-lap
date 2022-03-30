@@ -14,29 +14,31 @@ from fastest_lap import KMH
 
 ```python
 # Load vehicle
-vehicle=fastest_lap.load_vehicle("car","limebeer-2014-f1","../../../../database/limebeer-2014-f1.xml");
+vehicle=fastest_lap.load_vehicle("car","limebeer-2014-f1","../../../../database/mercedes-2020-catalunya.xml");
 ```
 
 
 ```python
 # Load track
-track=fastest_lap.load_track("../../../../database/catalunya_adapted.xml","catalunya",1.0);
+(track,s)=fastest_lap.load_track("../../../../database/catalunya_discrete.xml","catalunya");
 ```
 
 
 ```python
 # Compute optimal laptime
-data = fastest_lap.optimal_laptime(vehicle,track,1000,["x","y","delta","throttle","u","s","time","psi","omega","v"]);
-x        = data[0];
-y        = data[1];
-delta    = data[2];
-throttle = data[3];
-u        = data[4]
-s        = data[5]
-time     = data[6]
-psi      = data[7]
-omega    = data[8]
-v        = data[9]
+data = fastest_lap.optimal_laptime(vehicle,track,s,["x","y","delta","throttle","u","s","time","psi","omega","v"]);
+x        = data["x"];
+y        = data["y"];
+delta    = data["delta"];
+throttle = data["throttle"];
+u        = data["u"]
+s        = data["s"]
+time     = data["time"]
+psi      = data["psi"]
+omega    = data["omega"]
+v        = data["v"]
+
+
 ```
 
 ## GPS
@@ -153,7 +155,7 @@ mer_color = fastf1.plotting.team_color('MER')
     api            INFO 	Using cached data for car_data
     api            INFO 	Using cached data for position_data
     api            INFO 	Using cached data for weather_data
-    core           INFO 	Loaded data for 20 drivers: ['23', '5', '6', '33', '7', '3', '4', '10', '8', '20', '31', '26', '77', '55', '11', '99', '18', '16', '44', '63']
+    core           INFO 	Loaded data for 20 drivers: ['77', '11', '33', '4', '26', '44', '5', '6', '99', '8', '10', '3', '18', '7', '20', '63', '16', '31', '55', '23']
 
 
 
@@ -162,7 +164,7 @@ mer_color = fastf1.plotting.team_color('MER')
 fig, ax = plt.subplots(figsize=(20,5))
 ax.plot(ver_tel['Distance'], ver_tel['Speed'], color=rbr_color, label='VER')
 ax.plot(ham_tel['Distance'], ham_tel['Speed'], color=mer_color, label='HAM')
-ax.plot(np.array(s)-180.0,np.array(u)*3.6, label="Fastest-lap")
+ax.plot(np.array(s)-168.0,np.array(u)*3.6, label="Fastest-lap")
 ax.set_xlabel('Distance in m')
 ax.set_ylabel('Speed in km/h')
 
@@ -185,7 +187,10 @@ plt.show()
 fig, ax = plt.subplots(figsize=(20,4))
 ax.plot(ver_tel['Distance'], ver_tel['Throttle'], color=rbr_color, label='VER')
 ax.plot(ham_tel['Distance'], ham_tel['Throttle'], color=mer_color, label='HAM')
-ax.plot(np.array(s)-180,np.array(throttle)*100, label="Fastest-lap")
+throttle_pos = [None]*len(throttle);
+for i in range(len(throttle)):
+    throttle_pos[i] = max(throttle[i],0.0);
+ax.plot(np.array(s)-168,np.array(throttle_pos)*100, label="Fastest-lap")
 ax.set_xlabel('Distance in m')
 ax.set_ylabel('Throttle')
 plt.ylim((-10,110))
@@ -202,6 +207,8 @@ plt.show()
 ![png](output_14_0.png)
     
 
+
+# Study of the numerical errors (nothing to see here)
 
 
 ```python
@@ -248,35 +255,30 @@ plt.gca().set_aspect('equal')
 
 
     
-![png](output_15_0.png)
+![png](output_16_0.png)
     
 
 
 
     
-![png](output_15_1.png)
+![png](output_16_1.png)
     
 
 
 
     
-![png](output_15_2.png)
+![png](output_16_2.png)
     
 
 
 
     
-![png](output_15_3.png)
+![png](output_16_3.png)
     
 
 
 
     
-![png](output_15_4.png)
+![png](output_16_4.png)
     
 
-
-
-```python
-
-```

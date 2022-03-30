@@ -93,6 +93,8 @@ TEST_F(limebeer2014f1_test, variable_names)
 {
     limebeer2014f1<double>::curvilinear_p car_sc(database);
 
+    car_sc.xml()->save("autosave_f1.xml");
+
     auto [s_names, q_names, qa_names, u_names] = car_sc.get_state_and_control_names();
 }
 

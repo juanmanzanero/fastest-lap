@@ -37,6 +37,12 @@ class Brake
             throw std::runtime_error("Parameter \"" + parameter + "\" was not found in brake");
     }
 
+    // Fill xml
+    void fill_xml(Xml_document& doc) const
+    {
+        ::write_parameters(doc, _path, get_parameters());
+    }
+
     //! Operator(): Apply a scaling of the maximum braking torque with the brake percentage applied
     Timeseries_t operator()(const Timeseries_t brake_percentage) { return brake_percentage*_Tmax; }
 
@@ -44,10 +50,7 @@ class Brake
     std::string _path;
     scalar _Tmax;
 
-    std::vector<Database_parameter> get_parameters() { return 
-    { 
-        { "max_torque", _Tmax } 
-    };}
+    DECLARE_PARAMS({ "max_torque", _Tmax }); 
 };
 
 #endif 

@@ -278,7 +278,7 @@ class Axle_car_6dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
                                  //! Basically, interior tire lowers and the exterior rises
 
     template<typename T = Axle_mode<0,0>>
-    std::enable_if_t<std::is_same<T,POWERED_WITHOUT_DIFFERENTIAL<0,0>>::value,std::vector<Database_parameter>> 
+    std::enable_if_t<std::is_same<T,POWERED_WITHOUT_DIFFERENTIAL<0,0>>::value,std::vector<Database_parameter_mutable>> 
     get_parameters() { return 
     { 
         { "track", _track },
@@ -289,7 +289,7 @@ class Axle_car_6dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
     };}
 
     template<typename T = Axle_mode<0,0>>
-    std::enable_if_t<std::is_same<T,STEERING_FREE_ROLL<0,0>>::value,std::vector<Database_parameter>> 
+    std::enable_if_t<std::is_same<T,STEERING_FREE_ROLL<0,0>>::value,std::vector<Database_parameter_mutable>> 
     get_parameters() { return 
     { 
         { "track", _track },

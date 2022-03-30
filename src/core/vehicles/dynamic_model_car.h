@@ -114,6 +114,17 @@ class Dynamic_model_car
     constexpr const RoadModel_t& get_road() const { return _road; }
     constexpr       RoadModel_t& get_road()       { return _road; }
 
+    //! Write as xml
+    std::unique_ptr<Xml_document> xml() const
+    {
+        std::unique_ptr<Xml_document> doc_ptr(std::make_unique<Xml_document>());
+        doc_ptr->create_root_element("vehicle");
+
+        _chassis.fill_xml(*doc_ptr);
+
+        return doc_ptr;
+    }
+
  private:
     Chassis_t _chassis;    //! The chassis
     RoadModel_t _road;     //! The road

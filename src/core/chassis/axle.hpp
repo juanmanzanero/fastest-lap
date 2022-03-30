@@ -122,5 +122,13 @@ bool Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>::set_parameter(const std::st
     return found;
 }
 
+template<typename Timeseries_t, typename Tires_tuple, size_t STATE0, size_t CONTROL0>
+inline void Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>::fill_xml(Xml_document& doc) const
+{
+    // Call the method for the first tire
+    std::get<0>(_tires).fill_xml(doc);
+}
+
+
 
 #endif

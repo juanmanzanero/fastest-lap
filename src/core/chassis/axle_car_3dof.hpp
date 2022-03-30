@@ -156,6 +156,28 @@ inline bool Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0
     return found;
 }
 
+
+template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t> typename Axle_mode, size_t STATE0, size_t CONTROL0>
+inline void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::fill_xml(Xml_document& doc) const
+{
+    // Write the parameters of the base class
+    base_type::fill_xml(doc);
+
+    // Write the parameters of the brake
+    _brakes.fill_xml(doc);
+
+    // Write the parameters of the engine
+    if constexpr ( std::is_same<Axle_mode<0,0>, POWERED<0,0>>::value )
+    {
+        _engine.fill_xml(doc);
+    }
+
+    // Write the parameters of this class
+    ::write_parameters(doc, base_type::_path, get_parameters());
+}
+
+
+
 template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t> typename Axle_mode, size_t STATE0, size_t CONTROL0>
 void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::update
     (Timeseries_t Fz_left, Timeseries_t Fz_right, Timeseries_t throttle, Timeseries_t brake_bias)

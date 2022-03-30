@@ -33,6 +33,11 @@ class Engine
             throw std::runtime_error("Parameter \"" + parameter + "\" was not found");
     }
 
+    void fill_xml(Xml_document& doc) const 
+    {
+        ::write_parameters(doc, _path, get_parameters());
+    }
+
     constexpr const sPolynomial& get_polynomial() const { return _p; }
 
     Timeseries_t operator()(const Timeseries_t throttle_percentage, const Timeseries_t rpm);
@@ -53,10 +58,7 @@ class Engine
 
     scalar _maximum_power;      
 
-    std::vector<Database_parameter> get_parameters() { return 
-    { 
-        { "maximum-power", _maximum_power } 
-    };}
+    DECLARE_PARAMS({ "maximum-power", _maximum_power }); 
 };
 
 #include "engine.hpp"

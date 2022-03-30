@@ -59,8 +59,7 @@ struct Pacejka_standard_model
     template<typename Timeseries_t>
     Timeseries_t force_combined_lateral_magic(Timeseries_t kappa, Timeseries_t lambda, Timeseries_t Fz) const;
 
-    std::vector<Database_parameter> get_parameters() { return 
-    { 
+    DECLARE_PARAMS(
         { "nominal-vertical-load", _Fz0 },
         { "lambdaFz0", _lambdaFz0 },
         { "longitudinal/pure/pCx1", _pCx1 },
@@ -79,7 +78,7 @@ struct Pacejka_standard_model
         { "longitudinal/combined/rCx1", _rCx1 },
         { "lateral/combined/rBy1", _rBy1 },
         { "lateral/combined/rCy1", _rCy1 } 
-    };}
+    ); 
 
     std::ostream& print(std::ostream& os) const;
 
@@ -160,8 +159,7 @@ struct Pacejka_simple_model
     scalar _mu_min = 1.0;         //! [c] Minimum value for any friction coefficient
 
     //! Database parameters to be read from an XML element
-    std::vector<Database_parameter> get_parameters() { return 
-    { 
+    DECLARE_PARAMS(
         { "reference-load-1", _Fz1 },
         { "reference-load-2", _Fz2 },
         { "mu-x-max-1", _mu_x_max1 },
@@ -174,7 +172,7 @@ struct Pacejka_simple_model
         { "lambda-max-2", _lambda_max2_deg },
         { "Qx", _Qx },
         { "Qy", _Qy } 
-    };}
+    ); 
 
 
 };
@@ -211,6 +209,8 @@ class Tire_pacejka : public Tire<Timeseries_t, STATE0,CONTROL0>
 
     template<typename T>
     void set_parameter(const std::string& parameter, const T value);
+
+    void fill_xml(Xml_document& doc) const;
 
     //! Calls Tire::update(x0,v0,omega) of the base class, and calls update_self()
     //! This updates the tire dynamics and tire forces
@@ -278,14 +278,11 @@ class Tire_pacejka : public Tire<Timeseries_t, STATE0,CONTROL0>
     Timeseries_t _Smagic;     //! [out] Longitudinal force given by the magic formula
     Timeseries_t _Fmagic;     //! [out] Lateral force given by the magic formula
 
-    std::vector<Database_parameter> get_parameters() { return 
-    { 
+    DECLARE_PARAMS(
         { "radial-stiffness", _kt },
         { "radial-damping", _ct },
         { "Fz-max-ref2", _Fz_max_ref2 }
-    };}
-
-
+    ); 
 
 };
 

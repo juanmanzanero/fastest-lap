@@ -201,7 +201,7 @@ class Chassis_car_6dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
     Timeseries_t _d2phi;  //! [out] Roll acceleration [rad/s2]
 
 
-    std::vector<Database_parameter> get_parameters() { return 
+    std::vector<Database_parameter_mutable> get_parameters() { return 
     { 
         { "com", _x_com },
         { "front_axle", _x_front_axle },

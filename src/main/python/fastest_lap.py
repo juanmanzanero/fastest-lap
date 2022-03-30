@@ -17,8 +17,6 @@ class c_Vehicle(c.Structure):
 class c_Track(c.Structure):
     _fields_ = [("name", c.c_char_p),
                 ("track_file", c.c_char_p),
-                ("format", c.c_int),
-                ("scale", c.c_double),
                 ("is_closed", c.c_bool)
                ]
 
@@ -32,14 +30,28 @@ def load_vehicle(name,vehicle_type,database_file):
 
 	return vehicle;
 
-def load_track(track_file,name,scale):
+def load_track(track_file,name):
+	options="<options> <save_variables> <prefix>track/</prefix> <variables> <s/> </variables> </save_variables> </options>";
 	c_name = c.c_char_p((name).encode('utf-8'));
 	c_track_file = c.c_char_p((track_file).encode('utf-8'));
+	c_options = c.c_char_p((options).encode('utf-8'));
 
 	track = c_Track();
-	c_lib.create_track(c.byref(track),c_name,c_track_file,c.c_double(scale));
+	c_lib.create_track(c.byref(track),c_name,c_track_file,c_options);
 
-	return track;
+	# Get the results
+	c_variable = c.c_char_p(("track/s").encode('utf-8'));
+	n_points = c_lib.get_vector_table_variable_size(c_variable);
+	c_s = (c.c_double*n_points)();
+	c_lib.get_vector_table_variable(c_s, c.c_int(n_points), c_variable);
+	s = [None]*n_points;
+	for i in range(n_points):
+		s[i] = c_s[i];
+
+	# Clean up
+	c_lib.clear_tables_by_prefix(c.c_char_p(("track/").encode('utf-8')));
+
+	return track,s;
 
 def set_scalar_parameter(vehicle,parameter_name,parameter_value):
 	parameter_name = c.c_char_p((parameter_name).encode('utf-8'));
@@ -79,27 +91,43 @@ def gg_diagram(vehicle,speed,n_points):
 
 	return ay,ay_minus,ax_max,ax_min;
 
-def optimal_laptime(vehicle, track, n_points, channels, options):
+def optimal_laptime(vehicle, track, s, channels):
 
 	# Get channels ready to be written by C++
 	n_channels = len(channels);
 	c_channels_name = ((c.c_char_p)*n_channels)();
 	c_channels_data = (c.POINTER(c.c_double)*n_channels)()
+	c_s = (c.c_double*len(s))();
+
+	for i in range(len(s)):
+		c_s[i] = s[i];
+
+	options = "<options> <save_variables> <prefix>run/</prefix> <variables>";
+
+	for channel in channels:
+		options += "<" + channel + "/> ";
+
+	options += "</variables> </save_variables> </options>";
+	
 	c_options = c.c_char_p((options).encode('utf-8'));
 
-	for channel in range(0,n_channels):
-		c_channels_name[channel] = c.c_char_p(channels[channel].encode('utf-8'));
-		c_channels_data[channel] = ((c.c_double)*n_points)()
+	c_lib.optimal_laptime(c.byref(vehicle), c.byref(track), c.c_int(len(s)), c_s, c_options);
 
-	c_lib.optimal_laptime(c.byref(c_channels_data), c.byref(vehicle), c.byref(track), c.c_int(n_points), c.c_int(n_channels), c.byref(c_channels_name), c_options);
+	# Get the results
+	result = dict();
+	for channel in channels:
+		c_data = (c.c_double*len(s))();
+		c_variable = c.c_char_p(("run/" + channel).encode('utf-8'));
+		c_lib.get_vector_table_variable(c_data, c.c_int(len(s)), c_variable);
+		data = [None]*len(s);
+		for i in range(len(s)):
+			data[i] = c_data[i];
+		result[channel] = data;	
 
-	channels_data = [[None]*n_points for i in range(n_channels)];
+	# Clean up
+	c_lib.clear_tables_by_prefix(c.c_char_p(("run/").encode('utf-8')));
 
-	for i in range(n_points):
-		for j in range(n_channels):
-			channels_data[j][i] = c_channels_data[j][i];
-
-	return channels_data;
+	return result;
 
 def track_coordinates(track,n_points):
 	c_x_center = (c.c_double*n_points)();

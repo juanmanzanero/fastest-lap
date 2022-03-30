@@ -85,6 +85,9 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
     template<typename T>
     void set_parameter(const std::string& parameter, const T value);
 
+    //! Fill the corresponding nodes of an xml document
+    void fill_xml(Xml_document& doc) const;
+
     //! Update the chassis: update the axles to get forces and compute accelerations
     //! @param[in] x: x-coordinate of the road frame [m]
     //! @param[in] y: y-coordinate of the road frame [m]
@@ -170,6 +173,7 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
 
     static std::string type() { return "chassis_car_3dof"; }
 
+
  private:
 
     // Geometrical properties
@@ -207,9 +211,8 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
     Timeseries_t _Mx_eq;            //! [out] roll equilibrium equation
     Timeseries_t _My_eq;            //! [out] pitch equilibrium equation
     Timeseries_t _roll_balance_eq;  //! [out] roll balance equation
-    
-    std::vector<Database_parameter> get_parameters() { return 
-    { 
+
+    DECLARE_PARAMS(
         { "com/x", _x_com.x() },
         { "com/y", _x_com.y() },
         { "com/z", _x_com.z() },
@@ -225,7 +228,7 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
         { "brake_bias", _brake_bias_0 },
         { "roll_balance_coefficient", _roll_balance_coeff},
         { "Fz_max_ref2", _Fz_max_ref2 }
-    };}
+    );  
 };
 
 #include "chassis_car_3dof.hpp"

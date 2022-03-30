@@ -44,6 +44,11 @@ class Tire
     template<typename T>
     void set_parameter(const std::string& parameter, const T value);
 
+    void fill_xml(Xml_document& doc) const  
+    {
+        ::write_parameters(doc, _path, get_parameters());
+    }
+
     //! Return the tire carcass radial stiffness [N/m]
     //! To be implemented by children classes
     constexpr scalar get_radial_stiffness() const;
@@ -141,10 +146,9 @@ class Tire
 
     scalar _um = 0.2;   //! [c] Marginal velocity, the denominator of kappa and lambda for low velocities
 
-    std::vector<Database_parameter> get_parameters() { return 
-    { 
+    DECLARE_PARAMS(
         { "radius", _R0 }
-    };}
+    ); 
 
  protected:
 
