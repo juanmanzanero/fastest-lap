@@ -3,6 +3,7 @@
 #include "src/core/applications/optimal_laptime.h"
 #include "lion/thirdparty/include/cppad/cppad.hpp"
 #include "src/core/applications/steady_state.h"
+#include "lion/propagators/crank_nicolson.h"
 
 // Define convenient aliases
 using Front_left_tire_type  = limebeer2014f1<scalar>::Front_left_tire_type;
@@ -397,4 +398,62 @@ TEST_F(limebeer2014f1_test, set_parameter)
         for (size_t j = 0; j < dqa.size(); ++j)
             EXPECT_NEAR(dqa[j], dqa_c[j], 2.0e-15);
     }
+}
+
+TEST_F(limebeer2014f1_test,propagation_crank_nicolson)
+{
+    Xml_document catalunya_xml("./database/catalunya_discrete.xml",true);
+    Track_by_polynomial catalunya(catalunya_xml);
+
+    limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial>::Road_t road(catalunya);
+    limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial> car(database, road);
+
+    limebeer2014f1<scalar>::curvilinear<Track_by_polynomial>::Road_t road_sc(catalunya);
+    limebeer2014f1<scalar>::curvilinear<Track_by_polynomial> car_sc(database, road_sc);
+
+
+    // Get the results from a saved simulation
+    Xml_document opt_saved("data/f1_optimal_laptime_catalunya_discrete.xml", true);
+
+    auto arclength_saved = opt_saved.get_element("optimal_laptime/arclength").get_value(std::vector<scalar>());
+    auto kappa_fl_saved = opt_saved.get_element("optimal_laptime/steering-kappa-left").get_value(std::vector<scalar>());
+    auto kappa_fr_saved = opt_saved.get_element("optimal_laptime/steering-kappa-right").get_value(std::vector<scalar>());
+    auto kappa_rl_saved = opt_saved.get_element("optimal_laptime/powered-kappa-left").get_value(std::vector<scalar>());
+    auto kappa_rr_saved = opt_saved.get_element("optimal_laptime/powered-kappa-right").get_value(std::vector<scalar>());
+    auto u_saved        = opt_saved.get_element("optimal_laptime/u").get_value(std::vector<scalar>());
+    auto v_saved        = opt_saved.get_element("optimal_laptime/v").get_value(std::vector<scalar>());
+    auto omega_saved    = opt_saved.get_element("optimal_laptime/omega").get_value(std::vector<scalar>());
+    auto time_saved     = opt_saved.get_element("optimal_laptime/time").get_value(std::vector<scalar>());
+    auto n_saved        = opt_saved.get_element("optimal_laptime/n").get_value(std::vector<scalar>());
+    auto alpha_saved    = opt_saved.get_element("optimal_laptime/alpha").get_value(std::vector<scalar>());
+    auto delta_saved    = opt_saved.get_element("optimal_laptime/delta").get_value(std::vector<scalar>());
+    auto throttle_saved = opt_saved.get_element("optimal_laptime/throttle").get_value(std::vector<scalar>());
+    auto Fz_fl_saved    = opt_saved.get_element("optimal_laptime/Fz_fl").get_value(std::vector<scalar>());
+    auto Fz_fr_saved    = opt_saved.get_element("optimal_laptime/Fz_fr").get_value(std::vector<scalar>());
+    auto Fz_rl_saved    = opt_saved.get_element("optimal_laptime/Fz_rl").get_value(std::vector<scalar>());
+    auto Fz_rr_saved    = opt_saved.get_element("optimal_laptime/Fz_rr").get_value(std::vector<scalar>());
+
+    // Take a Crank-Nicolson step on i = 112
+    const size_t i_start = 112;
+    std::array<scalar,limebeer2014f1<scalar>::curvilinear_p::NSTATE> q = {kappa_fl_saved[i_start], kappa_fr_saved[i_start], kappa_rl_saved[i_start], kappa_rr_saved[i_start],
+                                                                          u_saved[i_start], v_saved[i_start], omega_saved[i_start], time_saved[i_start], n_saved[i_start], alpha_saved[i_start]};
+    std::array<scalar,limebeer2014f1<scalar>::curvilinear_p::NALGEBRAIC> qa = {Fz_fl_saved[i_start], Fz_fr_saved[i_start], Fz_rl_saved[i_start], Fz_rr_saved[i_start]};
+    std::array<scalar,limebeer2014f1<scalar>::curvilinear_p::NCONTROL> u = {delta_saved[i_start], throttle_saved[i_start]};
+
+    std::array<scalar,limebeer2014f1<scalar>::curvilinear_p::NSTATE> q_next = {kappa_fl_saved[i_start+1], kappa_fr_saved[i_start+1], kappa_rl_saved[i_start+1], kappa_rr_saved[i_start+1],
+                                                                          u_saved[i_start+1], v_saved[i_start+1], omega_saved[i_start+1], time_saved[i_start+1], n_saved[i_start+1], alpha_saved[i_start+1]};
+    std::array<scalar,limebeer2014f1<scalar>::curvilinear_p::NALGEBRAIC> qa_next = {Fz_fl_saved[i_start+1], Fz_fr_saved[i_start+1], Fz_rl_saved[i_start+1], Fz_rr_saved[i_start+1]};
+    std::array<scalar,limebeer2014f1<scalar>::curvilinear_p::NCONTROL> u_next = {delta_saved[i_start+1], throttle_saved[i_start+1]};
+
+    scalar s = arclength_saved[i_start];
+    scalar s_next = arclength_saved[i_start+1];
+
+    Crank_nicolson<limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p,10,4,2>::take_step(car, u, u_next, q, qa, s, s_next-s);
+
+
+    for (size_t i = 0; i < 10; ++i)
+        EXPECT_NEAR(q[i],q_next[i],1.0e-10) << ", with i = " << i;
+
+    for (size_t i = 0; i < 4; ++i)
+        EXPECT_NEAR(qa[i],qa_next[i],1.0e-10) << ", with i = " << i;
 }
