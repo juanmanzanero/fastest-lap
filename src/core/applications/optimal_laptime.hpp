@@ -250,7 +250,7 @@ template<typename Dynamic_model_t>
 template<bool isClosed>
 inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model_t& car, const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations) 
 {
-    FG_direct<isClosed> fg(n_elements,n_points,car,s,q.front(),qa.front(),u.front(),dissipations);
+    FG_direct<isClosed> fg(n_elements,n_points,car,s,q.front(),qa.front(),u.front(),dissipations, options.sigma);
     typename std::vector<scalar> x0(fg.get_n_variables(),0.0);
 
     // Set minimum and maximum variables
@@ -508,7 +508,8 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
     for (size_t i = 1; i < fg.get_states().size(); ++i)
     {
         const auto dtimeds = fg.get_car()(fg.get_state(i),fg.get_algebraic_state(i),fg.get_control(i),s[i]).first[Dynamic_model_t::Road_type::ITIME];
-        q[i][Dynamic_model_t::Road_type::ITIME] = q[i-1][Dynamic_model_t::Road_type::ITIME] + Value(0.5*(s[i]-s[i-1])*(dtimeds + dtimeds_prev));
+        q[i][Dynamic_model_t::Road_type::ITIME] = q[i-1][Dynamic_model_t::Road_type::ITIME] 
+            + Value((s[i]-s[i-1])*(options.sigma*dtimeds + (1.0-options.sigma)*dtimeds_prev));
         dtimeds_prev = dtimeds;
 
         x_coord[i] = Value(fg.get_car().get_road().get_x());
@@ -519,7 +520,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
     laptime = q.back()[Dynamic_model_t::Road_type::ITIME];
 
     if (isClosed)
-        laptime += Value(0.5*(L-s.back())*(dtimeds_prev*dtimeds_first));
+        laptime += Value((L-s.back())*((1.0-options.sigma)*dtimeds_prev + options.sigma*dtimeds_first));
 
     // Save optimization data
     optimization_data.zl     = result.zl;
@@ -531,7 +532,7 @@ template<typename Dynamic_model_t>
 template<bool isClosed>
 inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_model_t& car, const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations) 
 {
-    FG_derivative<isClosed> fg(n_elements,n_points,car,s,q.front(),qa.front(),u.front(),dissipations);
+    FG_derivative<isClosed> fg(n_elements,n_points,car,s,q.front(),qa.front(),u.front(),dissipations, options.sigma);
     typename std::vector<scalar> x0(fg.get_n_variables(),0.0);
 
     // Set minimum and maximum variables
@@ -767,7 +768,8 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
     for (size_t i = 1; i < fg.get_states().size(); ++i)
     {
         const auto dtimeds = fg.get_car()(fg.get_state(i),fg.get_algebraic_state(i),fg.get_control(i),s[i]).first[Dynamic_model_t::Road_type::ITIME];
-        q[i][Dynamic_model_t::Road_type::ITIME] = q[i-1][Dynamic_model_t::Road_type::ITIME] + Value(0.5*(s[i]-s[i-1])*(dtimeds + dtimeds_prev));
+        q[i][Dynamic_model_t::Road_type::ITIME] = q[i-1][Dynamic_model_t::Road_type::ITIME] 
+            + Value((s[i]-s[i-1])*(options.sigma*dtimeds + (1.0-options.sigma)*dtimeds_prev));
         dtimeds_prev = dtimeds;
 
         x_coord[i] = Value(fg.get_car().get_road().get_x());
@@ -778,7 +780,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
     laptime = q.back()[Dynamic_model_t::Road_type::ITIME];
 
     if (isClosed)
-        laptime += Value(0.5*(L-s.back())*(dtimeds_prev+dtimeds_first));
+        laptime += Value((L-s.back())*((1.0-options.sigma)*dtimeds_prev+options.sigma*dtimeds_first));
 
     // Save optimization data
     optimization_data.zl     = result.zl;
@@ -938,6 +940,7 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_direct<isClosed>::operator()(FG
     auto& _dqdt          = FG::_dqdt;
     auto& _dqa           = FG::_dqa ;
     auto& _dissipations  = FG::_dissipations;
+    auto& _sigma         = FG::_sigma;
 
 
     assert(x.size() == FG::_n_variables);
@@ -997,16 +1000,16 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_direct<isClosed>::operator()(FG
         std::tie(_dqdt[i],_dqa[i]) = _car(_q[i],_qa[i],_u[i],_s[i]);
 
         // Fitness function: integral of time
-        fg[0] += 0.5*(_s[i]-_s[i-1])*(_dqdt[i-1][Dynamic_model_t::Road_type::ITIME] + _dqdt[i][Dynamic_model_t::Road_type::ITIME]);
+        fg[0] += (_s[i]-_s[i-1])*((1.0-_sigma)*_dqdt[i-1][Dynamic_model_t::Road_type::ITIME] + _sigma*_dqdt[i][Dynamic_model_t::Road_type::ITIME]);
 
         // Equality constraints: --------------- 
         // q^{i} = q^{i-1} + 0.5.ds.[dqdt^{i} + dqdt^{i-1}] (before time)
         for (size_t j = 0; j < Dynamic_model_t::Road_type::ITIME; ++j)
-            fg[k++] = _q[i][j] - _q[i-1][j] - 0.5*(_s[i]-_s[i-1])*(_dqdt[i-1][j] + _dqdt[i][j]);
+            fg[k++] = _q[i][j] - _q[i-1][j] - (_s[i]-_s[i-1])*((1.0-_sigma)*_dqdt[i-1][j] + _sigma*_dqdt[i][j]);
 
         // q^{i} = q^{i-1} + 0.5.ds.[dqdt^{i} + dqdt^{i-1}] (after time)
         for (size_t j = Dynamic_model_t::Road_type::ITIME+1; j < Dynamic_model_t::NSTATE; ++j)
-            fg[k++] = _q[i][j] - _q[i-1][j] - 0.5*(_s[i]-_s[i-1])*(_dqdt[i-1][j] + _dqdt[i][j]);
+            fg[k++] = _q[i][j] - _q[i-1][j] - (_s[i]-_s[i-1])*((1.0-_sigma)*_dqdt[i-1][j] + _sigma*_dqdt[i][j]);
 
         // algebraic constraints: dqa^{i} = 0.0
         for (size_t j = 0; j < Dynamic_model_t::NALGEBRAIC; ++j)
@@ -1034,17 +1037,17 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_direct<isClosed>::operator()(FG
     if constexpr (isClosed)
     {
         // Fitness function: integral of time
-        fg[0] += 0.5*(L-_s.back())*(_dqdt.front()[Dynamic_model_t::Road_type::ITIME] + _dqdt.back()[Dynamic_model_t::Road_type::ITIME]);
+        fg[0] += (L-_s.back())*(_sigma*_dqdt.front()[Dynamic_model_t::Road_type::ITIME] + (1.0-_sigma)*_dqdt.back()[Dynamic_model_t::Road_type::ITIME]);
 
         // Equality constraints: 
 
         // q^{0} = q^{n-1} + 0.5.ds.[dqdt^{0} + dqdt^{n-1}] (before time)
         for (size_t j = 0; j < Dynamic_model_t::Road_type::ITIME; ++j)
-            fg[k++] = _q.front()[j] - _q.back()[j] - 0.5*(L-_s.back())*(_dqdt.back()[j] + _dqdt.front()[j]);
+            fg[k++] = _q.front()[j] - _q.back()[j] - (L-_s.back())*((1.0-_sigma)*_dqdt.back()[j] + _sigma*_dqdt.front()[j]);
 
         // q^{0} = q^{n-1} + 0.5.ds.[dqdt^{0} + dqdt^{n-1}] (after time)
         for (size_t j = Dynamic_model_t::Road_type::ITIME+1; j < Dynamic_model_t::NSTATE; ++j)
-            fg[k++] = _q.front()[j] - _q.back()[j] - 0.5*(L-_s.back())*(_dqdt.back()[j] + _dqdt.front()[j]);
+            fg[k++] = _q.front()[j] - _q.back()[j] - (L-_s.back())*((1.0-_sigma)*_dqdt.back()[j] + _sigma*_dqdt.front()[j]);
 
         // algebraic constraints: dqa^{0} = 0.0
         for (size_t j = 0; j < Dynamic_model_t::NALGEBRAIC; ++j)

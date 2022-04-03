@@ -218,34 +218,34 @@ struct lot2016kart_all
 {
     lot2016kart_all(Xml_document& database_xml)
     : cartesian_scalar(database_xml), 
-      curvilinear_scalar_poly(database_xml),
+      curvilinear_scalar(database_xml),
       cartesian_ad(database_xml),
-      curvilinear_ad_poly(database_xml)  
+      curvilinear_ad(database_xml)  
     {}
 
     using vehicle_scalar_curvilinear = lot2016kart<scalar>::curvilinear_p;
     using vehicle_ad_curvilinear = lot2016kart<CppAD::AD<scalar>>::curvilinear_p;
 
     // Get curvilinear AD car for the polynomial track
-    lot2016kart<CppAD::AD<scalar>>::curvilinear_p& get_curvilinear_ad_car() { return curvilinear_ad_poly; }
+    lot2016kart<CppAD::AD<scalar>>::curvilinear_p& get_curvilinear_ad_car() { return curvilinear_ad; }
 
     // Get curvilinear scalar car for the polynomial track
-    lot2016kart<scalar>::curvilinear_p& get_curvilinear_scalar_car() { return curvilinear_scalar_poly; }
+    lot2016kart<scalar>::curvilinear_p& get_curvilinear_scalar_car() { return curvilinear_scalar; }
 
     void add_variable_parameter(const std::string& parameter_name, const sPolynomial& parameter_value)
     {
         cartesian_scalar.add_variable_parameter(parameter_name, parameter_value);
-        curvilinear_scalar_poly.add_variable_parameter(parameter_name, parameter_value);
+        curvilinear_scalar.add_variable_parameter(parameter_name, parameter_value);
 
         cartesian_ad.add_variable_parameter(parameter_name, parameter_value);
-        curvilinear_ad_poly.add_variable_parameter(parameter_name, parameter_value);
+        curvilinear_ad.add_variable_parameter(parameter_name, parameter_value);
     }
 
 
     lot2016kart<scalar>::cartesian                 cartesian_scalar;
-    lot2016kart<scalar>::curvilinear_p             curvilinear_scalar_poly;
+    lot2016kart<scalar>::curvilinear_p             curvilinear_scalar;
     lot2016kart<CppAD::AD<scalar>>::cartesian      cartesian_ad;
-    lot2016kart<CppAD::AD<scalar>>::curvilinear_p  curvilinear_ad_poly;
+    lot2016kart<CppAD::AD<scalar>>::curvilinear_p  curvilinear_ad;
 };
 
 #endif

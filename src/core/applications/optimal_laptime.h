@@ -26,6 +26,7 @@ class Optimal_laptime
     struct Options
     {
         size_t print_level = 0;
+        scalar sigma = 0.5;         // 0: explicit euler, 0.5: crank-nicolson, 1.0: implicit euler
         size_t maximum_iterations = 3000;
         bool   throw_if_fail = true;
     };
@@ -149,9 +150,10 @@ class Optimal_laptime
            const std::array<scalar,Dynamic_model_t::NSTATE>& q0, 
            const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& qa0, 
            const std::array<scalar,Dynamic_model_t::NCONTROL>& u0,
-           const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations
+           const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations,
+           const scalar sigma 
           ) : _n_elements(n_elements), _n_points(n_points), _car(car), _s(s), _q0(q0), 
-              _qa0(qa0), _u0(u0), _dissipations(dissipations), _n_variables(n_variables),
+              _qa0(qa0), _u0(u0), _dissipations(dissipations), _sigma(sigma), _n_variables(n_variables),
               _n_constraints(n_constraints), _q(n_points,{0.0}), _qa(n_points), _u(n_points,{0.0}), _dqdt(n_points,{0.0}), _dqa(n_points) {}
 
      public:
@@ -183,6 +185,7 @@ class Optimal_laptime
         std::array<scalar,Dynamic_model_t::NALGEBRAIC> _qa0;   //! [c] Algebraic state vector for the initial node
         std::array<scalar,Dynamic_model_t::NCONTROL> _u0;      //! [c] Control vector for the initial node
         std::array<scalar,Dynamic_model_t::NCONTROL> _dissipations;
+        scalar _sigma;
 
         size_t _n_variables;                                                    //! [c] Number of total variables (NSTATE+NCONTROL-1).(n-1)
         size_t _n_constraints;                                                  //! [c] Number of total constraints (NSTATE-1).(n-1)
@@ -208,12 +211,13 @@ class Optimal_laptime
                   const std::array<scalar,Dynamic_model_t::NSTATE>& q0, 
                   const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& qa0, 
                   const std::array<scalar,Dynamic_model_t::NCONTROL>& u0,
-                  const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations
+                  const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations,
+                  const scalar sigma
           ) : FG(n_elements, 
                  n_points,
                  n_elements*n_variables_per_point<true>,
                  n_elements*n_constraints_per_element<true>, 
-                 car, s, q0, qa0, u0, dissipations) {}
+                 car, s, q0, qa0, u0, dissipations, sigma) {}
 
         void operator()(ADvector& fg, const ADvector& x);
     };
@@ -233,12 +237,13 @@ class Optimal_laptime
                       const std::array<scalar,Dynamic_model_t::NSTATE>& q0, 
                       const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& qa0, 
                       const std::array<scalar,Dynamic_model_t::NCONTROL>& u0,
-                      const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations
+                      const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations,
+                      const scalar sigma
           ) : FG(n_elements, 
                  n_points,
                  n_elements*n_variables_per_point<false>,
                  n_elements*n_constraints_per_element<false>,
-                 car, s, q0, qa0, u0, dissipations), _dudt(n_points,{0.0}) {}
+                 car, s, q0, qa0, u0, dissipations, sigma), _dudt(n_points,{0.0}) {}
 
         void operator()(ADvector& fg, const ADvector& x);
      private:

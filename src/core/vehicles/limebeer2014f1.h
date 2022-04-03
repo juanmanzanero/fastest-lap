@@ -238,50 +238,50 @@ struct limebeer2014f1_all
 {
     limebeer2014f1_all(Xml_document& database_xml)
     : cartesian_scalar(database_xml), 
-      curvilinear_scalar_poly(database_xml),
+      curvilinear_scalar(database_xml),
       cartesian_ad(database_xml),
-      curvilinear_ad_poly(database_xml)  
+      curvilinear_ad(database_xml)  
     {}
 
     limebeer2014f1_all()
     : cartesian_scalar(), 
-      curvilinear_scalar_poly(),
+      curvilinear_scalar(),
       cartesian_ad(),
-      curvilinear_ad_poly()  
+      curvilinear_ad()  
     {}
 
     using vehicle_scalar_curvilinear = limebeer2014f1<scalar>::curvilinear_p;
     using vehicle_ad_curvilinear = limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p;
 
     // Get curvilinear AD car for the polynomial track
-    limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p& get_curvilinear_ad_car() { return curvilinear_ad_poly; }
+    limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p& get_curvilinear_ad_car() { return curvilinear_ad; }
 
     // Get curvilinear scalar car for the polynomial track
-    limebeer2014f1<scalar>::curvilinear_p& get_curvilinear_scalar_car() { return curvilinear_scalar_poly; }
+    limebeer2014f1<scalar>::curvilinear_p& get_curvilinear_scalar_car() { return curvilinear_scalar; }
 
     template<typename T>
     void set_parameter(const std::string& parameter, const T value)
     {
         cartesian_scalar.set_parameter(parameter, value);
-        curvilinear_scalar_poly.set_parameter(parameter, value);
+        curvilinear_scalar.set_parameter(parameter, value);
 
         cartesian_ad.set_parameter(parameter, value);
-        curvilinear_ad_poly.set_parameter(parameter, value);
+        curvilinear_ad.set_parameter(parameter, value);
     }
 
     void add_variable_parameter(const std::string& parameter_name, const sPolynomial& parameter_value)
     {
         cartesian_scalar.add_variable_parameter(parameter_name, parameter_value);
-        curvilinear_scalar_poly.add_variable_parameter(parameter_name, parameter_value);
+        curvilinear_scalar.add_variable_parameter(parameter_name, parameter_value);
 
         cartesian_ad.add_variable_parameter(parameter_name, parameter_value);
-        curvilinear_ad_poly.add_variable_parameter(parameter_name, parameter_value);
+        curvilinear_ad.add_variable_parameter(parameter_name, parameter_value);
     }
 
     limebeer2014f1<scalar>::cartesian                 cartesian_scalar;
-    limebeer2014f1<scalar>::curvilinear_p             curvilinear_scalar_poly;
+    limebeer2014f1<scalar>::curvilinear_p             curvilinear_scalar;
     limebeer2014f1<CppAD::AD<scalar>>::cartesian      cartesian_ad;
-    limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p  curvilinear_ad_poly;
+    limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p  curvilinear_ad;
 };
 
 #endif

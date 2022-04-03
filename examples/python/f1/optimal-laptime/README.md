@@ -155,7 +155,7 @@ mer_color = fastf1.plotting.team_color('MER')
     api            INFO 	Using cached data for car_data
     api            INFO 	Using cached data for position_data
     api            INFO 	Using cached data for weather_data
-    core           INFO 	Loaded data for 20 drivers: ['77', '11', '33', '4', '26', '44', '5', '6', '99', '8', '10', '3', '18', '7', '20', '63', '16', '31', '55', '23']
+    core           INFO 	Loaded data for 20 drivers: ['23', '20', '6', '3', '99', '55', '63', '44', '7', '8', '31', '10', '16', '77', '5', '26', '33', '18', '11', '4']
 
 
 

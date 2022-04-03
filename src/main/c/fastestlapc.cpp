@@ -1,11 +1,13 @@
 #include "fastestlapc.h"
-#include<iostream>
-#include<unordered_map>
+#include <iostream>
+#include <unordered_map>
+#include <algorithm>
 
 #include "src/core/vehicles/lot2016kart.h"
 #include "src/core/vehicles/limebeer2014f1.h"
 #include "src/core/applications/steady_state.h"
 #include "src/core/applications/optimal_laptime.h"
+#include "lion/propagators/crank_nicolson.h"
 
 // Persistent vehicles
 std::unordered_map<std::string,lot2016kart_all> vehicles_lot2016kart;
@@ -212,8 +214,180 @@ void create_track(struct c_Track* track, const char* name, const char* track_fil
     }
 }
 
+template<typename Vehicle_t>
+double get_vehicle_property_generic(Vehicle_t& vehicle, const double* c_q, const double* c_qa, const double* c_u, const double s, const char* c_property_name)
+{
+    // (1) Construct Cpp version of the C inputs
+    std::array<scalar,Vehicle_t::NSTATE> q;
+    std::array<scalar,Vehicle_t::NALGEBRAIC> qa;
+    std::array<scalar,Vehicle_t::NCONTROL> u;
 
-int get_vector_table_variable_size(const char* name_c)
+    std::copy_n(c_q, Vehicle_t::NSTATE, q.begin());
+    std::copy_n(c_qa, Vehicle_t::NALGEBRAIC, qa.begin());
+    std::copy_n(c_u, Vehicle_t::NCONTROL, u.begin());
+
+    std::string property_name(c_property_name);
+
+    vehicle(q, qa, u, s);
+
+    if ( property_name == "x" ) 
+        return vehicle.get_road().get_x();
+
+    else if ( property_name == "y" )
+        return vehicle.get_road().get_y();
+
+    else if ( property_name == "s" )
+        return s;
+
+    else if ( property_name == "n" )
+        return q[Vehicle_t::Road_type::IN];
+
+    else if ( property_name == "alpha" )
+        return q[Vehicle_t::Road_type::IALPHA];
+
+    else if ( property_name == "u" )
+        return q[Vehicle_t::Chassis_type::IU];
+
+    else if ( property_name == "v" )
+        return q[Vehicle_t::Chassis_type::IV];
+
+    else if ( property_name == "time" )
+        return q[Vehicle_t::Road_type::ITIME];
+
+    else if ( property_name == "delta" )
+        return u[Vehicle_t::Chassis_type::Front_axle_type::ISTEERING];
+
+    else if ( property_name == "psi" )
+        return vehicle.get_road().get_psi();
+
+    else if ( property_name == "omega" )
+        return q[Vehicle_t::Chassis_type::IOMEGA];
+
+    else if ( property_name == "throttle" )
+    {
+        if constexpr (std::is_same<Vehicle_t, lot2016kart_all>::value)
+        {
+            return u[Vehicle_t::Chassis_type::Rear_axle_type::ITORQUE];
+        }
+
+        else if constexpr (std::is_same<Vehicle_t, limebeer2014f1_all>::value)
+        {
+            return u[Vehicle_t::Chassis_type::ITHROTTLE];
+        }
+        else
+        {
+            throw std::runtime_error("[ERROR] Vehicle type is not defined");
+        }
+    }
+    else if ( property_name == "rear_axle.left_tire.x" )
+        return vehicle.get_chassis().get_rear_axle().template get_tire<0>().get_position().at(0);
+
+    else if ( property_name == "rear_axle.left_tire.y" )
+        return vehicle.get_chassis().get_rear_axle().template get_tire<0>().get_position().at(1);
+
+    else if ( property_name == "rear_axle.right_tire.x" )
+        return vehicle.get_chassis().get_rear_axle().template get_tire<1>().get_position().at(0);
+
+    else if ( property_name == "rear_axle.right_tire.y" )
+        return vehicle.get_chassis().get_rear_axle().template get_tire<1>().get_position().at(1);
+
+    else if ( property_name == "front_axle.left_tire.x" )
+        return vehicle.get_chassis().get_front_axle().template get_tire<0>().get_position().at(0);
+
+    else if ( property_name == "front_axle.left_tire.y" )
+        return vehicle.get_chassis().get_front_axle().template get_tire<0>().get_position().at(1);
+
+    else if ( property_name == "front_axle.right_tire.x" )
+        return vehicle.get_chassis().get_front_axle().template get_tire<1>().get_position().at(0);
+
+    else if ( property_name == "front_axle.right_tire.y" )
+        return vehicle.get_chassis().get_front_axle().template get_tire<1>().get_position().at(1);
+
+    else if ( property_name == "front_axle.left_tire.kappa" )
+        return vehicle.get_chassis().get_front_axle().template get_tire<0>().get_kappa();
+
+    else if ( property_name == "front_axle.right_tire.kappa" )
+        return vehicle.get_chassis().get_front_axle().template get_tire<1>().get_kappa();
+
+    else if ( property_name == "rear_axle.left_tire.kappa" )
+        return vehicle.get_chassis().get_rear_axle().template get_tire<0>().get_kappa();
+
+    else if ( property_name == "rear_axle.right_tire.kappa" )
+        return vehicle.get_chassis().get_rear_axle().template get_tire<1>().get_kappa();
+
+    else if ( property_name == "Fz_fl" )
+    {
+        if constexpr (std::is_same<Vehicle_t, limebeer2014f1_all>::value)
+        {
+            return qa[Vehicle_t::vehicle_scalar_curvilinear::Chassis_type::IFZFL];
+        }
+        else 
+        {
+            throw std::runtime_error("Fz_fl is only defined for limebeer2014f1 models");
+        }
+    }
+
+    else if ( property_name == "Fz_fr" )
+    {
+        if constexpr (std::is_same<Vehicle_t, limebeer2014f1_all>::value)
+        {
+            return qa[Vehicle_t::vehicle_scalar_curvilinear::Chassis_type::IFZFR];
+        }
+        else 
+        {
+            throw std::runtime_error("Fz_fr is only defined for limebeer2014f1 models");
+        }
+    }
+
+    else if ( property_name == "Fz_rl" )
+    {
+        if constexpr (std::is_same<Vehicle_t, limebeer2014f1_all>::value)
+        {
+            return qa[Vehicle_t::vehicle_scalar_curvilinear::Chassis_type::IFZRL];
+        }
+        else 
+        {
+            throw std::runtime_error("Fz_rl is only defined for limebeer2014f1 models");
+        }
+    }
+
+    else if ( property_name == "Fz_rr" )
+    {
+        if constexpr (std::is_same<Vehicle_t, limebeer2014f1_all>::value)
+        {
+            return qa[Vehicle_t::vehicle_scalar_curvilinear::Chassis_type::IFZRR];
+        }
+        else 
+        {
+            throw std::runtime_error("Fz_rr is only defined for limebeer2014f1 models");
+        }
+    }
+
+    else
+    {
+        throw std::runtime_error("Variable \"" + property_name + "\" is not defined");
+    }
+}
+
+
+double get_vehicle_property(struct c_Vehicle* c_vehicle, const double* q, const double* qa, const double* u, const double s, const char* property_name)
+{
+    if ( c_vehicle->type == LOT2016KART )
+    {
+        return get_vehicle_property_generic(vehicles_lot2016kart.at(c_vehicle->name).curvilinear_scalar, q, qa, u, s, property_name);
+    }
+    else if ( c_vehicle->type == LIMEBEER2014F1 )
+    {
+        return get_vehicle_property_generic(vehicles_limebeer2014f1.at(c_vehicle->name).curvilinear_scalar, q, qa, u, s, property_name);
+    }
+    else
+    {
+        throw std::runtime_error("[ERROR] libfastestlapc::get_vehicle_property -> vehicle type is not defined");
+    }
+}
+
+
+int download_vector_table_variable_size(const char* name_c)
 {
     std::string name(name_c);
 
@@ -230,7 +404,7 @@ int get_vector_table_variable_size(const char* name_c)
 }
 
 
-void get_vector_table_variable(double* data, const int n, const char* name_c)
+void download_vector_table_variable(double* data, const int n, const char* name_c)
 {
     std::string name(name_c);
 
@@ -252,6 +426,18 @@ void get_vector_table_variable(double* data, const int n, const char* name_c)
     std::copy(table_data.cbegin(), table_data.cend(), data);
 
     return;
+}
+
+
+void load_vector_table_variable(double* data, const int n, const char* name_c)
+{
+    std::string name(name_c);
+
+    // Check that the variable does not exist
+    if ( table_vector.count(name) != 0 )
+        throw std::runtime_error(std::string("Variable \"") + name + "\" already exists in the vector table");
+
+    table_vector.insert({name,{data,data+n}});
 }
 
 
@@ -361,6 +547,73 @@ void vehicle_equations(double* dqdt, double* dqa, double** jac_dqdt, double** ja
 }
 
 
+template<typename Vehicle_t>
+void compute_propagation(Vehicle_t car, double* c_q, double* c_qa, double* c_u, double s, double ds, double* c_u_next, const char* c_options)
+{
+    // (1) Construct Cpp version of the C inputs
+    std::array<scalar,Vehicle_t::NSTATE> q;
+    std::array<scalar,Vehicle_t::NALGEBRAIC> qa;
+    std::array<scalar,Vehicle_t::NCONTROL> u;
+    std::array<scalar,Vehicle_t::NCONTROL> u_next;
+
+    std::copy_n(c_q, Vehicle_t::NSTATE, q.begin());
+    std::copy_n(c_qa, Vehicle_t::NALGEBRAIC, qa.begin());
+    std::copy_n(c_u, Vehicle_t::NCONTROL, u.begin());
+    std::copy_n(c_u_next, Vehicle_t::NCONTROL, u_next.begin());
+
+    // (2) Parse options
+    typename Crank_nicolson<Vehicle_t,Vehicle_t::NSTATE,Vehicle_t::NALGEBRAIC,Vehicle_t::NCONTROL>::Options opts;
+    if ( strlen(c_options) > 0 )
+    {
+        std::string options = c_options;
+        Xml_document doc;
+        doc.parse(options);
+    
+        if ( doc.has_element("options/sigma") )             opts.sigma = doc.get_element("options/sigma").get_value(scalar());
+        if ( doc.has_element("options/max_iter") )          opts.max_iter = doc.get_element("options/max_iter").get_value(scalar());
+        if ( doc.has_element("options/error_tolerance") )   opts.error_tolerance = doc.get_element("options/error_tolerance").get_value(scalar());
+        if ( doc.has_element("options/relaxation_factor") ) opts.relaxation_factor = doc.get_element("options/relaxation_factor").get_value(scalar());
+    }
+
+    // (3) Take step
+    Crank_nicolson<Vehicle_t,Vehicle_t::NSTATE,Vehicle_t::NALGEBRAIC,Vehicle_t::NCONTROL>::take_step(car, u, u_next, q, qa, s, ds, opts);
+
+    // (4) Return the variables to the c version
+    std::copy_n(q.begin(), Vehicle_t::NSTATE, c_q);
+    std::copy_n(qa.begin(), Vehicle_t::NALGEBRAIC, c_qa);
+}
+
+void propagate(double* q, double* qa, double* u, struct c_Vehicle* c_vehicle, struct c_Track* c_track, double s, double ds, double* u_next, bool use_circuit, const char* options)
+{
+    if ( c_vehicle->type == LOT2016KART )
+    {
+        if ( use_circuit )
+        {
+            vehicles_lot2016kart.at(c_vehicle->name).curvilinear_ad.get_road().change_track(table_track.at(c_track->name));
+            vehicles_lot2016kart.at(c_vehicle->name).curvilinear_scalar.get_road().change_track(table_track.at(c_track->name));
+            compute_propagation(vehicles_lot2016kart.at(c_vehicle->name).curvilinear_ad, q, qa, u, s, ds, u_next, options);
+        }
+        else
+        {
+            compute_propagation(vehicles_lot2016kart.at(c_vehicle->name).cartesian_ad, q, qa, u, s, ds, u_next, options);
+        }
+    }
+    else
+    {
+        if ( use_circuit )
+        {
+            vehicles_limebeer2014f1.at(c_vehicle->name).curvilinear_ad.get_road().change_track(table_track.at(c_track->name));
+            vehicles_limebeer2014f1.at(c_vehicle->name).curvilinear_scalar.get_road().change_track(table_track.at(c_track->name));
+            compute_propagation(vehicles_limebeer2014f1.at(c_vehicle->name).curvilinear_ad, q, qa, u, s, ds, u_next, options);
+        }
+        else
+        {
+            compute_propagation(vehicles_limebeer2014f1.at(c_vehicle->name).cartesian_ad, q, qa, u, s, ds, u_next, options);
+        }
+    }
+}
+
+
 template<typename vehicle_t>
 void compute_gg_diagram(vehicle_t& car, double* ay, double* ax_max, double* ax_min, double v, const int n_points)
 {
@@ -428,15 +681,20 @@ template<typename vehicle_t>
 void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, struct c_Vehicle* c_vehicle, const int n_points, const double* s, const char* options)
 {
     // (1) Process options
-    bool warm_start(false);
-    bool save_warm_start(false);
-    bool write_xml(false);
+    bool warm_start                   = false;
+    bool save_warm_start              = false;
+    bool write_xml                    = false;
     std::string xml_file_name;
-    size_t print_level(0);
-    scalar initial_speed(50.0);
-
-    bool is_direct = false;
+    size_t print_level                = 0;
+    scalar initial_speed              = 50.0;
+    bool is_direct                    = false;
+    bool is_closed                    = true;
     std::array<scalar,2> dissipations = {1.0e-2, 200*200*1.0e-10};
+    bool set_initial_condition        = false;
+    scalar sigma                      = 0.5;
+    std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NSTATE>     q_start;
+    std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NALGEBRAIC> qa_start;
+    std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NCONTROL>   u_start;
 
     std::string save_variables_prefix;
     std::vector<std::string> variables_to_save;
@@ -444,8 +702,8 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, str
     if ( c_vehicle->type == LIMEBEER2014F1 )
     {
         is_direct = true;
-        dissipations[0] = 10.0;
-        dissipations[1] = 1.0e-3;
+        dissipations[0] = 5.0;
+        dissipations[1] = 8.0e-4;
     }
     
     if ( strlen(options) > 0 )
@@ -459,6 +717,7 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, str
         //          <xml_file_name> run.xml </xml_file_name>
         //          <print_level> 5 </print_level>
         //          <initial_speed> 50.0 </initial_speed>
+        //          <sigma> 0.5 </sigma>
         //          <save_variables>
         //              <prefix> run/ </prefix>
         //              <variables>
@@ -467,6 +726,12 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, str
         //                  ...
         //              </variables>
         //          </save_variables>
+        //          <closed_simulation> true </closed_simulation>
+        //          <initial_condition>
+        //              <q/>
+        //              <qa/>
+        //              <u/>
+        //          </initial_condition>
         //      </options>
         //
         std::string s_options(options);
@@ -501,6 +766,22 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, str
         }
 
         if ( doc.has_element("options/initial_speed") ) initial_speed = doc.get_element("options/initial_speed").get_value(scalar());
+    
+        if ( doc.has_element("options/closed_simulation") ) is_closed = doc.get_element("options/closed_simulation").get_value(bool());
+
+        if ( doc.has_element("options/initial_condition") )
+        {
+            set_initial_condition = true;
+            auto v_q_start  = table_vector.at(doc.get_element("options/initial_condition/q").get_attribute("from_table"));
+            auto v_qa_start = table_vector.at(doc.get_element("options/initial_condition/qa").get_attribute("from_table"));
+            auto v_u_start  = table_vector.at(doc.get_element("options/initial_condition/u").get_attribute("from_table"));
+
+            std::copy(v_q_start.cbegin() , v_q_start.cend() , q_start.begin());
+            std::copy(v_qa_start.cbegin(), v_qa_start.cend(), qa_start.begin());
+            std::copy(v_u_start.cbegin() , v_u_start.cend() , u_start.begin());
+        }
+
+        if ( doc.has_element("options/sigma") ) sigma = doc.get_element("options/sigma").get_value(scalar());
     }
     
     // (2) Get aliases to cars
@@ -531,12 +812,23 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, str
     Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear> opt_laptime;
     typename Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>::Options opts;
     opts.print_level = print_level;
+    opts.sigma       = sigma;
 
     // (5.2.a) Start from steady-state
     if ( !warm_start )
     {
-        const size_t n = n_points;
-        opt_laptime = Optimal_laptime(arclength, true, is_direct, car_curv, {n,ss.q}, {n,ss.qa}, {n,ss.u}, dissipations, opts);
+        std::vector<std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NSTATE>> q0  = {static_cast<size_t>(n_points),ss.q};
+        std::vector<std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NALGEBRAIC>> qa0 = {static_cast<size_t>(n_points),ss.qa};
+        std::vector<std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NCONTROL>> u0  = {static_cast<size_t>(n_points),ss.u};
+
+        if ( set_initial_condition )
+        {
+            q0.front()  = q_start;
+            qa0.front() = qa_start;
+            u0.front()  = u_start;
+        }
+
+        opt_laptime = Optimal_laptime(arclength, is_closed, is_direct, car_curv, q0, qa0, u0, dissipations, opts);
     }
     // (5.2.b) Warm start
     else
@@ -566,7 +858,7 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, str
             u.push_back(u_arr);
         }
 
-        opt_laptime = Optimal_laptime(warm_start_variables.s, true, is_direct, car_curv, q, qa, u, dissipations, warm_start_variables.zl, 
+        opt_laptime = Optimal_laptime(warm_start_variables.s, is_closed, is_direct, car_curv, q, qa, u, dissipations, warm_start_variables.zl, 
                         warm_start_variables.zu, warm_start_variables.lambda, opts);
     }
 
@@ -601,8 +893,7 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, str
             std::vector<scalar> data(n_points);
             for (int i = 0; i < n_points; ++i)
             {
-                const scalar& L = car_curv.get_road().track_length();
-                car_curv_sc(opt_laptime.q[i], opt_laptime.qa[i], opt_laptime.u[i], ((double)i)*L/((double)n_points));
+                car_curv_sc(opt_laptime.q[i], opt_laptime.qa[i], opt_laptime.u[i], s[i]);
     
                 if ( variable_name == "x" ) 
                     data[i] = car_curv_sc.get_road().get_x();
@@ -611,7 +902,13 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, str
                     data[i] = car_curv_sc.get_road().get_y();
     
                 else if ( variable_name == "s" )
-                    data[i] = ((double)i)*L/((double)n_points);
+                    data[i] = s[i];
+
+                else if ( variable_name == "n" )
+                    data[i] = opt_laptime.q[i][vehicle_t::vehicle_scalar_curvilinear::Road_type::IN];
+    
+                else if ( variable_name == "alpha" )
+                    data[i] = opt_laptime.q[i][vehicle_t::vehicle_scalar_curvilinear::Road_type::IALPHA];
     
                 else if ( variable_name == "u" )
                     data[i] = opt_laptime.q[i][vehicle_t::vehicle_scalar_curvilinear::Chassis_type::IU];
@@ -643,29 +940,94 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, str
                         data[i] = opt_laptime.u[i][vehicle_t::vehicle_scalar_curvilinear::Chassis_type::ITHROTTLE];
                     }
                 }
-                else if ( variable_name == "rear_axle/left_tire/x" )
+                else if ( variable_name == "rear_axle.left_tire.x" )
                     data[i] = car_curv_sc.get_chassis().get_rear_axle().template get_tire<0>().get_position().at(0);
     
-                else if ( variable_name == "rear_axle/left_tire/y" )
+                else if ( variable_name == "rear_axle.left_tire.y" )
                     data[i] = car_curv_sc.get_chassis().get_rear_axle().template get_tire<0>().get_position().at(1);
     
-                else if ( variable_name == "rear_axle/right_tire/x" )
+                else if ( variable_name == "rear_axle.right_tire.x" )
                     data[i] = car_curv_sc.get_chassis().get_rear_axle().template get_tire<1>().get_position().at(0);
     
-                else if ( variable_name == "rear_axle/right_tire/y" )
+                else if ( variable_name == "rear_axle.right_tire.y" )
                     data[i] = car_curv_sc.get_chassis().get_rear_axle().template get_tire<1>().get_position().at(1);
     
-                else if ( variable_name == "front_axle/left_tire/x" )
+                else if ( variable_name == "front_axle.left_tire.x" )
                     data[i] = car_curv_sc.get_chassis().get_front_axle().template get_tire<0>().get_position().at(0);
     
-                else if ( variable_name == "front_axle/left_tire/y" )
+                else if ( variable_name == "front_axle.left_tire.y" )
                     data[i] = car_curv_sc.get_chassis().get_front_axle().template get_tire<0>().get_position().at(1);
     
-                else if ( variable_name == "front_axle/right_tire/x" )
+                else if ( variable_name == "front_axle.right_tire.x" )
                     data[i] = car_curv_sc.get_chassis().get_front_axle().template get_tire<1>().get_position().at(0);
     
-                else if ( variable_name == "front_axle/right_tire/y" )
+                else if ( variable_name == "front_axle.right_tire.y" )
                     data[i] = car_curv_sc.get_chassis().get_front_axle().template get_tire<1>().get_position().at(1);
+
+                else if ( variable_name == "front_axle.left_tire.kappa" )
+                    data[i] = car_curv_sc.get_chassis().get_front_axle().template get_tire<0>().get_kappa();
+    
+                else if ( variable_name == "front_axle.right_tire.kappa" )
+                    data[i] = car_curv_sc.get_chassis().get_front_axle().template get_tire<1>().get_kappa();
+    
+                else if ( variable_name == "rear_axle.left_tire.kappa" )
+                    data[i] = car_curv_sc.get_chassis().get_rear_axle().template get_tire<0>().get_kappa();
+    
+                else if ( variable_name == "rear_axle.right_tire.kappa" )
+                    data[i] = car_curv_sc.get_chassis().get_rear_axle().template get_tire<1>().get_kappa();
+    
+                else if ( variable_name == "Fz_fl" )
+                {
+                    if constexpr (std::is_same<vehicle_t, limebeer2014f1_all>::value)
+                    {
+                        data[i] = opt_laptime.qa[i][vehicle_t::vehicle_scalar_curvilinear::Chassis_type::IFZFL];
+                    }
+                    else 
+                    {
+                        throw std::runtime_error("Fz_fl is only defined for limebeer2014f1 models");
+                    }
+                }
+    
+                else if ( variable_name == "Fz_fr" )
+                {
+                    if constexpr (std::is_same<vehicle_t, limebeer2014f1_all>::value)
+                    {
+                        data[i] = opt_laptime.qa[i][vehicle_t::vehicle_scalar_curvilinear::Chassis_type::IFZFR];
+                    }
+                    else 
+                    {
+                        throw std::runtime_error("Fz_fr is only defined for limebeer2014f1 models");
+                    }
+                }
+    
+                else if ( variable_name == "Fz_rl" )
+                {
+                    if constexpr (std::is_same<vehicle_t, limebeer2014f1_all>::value)
+                    {
+                        data[i] = opt_laptime.qa[i][vehicle_t::vehicle_scalar_curvilinear::Chassis_type::IFZRL];
+                    }
+                    else 
+                    {
+                        throw std::runtime_error("Fz_rl is only defined for limebeer2014f1 models");
+                    }
+                }
+    
+                else if ( variable_name == "Fz_rr" )
+                {
+                    if constexpr (std::is_same<vehicle_t, limebeer2014f1_all>::value)
+                    {
+                        data[i] = opt_laptime.qa[i][vehicle_t::vehicle_scalar_curvilinear::Chassis_type::IFZRR];
+                    }
+                    else 
+                    {
+                        throw std::runtime_error("Fz_rr is only defined for limebeer2014f1 models");
+                    }
+                }
+
+                else
+                {
+                    throw std::runtime_error("Variable \"" + variable_name + "\" is not defined");
+                }
     
             }
     

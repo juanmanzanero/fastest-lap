@@ -41,9 +41,9 @@ def load_track(track_file,name):
 
 	# Get the results
 	c_variable = c.c_char_p(("track/s").encode('utf-8'));
-	n_points = c_lib.get_vector_table_variable_size(c_variable);
+	n_points = c_lib.download_vector_table_variable_size(c_variable);
 	c_s = (c.c_double*n_points)();
-	c_lib.get_vector_table_variable(c_s, c.c_int(n_points), c_variable);
+	c_lib.download_vector_table_variable(c_s, c.c_int(n_points), c_variable);
 	s = [None]*n_points;
 	for i in range(n_points):
 		s[i] = c_s[i];
@@ -118,7 +118,7 @@ def optimal_laptime(vehicle, track, s, channels):
 	for channel in channels:
 		c_data = (c.c_double*len(s))();
 		c_variable = c.c_char_p(("run/" + channel).encode('utf-8'));
-		c_lib.get_vector_table_variable(c_data, c.c_int(len(s)), c_variable);
+		c_lib.download_vector_table_variable(c_data, c.c_int(len(s)), c_variable);
 		data = [None]*len(s);
 		for i in range(len(s)):
 			data[i] = c_data[i];
