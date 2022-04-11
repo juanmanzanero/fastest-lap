@@ -9,7 +9,7 @@ class Engine_curve : public ::testing::Test
 {
  protected:
 
-    Xml_document database = { "database/roberto-lot-kart-2016.xml", true };
+    Xml_document database = { "database/vehicles/kart/roberto-lot-kart-2016.xml", true };
     Engine<scalar> _engine = {database,"vehicle/rear-axle/engine/",false};
 
 };

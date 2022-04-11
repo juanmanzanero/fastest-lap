@@ -3,7 +3,7 @@
 
 TEST(Track_by_polynomial_test, evaluation_at_nodes)
 {
-    Xml_document catalunya = {"./database/catalunya_discrete.xml", true};
+    Xml_document catalunya = {"./database/tracks/catalunya/catalunya_discrete.xml", true};
      
     const auto arclength = catalunya.get_element("circuit/data/arclength").get_value(std::vector<scalar>());
 

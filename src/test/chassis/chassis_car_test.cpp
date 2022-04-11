@@ -90,7 +90,7 @@ class Chassis_test : public ::testing::Test
                                                        };
 
 
-    Xml_document database = { "./database/roberto-lot-kart-2016.xml", true };
+    Xml_document database = { "./database/vehicles/kart/roberto-lot-kart-2016.xml", true };
 
     Chassis_t construct_chassis();
 

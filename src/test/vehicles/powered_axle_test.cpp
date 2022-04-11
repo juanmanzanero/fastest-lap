@@ -50,7 +50,7 @@ const static std::map<std::string,scalar> Lot2016kart_rear_axle =
 
 Xml_document* get_database_axle()
 {
-    Xml_document* database = new Xml_document("database/roberto-lot-kart-2016-rear-axle.xml", true);
+    Xml_document* database = new Xml_document("data/roberto-lot-kart-2016-rear-axle.xml", true);
     
     database->get_element("vehicle/rear-tire/Fz-max-ref2").set_value("0.0");
 

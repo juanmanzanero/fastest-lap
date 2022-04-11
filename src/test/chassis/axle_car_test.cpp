@@ -9,7 +9,7 @@ using Rear_axle_t  = Axle_car_6dof<scalar,Tire_t,Tire_t,POWERED_WITHOUT_DIFFEREN
 Front_axle_t construct_front_axle(const sFrame& car_frame, const std::map<std::string,scalar>& parameters)
 {
     // Construct tires
-    Xml_document database = { "database/roberto-lot-kart-2016.xml", true };
+    Xml_document database = { "database/vehicles/kart/roberto-lot-kart-2016.xml", true };
     
     // set the 'smooth' max parameter to 0
     database.get_element("vehicle/front-tire/Fz-max-ref2").set_value("0.0");
@@ -46,7 +46,7 @@ Front_axle_t construct_front_axle(const sFrame& car_frame, const std::map<std::s
 Rear_axle_t construct_rear_axle(const sFrame& car_frame, const std::map<std::string,scalar>& parameters)
 {
     // Construct tires
-    Xml_document database = { "database/roberto-lot-kart-2016.xml", true };
+    Xml_document database = { "database/vehicles/kart/roberto-lot-kart-2016.xml", true };
 
     // set the 'smooth' max parameter to 0
     database.get_element("vehicle/front-tire/Fz-max-ref2").set_value("0.0");

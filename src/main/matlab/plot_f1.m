@@ -1,20 +1,18 @@
 function plot_f1(x_rr,y_rr,psi,wb,track)
 
-persistent im
-persistent alpha
 
-if ( isempty(im) && isempty(alpha) )
-    [im,~,alpha] = imread('f1_marker.png');
-    alpha(alpha < 250) = 0;
-end
+[im_original,~,alpha_original] = imread('f1_marker.png');
+alpha_original(alpha_original < 250) = 0;
+    
+im = imresize(im_original,[size(im_original,1)/4,size(im_original,2)/4]);
+alpha = imresize(alpha_original,[size(im_original,1)/4,size(im_original,2)/4]);
+
 
 tire_rr = [659,2930];
 tire_rl = [1518,2930];
 tire_fr = [659,1055];
 
-
-
-im_light = imresize(im,[size(im,1)/8,size(im,2)/8]);
+im_light = imresize(im_original,[size(im_original,1)/8,size(im_original,2)/8]);
 
 for i = -1:1
     for j = -1:1
@@ -112,13 +110,9 @@ alpha_scaled = imresize(alpha,[size(alpha,1)*track_to_wb_desired/track_to_wb_img
 im_rotated = imrotate(im_scaled,-psi,'bilinear');
 alpha_rotated = imrotate(alpha_scaled,-psi,'bilinear');
 
-plot(x_rr,y_rr,'ok');
-hold on
+
 h_im = imagesc(x_range,y_range,im_rotated);
 h_im.AlphaData = alpha_rotated;
-plot(x_rr,y_rr,'ok');
 
-h = gcf;
-h.CurrentAxes.Visible = 'on';
-axis equal;
+
 end

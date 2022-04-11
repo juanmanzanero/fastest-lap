@@ -100,7 +100,7 @@ class Car_road_curvilinear_test : public ::testing::Test
     const scalar T = 0.1*17.6;    // Maximum torque at 10.250rpm
     const scalar omega_axle = 10.0;
 
-    Xml_document database = {"database/roberto-lot-kart-2016.xml", true};
+    Xml_document database = {"database/vehicles/kart/roberto-lot-kart-2016.xml", true};
     Road_t _road = {{construct_ninety_degrees_bend(), sPolynomial({0.0,1000.0},{5.0,5.0},1,false), sPolynomial({0.0,1000.0},{5.0,5.0},1,false)}};
     Dynamic_model_t _car = {database, _road};
 };

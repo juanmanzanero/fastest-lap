@@ -11,7 +11,7 @@ class Steady_state_test_f1 : public ::testing::Test
 {
  protected:
     Steady_state_test_f1() {}
-    Xml_document database = {"./database/limebeer-2014-f1.xml", true};
+    Xml_document database = {"./database/vehicles/f1/limebeer-2014-f1.xml", true};
     limebeer2014f1<CppAD::AD<scalar>>::cartesian car = { database };
     limebeer2014f1<scalar>::cartesian car_sc = { database };
 };

@@ -10,7 +10,7 @@ using timeseries = CppAD::AD<double>;
 
 TEST(Minimum_curvature_path,oval_50)
 {
-    Xml_document track_xml("./database/ovaltrack.xml",true);
+    Xml_document track_xml("./data/ovaltrack.xml",true);
     Track_by_arcs oval(track_xml,true);
 
     Xml_document matlab_result("./data/minimum_curvature_path.xml",true);

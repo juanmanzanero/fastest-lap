@@ -12,7 +12,7 @@ from fastest_lap import KMH
 
 ```python
 # Load vehicle
-vehicle=fastest_lap.load_vehicle("car","roberto-lot-kart-2016","../../../../database/roberto-lot-kart-2016.xml");
+vehicle=fastest_lap.load_vehicle("car","roberto-lot-kart-2016","../../../../database/vehicles/kart/roberto-lot-kart-2016.xml");
 ```
 
 

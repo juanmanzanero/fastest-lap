@@ -14,13 +14,13 @@ from fastest_lap import KMH
 
 ```python
 # Load vehicle
-vehicle=fastest_lap.load_vehicle("car","limebeer-2014-f1","../../../../database/mercedes-2020-catalunya.xml");
+vehicle=fastest_lap.load_vehicle("car","limebeer-2014-f1","../../../../database/vehicles/f1/mercedes-2020-catalunya.xml");
 ```
 
 
 ```python
 # Load track
-(track,s)=fastest_lap.load_track("../../../../database/catalunya_discrete.xml","catalunya");
+(track,s)=fastest_lap.load_track("../../../../database/tracks/catalunya/catalunya_discrete.xml","catalunya");
 ```
 
 
@@ -155,7 +155,7 @@ mer_color = fastf1.plotting.team_color('MER')
     api            INFO 	Using cached data for car_data
     api            INFO 	Using cached data for position_data
     api            INFO 	Using cached data for weather_data
-    core           INFO 	Loaded data for 20 drivers: ['23', '20', '6', '3', '99', '55', '63', '44', '7', '8', '31', '10', '16', '77', '5', '26', '33', '18', '11', '4']
+    core           INFO 	Loaded data for 20 drivers: ['7', '99', '8', '31', '18', '4', '3', '6', '77', '10', '63', '33', '20', '5', '26', '44', '11', '55', '16', '23']
 
 
 

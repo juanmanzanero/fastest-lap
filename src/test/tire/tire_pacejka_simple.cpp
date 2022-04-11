@@ -11,7 +11,7 @@ class Tire_pacejka_simple_test : public ::testing::Test
 
     sFrame inertial_frame = {};
 
-    Xml_document database = {"./database/limebeer-2014-f1.xml", true};
+    Xml_document database = {"./database/vehicles/f1/limebeer-2014-f1.xml", true};
     Tire_pacejka_simple<scalar,0,0> tire = { "tire-test", database, "vehicle/front-tire/"};
 };
 

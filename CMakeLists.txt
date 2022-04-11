@@ -9,6 +9,7 @@ SET(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 
 option(CHECK_BOUNDS "Enable bounds check at runtime" OFF)
 option(ENABLE_TESTS "Enable testing" ON)
+option(PYTHON_API_ABSOLUTE_PATH "Use absolute paths to look for libraries in the python API" ON)
 
 message("")
 message("	Configure third party libraries ")
@@ -65,7 +66,13 @@ include(matlabutils)
 
 add_subdirectory(./src)
 
-file(GENERATE OUTPUT ${CMAKE_SOURCE_DIR}/examples/python/fastest_lap.py INPUT ${CMAKE_SOURCE_DIR}/src/main/python/fastest_lap.py)
+if ( ${PYTHON_API_ABSOLUTE_PATH} )
+	set(libdir_python ${CMAKE_BINARY_DIR}/lib)
+else()
+	file(RELATIVE_PATH libdir_python ${CMAKE_SOURCE_DIR}/examples/python/ ${CMAKE_BINARY_DIR}/lib)
+endif()
+configure_file(${CMAKE_SOURCE_DIR}/src/main/python/fastest_lap.py ${CMAKE_SOURCE_DIR}/examples/python/fastest_lap.py)
+file(GENERATE OUTPUT ${CMAKE_SOURCE_DIR}/examples/python/fastest_lap.py INPUT ${CMAKE_SOURCE_DIR}/examples/python/fastest_lap.py)
 
 install(DIRECTORY "${CMAKE_BINARY_DIR}/thirdparty/lib/"
         DESTINATION "${CMAKE_INSTALL_PREFIX}/lib")
