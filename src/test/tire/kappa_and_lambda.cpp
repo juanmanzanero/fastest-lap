@@ -40,7 +40,7 @@ TEST(Tire_test, base_lambda_and_kappa)
     sFrame tire_fr_frame({+a,tf,-R},{0.0,0.0,0.0},{delta}, {0.0}, {Z}, chassis_frame);
     sFrame tire_fl_frame({+a,-tf,-R},{0.0,0.0,0.0},{delta}, {0.0}, {Z}, chassis_frame);
 
-    Xml_document database = { "database/roberto-lot-kart-2016.xml", true };
+    Xml_document database = { "database/vehicles/kart/roberto-lot-kart-2016.xml", true };
     Tire_t tire_rr("Rear right",database,"vehicle/rear-tire/");
     Tire_t tire_rl("Rear left",database,"vehicle/rear-tire/");
     Tire_t tire_fr("Front right",database,"vehicle/front-tire/");
@@ -109,7 +109,7 @@ TEST(Tire_test, pacejka_lambda_and_kappa)
     sFrame tire_fr_frame({+a,tf,-R},{0.0,0.0,0.0},{delta}, {0.0}, {Z}, chassis_frame);
     sFrame tire_fl_frame({+a,-tf,-R},{0.0,0.0,0.0},{delta}, {0.0}, {Z}, chassis_frame);
 
-    Xml_document database = { "database/roberto-lot-kart-2016.xml", true };
+    Xml_document database = { "database/vehicles/kart/roberto-lot-kart-2016.xml", true };
     Tire_pacejka_std_t tire_rr("Rear right",database,"vehicle/rear-tire/");
     Tire_pacejka_std_t tire_rl("Rear left",database,"vehicle/rear-tire/");
     Tire_pacejka_std_t tire_fr("Front right",database,"vehicle/front-tire/");

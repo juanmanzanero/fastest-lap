@@ -315,6 +315,42 @@ double get_vehicle_property_generic(Vehicle_t& vehicle, const double* c_q, const
     else if ( property_name == "rear_axle.right_tire.kappa" )
         return vehicle.get_chassis().get_rear_axle().template get_tire<1>().get_kappa();
 
+    else if ( property_name == "front_axle.left_tire.lambda" )
+        return vehicle.get_chassis().get_front_axle().template get_tire<0>().get_lambda();
+
+    else if ( property_name == "front_axle.right_tire.lambda" )
+        return vehicle.get_chassis().get_front_axle().template get_tire<1>().get_lambda();
+
+    else if ( property_name == "rear_axle.left_tire.lambda" )
+        return vehicle.get_chassis().get_rear_axle().template get_tire<0>().get_lambda();
+
+    else if ( property_name == "rear_axle.right_tire.lambda" )
+        return vehicle.get_chassis().get_rear_axle().template get_tire<1>().get_lambda();
+
+    else if ( property_name == "front_axle.left_tire.Fx" )
+        return vehicle.get_chassis().get_front_axle().template get_tire<0>().get_force().x();
+
+    else if ( property_name == "front_axle.right_tire.Fx" )
+        return vehicle.get_chassis().get_front_axle().template get_tire<1>().get_force().x();
+
+    else if ( property_name == "rear_axle.left_tire.Fx" )
+        return vehicle.get_chassis().get_rear_axle().template get_tire<0>().get_force().x();
+
+    else if ( property_name == "rear_axle.right_tire.Fx" )
+        return vehicle.get_chassis().get_rear_axle().template get_tire<1>().get_force().x();
+
+    else if ( property_name == "front_axle.left_tire.Fy" )
+        return vehicle.get_chassis().get_front_axle().template get_tire<0>().get_force().y();
+
+    else if ( property_name == "front_axle.right_tire.Fy" )
+        return vehicle.get_chassis().get_front_axle().template get_tire<1>().get_force().y();
+
+    else if ( property_name == "rear_axle.left_tire.Fy" )
+        return vehicle.get_chassis().get_rear_axle().template get_tire<0>().get_force().y();
+
+    else if ( property_name == "rear_axle.right_tire.Fy" )
+        return vehicle.get_chassis().get_rear_axle().template get_tire<1>().get_force().y();
+
     else if ( property_name == "Fz_fl" )
     {
         if constexpr (std::is_same<Vehicle_t, limebeer2014f1_all>::value)
@@ -363,6 +399,30 @@ double get_vehicle_property_generic(Vehicle_t& vehicle, const double* c_q, const
         }
     }
 
+    else if ( property_name == "ax" )
+    {
+        sVector3d velocity = {vehicle.get_chassis().get_u(), vehicle.get_chassis().get_v(), 0.0};
+
+        sVector3d acceleration = {vehicle.get_chassis().get_du() - velocity.y()*vehicle.get_chassis().get_omega(), 
+                                  vehicle.get_chassis().get_dv() + velocity.x()*vehicle.get_chassis().get_omega(),
+                                  0.0
+                                 };
+
+        return dot(velocity,acceleration)/norm(velocity);
+    }
+
+    else if ( property_name == "ay" )
+    {
+        sVector3d velocity = {vehicle.get_chassis().get_u(), vehicle.get_chassis().get_v(), 0.0};
+
+        sVector3d acceleration = {vehicle.get_chassis().get_du() - velocity.y()*vehicle.get_chassis().get_omega(), 
+                                  vehicle.get_chassis().get_dv() + velocity.x()*vehicle.get_chassis().get_omega(),
+                                  0.0
+                                 };
+
+        return cross(velocity,acceleration).z()/norm(velocity);
+    }
+
     else
     {
         throw std::runtime_error("Variable \"" + property_name + "\" is not defined");
@@ -387,6 +447,24 @@ double get_vehicle_property(struct c_Vehicle* c_vehicle, const double* q, const 
 }
 
 
+void save_vehicle_as_xml(struct c_Vehicle* c_vehicle, const char* file_name)
+{
+    if ( c_vehicle->type == LOT2016KART )
+    {
+        vehicles_lot2016kart.at(c_vehicle->name).curvilinear_scalar.xml()->save(std::string(file_name));
+    }
+    else if ( c_vehicle->type == LIMEBEER2014F1 )
+    {
+        vehicles_limebeer2014f1.at(c_vehicle->name).curvilinear_scalar.xml()->save(std::string(file_name));
+    }
+    else
+    {
+        throw std::runtime_error("[ERROR] libfastestlapc::get_vehicle_property -> vehicle type is not defined");
+    }
+
+}
+
+
 int download_vector_table_variable_size(const char* name_c)
 {
     std::string name(name_c);
@@ -401,6 +479,22 @@ int download_vector_table_variable_size(const char* name_c)
     const auto& table_data = item->second;
     
     return table_data.size();
+}
+
+
+double download_scalar_table_variable(const char* name_c)
+{
+    std::string name(name_c);
+
+    // Look for the item in the table
+    const auto& item = table_scalar.find(name);
+
+    // Check that it was found
+    if ( item == table_scalar.end() )
+        throw std::runtime_error(std::string("Variable \"") + name + "\" does not exists in the scalar table");
+
+    // Check input consistency
+    return item->second;
 }
 
 

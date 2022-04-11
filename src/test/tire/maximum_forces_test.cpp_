@@ -42,7 +42,7 @@ INSTANTIATE_TEST_SUITE_P(theta24, Maximum_forces_test, ::testing::Values(24));
 
 TEST_P(Maximum_forces_test, gg_diagram)
 {
-    Xml_document database = { "database/roberto-lot-kart-2016.xml", true };
+    Xml_document database = { "database/vehicles/kart/roberto-lot-kart-2016.xml", true };
     Tire_t tire("Test tire",database,"vehicle/rear-tire/");
 
     std::vector<double> Fx_saved = {503.99999999989507, 501.7606299804512, 493.48630774892189, 471.65320239438546, 403.80609130162441, 220.24277275949942, 

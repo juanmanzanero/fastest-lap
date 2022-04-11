@@ -45,7 +45,7 @@ class Chassis_car_3dof_test : public ::testing::Test
     }
 
     // Database containing the model parameters from the reference
-    Xml_document database   = {"./database/limebeer-2014-f1.xml", true};
+    Xml_document database   = {"./database/vehicles/f1/limebeer-2014-f1.xml", true};
 
     // Chassis object to be tested
     Chassis_t chassis       = {database};

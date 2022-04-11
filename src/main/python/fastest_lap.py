@@ -2,10 +2,11 @@
 import matplotlib.pyplot as plt
 import ctypes as c
 import numpy as np
+import pathlib
 
 KMH=1.0/3.6;
 
-libname="$<TARGET_FILE:fastestlapc>"
+libname=str(pathlib.Path(__file__).parent.absolute()) + "/" + "${libdir_python}/$<TARGET_FILE_NAME:fastestlapc>"
 c_lib = c.CDLL(libname)
 
 class c_Vehicle(c.Structure):

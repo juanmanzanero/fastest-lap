@@ -21,7 +21,7 @@ using Road_t                = limebeer2014f1<scalar>::Road_cartesian_t;
 class limebeer2014f1_test : public testing::Test
 {
  protected:
-    Xml_document database   = {"./database/limebeer-2014-f1.xml", true};
+    Xml_document database   = {"./database/vehicles/f1/limebeer-2014-f1.xml", true};
 };
 
 
@@ -278,7 +278,7 @@ TEST_F(limebeer2014f1_test, jacobian_autodiff_random)
 
 TEST_F(limebeer2014f1_test, set_parameter)
 {
-    Xml_document catalunya_xml("./database/catalunya_discrete.xml",true);
+    Xml_document catalunya_xml("./database/tracks/catalunya/catalunya_discrete.xml",true);
     Track_by_polynomial catalunya(catalunya_xml);
     
 
@@ -403,7 +403,7 @@ TEST_F(limebeer2014f1_test, set_parameter)
 
 TEST_F(limebeer2014f1_test,propagation_crank_nicolson)
 {
-    Xml_document catalunya_xml("./database/catalunya_discrete.xml",true);
+    Xml_document catalunya_xml("./database/tracks/catalunya/catalunya_discrete.xml",true);
     Track_by_polynomial catalunya(catalunya_xml);
 
     limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial>::Road_t road(catalunya);
@@ -477,7 +477,7 @@ TEST_F(limebeer2014f1_test,propagation_crank_nicolson)
 
 TEST_F(limebeer2014f1_test,propagation_crank_nicolson_corner_exit)
 {
-    Xml_document catalunya_xml("./database/catalunya_discrete.xml",true);
+    Xml_document catalunya_xml("./database/tracks/catalunya/catalunya_discrete.xml",true);
     Track_by_polynomial catalunya(catalunya_xml);
 
     limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial>::Road_t road(catalunya);

@@ -10,7 +10,7 @@ extern bool is_valgrind;
 class Optimal_laptime_test : public ::testing::Test
 {
  protected:
-    Xml_document database = {"./database/roberto-lot-kart-2016.xml", true};
+    Xml_document database = {"./database/vehicles/kart/roberto-lot-kart-2016.xml", true};
     Xml_document results  = {"./data/optimal_laptime.xml", true};
     lot2016kart<CppAD::AD<scalar>>::cartesian car_cartesian = { database };
     lot2016kart<scalar>::cartesian car_cartesian_scalar = { database };
@@ -79,7 +79,7 @@ TEST_F(Optimal_laptime_test, Ovaltrack_open)
     car_cartesian.get_chassis().get_rear_axle().enable_direct_torque(); 
     car_cartesian_scalar.get_chassis().get_rear_axle().enable_direct_torque();
 
-    Xml_document ovaltrack_xml("./database/ovaltrack.xml",true);
+    Xml_document ovaltrack_xml("./data/ovaltrack.xml",true);
     Track_by_arcs ovaltrack(ovaltrack_xml,0.2,true);
     
     constexpr const size_t n = 400;
@@ -119,7 +119,7 @@ TEST_F(Optimal_laptime_test, Ovaltrack_closed)
     car_cartesian.get_chassis().get_rear_axle().enable_direct_torque(); 
     car_cartesian_scalar.get_chassis().get_rear_axle().enable_direct_torque();
 
-    Xml_document ovaltrack_xml("./database/ovaltrack.xml",true);
+    Xml_document ovaltrack_xml("./data/ovaltrack.xml",true);
     Track_by_arcs ovaltrack(ovaltrack_xml,0.2,true);
     
     constexpr const size_t n = 100;
@@ -158,7 +158,7 @@ TEST_F(Optimal_laptime_test, Ovaltrack_derivative)
     car_cartesian.get_chassis().get_rear_axle().enable_direct_torque(); 
     car_cartesian_scalar.get_chassis().get_rear_axle().enable_direct_torque();
 
-    Xml_document ovaltrack_xml("./database/ovaltrack.xml",true);
+    Xml_document ovaltrack_xml("./data/ovaltrack.xml",true);
     Track_by_arcs ovaltrack(ovaltrack_xml,0.2,true);
     
     constexpr const size_t n = 100;
@@ -266,7 +266,7 @@ TEST_F(Optimal_laptime_test, Catalunya_direct)
     car_cartesian.get_chassis().get_rear_axle().enable_direct_torque(); 
     car_cartesian_scalar.get_chassis().get_rear_axle().enable_direct_torque();
 
-    Xml_document catalunya_xml("./database/catalunya.xml",true);
+    Xml_document catalunya_xml("./data/catalunya.xml",true);
     Track_by_arcs catalunya(catalunya_xml,0.2,true);
     
     constexpr const size_t n = 500;
@@ -312,7 +312,7 @@ TEST_F(Optimal_laptime_test, Catalunya_derivative)
     car_cartesian.get_chassis().get_rear_axle().enable_direct_torque(); 
     car_cartesian_scalar.get_chassis().get_rear_axle().enable_direct_torque();
 
-    Xml_document catalunya_xml("./database/catalunya.xml",true);
+    Xml_document catalunya_xml("./data/catalunya.xml",true);
     Track_by_arcs catalunya(catalunya_xml,0.2,true);
     
     constexpr const size_t n = 500;
@@ -423,7 +423,7 @@ TEST_F(Optimal_laptime_test, Catalunya_derivative_throttle)
     car_cartesian.get_chassis().get_rear_axle().enable_direct_torque(); 
     car_cartesian_scalar.get_chassis().get_rear_axle().enable_direct_torque();
 
-    Xml_document catalunya_xml("./database/catalunya.xml",true);
+    Xml_document catalunya_xml("./data/catalunya.xml",true);
     Track_by_arcs catalunya(catalunya_xml,0.2,true);
     
     constexpr const size_t n = 500;
@@ -527,14 +527,14 @@ TEST_F(Optimal_laptime_test, Vendrell)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
-    Xml_document database = {"./database/rental-kart.xml", true};
+    Xml_document database = {"./database/vehicles/kart/rental-kart.xml", true};
     lot2016kart<CppAD::AD<scalar>>::cartesian car_cartesian = { database };
     lot2016kart<scalar>::cartesian car_cartesian_scalar = { database };
 
     car_cartesian.get_chassis().get_rear_axle().enable_direct_torque(); 
     car_cartesian_scalar.get_chassis().get_rear_axle().enable_direct_torque();
 
-    Xml_document vendrell_xml("./database/vendrell.xml",true);
+    Xml_document vendrell_xml("./database/tracks/vendrell/vendrell.xml",true);
     Circuit_preprocessor vendrell_pproc(vendrell_xml);
     Track_by_polynomial vendrell(vendrell_pproc);
     

@@ -37,7 +37,7 @@ class Axle_car_3dof_test : public testing::Test
         rear_axle.set_state_and_controls(q,u);
     }
     // Read database
-    Xml_document database         = {"./database/limebeer-2014-f1.xml", true};
+    Xml_document database         = {"./database/vehicles/f1/limebeer-2014-f1.xml", true};
 
     // Construct tires
     Front_left_tire_type tire_fl  = { "front-left" , database, "vehicle/front-tire/"};

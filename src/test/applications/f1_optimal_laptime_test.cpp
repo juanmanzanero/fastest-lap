@@ -11,7 +11,7 @@ extern bool is_valgrind;
 class F1_optimal_laptime_test : public ::testing::Test
 {
  protected:
-    Xml_document database = {"./database/limebeer-2014-f1.xml", true};
+    Xml_document database = {"./database/vehicles/f1/limebeer-2014-f1.xml", true};
     limebeer2014f1<CppAD::AD<scalar>>::cartesian car_cartesian = { database };
     limebeer2014f1<scalar>::cartesian car_cartesian_scalar = { database };
 };
@@ -20,7 +20,7 @@ TEST_F(F1_optimal_laptime_test, Catalunya_discrete)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
-    Xml_document catalunya_xml("./database/catalunya_discrete.xml",true);
+    Xml_document catalunya_xml("./database/tracks/catalunya/catalunya_discrete.xml",true);
     Circuit_preprocessor catalunya_pproc(catalunya_xml);
     Track_by_polynomial catalunya(catalunya_pproc);
     
@@ -105,7 +105,7 @@ TEST_F(F1_optimal_laptime_test, Catalunya_adapted)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
-    Xml_document catalunya_xml("./database/catalunya_adapted.xml",true);
+    Xml_document catalunya_xml("./database/tracks/catalunya/catalunya_adapted.xml",true);
     Circuit_preprocessor catalunya_pproc(catalunya_xml);
     Track_by_polynomial catalunya(catalunya_pproc);
     
@@ -212,7 +212,7 @@ TEST_F(F1_optimal_laptime_test, Catalunya_variable_parameter)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
-    Xml_document catalunya_xml("./database/catalunya_adapted.xml",true);
+    Xml_document catalunya_xml("./database/tracks/catalunya/catalunya_adapted.xml",true);
     Circuit_preprocessor catalunya_pproc(catalunya_xml);
     Track_by_polynomial catalunya(catalunya_pproc);
     
@@ -325,7 +325,7 @@ TEST_F(F1_optimal_laptime_test, Catalunya_chicane)
 {
     // The chicane test uses the adapted mesh from i=533 to i=677
 
-    Xml_document catalunya_xml("./database/catalunya_adapted.xml",true);
+    Xml_document catalunya_xml("./database/tracks/catalunya/catalunya_adapted.xml",true);
     Circuit_preprocessor catalunya_pproc(catalunya_xml);
     Track_by_polynomial catalunya(catalunya_pproc);
     
@@ -453,7 +453,7 @@ TEST_F(F1_optimal_laptime_test, Catalunya_warm_start)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
-    Xml_document catalunya_xml("./database/catalunya_adapted.xml",true);
+    Xml_document catalunya_xml("./database/tracks/catalunya/catalunya_adapted.xml",true);
     Circuit_preprocessor catalunya_pproc(catalunya_xml);
     Track_by_polynomial catalunya(catalunya_pproc);
     
@@ -562,7 +562,7 @@ TEST_F(F1_optimal_laptime_test, Catalunya_chicane_warm_start)
 {
     // The chicane test uses the adapted mesh from i=533 to i=677
 
-    Xml_document catalunya_xml("./database/catalunya_adapted.xml",true);
+    Xml_document catalunya_xml("./database/tracks/catalunya/catalunya_adapted.xml",true);
     Circuit_preprocessor catalunya_pproc(catalunya_xml);
     Track_by_polynomial catalunya(catalunya_pproc);
     
@@ -796,7 +796,7 @@ TEST_F(F1_optimal_laptime_test, Ovaltrack_open)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
-    Xml_document ovaltrack_xml("./database/ovaltrack.xml",true);
+    Xml_document ovaltrack_xml("./data/ovaltrack.xml",true);
     Track_by_arcs ovaltrack(ovaltrack_xml,1.0,true);
     
     constexpr const size_t n = 400;
@@ -878,7 +878,7 @@ TEST_F(F1_optimal_laptime_test, Ovaltrack_open)
 
 TEST_F(F1_optimal_laptime_test, Ovaltrack_closed)
 {
-    Xml_document ovaltrack_xml("./database/ovaltrack.xml",true);
+    Xml_document ovaltrack_xml("./data/ovaltrack.xml",true);
     Track_by_arcs ovaltrack(ovaltrack_xml,1.0,true);
     
     constexpr const size_t n = 100;

@@ -9,7 +9,7 @@ class Steady_state_ad_test : public ::testing::Test
 {
  protected:
     Steady_state_ad_test() { car.get_chassis().get_rear_axle().enable_direct_torque(); }
-    Xml_document database = {"./database/roberto-lot-kart-2016.xml", true};
+    Xml_document database = {"./database/vehicles/kart/roberto-lot-kart-2016.xml", true};
     Xml_document results  = {"./data/steady_state.xml", true};
     lot2016kart<CppAD::AD<scalar>>::cartesian car = { database };
 };

@@ -42,6 +42,8 @@ void clear_tables();
 void clear_tables_by_prefix(const char* prefix_c);
 
 // Getters -------------------------------------------------------------------------------------------------------------
+double download_scalar_table_variable(const char* name_c);
+
 int download_vector_table_variable_size(const char* name_c);
 
 void download_vector_table_variable(double* data, const int n, const char* name_c);
@@ -49,6 +51,8 @@ void download_vector_table_variable(double* data, const int n, const char* name_
 void load_vector_table_variable(double* data, const int n, const char* name_c);
 
 double get_vehicle_property(struct c_Vehicle* vehicle, const double* q, const double* qa, const double* u, const double s, const char* property_name);
+
+void save_vehicle_as_xml(struct c_Vehicle* vehicle, const char* file_name);
 
 // Modifyers -----------------------------------------------------------------------------------------------------------
 void set_scalar_parameter(struct c_Vehicle* vehicle, const char* parameter, const double value);

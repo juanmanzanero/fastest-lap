@@ -75,7 +75,7 @@ class Control_brake
 
 Xml_document* get_database()
 {
-    Xml_document* database = new Xml_document("database/roberto-lot-kart-2016.xml", true ); 
+    Xml_document* database = new Xml_document("database/vehicles/kart/roberto-lot-kart-2016.xml", true ); 
 
     // set the 'smooth' max parameter to 0
     database->get_element("vehicle/front-tire/Fz-max-ref2").set_value("0.0");
