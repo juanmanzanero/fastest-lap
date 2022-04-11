@@ -113,10 +113,10 @@ make install
 
 #### Linux
 
-A Docker build environment is provided for compilation on Linux.
+A Docker build environment is provided and can be used to compile the shared library and generate the Python bindings.
 
 ```shell
-scripts/linux/run_docker.sh
+sh ./src/scripts/linux/docker_compile.sh
 ```
 
 ### References
