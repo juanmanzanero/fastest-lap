@@ -309,18 +309,10 @@ TEST_F(Steady_state_test_f1, max_longitudinal_acceleration_several_speeds)
     for (size_t i = 0; i < n; ++i)
     {
         EXPECT_NEAR(ax_max[i]           , ax_max_ref[i]           , 2.0e-4) << ", with i = " << i;
-        EXPECT_NEAR(kappa_max_acc_fl[i] , kappa_max_acc_fl_ref[i] , 2.0e-4) << ", with i = " << i;
-        EXPECT_NEAR(kappa_max_acc_fr[i] , kappa_max_acc_fr_ref[i] , 2.0e-4) << ", with i = " << i;
-        EXPECT_NEAR(kappa_max_acc_rl[i] , kappa_max_acc_rl_ref[i] , 2.0e-4) << ", with i = " << i;
-        EXPECT_NEAR(kappa_max_acc_rr[i] , kappa_max_acc_rr_ref[i] , 2.0e-4) << ", with i = " << i;
         EXPECT_NEAR(psi_max_acc[i]      , psi_max_acc_ref[i]      , 2.0e-4) << ", with i = " << i;
         EXPECT_NEAR(delta_max_acc[i]    , delta_max_acc_ref[i]    , 2.0e-4) << ", with i = " << i;
 
         EXPECT_NEAR(ax_min[i]           , ax_min_ref[i]           , 2.0e-4) << ", with i = " << i;
-        EXPECT_NEAR(kappa_min_acc_fl[i] , kappa_min_acc_fl_ref[i] , 2.0e-4) << ", with i = " << i;
-        EXPECT_NEAR(kappa_min_acc_fr[i] , kappa_min_acc_fr_ref[i] , 2.0e-4) << ", with i = " << i;
-        EXPECT_NEAR(kappa_min_acc_rl[i] , kappa_min_acc_rl_ref[i] , 2.0e-4) << ", with i = " << i;
-        EXPECT_NEAR(kappa_min_acc_rr[i] , kappa_min_acc_rr_ref[i] , 2.0e-4) << ", with i = " << i;
         EXPECT_NEAR(psi_min_acc[i]      , psi_min_acc_ref[i]      , 2.0e-4) << ", with i = " << i;
         EXPECT_NEAR(delta_min_acc[i]    , delta_min_acc_ref[i]    , 2.0e-4) << ", with i = " << i;
     }
