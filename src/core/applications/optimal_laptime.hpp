@@ -550,7 +550,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
 
     for (size_t i = offset; i < n_points; ++i)
     {
-        // Set state before time
+        // Set state and initial condition from start to ITIME
         for (size_t j = 0; j < Dynamic_model_t::Road_type::ITIME; ++j)    
         {
             x0[k] = q[i][j];
@@ -567,7 +567,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
         x_ub[k] =  car.get_road().get_right_track_limit(s[i]);
         k++;
 
-        // Set state after the normal 
+        // Set state after IN
         for (size_t j = Dynamic_model_t::Road_type::IN+1; j < Dynamic_model_t::NSTATE; ++j)    
         {
             x0[k] = q[i][j];
@@ -992,7 +992,6 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_direct<isClosed>::operator()(FG
     fg[0] = 0.0;
 
     // Loop over the nodes
-    
     std::tie(_dqdt[0], _dqa[0]) = _car(_q[0],_qa[0],_u[0],_s[0]);
     k = 1;  // Reset the counter
     for (size_t i = 1; i < _n_points; ++i)
@@ -1088,6 +1087,7 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_derivative<isClosed>::operator(
     auto& _dqdt          = FG::_dqdt;
     auto& _dqa           = FG::_dqa ;
     auto& _dissipations  = FG::_dissipations;
+    auto& _sigma         = FG::_sigma;
 
     assert(x.size() == FG::_n_variables);
     assert(fg.size() == (1 + FG::_n_constraints));
@@ -1152,18 +1152,26 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_derivative<isClosed>::operator(
     {
         std::tie(_dqdt[i], _dqa[i]) = _car(_q[i],_qa[i],_u[i],_s[i]);
 
-        // Fitness function: integral of time
-        fg[0] += 0.5*(_s[i]-_s[i-1])*(_dqdt[i-1][Dynamic_model_t::Road_type::ITIME] + _dqdt[i][Dynamic_model_t::Road_type::ITIME]);
+        // (1) Fitness function: 
+
+        // (1.1) Integral of time
+        fg[0] += (_s[i]-_s[i-1])*((1.0-_sigma)*_dqdt[i-1][Dynamic_model_t::Road_type::ITIME] + _sigma*_dqdt[i][Dynamic_model_t::Road_type::ITIME]);
+
+/*
+        // (1.2) Penalisation of controls
+        for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
+            fg[0] += 0.5*_dissipations[j]*(_dudt[i-i][j]*_dudt[i-i][j]+_dudt[i][j]*_dudt[i][j])*(_s[i]-_s[i-1]);
+*/
 
         // Equality constraints: 
 
         // q^{i} = q^{i-1} + 0.5.ds.[dqdt^{i} + dqdt^{i-1}] (before time)
         for (size_t j = 0; j < Dynamic_model_t::Road_type::ITIME; ++j)
-            fg[k++] = _q[i][j] - _q[i-1][j] - 0.5*(_s[i]-_s[i-1])*(_dqdt[i-1][j] + _dqdt[i][j]);
+            fg[k++] = _q[i][j] - _q[i-1][j] - (_s[i]-_s[i-1])*((1.0-_sigma)*_dqdt[i-1][j] + _sigma*_dqdt[i][j]);
 
         // q^{i} = q^{i-1} + 0.5.ds.[dqdt^{i} + dqdt^{i-1}] (before time)
         for (size_t j = Dynamic_model_t::Road_type::ITIME+1; j < Dynamic_model_t::NSTATE; ++j)
-            fg[k++] = _q[i][j] - _q[i-1][j] - 0.5*(_s[i]-_s[i-1])*(_dqdt[i-1][j] + _dqdt[i][j]);
+            fg[k++] = _q[i][j] - _q[i-1][j] - (_s[i]-_s[i-1])*((1.0-_sigma)*_dqdt[i-1][j] + _sigma*_dqdt[i][j]);
 
         // algebraic constraints: dqa^{i} = 0.0
         for (size_t j = 0; j < Dynamic_model_t::NALGEBRAIC; ++j)
@@ -1176,7 +1184,7 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_derivative<isClosed>::operator(
             fg[k++] = c_extra[j];
 
         for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
-            fg[k++] = _u[i][j] - _u[i-1][j] - 0.5*(_s[i]-_s[i-1])*(_dudt[i-1][j]*_dqdt[i-1][Dynamic_model_t::Road_type::ITIME]+_dudt[i][j]*_dqdt[i][Dynamic_model_t::Road_type::ITIME]);
+            fg[k++] = _u[i][j] - _u[i-1][j] - (_s[i]-_s[i-1])*((1.0-_sigma)*_dudt[i-1][j]*_dqdt[i-1][Dynamic_model_t::Road_type::ITIME]+_sigma*_dudt[i][j]*_dqdt[i][Dynamic_model_t::Road_type::ITIME]);
     }
 
     // Add a penalisation to the controls (TODO do this properly)
@@ -1188,18 +1196,26 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_derivative<isClosed>::operator(
     const scalar& L = _car.get_road().track_length();
     if constexpr (isClosed)
     {
-        // Fitness function: integral of time
-        fg[0] += 0.5*(L-_s.back())*(_dqdt.front()[Dynamic_model_t::Road_type::ITIME] + _dqdt.back()[Dynamic_model_t::Road_type::ITIME]);
+        // (1) Fitness function: 
+
+        // (1.1) Integral of time
+        fg[0] += (L-_s.back())*((1.0-_sigma)*_dqdt.back()[Dynamic_model_t::Road_type::ITIME] + _sigma*_dqdt.front()[Dynamic_model_t::Road_type::ITIME]);
+
+/*
+        // (1.2) Penalisation to the controls
+        for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
+            fg[0] += 0.5*_dissipations[j]*(_dudt.back()[j]*_dudt.back()[j] + _dudt.front()[j]*_dudt.front()[j])*(L-_s.back());
+*/
 
         // Equality constraints: 
 
         // q^{i} = q^{i-1} + 0.5.ds.[dqdt^{i} + dqdt^{i-1}] (before time)
         for (size_t j = 0; j < Dynamic_model_t::Road_type::ITIME; ++j)
-            fg[k++] = _q.front()[j] - _q.back()[j] - 0.5*(L-_s.back())*(_dqdt.back()[j] + _dqdt.front()[j]);
+            fg[k++] = _q.front()[j] - _q.back()[j] - (L-_s.back())*((1.0-_sigma)*_dqdt.back()[j] + _sigma*_dqdt.front()[j]);
 
         // q^{i} = q^{i-1} + 0.5.ds.[dqdt^{i} + dqdt^{i-1}] (before time)
         for (size_t j = Dynamic_model_t::Road_type::ITIME+1; j < Dynamic_model_t::NSTATE; ++j)
-            fg[k++] = _q.front()[j] - _q.back()[j] - 0.5*(L-_s.back())*(_dqdt.back()[j] + _dqdt.front()[j]);
+            fg[k++] = _q.front()[j] - _q.back()[j] - (L-_s.back())*((1.0-_sigma)*_dqdt.back()[j] + _sigma*_dqdt.front()[j]);
 
         // algebraic constraints: dqa^{0} = 0
         for (size_t j = 0; j < Dynamic_model_t::NALGEBRAIC; ++j)
@@ -1213,7 +1229,7 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_derivative<isClosed>::operator(
             fg[k++] = c_extra[j];
 
         for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
-            fg[k++] = _u.front()[j] - _u.back()[j] - 0.5*(L-_s.back())*(_dudt.back()[j]*_dqdt.back()[Dynamic_model_t::Road_type::ITIME]+_dudt.front()[j]*_dqdt.front()[Dynamic_model_t::Road_type::ITIME]);
+            fg[k++] = _u.front()[j] - _u.back()[j] - (L-_s.back())*((1.0-_sigma)*_dudt.back()[j]*_dqdt.back()[Dynamic_model_t::Road_type::ITIME]+_sigma*_dudt.front()[j]*_dqdt.front()[Dynamic_model_t::Road_type::ITIME]);
 
         // Add the penalisation to the controls
         for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)

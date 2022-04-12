@@ -125,6 +125,7 @@ class Optimal_laptime
 
     struct 
     {
+        std::vector<scalar> duds;
         std::vector<scalar> zl;
         std::vector<scalar> zu;
         std::vector<scalar> lambda;
