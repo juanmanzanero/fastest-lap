@@ -1157,11 +1157,9 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_derivative<isClosed>::operator(
         // (1.1) Integral of time
         fg[0] += (_s[i]-_s[i-1])*((1.0-_sigma)*_dqdt[i-1][Dynamic_model_t::Road_type::ITIME] + _sigma*_dqdt[i][Dynamic_model_t::Road_type::ITIME]);
 
-/*
         // (1.2) Penalisation of controls
         for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
             fg[0] += 0.5*_dissipations[j]*(_dudt[i-i][j]*_dudt[i-i][j]+_dudt[i][j]*_dudt[i][j])*(_s[i]-_s[i-1]);
-*/
 
         // Equality constraints: 
 
@@ -1187,11 +1185,6 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_derivative<isClosed>::operator(
             fg[k++] = _u[i][j] - _u[i-1][j] - (_s[i]-_s[i-1])*((1.0-_sigma)*_dudt[i-1][j]*_dqdt[i-1][Dynamic_model_t::Road_type::ITIME]+_sigma*_dudt[i][j]*_dqdt[i][Dynamic_model_t::Road_type::ITIME]);
     }
 
-    // Add a penalisation to the controls (TODO do this properly)
-    for (size_t i = 1; i < _n_points; ++i)
-        for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
-            fg[0] += _dissipations[j]*(_dudt[i][j]*_dudt[i][j])*(_s[i]-_s[i-1]);
-
     // Add the periodic element if track is closed
     const scalar& L = _car.get_road().track_length();
     if constexpr (isClosed)
@@ -1201,11 +1194,9 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_derivative<isClosed>::operator(
         // (1.1) Integral of time
         fg[0] += (L-_s.back())*((1.0-_sigma)*_dqdt.back()[Dynamic_model_t::Road_type::ITIME] + _sigma*_dqdt.front()[Dynamic_model_t::Road_type::ITIME]);
 
-/*
         // (1.2) Penalisation to the controls
         for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
             fg[0] += 0.5*_dissipations[j]*(_dudt.back()[j]*_dudt.back()[j] + _dudt.front()[j]*_dudt.front()[j])*(L-_s.back());
-*/
 
         // Equality constraints: 
 
@@ -1231,11 +1222,6 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_derivative<isClosed>::operator(
         for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
             fg[k++] = _u.front()[j] - _u.back()[j] - (L-_s.back())*((1.0-_sigma)*_dudt.back()[j]*_dqdt.back()[Dynamic_model_t::Road_type::ITIME]+_sigma*_dudt.front()[j]*_dqdt.front()[Dynamic_model_t::Road_type::ITIME]);
 
-        // Add the penalisation to the controls
-        for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
-        {
-            fg[0] += _dissipations[j]*(_dudt[0][j]*_dudt[0][j])*(L-_s.back());
-        }
     }
 
     assert(k == FG::_n_constraints+1);
