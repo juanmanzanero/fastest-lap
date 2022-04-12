@@ -73,6 +73,7 @@ class Optimal_laptime
                     const std::vector<std::array<scalar,Dynamic_model_t::NSTATE>>& q0, 
                     const std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>>& qa0,
                     const std::vector<std::array<scalar,Dynamic_model_t::NCONTROL>>& u0, 
+                    const std::vector<std::array<scalar,Dynamic_model_t::NCONTROL>>& dudt0, 
                     const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations,
                     const Options opts);
 
@@ -84,6 +85,7 @@ class Optimal_laptime
                     const std::vector<std::array<scalar,Dynamic_model_t::NSTATE>>& q0, 
                     const std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>>& qa0,
                     const std::vector<std::array<scalar,Dynamic_model_t::NCONTROL>>& u0, 
+                    const std::vector<std::array<scalar,Dynamic_model_t::NCONTROL>>& dudt0, 
                     const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations,
                     const std::vector<scalar>& zl,
                     const std::vector<scalar>& zu,
@@ -119,13 +121,14 @@ class Optimal_laptime
     std::vector<std::array<scalar,Dynamic_model_t::NSTATE>> q;       //! All state vectors
     std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>> qa;  //! All algebraic variables vectors
     std::vector<std::array<scalar,Dynamic_model_t::NCONTROL>> u;     //! All control vectors
+    std::vector<std::array<scalar,Dynamic_model_t::NCONTROL>> dudt;  //! All control vectors derivatives: only used for is_direct = false
     std::vector<scalar> x_coord;
     std::vector<scalar> y_coord;
     std::vector<scalar> psi;
 
+    size_t iter_count;
     struct 
     {
-        std::vector<scalar> duds;
         std::vector<scalar> zl;
         std::vector<scalar> zu;
         std::vector<scalar> lambda;
@@ -238,17 +241,21 @@ class Optimal_laptime
                       const std::array<scalar,Dynamic_model_t::NSTATE>& q0, 
                       const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& qa0, 
                       const std::array<scalar,Dynamic_model_t::NCONTROL>& u0,
+                      const std::array<scalar,Dynamic_model_t::NCONTROL>& dudt0,
                       const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations,
                       const scalar sigma
           ) : FG(n_elements, 
                  n_points,
                  n_elements*n_variables_per_point<false>,
                  n_elements*n_constraints_per_element<false>,
-                 car, s, q0, qa0, u0, dissipations, sigma), _dudt(n_points,{0.0}) {}
+                 car, s, q0, qa0, u0, dissipations, sigma), _dudt0(dudt0), _dudt(n_points,{0.0}) {}
 
         void operator()(ADvector& fg, const ADvector& x);
+
+        const std::array<Timeseries_t,Dynamic_model_t::NCONTROL>& get_control_derivative(const size_t i) const { return _dudt[i]; }
      private:
         
+        std::array<scalar,Dynamic_model_t::NCONTROL> _dudt0;                     //! [c] Control vector derivative for the initial node
         std::vector<std::array<Timeseries_t,Dynamic_model_t::NCONTROL>> _dudt;
     };
 

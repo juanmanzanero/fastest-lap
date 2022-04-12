@@ -922,7 +922,14 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, str
             u0.front()  = u_start;
         }
 
-        opt_laptime = Optimal_laptime(arclength, is_closed, is_direct, car_curv, q0, qa0, u0, dissipations, opts);
+        std::vector<std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NCONTROL>> dudt0;
+
+        if ( !is_direct )
+        {
+            dudt0 = {static_cast<size_t>(n_points), {0.0}};
+        }
+
+        opt_laptime = Optimal_laptime(arclength, is_closed, is_direct, car_curv, q0, qa0, u0, dudt0, dissipations, opts);
     }
     // (5.2.b) Warm start
     else
@@ -930,6 +937,7 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, str
         std::vector<std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NSTATE>> q;
         std::vector<std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NALGEBRAIC>> qa;
         std::vector<std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NCONTROL>> u;
+        std::vector<std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NCONTROL>> dudt;
         
         for (const auto& q_vector : warm_start_variables.q)
         {
@@ -952,7 +960,12 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, str
             u.push_back(u_arr);
         }
 
-        opt_laptime = Optimal_laptime(warm_start_variables.s, is_closed, is_direct, car_curv, q, qa, u, dissipations, warm_start_variables.zl, 
+        if ( !is_direct ) 
+        {
+            dudt = {warm_start_variables.s.size(), {0.0}};
+        }
+
+        opt_laptime = Optimal_laptime(warm_start_variables.s, is_closed, is_direct, car_curv, q, qa, u, dudt, dissipations, warm_start_variables.zl, 
                         warm_start_variables.zu, warm_start_variables.lambda, opts);
     }
 

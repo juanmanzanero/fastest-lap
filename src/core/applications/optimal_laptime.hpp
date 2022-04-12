@@ -28,6 +28,11 @@ inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const size_t n, const b
     qa = std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>>(n_points,qa0);
     u  = std::vector<std::array<scalar,Dynamic_model_t::NCONTROL>>(n_points,u0);
 
+    if ( is_direct )
+        dudt = {};
+    else
+        dudt = std::vector<std::array<scalar,Dynamic_model_t::NCONTROL>>(n_points,{0.0});
+
     // (4) Compute
     compute(car, dissipations);
 }
@@ -38,6 +43,7 @@ inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const std::vector<scala
     const Dynamic_model_t& car, const std::vector<std::array<scalar,Dynamic_model_t::NSTATE>>& q0, 
     const std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>>& qa0,
     const std::vector<std::array<scalar,Dynamic_model_t::NCONTROL>>& u0, 
+    const std::vector<std::array<scalar,Dynamic_model_t::NCONTROL>>& dudt0,
     const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations,
     const Options opts)
 : options(opts), is_closed(is_closed_), is_direct(is_direct_), warm_start(false)
@@ -90,6 +96,20 @@ inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const std::vector<scala
     qa = qa0;
     u  = u0;
 
+    // (3.1) Derivative of the controls: empty if direct, size equal to n_points if derivative
+    if ( is_direct ) 
+    {
+        if ( dudt0.size() > 0 )
+            throw std::runtime_error("dudt0 should be empty for direct simulations");
+        dudt = {};
+    }
+    else
+    {
+        if ( dudt0.size() != n_points )
+            throw std::runtime_error("dudt0 must have size of n_points");
+        dudt = dudt0;
+    }
+
     // (4) Compute
     compute(car, dissipations);
 }
@@ -100,6 +120,7 @@ inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const std::vector<scala
     const Dynamic_model_t& car, const std::vector<std::array<scalar,Dynamic_model_t::NSTATE>>& q0, 
     const std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>>& qa0,
     const std::vector<std::array<scalar,Dynamic_model_t::NCONTROL>>& u0, 
+    const std::vector<std::array<scalar,Dynamic_model_t::NCONTROL>>& dudt0,
     const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations,
     const std::vector<scalar>& zl,
     const std::vector<scalar>& zu,
@@ -115,7 +136,7 @@ inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const std::vector<scala
     n_points = s.size();
     n_elements = (is_closed ? n_points : n_points - 1);
 
-    // (2) Verify the vector or arclength
+    // (2) Verify the vector of arclength
     const scalar& L = car.get_road().track_length();
 
     if (is_closed)
@@ -155,11 +176,26 @@ inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const std::vector<scala
     qa = qa0;
     u  = u0;
 
+    // (3.1) Derivative of the controls: empty if direct, size equal to n_points if derivative
+    if ( is_direct ) 
+    {
+        if ( dudt0.size() > 0 )
+            throw std::runtime_error("dudt0 should be empty for direct simulations");
+        dudt = {};
+    }
+    else
+    {
+        if ( dudt0.size() != n_points )
+            throw std::runtime_error("dudt0 must have size of n_points");
+        dudt = dudt0;
+    }
+      
+    // (4) Set optimization data
     optimization_data.zl     = zl;
     optimization_data.zu     = zu;
     optimization_data.lambda = lambda;
 
-    // (4) Compute
+    // (5) Compute
     compute(car, dissipations);
 }
 
@@ -176,6 +212,13 @@ inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(Xml_document& doc)
         is_closed = false;
     else
         throw std::runtime_error("Incorrect track type, should be \"open\" or \"closed\"");
+
+    if ( root.get_attribute("is_direct") == "true" )
+        is_direct = true;
+    else if ( root.get_attribute("is_direct") == "false" )
+        is_direct = false;
+    else
+        throw std::runtime_error("Incorrect \"is_direct\" attribute, should be \"true\" or \"false\"");
 
     const auto [key_name, q_names, qa_names, u_names] = Dynamic_model_t::get_state_and_control_names();
 
@@ -212,6 +255,20 @@ inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(Xml_document& doc)
         std::vector<scalar> data_in = root.get_child(u_names[i]).get_value(std::vector<scalar>());
         for (size_t j = 0; j < n_points; ++j)
             u[j][i] = data_in[j];
+    }
+
+    // Get derivative of the controls
+    if ( is_direct )
+        dudt = {};
+    else
+    {
+        dudt = std::vector<std::array<scalar,Dynamic_model_t::NCONTROL>>(n_points);
+        for (size_t i = 0; i < Dynamic_model_t::NCONTROL; ++i)
+        {
+            std::vector<scalar> data_in = root.get_child("derivatives/" + u_names[i]).get_value(std::vector<scalar>());
+            for (size_t j = 0; j < n_points; ++j)
+                dudt[j][i] = data_in[j];
+        }
     }
 
     // Get x
@@ -457,6 +514,8 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
 
     success = result.status == CppAD::ipopt_cppad_result<std::vector<scalar>>::success; 
 
+    iter_count = result.iter_count;
+
     if ( !success && options.throw_if_fail )
     {
         throw std::runtime_error("Optimization did not succeed");
@@ -532,7 +591,7 @@ template<typename Dynamic_model_t>
 template<bool isClosed>
 inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_model_t& car, const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations) 
 {
-    FG_derivative<isClosed> fg(n_elements,n_points,car,s,q.front(),qa.front(),u.front(),dissipations, options.sigma);
+    FG_derivative<isClosed> fg(n_elements,n_points,car,s,q.front(),qa.front(),u.front(),dudt.front(),dissipations, options.sigma);
     typename std::vector<scalar> x0(fg.get_n_variables(),0.0);
 
     // Set minimum and maximum variables
@@ -593,10 +652,10 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
             k++;
         }
 
-        // Set control derivatives: initially zero
+        // Set control derivatives
         for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
         {
-            x0[k] = 0.0;
+            x0[k] = dudt[i][j];
             x_lb[k] = dudt_lb[j];
             x_ub[k] = dudt_ub[j];
             k++;
@@ -696,8 +755,46 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
         }
     }
 
-    assert(k == fg.get_n_variables());
-    assert(kc == fg.get_n_constraints());
+    if ( k != fg.get_n_variables() )
+    {
+        std::ostringstream s_out;
+        s_out << "k(=" << k << ") != fg.get_n_variables()(=" << fg.get_n_variables() << ")" ;
+        throw std::runtime_error(s_out.str());
+    }
+    
+    if ( kc != fg.get_n_constraints() )
+    {
+        std::ostringstream s_out;
+        s_out << "kc(=" << kc << ") != fg.get_n_constraints()(=" << fg.get_n_constraints() << ")" ;
+        throw std::runtime_error(s_out.str());
+    }
+
+
+    // Warm-start: simply check the dimensions
+    if ( warm_start )
+    {
+        if ( optimization_data.zl.size() != n_elements*n_variables_per_point<false> )
+        {
+            std::ostringstream s_out;
+            s_out << "size of zl should be " << n_elements*n_variables_per_point<false> << " but it is " << optimization_data.zl.size();
+            throw std::runtime_error(s_out.str());
+        }
+
+        if ( optimization_data.zu.size() != n_elements*n_variables_per_point<false> )
+        {
+            std::ostringstream s_out;
+            s_out << "size of zu should be " << n_elements*n_variables_per_point<false> << " but it is " << optimization_data.zu.size();
+            throw std::runtime_error(s_out.str());
+        }
+
+        if ( optimization_data.lambda.size() != n_elements*n_constraints_per_element<false> )
+        {
+            std::ostringstream s_out;
+            s_out << "size of lambda should be " << n_elements*n_variables_per_point<false> << " but it is " << optimization_data.lambda.size();
+            throw std::runtime_error(s_out.str());
+        }
+    } 
+
 
     // options
     std::string ipoptoptions;
@@ -712,12 +809,21 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
     ipoptoptions += "Numeric acceptable_tol  1e-8\n";
 
     // place to return solution
-    CppAD::ipopt::solve_result<std::vector<scalar>> result;
+    CppAD::ipopt_cppad_result<std::vector<scalar>> result;
 
     // solve the problem
-    CppAD::ipopt::solve<std::vector<scalar>, FG_derivative<isClosed>>(ipoptoptions, x0, x_lb, x_ub, c_lb, c_ub, fg, result);
+    if ( !warm_start )
+        CppAD::ipopt_cppad_solve<std::vector<scalar>, FG_derivative<isClosed>>(ipoptoptions, x0, x_lb, x_ub, c_lb, c_ub, fg, result);
+    else
+        CppAD::ipopt_cppad_solve<std::vector<scalar>, FG_derivative<isClosed>>(ipoptoptions, x0, x_lb, x_ub, c_lb, c_ub, 
+            optimization_data.lambda, optimization_data.zl, optimization_data.zu, fg, result);
+ 
 
-    if ( result.status != CppAD::ipopt::solve_result<std::vector<scalar>>::success )
+    success = result.status == CppAD::ipopt_cppad_result<std::vector<scalar>>::success; 
+    
+    iter_count = result.iter_count;
+
+    if ( !success && options.throw_if_fail )
     {
         throw std::runtime_error("Optimization did not succeed");
     }
@@ -753,6 +859,12 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
     for (size_t i = 0; i < n_points; ++i)
         for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
             u[i][j] = Value(fg.get_control(i)[j]);
+
+    dudt = std::vector<std::array<scalar,Dynamic_model_t::NCONTROL>>(n_points);
+
+    for (size_t i = 0; i < n_points; ++i)
+        for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
+            dudt[i][j] = Value(fg.get_control_derivative(i)[j]);
 
     // Compute the time, x, y, and psi
     x_coord = std::vector<scalar>(fg.get_states().size());
@@ -809,6 +921,12 @@ std::unique_ptr<Xml_document> Optimal_laptime<Dynamic_model_t>::xml() const
     else
         root.add_attribute("type", "open");
 
+    if ( is_direct )
+        root.add_attribute("is_direct","true");
+    else
+        root.add_attribute("is_direct","false");
+    
+
     // Save arclength
     for (size_t j = 0; j < s.size()-1; ++j)
         s_out << s[j] << ", ";
@@ -856,6 +974,21 @@ std::unique_ptr<Xml_document> Optimal_laptime<Dynamic_model_t>::xml() const
         s_out.str(""); s_out.clear();
     }
 
+    // Save controls derivatives if not direct
+    if ( !is_direct )
+    {
+        for (size_t i = 0; i < Dynamic_model_t::NCONTROL; ++i)
+        {
+            for (size_t j = 0; j < dudt.size()-1; ++j)
+                s_out << dudt[j][i] << ", " ;
+    
+            s_out << dudt.back()[i];
+    
+            root.add_child("derivatives/" + u_names[i]).set_value(s_out.str());
+            s_out.str(""); s_out.clear();
+        }
+    }
+
     // Save x, y, and psi if they are not contained
     for (size_t j = 0; j < q.size()-1; ++j)
         s_out << x_coord[j] << ", " ;
@@ -882,6 +1015,7 @@ std::unique_ptr<Xml_document> Optimal_laptime<Dynamic_model_t>::xml() const
     auto opt_data = root.add_child("optimization_data");
     size_t n_vars(0);
     size_t n_cons(0);
+
     if ( is_direct )
     {
         n_vars = n_variables_per_point<true>;
@@ -1111,7 +1245,7 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_derivative<isClosed>::operator(
 
         // Load the control derivative in the first position
         for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
-            _dudt[0][j] = 0.0;
+            _dudt[0][j] = _dudt0[j];
     }
 
     constexpr const size_t offset = (isClosed ? 0 : 1);
