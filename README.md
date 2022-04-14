@@ -22,6 +22,9 @@ Fastest-lap is a vehicle dynamics simulator. It can be used to understand vehicl
 
   This is not a quasi-steady-state simulation. The model solves the fully transient states as in the dynamic equations without steady-state assumptions.
 
+https://user-images.githubusercontent.com/26557659/163474269-5c195f4b-2109-419d-af49-7b7fa86a603d.mp4
+
+
 [gg]: https://github.com/juanmanzanero/fastest-lap/tree/main/examples/python/kart/gg-diagram
 [optimal-laptime]: https://github.com/juanmanzanero/fastest-lap/tree/main/examples/python/f1/optimal-laptime
 
