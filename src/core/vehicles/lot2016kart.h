@@ -160,26 +160,12 @@ class lot2016kart
 
 
         // Optimal lap-time --------------------------------------------------------
-        std::tuple<std::vector<scalar>,std::vector<scalar>,std::vector<scalar>,std::vector<scalar>> optimal_laptime_control_bounds() const
+        std::tuple<std::vector<scalar>,std::vector<scalar>> optimal_laptime_derivative_control_bounds() const
         {
             if ( this->get_chassis().get_rear_axle().is_direct_torque() )
-                return {{-20.0*DEG,-200.0},{20.0*DEG,200.0},{-20.0*DEG,-4000.0},{20.0*DEG,4000.0}};
+                return {{-20.0*DEG,-4000.0},{20.0*DEG,4000.0}};
             else
-                return {{-20.0*DEG,-1.0},{20.0*DEG,1.0},{-20.0*DEG,-10.0},{20.0*DEG,10.0}};
-        }
-
-        static std::pair<std::vector<scalar>,std::vector<scalar>> optimal_laptime_state_bounds() 
-        {
-            return 
-            {
-                { 10.0*KMH/0.139, 10.0*KMH,-10.0*KMH, -10.0, 1.0e-5, -30.0*DEG, -30.0*DEG, -10.0, -10.0, -10.0, 0.0, -2.0, -30.0*DEG },
-                { 200.0*KMH/0.139, 200.0*KMH,10.0*KMH, 10.0, 0.139,  30.0*DEG,  30.0*DEG,  10.0,  10.0,  10.0, 0.0,  2.0,  30.0*DEG }
-            };
-        }
-
-        static std::pair<std::vector<scalar>,std::vector<scalar>> optimal_laptime_algebraic_state_bounds()
-        {
-            return {{},{}};
+                return {{-20.0*DEG,-10.0},{20.0*DEG,10.0}};
         }
 
         std::pair<std::vector<scalar>,std::vector<scalar>> optimal_laptime_extra_constraints_bounds(const scalar s) const

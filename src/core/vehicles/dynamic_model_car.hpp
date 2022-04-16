@@ -165,4 +165,36 @@ std::tuple<std::string,std::array<std::string,_NSTATE>,std::array<std::string,Ch
     return {key_name,q_names,qa_names,u_names};
 }
 
+
+
+template<typename Timeseries_t, typename Chassis_t, typename RoadModel_t, size_t _NSTATE, size_t _NCONTROL>
+typename Dynamic_model_car<Timeseries_t,Chassis_t,RoadModel_t,_NSTATE,_NCONTROL>::State_and_control_upper_lower_and_default_values 
+    Dynamic_model_car<Timeseries_t,Chassis_t,RoadModel_t,_NSTATE,_NCONTROL>::get_state_and_control_upper_lower_and_default_values() const
+{
+    // (1) Define outputs
+    std::array<scalar,_NSTATE> q_def;
+    std::array<scalar,_NSTATE> q_lb;
+    std::array<scalar,_NSTATE> q_ub;
+    std::array<scalar,NALGEBRAIC> qa_def;
+    std::array<scalar,NALGEBRAIC> qa_lb;
+    std::array<scalar,NALGEBRAIC> qa_ub;
+    std::array<scalar,_NCONTROL> u_def;
+    std::array<scalar,_NCONTROL> u_lb;
+    std::array<scalar,_NCONTROL> u_ub;
+
+    // (2) Outputs are filled by chassis
+    _chassis.set_state_and_control_upper_lower_and_default_values(q_def, q_lb, q_ub, qa_def, qa_lb, qa_ub, u_def, u_lb, u_ub);
+
+    // (3) Outputs are filled by road
+    _road.set_state_and_control_upper_lower_and_default_values(q_def, q_lb, q_ub, u_def, u_lb, u_ub);
+
+    // (4) Return
+    return (State_and_control_upper_lower_and_default_values)
+    {
+        .q_def  = q_def , .q_lb  = q_lb , .q_ub  = q_ub , 
+        .qa_def = qa_def, .qa_lb = qa_lb, .qa_ub = qa_ub, 
+        .u_def  = u_def , .u_lb  = u_lb , .u_ub  = u_ub   
+    };
+}
+
 #endif

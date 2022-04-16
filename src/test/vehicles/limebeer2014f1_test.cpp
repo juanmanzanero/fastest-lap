@@ -41,7 +41,8 @@ static_assert(limebeer2014f1<scalar>::cartesian::NSTATE == 10);
 // Check expected indexes for control variables
 static_assert(Front_axle_t::ISTEERING == 0);
 static_assert(Chassis_t::ITHROTTLE    == 1);
-static_assert(limebeer2014f1<scalar>::cartesian::NCONTROL == 2);
+static_assert(Chassis_t::IBRAKE_BIAS  == 2);
+static_assert(limebeer2014f1<scalar>::cartesian::NCONTROL == 3);
 
 // Check expected indexes for state derivative variables
 static_assert(Front_axle_t::IIDKAPPA_LEFT  == 0);
@@ -76,7 +77,8 @@ TEST_F(limebeer2014f1_test, indexes)
 
     EXPECT_EQ(Front_axle_t::ISTEERING, 0);
     EXPECT_EQ(Chassis_t::ITHROTTLE, 1);
-    EXPECT_EQ(limebeer2014f1<scalar>::cartesian::NCONTROL, 2);
+    EXPECT_EQ(Chassis_t::IBRAKE_BIAS, 2);
+    EXPECT_EQ(limebeer2014f1<scalar>::cartesian::NCONTROL, 3);
 
     EXPECT_EQ(Front_axle_t::IIDKAPPA_LEFT  , 0);
     EXPECT_EQ(Front_axle_t::IIDKAPPA_RIGHT , 1);
@@ -108,7 +110,8 @@ TEST_F(limebeer2014f1_test, jacobian_autodiff)
     // Fill the inputs to the operator() of the vehicle. These inputs belong to a 0g trim at 300km/h
     std::array<double,10> q0 = {0.0, 0.0, 0.0111971, 0.0111971, 83.3333, 0.0, 0.0, 0.0, 0.0, 0.0};
     std::array<double,4> qa0 = {-0.874103, -0.874103, -1.07386, -1.07386};
-    std::array<double,2> u0 = {0.0, 0.644468};
+    auto u0 = car_ad.get_state_and_control_upper_lower_and_default_values().u_def;
+    u0[decltype(car_ad)::Chassis_type::ITHROTTLE] = 0.644468;
 
     // Call operator()
     auto solution = car_ad.equations(q0,qa0,u0,0.0);
@@ -196,7 +199,9 @@ TEST_F(limebeer2014f1_test, jacobian_autodiff_random)
     // Fill the inputs to the operator() of the vehicle. These are made up inputs
     std::array<double,10> q0 = {-0.05, -0.08, 0.0200000, 0.0800000, 50.0000, -5.0, 0.4, 0.0, 0.0, 5.0*DEG};
     std::array<double,4> qa0 = {-0.674103, -0.474103, -0.80386, -0.70386};
-    std::array<double,2> u0 = {-2.0*DEG, 0.100000};
+    auto u0 = car_ad.get_state_and_control_upper_lower_and_default_values().u_def;
+    u0[decltype(car_ad)::Chassis_type::front_axle_type::ISTEERING] = -2.0*DEG;
+    u0[decltype(car_ad)::Chassis_type::ITHROTTLE] = 0.100000;
 
     // Call operator()
     auto solution = car_ad.equations(q0,qa0,u0,0.0);
@@ -356,7 +361,7 @@ TEST_F(limebeer2014f1_test, set_parameter)
 
     std::array<double,10> q0;
     std::array<double,4> qa0;
-    std::array<double,2> u0;
+    auto u0 = car.get_state_and_control_upper_lower_and_default_values().u_def;
     
     constexpr const size_t n = 500;
 
@@ -386,7 +391,9 @@ TEST_F(limebeer2014f1_test, set_parameter)
         q0 = {kappa_fl_saved[i], kappa_fr_saved[i], kappa_rl_saved[i], kappa_rr_saved[i], u_saved[i], v_saved[i], omega_saved[i],
               time_saved[i], n_saved[i], alpha_saved[i]};
 
-        u0 = {delta_saved[i], throttle_saved[i]};
+        u0[decltype(car)::Chassis_type::front_axle_type::ISTEERING] = delta_saved[i];
+        u0[decltype(car)::Chassis_type::ITHROTTLE] = throttle_saved[i];
+
         qa0 = {Fz_fl_saved[i], Fz_fr_saved[i], Fz_rl_saved[i], Fz_rr_saved[i]};
 
         auto [dqdt, dqa] = car(q0,qa0,u0,arclength_saved[i]);
@@ -436,15 +443,47 @@ TEST_F(limebeer2014f1_test,propagation_crank_nicolson)
 
     // Take a Crank-Nicolson step on i = 112
     const size_t i_start = 112;
-    std::array<scalar,limebeer2014f1<scalar>::curvilinear_p::NSTATE> q = {kappa_fl_saved[i_start], kappa_fr_saved[i_start], kappa_rl_saved[i_start], kappa_rr_saved[i_start],
-                                                                          u_saved[i_start], v_saved[i_start], omega_saved[i_start], time_saved[i_start], n_saved[i_start], alpha_saved[i_start]};
-    std::array<scalar,limebeer2014f1<scalar>::curvilinear_p::NALGEBRAIC> qa = {Fz_fl_saved[i_start], Fz_fr_saved[i_start], Fz_rl_saved[i_start], Fz_rr_saved[i_start]};
-    std::array<scalar,limebeer2014f1<scalar>::curvilinear_p::NCONTROL> u = {delta_saved[i_start], throttle_saved[i_start]};
+    std::array<scalar,limebeer2014f1<scalar>::curvilinear_p::NSTATE> q = {kappa_fl_saved[i_start],
+                                                                          kappa_fr_saved[i_start],
+                                                                          kappa_rl_saved[i_start],
+                                                                          kappa_rr_saved[i_start],
+                                                                          u_saved[i_start],
+                                                                          v_saved[i_start],
+                                                                          omega_saved[i_start],
+                                                                          time_saved[i_start],
+                                                                          n_saved[i_start],
+                                                                          alpha_saved[i_start]};
 
-    std::array<scalar,limebeer2014f1<scalar>::curvilinear_p::NSTATE> q_next = {kappa_fl_saved[i_start+1], kappa_fr_saved[i_start+1], kappa_rl_saved[i_start+1], kappa_rr_saved[i_start+1],
-                                                                          u_saved[i_start+1], v_saved[i_start+1], omega_saved[i_start+1], time_saved[i_start+1], n_saved[i_start+1], alpha_saved[i_start+1]};
-    std::array<scalar,limebeer2014f1<scalar>::curvilinear_p::NALGEBRAIC> qa_next = {Fz_fl_saved[i_start+1], Fz_fr_saved[i_start+1], Fz_rl_saved[i_start+1], Fz_rr_saved[i_start+1]};
-    std::array<scalar,limebeer2014f1<scalar>::curvilinear_p::NCONTROL> u_next = {delta_saved[i_start+1], throttle_saved[i_start+1]};
+    std::array<scalar,limebeer2014f1<scalar>::curvilinear_p::NALGEBRAIC> qa = {Fz_fl_saved[i_start],
+                                                                               Fz_fr_saved[i_start],
+                                                                               Fz_rl_saved[i_start],
+                                                                               Fz_rr_saved[i_start]};
+
+    auto u = car.get_state_and_control_upper_lower_and_default_values().u_def;
+
+    u[decltype(car)::Chassis_type::front_axle_type::ISTEERING] = delta_saved[i_start];
+    u[decltype(car)::Chassis_type::ITHROTTLE] = throttle_saved[i_start];
+
+    std::array<scalar,limebeer2014f1<scalar>::curvilinear_p::NSTATE> q_next = {kappa_fl_saved[i_start + 1],
+                                                                               kappa_fr_saved[i_start + 1],
+                                                                               kappa_rl_saved[i_start + 1],
+                                                                               kappa_rr_saved[i_start + 1],
+                                                                               u_saved       [i_start + 1],
+                                                                               v_saved       [i_start + 1],
+                                                                               omega_saved   [i_start + 1],
+                                                                               time_saved    [i_start + 1],
+                                                                               n_saved       [i_start + 1],
+                                                                               alpha_saved   [i_start + 1]};
+
+    std::array<scalar,limebeer2014f1<scalar>::curvilinear_p::NALGEBRAIC> qa_next = {Fz_fl_saved[i_start + 1],
+                                                                                    Fz_fr_saved[i_start + 1],
+                                                                                    Fz_rl_saved[i_start + 1],
+                                                                                    Fz_rr_saved[i_start + 1]};
+
+    auto u_next = car.get_state_and_control_upper_lower_and_default_values().u_def;
+
+    u_next[decltype(car)::Chassis_type::front_axle_type::ISTEERING] = delta_saved[i_start+1];
+    u_next[decltype(car)::Chassis_type::ITHROTTLE] = throttle_saved[i_start+1];
 
     scalar s = arclength_saved[i_start];
     scalar s_next = arclength_saved[i_start+1];
@@ -464,7 +503,7 @@ TEST_F(limebeer2014f1_test,propagation_crank_nicolson)
 
 
 
-    Crank_nicolson<limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p,10,4,2>::take_step(car, u, u_next, q, qa, s, s_next-s, {});
+    Crank_nicolson<limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p,10,4,3>::take_step(car, u, u_next, q, qa, s, s_next-s, {});
 
 
     for (size_t i = 0; i < 10; ++i)
@@ -510,15 +549,47 @@ TEST_F(limebeer2014f1_test,propagation_crank_nicolson_corner_exit)
 
     // Take a Crank-Nicolson step on i = 325
     const size_t i_start = 101;
-    std::array<scalar,limebeer2014f1<scalar>::curvilinear_p::NSTATE> q = {kappa_fl_saved[i_start], kappa_fr_saved[i_start], kappa_rl_saved[i_start], kappa_rr_saved[i_start],
-                                                                          u_saved[i_start], v_saved[i_start], omega_saved[i_start], time_saved[i_start], n_saved[i_start], alpha_saved[i_start]};
-    std::array<scalar,limebeer2014f1<scalar>::curvilinear_p::NALGEBRAIC> qa = {Fz_fl_saved[i_start], Fz_fr_saved[i_start], Fz_rl_saved[i_start], Fz_rr_saved[i_start]};
-    std::array<scalar,limebeer2014f1<scalar>::curvilinear_p::NCONTROL> u = {delta_saved[i_start], throttle_saved[i_start]};
+    std::array<scalar,limebeer2014f1<scalar>::curvilinear_p::NSTATE> q = {kappa_fl_saved[i_start],
+                                                                          kappa_fr_saved[i_start],
+                                                                          kappa_rl_saved[i_start],
+                                                                          kappa_rr_saved[i_start],
+                                                                          u_saved[i_start],
+                                                                          v_saved[i_start],
+                                                                          omega_saved[i_start],
+                                                                          time_saved[i_start],
+                                                                          n_saved[i_start],
+                                                                          alpha_saved[i_start]};
 
-    std::array<scalar,limebeer2014f1<scalar>::curvilinear_p::NSTATE> q_next = {kappa_fl_saved[i_start+1], kappa_fr_saved[i_start+1], kappa_rl_saved[i_start+1], kappa_rr_saved[i_start+1],
-                                                                          u_saved[i_start+1], v_saved[i_start+1], omega_saved[i_start+1], time_saved[i_start+1], n_saved[i_start+1], alpha_saved[i_start+1]};
-    std::array<scalar,limebeer2014f1<scalar>::curvilinear_p::NALGEBRAIC> qa_next = {Fz_fl_saved[i_start+1], Fz_fr_saved[i_start+1], Fz_rl_saved[i_start+1], Fz_rr_saved[i_start+1]};
-    std::array<scalar,limebeer2014f1<scalar>::curvilinear_p::NCONTROL> u_next = {delta_saved[i_start+1], throttle_saved[i_start+1]};
+    std::array<scalar,limebeer2014f1<scalar>::curvilinear_p::NALGEBRAIC> qa = {Fz_fl_saved[i_start],
+                                                                               Fz_fr_saved[i_start],
+                                                                               Fz_rl_saved[i_start],
+                                                                               Fz_rr_saved[i_start]};
+
+    auto u = car.get_state_and_control_upper_lower_and_default_values().u_def;
+
+    u[decltype(car)::Chassis_type::front_axle_type::ISTEERING] = delta_saved[i_start];
+    u[decltype(car)::Chassis_type::ITHROTTLE] = throttle_saved[i_start];
+
+    std::array<scalar,limebeer2014f1<scalar>::curvilinear_p::NSTATE> q_next = {kappa_fl_saved[i_start + 1],
+                                                                               kappa_fr_saved[i_start + 1],
+                                                                               kappa_rl_saved[i_start + 1],
+                                                                               kappa_rr_saved[i_start + 1],
+                                                                               u_saved       [i_start + 1],
+                                                                               v_saved       [i_start + 1],
+                                                                               omega_saved   [i_start + 1],
+                                                                               time_saved    [i_start + 1],
+                                                                               n_saved       [i_start + 1],
+                                                                               alpha_saved   [i_start + 1]};
+
+    std::array<scalar,limebeer2014f1<scalar>::curvilinear_p::NALGEBRAIC> qa_next = {Fz_fl_saved[i_start + 1],
+                                                                                    Fz_fr_saved[i_start + 1],
+                                                                                    Fz_rl_saved[i_start + 1],
+                                                                                    Fz_rr_saved[i_start + 1]};
+
+    auto u_next = car.get_state_and_control_upper_lower_and_default_values().u_def;
+
+    u_next[decltype(car)::Chassis_type::front_axle_type::ISTEERING] = delta_saved[i_start+1];
+    u_next[decltype(car)::Chassis_type::ITHROTTLE] = throttle_saved[i_start+1];
 
     scalar s = arclength_saved[i_start];
     scalar s_next = arclength_saved[i_start+1];
@@ -536,10 +607,7 @@ TEST_F(limebeer2014f1_test,propagation_crank_nicolson_corner_exit)
     for (size_t i = 0; i < 4; ++i)
         EXPECT_NEAR(dqa_fin[i], 0.0, 1.0e-8);
 
-
-
-    Crank_nicolson<limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p,10,4,2>::take_step(car, u, u_next, q, qa, s, s_next-s, {});
-
+    Crank_nicolson<limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p,10,4,3>::take_step(car, u, u_next, q, qa, s, s_next-s, {});
 
     for (size_t i = 0; i < 10; ++i)
         EXPECT_NEAR(q[i],q_next[i],1.0e-10) << ", with i = " << i;

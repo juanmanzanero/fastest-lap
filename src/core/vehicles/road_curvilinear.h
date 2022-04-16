@@ -55,6 +55,16 @@ class Road_curvilinear : public Road<Timeseries_t,STATE0,CONTROL0>
     template<size_t NSTATE, size_t NCONTROL>
     void set_state_and_controls(const scalar t, const std::array<Timeseries_t,NSTATE>& q, const std::array<Timeseries_t,NCONTROL>& u);
 
+    //! Set the state and controls upper, lower, and default values
+    template<size_t NSTATE, size_t NCONTROL>
+    void set_state_and_control_upper_lower_and_default_values(std::array<scalar,NSTATE>& q_def,
+                                                               std::array<scalar,NSTATE>& q_lb,
+                                                               std::array<scalar,NSTATE>& q_ub,
+                                                               std::array<scalar,NCONTROL>& u_def,
+                                                               std::array<scalar,NCONTROL>& u_lb,
+                                                               std::array<scalar,NCONTROL>& u_ub 
+                                                              ) const;
+
     template<size_t NSTATE, size_t NCONTROL>
     static void set_state_and_control_names(std::string& key_name, std::array<std::string,NSTATE>& q, std::array<std::string,NCONTROL>& u);
 

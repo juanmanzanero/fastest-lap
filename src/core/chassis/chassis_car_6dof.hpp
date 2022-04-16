@@ -278,7 +278,52 @@ void Chassis_car_6dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_
     _dmu = q[IDMU];
 }
 
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
+template<size_t NSTATE, size_t NCONTROL>
+void Chassis_car_6dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_state_and_control_upper_lower_and_default_values
+    (std::array<scalar, NSTATE>& q_def     , std::array<scalar, NSTATE>& q_lb     , std::array<scalar, NSTATE>& q_ub     ,
+    std::array<scalar , NALGEBRAIC>& qa_def, std::array<scalar, NALGEBRAIC>& qa_lb, std::array<scalar, NALGEBRAIC>& qa_ub,
+    std::array<scalar , NCONTROL>& u_def   , std::array<scalar, NCONTROL>& u_lb   , std::array<scalar, NCONTROL>& u_ub) const
+{
+    // Call function for the parent class
+    base_type::set_state_and_control_upper_lower_and_default_values(q_def, q_lb, q_ub, u_def, u_lb, u_ub, 10.0*KMH, 200.0*KMH, 10.0*KMH, 10.0);
 
+    // State ---
+
+    // 1st order
+
+    // z
+    q_def[IZ] = 1.0e-5;
+    q_lb[IZ]  = 1.0e-5;
+    q_ub[IZ]  = 0.139;
+
+    // phi
+    q_def[IPHI] = 0.0;
+    q_lb[IPHI]  = -30.0*DEG;
+    q_ub[IPHI]  =  30.0*DEG;
+
+    // mu
+    q_def[IMU] = 0.0;
+    q_lb[IMU]  = -30.0*DEG;
+    q_ub[IMU]  =  30.0*DEG;
+
+    // 2nd order
+
+    // dz
+    q_def[IDZ] = 0.0;
+    q_lb[IDZ]  = -10.0;
+    q_ub[IDZ]  =  10.0;
+
+    // dphidt
+    q_def[IDPHI] = 0.0;
+    q_lb[IDPHI]  = -10.0; 
+    q_ub[IDPHI]  =  10.0;
+
+    // dmudt
+    q_def[IDMU] = 0.0;
+    q_lb[IDMU]  = -10.0;
+    q_ub[IDMU]  =  10.0;
+}
 
 #endif
 

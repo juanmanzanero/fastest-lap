@@ -51,7 +51,7 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
     enum State { STATE_END = base_type::STATE_END };
 
     //! Control variables: throttle/brake
-    enum Controls  { ITHROTTLE = base_type::CONTROL_END, CONTROL_END };
+    enum Controls  { ITHROTTLE = base_type::CONTROL_END, IBRAKE_BIAS, CONTROL_END };
 
     //! Algebraic variables: the four vertical forces
     enum Algebraic { IFZFL, IFZFR, IFZRL, IFZRR, ALGEBRAIC_END };
@@ -141,6 +141,9 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
     //! Get the throttle
     const Timeseries_t& get_throttle() const { return _throttle; }
 
+    //! Get the brake bias
+    const Timeseries_t& get_brake_bias() const { return _brake_bias; }
+
     //! Return a mechanical/geometrical parameter by name
     //! @param[in] parameter_name: name of the parameter
     scalar get_parameter(const std::string& parameter_name) const;
@@ -162,6 +165,20 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
     void set_state_and_controls(const std::array<Timeseries_t,NSTATE>& q, 
                                 const std::array<Timeseries_t,NALGEBRAIC>& qa,
                                 const std::array<Timeseries_t,NCONTROL>& u);
+
+
+    //! Set the state and controls upper, lower, and default values
+    template<size_t NSTATE, size_t NCONTROL>
+    void set_state_and_control_upper_lower_and_default_values(std::array<scalar,NSTATE>& q_def,
+                                                               std::array<scalar,NSTATE>& q_lb,
+                                                               std::array<scalar,NSTATE>& q_ub,
+                                                               std::array<scalar,NALGEBRAIC>& qa_def,
+                                                               std::array<scalar,NALGEBRAIC>& qa_lb,
+                                                               std::array<scalar,NALGEBRAIC>& qa_ub,
+                                                               std::array<scalar,NCONTROL>& u_def,
+                                                               std::array<scalar,NCONTROL>& u_lb,
+                                                               std::array<scalar,NCONTROL>& u_ub 
+                                                              ) const;
 
     //! Get the names of the state and control varaibles of this class
     //! @param[out] q: the vehicle state names
@@ -189,11 +206,11 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
     // Variables    ----------------------------------------------------------------
 
     // Setteable variables
-    Timeseries_t _brake_bias;   //! [in] Brake bias: 1-only front, 0-only rear
     scalar       _brake_bias_0; //! [in] Initial value for the brake bias (to be read from database)
 
     // Control variables
-    Timeseries_t _throttle;
+    Timeseries_t _throttle;     //! [in] throttle: 1-full throttle, -1-hard brake
+    Timeseries_t _brake_bias;   //! [in] Brake bias: 1-only front, 0-only rear
 
     // Algebraic variables
     Timeseries_t _Fz_fl;    //! [in] Vertical load for FL tire

@@ -2,39 +2,20 @@
 #include "lion/math/ipopt_cppad_handler.hpp"
 
 template<typename Dynamic_model_t>
-inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const size_t n, const bool is_closed_, const bool is_direct_, 
-    const Dynamic_model_t& car, const std::array<scalar,Dynamic_model_t::NSTATE>& q0, 
-    const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& qa0, 
-    const std::array<scalar,Dynamic_model_t::NCONTROL>& u0, const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations,
-    const Options opts) 
-: options(opts), is_closed(is_closed_), is_direct(is_direct_), warm_start(false)
+inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const std::vector<scalar>& s_, const bool is_closed_, const bool is_direct_,
+    const Dynamic_model_t& car, const std::vector<std::array<scalar,Dynamic_model_t::NSTATE>>& q0, 
+    const std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>>& qa0,
+    Control_variables<> control_variables_0, 
+    const Options opts)
+: options(opts), is_closed(is_closed_), is_direct(is_direct_), warm_start(false), 
+  s(s_), q(q0), qa(qa0), control_variables(control_variables_0.check()),
+  optimization_data()
 {
-    // (1) Compute number of elements and points
-    n_elements = n;
-    n_points = (is_closed ? n_elements : n_elements + 1);
-
-    // (2) Compute vector of arclengths
-    const scalar& L = car.get_road().track_length();
-    const scalar ds = L/static_cast<scalar>(n_elements);
-    s = std::vector<scalar>(n_points, 0.0);
-
-    for (size_t i = 1; i < n_points; ++i)
-        s[i] = static_cast<scalar>(i)*ds;
-
-    if ( !is_closed ) s.back() = L; // If open circuit, simply override the last one by the accurate track length
-
-    // (3) Set the initial condition
-    q  = std::vector<std::array<scalar,Dynamic_model_t::NSTATE>>(n_points,q0);
-    qa = std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>>(n_points,qa0);
-    u  = std::vector<std::array<scalar,Dynamic_model_t::NCONTROL>>(n_points,u0);
-
-    if ( is_direct )
-        dudt = {};
-    else
-        dudt = std::vector<std::array<scalar,Dynamic_model_t::NCONTROL>>(n_points,{0.0});
+    // (1) Check inputs
+    check_inputs(car);
 
     // (4) Compute
-    compute(car, dissipations);
+    compute(car);
 }
 
 
@@ -42,13 +23,26 @@ template<typename Dynamic_model_t>
 inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const std::vector<scalar>& s_, const bool is_closed_, const bool is_direct_,
     const Dynamic_model_t& car, const std::vector<std::array<scalar,Dynamic_model_t::NSTATE>>& q0, 
     const std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>>& qa0,
-    const std::vector<std::array<scalar,Dynamic_model_t::NCONTROL>>& u0, 
-    const std::vector<std::array<scalar,Dynamic_model_t::NCONTROL>>& dudt0,
-    const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations,
+    Control_variables<> control_variables_0,
+    const std::vector<scalar>& zl,
+    const std::vector<scalar>& zu,
+    const std::vector<scalar>& lambda,
     const Options opts)
-: options(opts), is_closed(is_closed_), is_direct(is_direct_), warm_start(false)
+: options(opts), is_closed(is_closed_), is_direct(is_direct_), warm_start(true), 
+  s(s_), q(q0), qa(qa0), control_variables(control_variables_0.check()),
+  optimization_data({.zl{zl},.zu{zu},.lambda{lambda}})
 {
-    s = s_;
+    // (1) Check inputs
+    check_inputs(car);
+      
+    // (5) Compute
+    compute(car);
+}
+
+
+template<typename Dynamic_model_t>
+void Optimal_laptime<Dynamic_model_t>::check_inputs(const Dynamic_model_t& car)
+{
     if ( s.size() <= 1 )
         throw std::runtime_error("Provide at least two values of arclength");
 
@@ -83,120 +77,35 @@ inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const std::vector<scala
     }
 
     // (3) Set the initial condition
-    if ( q0.size() != n_points )
-        throw std::runtime_error("q0 must have size of n_points");
 
-    if ( qa0.size() != n_points )
-        throw std::runtime_error("qa0 must have size of n_points");
+    // (3.1) State
+    if ( q.size() != n_points )
+        throw std::runtime_error("q must have size of n_points");
 
-    if ( u0.size() != n_points )
-        throw std::runtime_error("u0 must have size of n_points");
-
-    q  = q0;
-    qa = qa0;
-    u  = u0;
-
-    // (3.1) Derivative of the controls: empty if direct, size equal to n_points if derivative
-    if ( is_direct ) 
+    // (3.2) Algebraic state
+    if ( qa.size() != n_points )
+        throw std::runtime_error("qa must have size of n_points");
+    
+    // (3.3) Controls: check size only for full-mesh controls
+    for (const auto& control_variable : control_variables )
     {
-        if ( dudt0.size() > 0 )
-            throw std::runtime_error("dudt0 should be empty for direct simulations");
-        dudt = {};
+        if ( control_variable.optimal_control_type == FULL_MESH )
+        {
+            if ( control_variable.u.size() != n_points )
+                throw std::runtime_error("control_variables.u must have the size of n_points");            
+
+            if ( is_direct )
+            {
+                if ( control_variable.dudt.size() != 0 )
+                    throw std::runtime_error("In direct simulations, control_variables.dudt must be empty");            
+            }
+            else
+            {   
+                if ( control_variable.dudt.size() != n_points )
+                    throw std::runtime_error("control_variables.dudt must have the size of n_points");            
+            }
+        }
     }
-    else
-    {
-        if ( dudt0.size() != n_points )
-            throw std::runtime_error("dudt0 must have size of n_points");
-        dudt = dudt0;
-    }
-
-    // (4) Compute
-    compute(car, dissipations);
-}
-
-
-template<typename Dynamic_model_t>
-inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const std::vector<scalar>& s_, const bool is_closed_, const bool is_direct_,
-    const Dynamic_model_t& car, const std::vector<std::array<scalar,Dynamic_model_t::NSTATE>>& q0, 
-    const std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>>& qa0,
-    const std::vector<std::array<scalar,Dynamic_model_t::NCONTROL>>& u0, 
-    const std::vector<std::array<scalar,Dynamic_model_t::NCONTROL>>& dudt0,
-    const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations,
-    const std::vector<scalar>& zl,
-    const std::vector<scalar>& zu,
-    const std::vector<scalar>& lambda,
-    const Options opts)
-: options(opts), is_closed(is_closed_), is_direct(is_direct_), warm_start(true)
-{
-    s = s_;
-    if ( s.size() <= 1 )
-        throw std::runtime_error("Provide at least two values of arclength");
-
-    // (1) Compute number of elements and points
-    n_points = s.size();
-    n_elements = (is_closed ? n_points : n_points - 1);
-
-    // (2) Verify the vector of arclength
-    const scalar& L = car.get_road().track_length();
-
-    if (is_closed)
-    {
-        if (std::abs(s.front()) > 1.0e-12)
-            throw std::runtime_error("In closed circuits, s[0] should be 0.0");
-
-        if (s.back() > L - 1.0e-10)
-            throw std::runtime_error("In closed circuits, s[end] should be < track_length");
-    }
-    else
-    {
-        if (s[0] < -1.0e-12)
-            throw std::runtime_error("s[0] must be >= 0");
-
-        if (s.back() > L)
-            throw std::runtime_error("s[end] must be <= L");
-    }
-
-    // If closed, replace the initial arclength by 0
-    if (is_closed)
-    {   
-        s.front() = 0.0;
-    }
-
-    // (3) Set the initial condition
-    if ( q0.size() != n_points )
-        throw std::runtime_error("q0 must have size of n_points");
-
-    if ( qa0.size() != n_points )
-        throw std::runtime_error("qa0 must have size of n_points");
-
-    if ( u0.size() != n_points )
-        throw std::runtime_error("u0 must have size of n_points");
-
-    q  = q0;
-    qa = qa0;
-    u  = u0;
-
-    // (3.1) Derivative of the controls: empty if direct, size equal to n_points if derivative
-    if ( is_direct ) 
-    {
-        if ( dudt0.size() > 0 )
-            throw std::runtime_error("dudt0 should be empty for direct simulations");
-        dudt = {};
-    }
-    else
-    {
-        if ( dudt0.size() != n_points )
-            throw std::runtime_error("dudt0 must have size of n_points");
-        dudt = dudt0;
-    }
-      
-    // (4) Set optimization data
-    optimization_data.zl     = zl;
-    optimization_data.zu     = zu;
-    optimization_data.lambda = lambda;
-
-    // (5) Compute
-    compute(car, dissipations);
 }
 
 
@@ -249,27 +158,39 @@ inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(Xml_document& doc)
     }
 
     // Get controls
-    u = std::vector<std::array<scalar,Dynamic_model_t::NCONTROL>>(n_points);
+    control_variables = Control_variables<>{};
     for (size_t i = 0; i < Dynamic_model_t::NCONTROL; ++i)
     {
-        std::vector<scalar> data_in = root.get_child(u_names[i]).get_value(std::vector<scalar>());
-        for (size_t j = 0; j < n_points; ++j)
-            u[j][i] = data_in[j];
+        auto control_var_element = root.get_child("control_variables/" + u_names[i]);
+        
+        // Get optimal control type attribute
+        auto optimal_control_type_str = control_var_element.get_attribute("optimal_control_type");
+
+        if ( optimal_control_type_str == "dont optimize" )
+            control_variables[i].optimal_control_type = DONT_OPTIMIZE;
+        else if ( optimal_control_type_str == "constant" )
+            control_variables[i].optimal_control_type = CONSTANT;
+        else if ( optimal_control_type_str == "hypermesh" )
+            control_variables[i].optimal_control_type = HYPERMESH;
+        else if ( optimal_control_type_str == "full-mesh" )
+            control_variables[i].optimal_control_type = FULL_MESH;
+        else
+            throw std::runtime_error("optimal_control_type attribute not recognize. Options are: 'dont optimize', 'constant', 'hypermesh', 'full-mesh'");
+
+        // Get value
+        control_variables[i].u = root.get_child("control_variables/" + u_names[i] + "/values").get_value(std::vector<scalar>());
+
+        // Get derivative value if present
+        if ( !is_direct && root.has_child("control_variables/" + u_names[i] + "/derivatives") )
+            control_variables[i].dudt = root.get_child("control_variables/" + u_names[i] + "/derivatives").get_value(std::vector<scalar>());
+
+        // Get hypermesh 
+        if ( control_variables[i].optimal_control_type == HYPERMESH )
+            control_variables[i].s_hypermesh = root.get_child("control_variables/" + u_names[i] + "/hypermesh").get_value(std::vector<scalar>());
     }
 
-    // Get derivative of the controls
-    if ( is_direct )
-        dudt = {};
-    else
-    {
-        dudt = std::vector<std::array<scalar,Dynamic_model_t::NCONTROL>>(n_points);
-        for (size_t i = 0; i < Dynamic_model_t::NCONTROL; ++i)
-        {
-            std::vector<scalar> data_in = root.get_child("derivatives/" + u_names[i]).get_value(std::vector<scalar>());
-            for (size_t j = 0; j < n_points; ++j)
-                dudt[j][i] = data_in[j];
-        }
-    }
+    // check them and compute its statistics
+    control_variables.check();
 
     // Get x
     x_coord = root.get_child("x").get_value(std::vector<scalar>());
@@ -284,169 +205,221 @@ inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(Xml_document& doc)
 
 
 template<typename Dynamic_model_t>
-inline void Optimal_laptime<Dynamic_model_t>::compute(const Dynamic_model_t& car, const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations)
+inline void Optimal_laptime<Dynamic_model_t>::compute(const Dynamic_model_t& car)
 {
     if ( is_direct )
     {
         if ( is_closed )
-            compute_direct<true>(car,dissipations);
+            compute_direct<true>(car);
         else
-            compute_direct<false>(car,dissipations);
+            compute_direct<false>(car);
     }
     else
     {
         if ( is_closed )
-            compute_derivative<true>(car,dissipations);
+            compute_derivative<true>(car);
         else
-            compute_derivative<false>(car,dissipations);
+            compute_derivative<false>(car);
     }
 }
 
 
 template<typename Dynamic_model_t>
 template<bool isClosed>
-inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model_t& car, const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations) 
+inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model_t& car) 
 {
-    FG_direct<isClosed> fg(n_elements,n_points,car,s,q.front(),qa.front(),u.front(),dissipations, options.sigma);
-    typename std::vector<scalar> x0(fg.get_n_variables(),0.0);
+    class Counter
+    {
+     public:
+        Counter() : k(0) {}
 
-    // Set minimum and maximum variables
-    std::vector<scalar> u_lb, u_ub;
-    std::tie(u_lb, u_ub, std::ignore, std::ignore) = car.optimal_laptime_control_bounds();
-    auto [q_lb, q_ub] = Dynamic_model_t::optimal_laptime_state_bounds();
-    auto [qa_lb, qa_ub] = Dynamic_model_t::optimal_laptime_algebraic_state_bounds();
+        Counter& increment() { ++k; return *this;}
+    
+        operator size_t() const { return k; }
 
-    // Correct the maximum bound in N to the track limits
-    std::vector<scalar> x_lb(fg.get_n_variables(), -1.0e24);
-    std::vector<scalar> x_ub(fg.get_n_variables(), +1.0e24);
+     private:
+        size_t k;
+    };
 
-    // Fill x0 with the initial condition as state vector, and zero controls
-    size_t k = 0;
+    // (1) Get variable bounds and default control variables
+    const auto [__ignore, q_lb, q_ub, ___ignore, qa_lb, qa_ub, ____ignore, u_lb, u_ub] = car.get_state_and_control_upper_lower_and_default_values();
+    (void) __ignore;
+    (void) ___ignore;
+    (void) ____ignore;
+
+    // (1) Construct starting vector of control variables
+    auto u0 = control_variables.control_array_at_s(car, 0, s.front());
+
+    // (2) Construct fitness function functor
+    FG_direct<isClosed> fg(n_elements,n_points,car,s,q.front(),qa.front(),u0,control_variables, options.sigma);
+
+    // (3) Construct vectors of initial optimization point, and variable upper/lower bounds
+    std::vector<scalar> x0(fg.get_n_variables(),0.0);
+    std::vector<scalar> x_lb(fg.get_n_variables(), std::numeric_limits<scalar>::lowest());
+    std::vector<scalar> x_ub(fg.get_n_variables(), std::numeric_limits<scalar>::max());
+
+    Counter k;
     constexpr const size_t offset = isClosed ? 0 : 1;
 
     for (size_t i = offset; i < n_points; ++i)
     {
-        // Set state and initial condition from start to ITIME
+        // (3.1) Set state and initial condition from start to ITIME
         for (size_t j = 0; j < Dynamic_model_t::Road_type::ITIME; ++j)    
         {
             x0[k] = q[i][j];
             x_lb[k] = q_lb[j];
             x_ub[k] = q_ub[j];
-            k++;
+            k.increment();
         }
 
-        // Set state to IN. Assert that ITIME = IN - 1
+        // (3.2) Set state to IN. Assert that ITIME = IN - 1
         assert(Dynamic_model_t::Road_type::ITIME == ( Dynamic_model_t::Road_type::IN - 1 ) );
 
         x0[k] = q[i][Dynamic_model_t::Road_type::IN];
         x_lb[k] = -car.get_road().get_left_track_limit(s[i]);
         x_ub[k] =  car.get_road().get_right_track_limit(s[i]);
-        k++;
+        k.increment();
 
-        // Set state after IN
+        // (3.3) Set state after IN
         for (size_t j = Dynamic_model_t::Road_type::IN+1; j < Dynamic_model_t::NSTATE; ++j)    
         {
             x0[k] = q[i][j];
             x_lb[k] = q_lb[j];
             x_ub[k] = q_ub[j];
-            k++;
+            k.increment();
         }
 
+        // (3.4) Set algebraic variables
         for (size_t j = 0; j < Dynamic_model_t::NALGEBRAIC; ++j)
         {
             x0[k] = qa[i][j];
             x_lb[k] = qa_lb[j];
             x_ub[k] = qa_ub[j];
-            k++; 
+            k.increment();
         }
 
+        // (3.5) Set full mesh control variables
         for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
         {
-            x0[k] = u[i][j];
-            x_lb[k] = u_lb[j];
-            x_ub[k] = u_ub[j];
-            k++;
+            if ( control_variables[j].optimal_control_type == FULL_MESH )
+            {
+                x0[k] = control_variables[j].u[i];
+                x_lb[k] = u_lb[j];
+                x_ub[k] = u_ub[j];
+                k.increment();
+            }
         }
     }
 
-    // Fill the constraints upper/lower bounds vector
+    // (3.6) Add the control variables corresponding to constant optimizations and hypermesh optimizations
+    for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
+    {
+        switch (control_variables[j].optimal_control_type)
+        {
+         case (CONSTANT):
+            for (size_t i = 0; i < control_variables[j].u.size(); ++i)
+            {
+                x0[k] = control_variables[j].u[i];
+                x_lb[k] = u_lb[j];
+                x_ub[k] = u_ub[j];
+                k.increment();
+            } 
+
+         case (HYPERMESH):
+            for (size_t i = 0; i < control_variables[j].u.size(); ++i)
+            {
+                x0[k] = control_variables[j].u[i];
+                x_lb[k] = u_lb[j];
+                x_ub[k] = u_ub[j];
+                k.increment();
+            }    
+         default:
+            break;
+        }
+    }
+
+    // (4) Construct vector of upper/lower bounds for constraints
     std::vector<scalar> c_lb(fg.get_n_constraints(),0.0);
     std::vector<scalar> c_ub(fg.get_n_constraints(),0.0);
-    size_t kc = 0;
+    Counter kc;
     for (size_t i = 1; i < n_points; ++i)
     {
         // Equality constraints: --------------- 
+
+        // (4.1) q^{i} = q^{i-1} + 0.5.ds.[dqdt^{i} + dqdt^{i-1}] (before time)
         for (size_t j = 0; j < Dynamic_model_t::Road_type::ITIME; ++j)
         {
             c_lb[kc] = 0.0;
             c_ub[kc] = 0.0;
-            kc++;
+            kc.increment();
         }
 
-        // q^{i} = q^{i-1} + 0.5.ds.[dqdt^{i} + dqdt^{i-1}] (after time)
+        // (4.2) q^{i} = q^{i-1} + 0.5.ds.[dqdt^{i} + dqdt^{i-1}] (after time)
         for (size_t j = Dynamic_model_t::Road_type::ITIME+1; j < Dynamic_model_t::NSTATE; ++j)
         {
             c_lb[kc] = 0.0;
             c_ub[kc] = 0.0;
-            kc++;
+            kc.increment();
         }
 
-        // algebraic constraints: dqa^{i} = 0.0
+        // (4.3) Algebraic constraints: dqa^{i} = 0.0
         for (size_t j = 0; j < Dynamic_model_t::NALGEBRAIC; ++j)
         {
             c_lb[kc] = 0.0;
             c_ub[kc] = 0.0;
-            kc++;
+            kc.increment();
         }
         
-        // Inequality constraints: -0.11 < kappa < 0.11, -0.11 < lambda < 0.11
+        // (4.4) Extra constraints per point
         auto [c_extra_lb, c_extra_ub] = car.optimal_laptime_extra_constraints_bounds(s[i]); 
         for (size_t j = 0; j < Dynamic_model_t::N_OL_EXTRA_CONSTRAINTS; ++j)
         {
             c_lb[kc] = c_extra_lb[j];
             c_ub[kc] = c_extra_ub[j];
-            kc++;
+            kc.increment();
         }
     }
 
-    // Add the periodic element if track is closed
+    // (5) Add the periodic element if track is closed
     if constexpr (isClosed)
     {
         // Equality constraints: --------------- 
+
+        // (5.1) q^{i} = q^{i-1} + 0.5.ds.[dqdt^{i} + dqdt^{i-1}] (before time)
         for (size_t j = 0; j < Dynamic_model_t::Road_type::ITIME; ++j)
         {
             c_lb[kc] = 0.0;
             c_ub[kc] = 0.0;
-            kc++;
+            kc.increment();
         }
 
-        // q^{i} = q^{i-1} + 0.5.ds.[dqdt^{i} + dqdt^{i-1}] (after time)
+        // (5.2) q^{i} = q^{i-1} + 0.5.ds.[dqdt^{i} + dqdt^{i-1}] (after time)
         for (size_t j = Dynamic_model_t::Road_type::ITIME+1; j < Dynamic_model_t::NSTATE; ++j)
         {
             c_lb[kc] = 0.0;
             c_ub[kc] = 0.0;
-            kc++;
+            kc.increment();
         }
 
-        // algebraic constraints: dqa^{i} = 0.0
+        // (5.3) Algebraic constraints: dqa^{i} = 0.0
         for (size_t j = 0; j < Dynamic_model_t::NALGEBRAIC; ++j)
         {
             c_lb[kc] = 0.0;
             c_ub[kc] = 0.0;
-            kc++;
+            kc.increment();
         }
         
-        // Inequality constraints: -0.11 < kappa < 0.11, -0.11 < lambda < 0.11
+        // (5.4) Extra constraints per point
         auto [c_extra_lb, c_extra_ub] = car.optimal_laptime_extra_constraints_bounds(s[0]); 
         for (size_t j = 0; j < Dynamic_model_t::N_OL_EXTRA_CONSTRAINTS; ++j)
         {
             c_lb[kc] = c_extra_lb[j];
             c_ub[kc] = c_extra_ub[j];
-            kc++;
+            kc.increment();
         }
-
     }
 
+    // (6) Check the dimensions of the counter used to fill the vectors
     if ( k != fg.get_n_variables() )
     {
         std::ostringstream s_out;
@@ -461,34 +434,35 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
         throw std::runtime_error(s_out.str());
     }
 
-    // Warm-start: simply check the dimensions
+    // (7) Warm-start: simply check the dimensions
     if ( warm_start )
     {
-        if ( optimization_data.zl.size() != n_elements*n_variables_per_point<true> )
+        if ( optimization_data.zl.size() != fg.get_n_variables() )
         {
             std::ostringstream s_out;
-            s_out << "size of zl should be " << n_elements*n_variables_per_point<true> << " but it is " << optimization_data.zl.size();
+            s_out << "size of zl should be " << fg.get_n_variables() << " but it is " << optimization_data.zl.size();
             throw std::runtime_error(s_out.str());
         }
 
-        if ( optimization_data.zu.size() != n_elements*n_variables_per_point<true> )
+        if ( optimization_data.zu.size() != fg.get_n_variables() )
         {
             std::ostringstream s_out;
-            s_out << "size of zu should be " << n_elements*n_variables_per_point<true> << " but it is " << optimization_data.zu.size();
+            s_out << "size of zu should be " << fg.get_n_variables() << " but it is " << optimization_data.zu.size();
             throw std::runtime_error(s_out.str());
         }
 
-        if ( optimization_data.lambda.size() != n_elements*n_constraints_per_element<true> )
+        if ( optimization_data.lambda.size() != fg.get_n_constraints() )
         {
             std::ostringstream s_out;
-            s_out << "size of lambda should be " << n_elements*n_variables_per_point<true> << " but it is " << optimization_data.lambda.size();
+            s_out << "size of lambda should be " << fg.get_n_constraints() << " but it is " << optimization_data.lambda.size();
             throw std::runtime_error(s_out.str());
         }
     } 
 
-    // options
+    // (8) Run optimization
+
+    // (8.1) Prepare options
     std::string ipoptoptions;
-    // turn off any printing
     ipoptoptions += "Integer print_level  ";
     ipoptoptions += std::to_string(options.print_level);
     ipoptoptions += "\n";
@@ -501,10 +475,10 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
     ipoptoptions += "Numeric constr_viol_tol  1e-10\n";
     ipoptoptions += "Numeric acceptable_tol  1e-8\n";
 
-    // place to return solution
+    // (8.2) Return object
     CppAD::ipopt_cppad_result<std::vector<scalar>> result;
 
-    // solve the problem
+    // (8.3) Solve the problem
     if ( !warm_start )
         CppAD::ipopt_cppad_solve<std::vector<scalar>, FG_direct<isClosed>>(ipoptoptions, x0, x_lb, x_ub, c_lb, c_ub, fg, result);
     else
@@ -512,8 +486,8 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
             optimization_data.lambda, optimization_data.zl, optimization_data.zu, fg, result);
     
 
+    // (8.4) Check success flag
     success = result.status == CppAD::ipopt_cppad_result<std::vector<scalar>>::success; 
-
     iter_count = result.iter_count;
 
     if ( !success && options.throw_if_fail )
@@ -521,52 +495,79 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
         throw std::runtime_error("Optimization did not succeed");
     }
 
-    // Load the latest solution to be retrieved by the caller via get_state(i) and get_control(i)
-    std::vector<CppAD::AD<scalar>> x_final(result.x.size());
-    std::vector<CppAD::AD<scalar>> fg_final(fg.get_n_constraints()+1);
+    // (9) Export the solution
 
-    for (size_t i = 0; i < result.x.size(); ++i)
-        x_final[i] = result.x[i];
-
+    // (9.1) Load the latest solution vector to the fitness function object
+    std::vector<CppAD::AD<scalar>> x_final(result.x.size(),0.0),fg_final(fg.get_n_constraints()+1,0.0);
+    std::copy(result.x.cbegin(), result.x.cend(), x_final.begin());
     fg(fg_final,x_final);
 
-    // Export the solution
-    assert(fg.get_states().size() == n_points);
+    assert(fg.get_states().size()           == n_points);
     assert(fg.get_algebraic_states().size() == n_points);
-    assert(fg.get_controls().size() == n_points);
 
+    // (9.2) Export states
     q = std::vector<std::array<scalar,Dynamic_model_t::NSTATE>>(n_points);
     
     for (size_t i = 0; i < n_points; ++i)
         for (size_t j = 0; j < Dynamic_model_t::NSTATE; ++j)
             q[i][j] = Value(fg.get_state(i)[j]);
 
+    // (9.3) Export algebraic states
     qa = std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>>(n_points);
     
     for (size_t i = 0; i < n_points; ++i)
         for (size_t j = 0; j < Dynamic_model_t::NALGEBRAIC; ++j)
             qa[i][j] = Value(fg.get_algebraic_state(i)[j]);
 
-    u = std::vector<std::array<scalar,Dynamic_model_t::NCONTROL>>(n_points);
+    // (9.4) Export control variables
+    control_variables.clear();
     
-    for (size_t i = 0; i < n_points; ++i)
-        for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
-            u[i][j] = Value(fg.get_control(i)[j]);
+    for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
+    {
+        switch (control_variables[j].optimal_control_type) 
+        {
+         case (CONSTANT):
+            std::transform(fg.get_control(j).u.cbegin(), fg.get_control(j).u.cend(), control_variables[j].u.begin(), 
+                [](const auto& u_cppad) -> auto { return Value(u_cppad); });
+            break;
+        
+         case (HYPERMESH):
+            std::transform(fg.get_control(j).u.cbegin(), fg.get_control(j).u.cend(), control_variables[j].u.begin(), 
+                [](const auto& u_cppad) -> auto { return Value(u_cppad); });
+            break;
 
-    // Compute the time, x, y, and psi
+         case (FULL_MESH):
+            std::transform(fg.get_control(j).u.cbegin(), fg.get_control(j).u.cend(), control_variables[j].u.begin(), 
+                [](const auto& u_cppad) -> auto { return Value(u_cppad); });
+            break;
+
+         default:
+            // do nothing
+            break;
+        }
+    }
+
+    // (9.5) Export time, x, y, and psi
+    const scalar& L = car.get_road().track_length();
+
     x_coord = std::vector<scalar>(fg.get_states().size());
     y_coord = std::vector<scalar>(fg.get_states().size());
     psi = std::vector<scalar>(fg.get_states().size());
 
-    const scalar& L = car.get_road().track_length();
-    auto dtimeds_first = fg.get_car()(fg.get_state(0),fg.get_algebraic_state(0),fg.get_control(0),s[0]).first[Dynamic_model_t::Road_type::ITIME];
+    // (9.5.1) Compute the first point
+    auto u_i = fg.get_controls().control_array_at_s(car, 0, s.front());
+    auto dtimeds_first = fg.get_car()(fg.get_state(0),fg.get_algebraic_state(0),u_i,s[0]).first[Dynamic_model_t::Road_type::ITIME];
     auto dtimeds_prev = dtimeds_first;
+
     x_coord.front() = Value(fg.get_car().get_road().get_x());
     y_coord.front() = Value(fg.get_car().get_road().get_y());
     psi.front() = Value(fg.get_car().get_road().get_psi());
+
+    // (9.5.2) Compute the rest of the points
     for (size_t i = 1; i < fg.get_states().size(); ++i)
     {
-        const auto dtimeds = fg.get_car()(fg.get_state(i),fg.get_algebraic_state(i),fg.get_control(i),s[i]).first[Dynamic_model_t::Road_type::ITIME];
+        u_i = fg.get_controls().control_array_at_s(car, i, s[i]);
+        const auto dtimeds = fg.get_car()(fg.get_state(i),fg.get_algebraic_state(i),u_i,s[i]).first[Dynamic_model_t::Road_type::ITIME];
         q[i][Dynamic_model_t::Road_type::ITIME] = q[i-1][Dynamic_model_t::Road_type::ITIME] 
             + Value((s[i]-s[i-1])*(options.sigma*dtimeds + (1.0-options.sigma)*dtimeds_prev));
         dtimeds_prev = dtimeds;
@@ -576,12 +577,13 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
         psi[i]     = Value(fg.get_car().get_road().get_psi());
     }
 
+    // (9.5.4) Compute the laptime
     laptime = q.back()[Dynamic_model_t::Road_type::ITIME];
 
     if (isClosed)
         laptime += Value((L-s.back())*((1.0-options.sigma)*dtimeds_prev + options.sigma*dtimeds_first));
 
-    // Save optimization data
+    // (9.6) Save optimization data
     optimization_data.zl     = result.zl;
     optimization_data.zu     = result.zu;
     optimization_data.lambda = result.lambda;
@@ -589,172 +591,236 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
 
 template<typename Dynamic_model_t>
 template<bool isClosed>
-inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_model_t& car, const std::array<scalar,Dynamic_model_t::NCONTROL>& dissipations) 
+inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_model_t& car) 
 {
-    FG_derivative<isClosed> fg(n_elements,n_points,car,s,q.front(),qa.front(),u.front(),dudt.front(),dissipations, options.sigma);
-    typename std::vector<scalar> x0(fg.get_n_variables(),0.0);
+    class Counter
+    {
+     public:
+        Counter() : k(0) {}
 
-    // Set minimum and maximum variables
-    auto [u_lb, u_ub, dudt_lb, dudt_ub] = car.optimal_laptime_control_bounds();
-    auto [q_lb, q_ub] = Dynamic_model_t::optimal_laptime_state_bounds();
-    auto [qa_lb, qa_ub] = Dynamic_model_t::optimal_laptime_algebraic_state_bounds();
+        Counter& increment() { ++k; return *this;}
+    
+        operator size_t() const { return k; }
 
-    // Set state bounds
-    std::vector<scalar> x_lb(fg.get_n_variables(), -1.0e24);
-    std::vector<scalar> x_ub(fg.get_n_variables(), +1.0e24);
+     private:
+        size_t k;
+    };
 
-    // Fill x0 with the initial condition as state vector, and zero controls
-    size_t k = 0;
+    // (1) Get variable bounds and default control variables
+    const auto [__ignore, q_lb, q_ub, ___ignore, qa_lb, qa_ub, ____ignore, u_lb, u_ub] = car.get_state_and_control_upper_lower_and_default_values();
+    (void) __ignore;
+    (void) ___ignore;
+    (void) ____ignore;
+
+    const auto [dudt_lb, dudt_ub] = car.optimal_laptime_derivative_control_bounds();
+
+    // (1) Construct starting vector of control variables
+    auto [u0, dudt0] = control_variables.control_array_and_derivative_at_s(car, 0, s.front());
+
+    // (2) Construct fitness function functor
+    FG_derivative<isClosed> fg(n_elements,n_points,car,s,q.front(),qa.front(),u0,dudt0,control_variables,options.sigma);
+
+    // (3) Construct vectors of initial optimization point, and variable upper/lower bounds
+    std::vector<scalar> x0(fg.get_n_variables(),0.0);
+    std::vector<scalar> x_lb(fg.get_n_variables(), std::numeric_limits<scalar>::lowest());
+    std::vector<scalar> x_ub(fg.get_n_variables(), std::numeric_limits<scalar>::max());
+
+    Counter k;
     constexpr const size_t offset = isClosed ? 0 : 1;
 
     for (size_t i = offset; i < n_points; ++i)
     {
-        // Set state and initial condition from start to ITIME
+        // (3.1) Set state and initial condition from start to ITIME
         for (size_t j = 0; j < Dynamic_model_t::Road_type::ITIME; ++j)    
         {
             x0[k] = q[i][j];
             x_lb[k] = q_lb[j];
             x_ub[k] = q_ub[j];
-            k++;
+            k.increment();
         }
 
-        // Set state to IN. Assert that ITIME = IN - 1
+        // (3.2) Set state to IN. Assert that ITIME = IN - 1
         assert(Dynamic_model_t::Road_type::ITIME == ( Dynamic_model_t::Road_type::IN - 1 ) );
 
         x0[k] = q[i][Dynamic_model_t::Road_type::IN];
         x_lb[k] = -car.get_road().get_left_track_limit(s[i]);
         x_ub[k] =  car.get_road().get_right_track_limit(s[i]);
-        k++;
+        k.increment();
 
-        // Set state after IN
+        // (3.3) Set state after IN
         for (size_t j = Dynamic_model_t::Road_type::IN+1; j < Dynamic_model_t::NSTATE; ++j)    
         {
             x0[k] = q[i][j];
             x_lb[k] = q_lb[j];
             x_ub[k] = q_ub[j];
-            k++;
+            k.increment();
         }
 
+        // (3.4) Set algebraic variables
         for (size_t j = 0; j < Dynamic_model_t::NALGEBRAIC; ++j)
         {
             x0[k] = qa[i][j];
             x_lb[k] = qa_lb[j];
             x_ub[k] = qa_ub[j];
-            k++;
+            k.increment();
         }
 
-        // Set controls
+        // (3.5) Set full mesh control variables
         for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
         {
-            x0[k] = u[i][j];
-            x_lb[k] = u_lb[j];
-            x_ub[k] = u_ub[j];
-            k++;
+            if ( control_variables[j].optimal_control_type == FULL_MESH )
+            {
+                x0[k] = control_variables[j].u[i];
+                x_lb[k] = u_lb[j];
+                x_ub[k] = u_ub[j];
+                k.increment();
+            }
         }
 
-        // Set control derivatives
+        // (3.6) Set full mesh control variables derivatives
         for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
         {
-            x0[k] = dudt[i][j];
-            x_lb[k] = dudt_lb[j];
-            x_ub[k] = dudt_ub[j];
-            k++;
+            if ( control_variables[j].optimal_control_type == FULL_MESH )
+            {
+                x0[k] = control_variables[j].dudt[i];
+                x_lb[k] = dudt_lb[j];
+                x_ub[k] = dudt_ub[j];
+                k.increment();
+            }
         }
     }
 
-    // Fill the constraints upper/lower bounds vector
+    // (3.7) Add the control variables corresponding to constant optimizations and hypermesh optimizations
+    for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
+    {
+        switch (control_variables[j].optimal_control_type)
+        {
+         case (CONSTANT):
+            for (size_t i = 0; i < control_variables[j].u.size(); ++i)
+            {
+                x0[k] = control_variables[j].u[i];
+                x_lb[k] = u_lb[j];
+                x_ub[k] = u_ub[j];
+                k.increment();
+            } 
+
+         case (HYPERMESH):
+            for (size_t i = 0; i < control_variables[j].u.size(); ++i)
+            {
+                x0[k] = control_variables[j].u[i];
+                x_lb[k] = u_lb[j];
+                x_ub[k] = u_ub[j];
+                k.increment();
+            }    
+         default:
+            break;
+        }
+    }
+
+    // (4) Construct vector of upper/lower bounds for constraints
     std::vector<scalar> c_lb(fg.get_n_constraints(),0.0);
     std::vector<scalar> c_ub(fg.get_n_constraints(),0.0);
-    size_t kc = 0;
+    Counter kc;
     for (size_t i = 1; i < n_points; ++i)
     {
         // Equality constraints: --------------- 
+
+        // (4.1) q^{i} = q^{i-1} + 0.5.ds.[dqdt^{i} + dqdt^{i-1}] (before time)
         for (size_t j = 0; j < Dynamic_model_t::Road_type::ITIME; ++j)
         {
             c_lb[kc] = 0.0;
             c_ub[kc] = 0.0;
-            kc++;
+            kc.increment();
         }
 
-        // q^{i} = q^{i-1} + 0.5.ds.[dqdt^{i} + dqdt^{i-1}] (after time)
+        // (4.2) q^{i} = q^{i-1} + 0.5.ds.[dqdt^{i} + dqdt^{i-1}] (after time)
         for (size_t j = Dynamic_model_t::Road_type::ITIME+1; j < Dynamic_model_t::NSTATE; ++j)
         {
             c_lb[kc] = 0.0;
             c_ub[kc] = 0.0;
-            kc++;
+            kc.increment();
         }
 
-        // algebraic constraints: dqa^{i} = 0.0
+        // (4.3) Algebraic constraints: dqa^{i} = 0.0
         for (size_t j = 0; j < Dynamic_model_t::NALGEBRAIC; ++j)
         {
             c_lb[kc] = 0.0;
             c_ub[kc] = 0.0;
-            kc++;
+            kc.increment();
         }
         
-        // Inequality constraints: -0.11 < kappa < 0.11, -0.11 < lambda < 0.11
+        // (4.4) Extra constraints per point
         auto [c_extra_lb, c_extra_ub] = car.optimal_laptime_extra_constraints_bounds(s[i]); 
         for (size_t j = 0; j < Dynamic_model_t::N_OL_EXTRA_CONSTRAINTS; ++j)
         {
             c_lb[kc] = c_extra_lb[j];
             c_ub[kc] = c_extra_ub[j];
-            kc++;
+            kc.increment();
         }
 
-        // control derivatives
+        // (4.5) Full mesh control derivatives
         for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
         {   
-            c_lb[kc] = 0.0;
-            c_ub[kc] = 0.0;
-            kc++;
+            if ( control_variables[j].optimal_control_type == FULL_MESH )
+            {
+                c_lb[kc] = 0.0;
+                c_ub[kc] = 0.0;
+                kc.increment();
+            }
         }
     }
 
-    // Add the periodic element if track is closed
+    // (5) Add the periodic element if track is closed
     if constexpr (isClosed)
     {
         // Equality constraints: --------------- 
+
+        // (5.1) q^{i} = q^{i-1} + 0.5.ds.[dqdt^{i} + dqdt^{i-1}] (before time)
         for (size_t j = 0; j < Dynamic_model_t::Road_type::ITIME; ++j)
         {
             c_lb[kc] = 0.0;
             c_ub[kc] = 0.0;
-            kc++;
+            kc.increment();
         }
 
-        // q^{i} = q^{i-1} + 0.5.ds.[dqdt^{i} + dqdt^{i-1}] (after time)
+        // (5.2) q^{i} = q^{i-1} + 0.5.ds.[dqdt^{i} + dqdt^{i-1}] (after time)
         for (size_t j = Dynamic_model_t::Road_type::ITIME+1; j < Dynamic_model_t::NSTATE; ++j)
         {
             c_lb[kc] = 0.0;
             c_ub[kc] = 0.0;
-            kc++;
+            kc.increment();
         }
 
-        // algebraic constraints: dqa^{i} = 0.0
+        // (5.3) Algebraic constraints: dqa^{i} = 0.0
         for (size_t j = 0; j < Dynamic_model_t::NALGEBRAIC; ++j)
         {
             c_lb[kc] = 0.0;
             c_ub[kc] = 0.0;
-            kc++;
+            kc.increment();
         }
         
-        // Inequality constraints: -0.11 < kappa < 0.11, -0.11 < lambda < 0.11
+        // (5.4) Extra constraints per point
         auto [c_extra_lb, c_extra_ub] = car.optimal_laptime_extra_constraints_bounds(s[0]); 
         for (size_t j = 0; j < Dynamic_model_t::N_OL_EXTRA_CONSTRAINTS; ++j)
         {
             c_lb[kc] = c_extra_lb[j];
             c_ub[kc] = c_extra_ub[j];
-            kc++;
+            kc.increment();
         }
 
-        // control derivatives
+        // (5.5) Full mesh control variables derivatives
         for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
         {   
-            c_lb[kc] = 0.0;
-            c_ub[kc] = 0.0;
-            kc++;
+            if ( control_variables[j].optimal_control_type == FULL_MESH )
+            {
+                c_lb[kc] = 0.0;
+                c_ub[kc] = 0.0;
+                kc.increment();
+            }
         }
     }
 
+    // (6) Check the dimensions of the counter used to fill the vectors
     if ( k != fg.get_n_variables() )
     {
         std::ostringstream s_out;
@@ -770,35 +836,35 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
     }
 
 
-    // Warm-start: simply check the dimensions
+    // (7) Warm-start: simply check the dimensions
     if ( warm_start )
     {
-        if ( optimization_data.zl.size() != n_elements*n_variables_per_point<false> )
+        if ( optimization_data.zl.size() != fg.get_n_variables() )
         {
             std::ostringstream s_out;
-            s_out << "size of zl should be " << n_elements*n_variables_per_point<false> << " but it is " << optimization_data.zl.size();
+            s_out << "size of zl should be " << fg.get_n_variables() << " but it is " << optimization_data.zl.size();
             throw std::runtime_error(s_out.str());
         }
 
-        if ( optimization_data.zu.size() != n_elements*n_variables_per_point<false> )
+        if ( optimization_data.zu.size() != fg.get_n_variables() )
         {
             std::ostringstream s_out;
-            s_out << "size of zu should be " << n_elements*n_variables_per_point<false> << " but it is " << optimization_data.zu.size();
+            s_out << "size of zu should be " << fg.get_n_variables() << " but it is " << optimization_data.zu.size();
             throw std::runtime_error(s_out.str());
         }
 
-        if ( optimization_data.lambda.size() != n_elements*n_constraints_per_element<false> )
+        if ( optimization_data.lambda.size() != fg.get_n_constraints() )
         {
             std::ostringstream s_out;
-            s_out << "size of lambda should be " << n_elements*n_variables_per_point<false> << " but it is " << optimization_data.lambda.size();
+            s_out << "size of lambda should be " << fg.get_n_constraints() << " but it is " << optimization_data.lambda.size();
             throw std::runtime_error(s_out.str());
         }
     } 
 
+    // (8) Run optimization
 
-    // options
+    // (8.1) Prepare options
     std::string ipoptoptions;
-    // turn off any printing
     ipoptoptions += "Integer print_level  ";
     ipoptoptions += std::to_string(options.print_level);
     ipoptoptions += "\n";
@@ -808,10 +874,10 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
     ipoptoptions += "Numeric constr_viol_tol  1e-10\n";
     ipoptoptions += "Numeric acceptable_tol  1e-8\n";
 
-    // place to return solution
+    // (8.2) Return object
     CppAD::ipopt_cppad_result<std::vector<scalar>> result;
 
-    // solve the problem
+    // (8.3) Solve the problem
     if ( !warm_start )
         CppAD::ipopt_cppad_solve<std::vector<scalar>, FG_derivative<isClosed>>(ipoptoptions, x0, x_lb, x_ub, c_lb, c_ub, fg, result);
     else
@@ -819,8 +885,8 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
             optimization_data.lambda, optimization_data.zl, optimization_data.zu, fg, result);
  
 
+    // (8.4) Check success flag
     success = result.status == CppAD::ipopt_cppad_result<std::vector<scalar>>::success; 
-    
     iter_count = result.iter_count;
 
     if ( !success && options.throw_if_fail )
@@ -828,58 +894,83 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
         throw std::runtime_error("Optimization did not succeed");
     }
 
-    // Load the latest solution to be retrieved by the caller via get_state(i) and get_control(i)
-    std::vector<CppAD::AD<scalar>> x_final(result.x.size());
-    std::vector<CppAD::AD<scalar>> fg_final(fg.get_n_constraints()+1);
+    // (9) Export the solution
 
-    for (size_t i = 0; i < result.x.size(); ++i)
-        x_final[i] = result.x[i];
-
+    // (9.1) Load the latest solution vector to the fitness function object
+    std::vector<CppAD::AD<scalar>> x_final(result.x.size(),0.0),fg_final(fg.get_n_constraints()+1,0.0);
+    std::copy(result.x.cbegin(), result.x.cend(), x_final.begin());
     fg(fg_final,x_final);
   
-    // Export the solution
     assert(fg.get_states().size() == n_points);
     assert(fg.get_algebraic_states().size() == n_points);
-    assert(fg.get_controls().size() == n_points);
 
+    // (9.2) Export states
     q = std::vector<std::array<scalar,Dynamic_model_t::NSTATE>>(n_points);
     
     for (size_t i = 0; i < n_points; ++i)
         for (size_t j = 0; j < Dynamic_model_t::NSTATE; ++j)
             q[i][j] = Value(fg.get_state(i)[j]);
 
+    // (9.3) Export algebraic states
     qa = std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>>(n_points);
     
     for (size_t i = 0; i < n_points; ++i)
         for (size_t j = 0; j < Dynamic_model_t::NALGEBRAIC; ++j)
             qa[i][j] = Value(fg.get_algebraic_state(i)[j]);
 
-    u = std::vector<std::array<scalar,Dynamic_model_t::NCONTROL>>(n_points);
-    
-    for (size_t i = 0; i < n_points; ++i)
-        for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
-            u[i][j] = Value(fg.get_control(i)[j]);
+    // (9.4) Export control variables
+    control_variables.clear();
 
-    dudt = std::vector<std::array<scalar,Dynamic_model_t::NCONTROL>>(n_points);
+    for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
+    {
+        switch (control_variables[j].optimal_control_type) 
+        {
+         case (CONSTANT):
+            std::transform(fg.get_control(j).u.cbegin(), fg.get_control(j).u.cend(), control_variables[j].u.begin(), 
+                [](const auto& u_cppad) -> auto { return Value(u_cppad); });
+            break;
+        
+         case (HYPERMESH):
+            std::transform(fg.get_control(j).u.cbegin(), fg.get_control(j).u.cend(), control_variables[j].u.begin(), 
+                [](const auto& u_cppad) -> auto { return Value(u_cppad); });
+            break;
 
-    for (size_t i = 0; i < n_points; ++i)
-        for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
-            dudt[i][j] = Value(fg.get_control_derivative(i)[j]);
+         case (FULL_MESH):
+            std::transform(fg.get_control(j).u.cbegin(), fg.get_control(j).u.cend(), control_variables[j].u.begin(), 
+                [](const auto& u_cppad) -> auto { return Value(u_cppad); });
 
-    // Compute the time, x, y, and psi
+            std::transform(fg.get_control(j).dudt.cbegin(), fg.get_control(j).dudt.cend(), control_variables[j].dudt.begin(), 
+                [](const auto& u_cppad) -> auto { return Value(u_cppad); });
+            break;
+
+         default:
+            // do nothing
+            break;
+        }
+    }
+
+    // (9.5) Export time, x, y, and psi
+    const scalar& L = car.get_road().track_length();
+
     x_coord = std::vector<scalar>(fg.get_states().size());
     y_coord = std::vector<scalar>(fg.get_states().size());
     psi = std::vector<scalar>(fg.get_states().size());
 
-    const scalar& L = car.get_road().track_length();
-    auto dtimeds_first = fg.get_car()(fg.get_state(0),fg.get_algebraic_state(0),fg.get_control(0),0.0).first[Dynamic_model_t::Road_type::ITIME];
+    // (9.5.1) Compute the first point
+    auto u_i = fg.get_controls().control_array_at_s(car, 0, s.front());
+    auto dtimeds_first = fg.get_car()(fg.get_state(0),fg.get_algebraic_state(0),u_i,s[0]).first[Dynamic_model_t::Road_type::ITIME];
     auto dtimeds_prev = dtimeds_first;
+
     x_coord.front() = Value(fg.get_car().get_road().get_x());
     y_coord.front() = Value(fg.get_car().get_road().get_y());
     psi.front() = Value(fg.get_car().get_road().get_psi());
+
+    // (9.5.2) Compute the rest of the points
     for (size_t i = 1; i < fg.get_states().size(); ++i)
     {
-        const auto dtimeds = fg.get_car()(fg.get_state(i),fg.get_algebraic_state(i),fg.get_control(i),s[i]).first[Dynamic_model_t::Road_type::ITIME];
+        u_i = fg.get_controls().control_array_at_s(car, i, s[i]);
+        const auto dtimeds = fg.get_car()(fg.get_state(i),fg.get_algebraic_state(i),u_i,s[i]).first[Dynamic_model_t::Road_type::ITIME];
+
         q[i][Dynamic_model_t::Road_type::ITIME] = q[i-1][Dynamic_model_t::Road_type::ITIME] 
             + Value((s[i]-s[i-1])*(options.sigma*dtimeds + (1.0-options.sigma)*dtimeds_prev));
         dtimeds_prev = dtimeds;
@@ -889,12 +980,13 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
         psi[i]     = Value(fg.get_car().get_road().get_psi());
     }
 
+    // (9.5.4) Compute the laptime
     laptime = q.back()[Dynamic_model_t::Road_type::ITIME];
 
     if (isClosed)
         laptime += Value((L-s.back())*((1.0-options.sigma)*dtimeds_prev+options.sigma*dtimeds_first));
 
-    // Save optimization data
+    // (9.6) Save optimization data
     optimization_data.zl     = result.zl;
     optimization_data.zu     = result.zu;
     optimization_data.lambda = result.lambda;
@@ -904,11 +996,12 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
 template<typename Dynamic_model_t>
 std::unique_ptr<Xml_document> Optimal_laptime<Dynamic_model_t>::xml() const 
 {
+    std::unique_ptr<Xml_document> doc_ptr(std::make_unique<Xml_document>());
+
     const auto [key_name, q_names, qa_names, u_names] = Dynamic_model_t::get_state_and_control_names();
 
     std::ostringstream s_out;
     s_out.precision(17);
-    std::unique_ptr<Xml_document> doc_ptr(std::make_unique<Xml_document>());
 
     doc_ptr->create_root_element("optimal_laptime");
 
@@ -963,29 +1056,45 @@ std::unique_ptr<Xml_document> Optimal_laptime<Dynamic_model_t>::xml() const
     }
 
     // Save controls
+    auto node_control_variables = root.add_child("control_variables");
     for (size_t i = 0; i < Dynamic_model_t::NCONTROL; ++i)
     {
-        for (size_t j = 0; j < u.size()-1; ++j)
-            s_out << u[j][i] << ", " ;
-
-        s_out << u.back()[i];
-
-        root.add_child(u_names[i]).set_value(s_out.str());
-        s_out.str(""); s_out.clear();
-    }
-
-    // Save controls derivatives if not direct
-    if ( !is_direct )
-    {
-        for (size_t i = 0; i < Dynamic_model_t::NCONTROL; ++i)
+        auto node_variable = node_control_variables.add_child(u_names[i]);
+        if ( control_variables[i].optimal_control_type == DONT_OPTIMIZE )
         {
-            for (size_t j = 0; j < dudt.size()-1; ++j)
-                s_out << dudt[j][i] << ", " ;
-    
-            s_out << dudt.back()[i];
-    
-            root.add_child("derivatives/" + u_names[i]).set_value(s_out.str());
+            node_variable.add_attribute("type","dont optimize");
+            node_variable.add_child("values");
+        }
+        else if ( control_variables[i].optimal_control_type == CONSTANT )
+        {   
+            throw std::runtime_error("Not implemented yet");
+        }
+        else if ( control_variables[i].optimal_control_type == HYPERMESH )
+        {
+            throw std::runtime_error("Not implemented yet");
+        }
+        else if ( control_variables[i].optimal_control_type == FULL_MESH )
+        {
+            node_variable.add_attribute("type", "full-mesh");
+            for (size_t j = 0; j < control_variables[i].u.size()-1; ++j)
+                s_out << control_variables[i].u[j] << ", " ;
+
+            s_out << control_variables[i].u.back();
+
+            node_variable.add_child("values").set_value(s_out.str());
             s_out.str(""); s_out.clear();
+
+            // Save controls derivatives if not direct
+            if ( !is_direct )
+            {
+                for (size_t j = 0; j < control_variables[i].dudt.size()-1; ++j)
+                    s_out << control_variables[i].dudt[j] << ", " ;
+        
+                s_out << control_variables[i].dudt.back();
+
+                node_variable.add_child("derivatives").set_value(s_out.str());
+                s_out.str(""); s_out.clear();
+            }
         }
     }
 
@@ -1018,13 +1127,13 @@ std::unique_ptr<Xml_document> Optimal_laptime<Dynamic_model_t>::xml() const
 
     if ( is_direct )
     {
-        n_vars = n_variables_per_point<true>;
-        n_cons = n_constraints_per_element<true>;
+        n_vars = n_variables_per_point<true>(control_variables);
+        n_cons = n_constraints_per_element<true>(control_variables);
     }
     else
     {
-        n_vars = n_variables_per_point<false>;
-        n_cons = n_constraints_per_element<false>;
+        n_vars = n_variables_per_point<false>(control_variables);
+        n_cons = n_constraints_per_element<false>(control_variables);
     }
 
     opt_data.add_attribute("n_variables_per_point", std::to_string(n_vars));
@@ -1062,142 +1171,174 @@ template<typename Dynamic_model_t>
 template<bool isClosed>
 inline void Optimal_laptime<Dynamic_model_t>::FG_direct<isClosed>::operator()(FG_direct<isClosed>::ADvector& fg, const Optimal_laptime<Dynamic_model_t>::FG_direct<isClosed>::ADvector& x)
 {
-    auto& _n_points      = FG::_n_points;
-    auto& _car           = FG::_car;
-    auto& _s             = FG::_s;
-    auto& _q0            = FG::_q0;
-    auto& _qa0           = FG::_qa0;
-    auto& _u0            = FG::_u0;
-    auto& _q             = FG::_q;
-    auto& _qa            = FG::_qa;
-    auto& _u             = FG::_u;
-    auto& _dqdt          = FG::_dqdt;
-    auto& _dqa           = FG::_dqa ;
-    auto& _dissipations  = FG::_dissipations;
-    auto& _sigma         = FG::_sigma;
+    // (1) Useful aliases
+    auto& _n_points          = FG::_n_points;
+    auto& _car               = FG::_car;
+    auto& _s                 = FG::_s;
+    auto& _q0                = FG::_q0;
+    auto& _qa0               = FG::_qa0;
+    auto& _u0                = FG::_u0;
+    auto& _q                 = FG::_q;
+    auto& _qa                = FG::_qa;
+    auto& _control_variables = FG::_control_variables;
+    auto& _dqdt              = FG::_dqdt;
+    auto& _dqa               = FG::_dqa ;
+    auto& _sigma             = FG::_sigma;
 
-
+    // (2) Check dimensions
     assert(x.size() == FG::_n_variables);
     assert(fg.size() == (1 + FG::_n_constraints));
 
-    // Load the state and control vectors
+    // (3) Load the state and control vectors
     size_t k = 0;
 
+    // (3.1) For open simulations, load the stored initial condition
     if constexpr (!isClosed)
     {
-        // Load the state in the first position
+        // (3.1.1) State
         for (size_t j = 0; j < Dynamic_model_t::NSTATE; ++j)
             _q[0][j] = _q0[j];
 
-        // Load the algebraic state in the first position
+        // (3.1.2) Algebraic state
         for (size_t j = 0; j < Dynamic_model_t::NALGEBRAIC; ++j)
             _qa[0][j] = _qa0[j];
     
-        // Load the control in the first position
+        // (3.1.3) Control for full mesh calculations
         for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
-            _u[0][j] = _u0[j];
+        {
+            if ( _control_variables[j].optimal_control_type == FULL_MESH )
+                _control_variables[j].u.front() = _u0[j];
+        }
     }
 
+    // (3.2) Load the rest of the points
     constexpr const size_t offset = (isClosed ? 0 : 1);
 
     for (size_t i = offset; i < _n_points; ++i)
     {
-        // Load state (before time)
+        // (3.2.1) Load state (before time)
         for (size_t j = 0; j < Dynamic_model_t::Road_type::ITIME; ++j)
             _q[i][j] = x[k++];
 
-        // Load state (after time)
+        // (3.2.2) Load state (after time)
         for (size_t j = Dynamic_model_t::Road_type::ITIME+1; j < Dynamic_model_t::NSTATE; ++j)
             _q[i][j] = x[k++];
 
-        // Load algebraic state
+        // (3.2.3) Load algebraic state
         for (size_t j = 0; j < Dynamic_model_t::NALGEBRAIC; ++j)
             _qa[i][j] = x[k++];
             
-        // Load control
-        for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
-            _u[i][j] = x[k++];
+        // (3.2.4) Load full mesh controls
+        for (auto& control_variable : _control_variables)
+        {
+            if ( control_variable.optimal_control_type == FULL_MESH )
+                control_variable.u[i] = x[k++];
+        }
     }
 
-    // Check that all variables in x were used
+    // (3.3) Load the rest of the controls
+    for (auto& control_variable : _control_variables)
+    {
+        switch (control_variable.optimal_control_type)
+        {
+         case (CONSTANT):
+            for (size_t i = 0; i < control_variable.u.size(); ++i)
+                control_variable.u[i] = x[k++];
+            break;
+         case (HYPERMESH):
+            for (size_t i = 0; i < control_variable.u.size(); ++i)
+                control_variable.u[i] = x[k++];
+            break;
+         default:
+            break;
+        }
+    }
+
+    // (4) Check that all variables in x were used
     assert(k == FG::_n_variables);
 
-    // Initialize fitness function
+    // (5) Write fitness function and constraints
     fg[0] = 0.0;
-
-    // Loop over the nodes
-    std::tie(_dqdt[0], _dqa[0]) = _car(_q[0],_qa[0],_u[0],_s[0]);
+    
+    std::tie(_dqdt[0], _dqa[0]) = _car(_q[0],_qa[0],_control_variables.control_array_at_s(_car, 0,_s[0]),_s[0]);
     k = 1;  // Reset the counter
     for (size_t i = 1; i < _n_points; ++i)
     {
-        std::tie(_dqdt[i],_dqa[i]) = _car(_q[i],_qa[i],_u[i],_s[i]);
+        std::tie(_dqdt[i],_dqa[i]) = _car(_q[i],_qa[i],_control_variables.control_array_at_s(_car, i, _s[i]),_s[i]);
 
-        // Fitness function: integral of time
+        // (5.1) Fitness function: integral of time
         fg[0] += (_s[i]-_s[i-1])*((1.0-_sigma)*_dqdt[i-1][Dynamic_model_t::Road_type::ITIME] + _sigma*_dqdt[i][Dynamic_model_t::Road_type::ITIME]);
 
         // Equality constraints: --------------- 
-        // q^{i} = q^{i-1} + 0.5.ds.[dqdt^{i} + dqdt^{i-1}] (before time)
+
+        // (5.2) q^{i} = q^{i-1} + 0.5.ds.[dqdt^{i} + dqdt^{i-1}] (before time)
         for (size_t j = 0; j < Dynamic_model_t::Road_type::ITIME; ++j)
             fg[k++] = _q[i][j] - _q[i-1][j] - (_s[i]-_s[i-1])*((1.0-_sigma)*_dqdt[i-1][j] + _sigma*_dqdt[i][j]);
 
-        // q^{i} = q^{i-1} + 0.5.ds.[dqdt^{i} + dqdt^{i-1}] (after time)
+        // (5.3) q^{i} = q^{i-1} + 0.5.ds.[dqdt^{i} + dqdt^{i-1}] (after time)
         for (size_t j = Dynamic_model_t::Road_type::ITIME+1; j < Dynamic_model_t::NSTATE; ++j)
             fg[k++] = _q[i][j] - _q[i-1][j] - (_s[i]-_s[i-1])*((1.0-_sigma)*_dqdt[i-1][j] + _sigma*_dqdt[i][j]);
 
-        // algebraic constraints: dqa^{i} = 0.0
+        // (5.4) algebraic constraints: dqa^{i} = 0.0
         for (size_t j = 0; j < Dynamic_model_t::NALGEBRAIC; ++j)
             fg[k++] = _dqa[i][j];
         
-        // Inequality constraints: -0.11 < kappa < 0.11, -0.11 < lambda < 0.11
+        // (5.5) Problem dependent extra constraints
         auto c_extra = _car.optimal_laptime_extra_constraints();
 
         for (size_t j = 0; j < Dynamic_model_t::N_OL_EXTRA_CONSTRAINTS; ++j)
             fg[k++] = c_extra[j];
     }
 
-    // Add a penalisation to the controls
-    for (size_t i = 1; i < _n_points; ++i)
+    // (5.6) Add a penalisation to the controls
+    for (const auto& control_variable : _control_variables)
     {
-        for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
+        if (control_variable.optimal_control_type == FULL_MESH)
         {
-            const auto derivative = (_u[i][j]-_u[i-1][j])/(_s[i]-_s[i-1]);
-            fg[0] += _dissipations[j]*(derivative*derivative)*(_s[i]-_s[i-1]);
+            for (size_t i = 1; i < _n_points; ++i)
+            {
+                const auto derivative = (control_variable.u[i]-control_variable.u[i-1])/(_s[i]-_s[i-1]);
+                fg[0] += control_variable.dissipation*(derivative*derivative)*(_s[i]-_s[i-1]);
+            }
         }
     }
 
-    // Add the periodic element if track is closed
+    // (5.7) Add the periodic element if track is closed
     const scalar& L = _car.get_road().track_length();
     if constexpr (isClosed)
     {
-        // Fitness function: integral of time
+        // (5.7.1) Fitness function: integral of time
         fg[0] += (L-_s.back())*(_sigma*_dqdt.front()[Dynamic_model_t::Road_type::ITIME] + (1.0-_sigma)*_dqdt.back()[Dynamic_model_t::Road_type::ITIME]);
 
         // Equality constraints: 
 
-        // q^{0} = q^{n-1} + 0.5.ds.[dqdt^{0} + dqdt^{n-1}] (before time)
+        // (5.7.2) q^{0} = q^{n-1} + 0.5.ds.[dqdt^{0} + dqdt^{n-1}] (before time)
         for (size_t j = 0; j < Dynamic_model_t::Road_type::ITIME; ++j)
             fg[k++] = _q.front()[j] - _q.back()[j] - (L-_s.back())*((1.0-_sigma)*_dqdt.back()[j] + _sigma*_dqdt.front()[j]);
 
-        // q^{0} = q^{n-1} + 0.5.ds.[dqdt^{0} + dqdt^{n-1}] (after time)
+        // (5.7.3) q^{0} = q^{n-1} + 0.5.ds.[dqdt^{0} + dqdt^{n-1}] (after time)
         for (size_t j = Dynamic_model_t::Road_type::ITIME+1; j < Dynamic_model_t::NSTATE; ++j)
             fg[k++] = _q.front()[j] - _q.back()[j] - (L-_s.back())*((1.0-_sigma)*_dqdt.back()[j] + _sigma*_dqdt.front()[j]);
 
-        // algebraic constraints: dqa^{0} = 0.0
+        // (5.7.4) algebraic constraints: dqa^{0} = 0.0
         for (size_t j = 0; j < Dynamic_model_t::NALGEBRAIC; ++j)
             fg[k++] = _dqa.front()[j];
 
-        // Inequality constraints: -0.11 < kappa < 0.11, -0.11 < lambda < 0.11
-        _car(_q[0],_qa[0],_u[0],_s[0]);
+        // (5.7.5) Inequality constraints: -0.11 < kappa < 0.11, -0.11 < lambda < 0.11
+        _car(_q[0],_qa[0],_control_variables.control_array_at_s(_car,0,_s[0]),_s[0]);
         const auto c_extra = _car.optimal_laptime_extra_constraints();
     
         for (size_t j = 0; j < Dynamic_model_t::N_OL_EXTRA_CONSTRAINTS; ++j)
             fg[k++] = c_extra[j];
 
-        // Add the penalisation to the controls
-        for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
+        // (5.7.6) Add a penalisation to the controls
+        for (const auto& control_variable : _control_variables)
         {
-            const auto derivative = (_u.front()[j]-_u.back()[j])/(L-_s.back());
-            fg[0] += _dissipations[j]*(derivative*derivative)*(L-_s.back());
+            if (control_variable.optimal_control_type == FULL_MESH)
+            {
+                const auto derivative = (control_variable.u.front()-control_variable.u.back())/(L-_s.back());
+                fg[0] += control_variable.dissipation*(derivative*derivative)*(L-_s.back());
+            }
         }
     }
 
@@ -1209,154 +1350,382 @@ template<typename Dynamic_model_t>
 template<bool isClosed>
 inline void Optimal_laptime<Dynamic_model_t>::FG_derivative<isClosed>::operator()(FG_derivative<isClosed>::ADvector& fg, const Optimal_laptime<Dynamic_model_t>::FG_derivative<isClosed>::ADvector& x)
 {
-    auto& _n_points      = FG::_n_points;
-    auto& _car           = FG::_car;
-    auto& _s             = FG::_s;
-    auto& _q0            = FG::_q0;
-    auto& _qa0           = FG::_qa0;
-    auto& _u0            = FG::_u0;
-    auto& _q             = FG::_q;
-    auto& _qa            = FG::_qa;
-    auto& _u             = FG::_u;
-    auto& _dqdt          = FG::_dqdt;
-    auto& _dqa           = FG::_dqa ;
-    auto& _dissipations  = FG::_dissipations;
-    auto& _sigma         = FG::_sigma;
+    // (1) Useful aliases
+    auto& _n_points          = FG::_n_points;
+    auto& _car               = FG::_car;
+    auto& _s                 = FG::_s;
+    auto& _q0                = FG::_q0;
+    auto& _qa0               = FG::_qa0;
+    auto& _u0                = FG::_u0;
+    auto& _q                 = FG::_q;
+    auto& _qa                = FG::_qa;
+    auto& _control_variables = FG::_control_variables;
+    auto& _dqdt              = FG::_dqdt;
+    auto& _dqa               = FG::_dqa ;
+    auto& _sigma             = FG::_sigma;
 
+    // (2) Check dimensions
     assert(x.size() == FG::_n_variables);
     assert(fg.size() == (1 + FG::_n_constraints));
 
-    // Load the state and control vectors
+    // (3) Load the state and control vectors
     size_t k = 0;
 
+    // (3.1) For open simulations, load the stored initial condition
     if constexpr (!isClosed)
     {
-        // Load the state in the first position
+        // (3.1.1) State
         for (size_t j = 0; j < Dynamic_model_t::NSTATE; ++j)
             _q[0][j] = _q0[j];
 
-        // Load the algebraic state in the first position
+        // (3.1.2) Algebraic state
         for (size_t j = 0; j < Dynamic_model_t::NALGEBRAIC; ++j)
             _qa[0][j] = _qa0[j];
     
-        // Load the control in the first position
+        // (3.1.3) Control for full mesh calculations
         for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
-            _u[0][j] = _u0[j];
-
-        // Load the control derivative in the first position
-        for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
-            _dudt[0][j] = _dudt0[j];
+        {
+            if ( _control_variables[j].optimal_control_type == FULL_MESH )
+            {
+                _control_variables[j].u.front()    = _u0[j];
+                _control_variables[j].dudt.front() = _dudt0[j];
+            }
+        }
     }
 
+    // (3.2) Load the rest of the points
     constexpr const size_t offset = (isClosed ? 0 : 1);
 
     for (size_t i = offset; i < _n_points; ++i)
     {
-        // Load state (before time)
+        // (3.2.1) Load state (before time)
         for (size_t j = 0; j < Dynamic_model_t::Road_type::ITIME; ++j)
             _q[i][j] = x[k++];
 
-        // Load state (after time)
+        // (3.2.2) Load state (after time)
         for (size_t j = Dynamic_model_t::Road_type::ITIME+1; j < Dynamic_model_t::NSTATE; ++j)
             _q[i][j] = x[k++];
 
-        // Load algebraic states
+        // (3.2.3) Load algebraic state
         for (size_t j = 0; j < Dynamic_model_t::NALGEBRAIC; ++j)
             _qa[i][j] = x[k++];
             
-        // Load control
-        for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
-            _u[i][j] = x[k++];
+        // (3.2.4) Load full mesh controls
+        for (auto& control_variable : _control_variables)
+        {
+            if ( control_variable.optimal_control_type == FULL_MESH )
+                control_variable.u[i] = x[k++];
+        }
 
-        // Load control derivative
-        for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
-            _dudt[i][j] = x[k++];
+        // (3.2.4) Load full mesh control derivatives
+        for (auto& control_variable : _control_variables)
+        {
+            if ( control_variable.optimal_control_type == FULL_MESH )
+                control_variable.dudt[i] = x[k++];
+        }
     }
 
-    // Check that all variables in x were used
+    // (3.3) Load the rest of the controls
+    for (auto& control_variable : _control_variables)
+    {
+        switch (control_variable.optimal_control_type)
+        {
+         case (CONSTANT):
+            for (size_t i = 0; i < control_variable.u.size(); ++i)
+                control_variable.u[i] = x[k++];
+            break;
+         case (HYPERMESH):
+            for (size_t i = 0; i < control_variable.u.size(); ++i)
+                control_variable.u[i] = x[k++];
+            break;
+         default:
+            break;
+        }
+    }
+
+
+    // (4) Check that all variables in x were used
     assert(k == FG::_n_variables);
 
-    // Initialize fitness function
+    // (5) Write fitness function and constraints
     fg[0] = 0.0;
 
-    // Loop over the nodes
-    std::tie(_dqdt[0],_dqa[0]) = _car(_q[0],_qa[0],_u[0],_s[0]);
+    std::tie(_dqdt[0], _dqa[0]) = _car(_q[0],_qa[0],_control_variables.control_array_at_s(_car,0,_s[0]),_s[0]);
     k = 1;  // Reset the counter
     for (size_t i = 1; i < _n_points; ++i)
     {
-        std::tie(_dqdt[i], _dqa[i]) = _car(_q[i],_qa[i],_u[i],_s[i]);
+        std::tie(_dqdt[i],_dqa[i]) = _car(_q[i],_qa[i],_control_variables.control_array_at_s(_car,i,_s[i]),_s[i]);
 
-        // (1) Fitness function: 
+        // (5.1) Fitness function: 
 
-        // (1.1) Integral of time
+        // (5.1.1) Integral of time
         fg[0] += (_s[i]-_s[i-1])*((1.0-_sigma)*_dqdt[i-1][Dynamic_model_t::Road_type::ITIME] + _sigma*_dqdt[i][Dynamic_model_t::Road_type::ITIME]);
 
-        // (1.2) Penalisation of controls
-        for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
-            fg[0] += 0.5*_dissipations[j]*(_dudt[i-i][j]*_dudt[i-i][j]+_dudt[i][j]*_dudt[i][j])*(_s[i]-_s[i-1]);
+        // (5.1.2) Penalisation of controls
+        for (const auto& control_variable : _control_variables)
+        {
+            if ( control_variable.optimal_control_type == FULL_MESH )
+            {
+                const auto& dudt = control_variable.dudt;
+                const auto& dissipation = control_variable.dissipation;
+                fg[0] += 0.5*dissipation*(dudt[i-i]*dudt[i-i]+dudt[i]*dudt[i])*(_s[i]-_s[i-1]);
+            }
+        }
 
         // Equality constraints: 
 
-        // q^{i} = q^{i-1} + 0.5.ds.[dqdt^{i} + dqdt^{i-1}] (before time)
+        // (5.2) q^{i} = q^{i-1} + 0.5.ds.[dqdt^{i} + dqdt^{i-1}] (before time)
         for (size_t j = 0; j < Dynamic_model_t::Road_type::ITIME; ++j)
             fg[k++] = _q[i][j] - _q[i-1][j] - (_s[i]-_s[i-1])*((1.0-_sigma)*_dqdt[i-1][j] + _sigma*_dqdt[i][j]);
 
-        // q^{i} = q^{i-1} + 0.5.ds.[dqdt^{i} + dqdt^{i-1}] (before time)
+        // (5.3) q^{i} = q^{i-1} + 0.5.ds.[dqdt^{i} + dqdt^{i-1}] (before time)
         for (size_t j = Dynamic_model_t::Road_type::ITIME+1; j < Dynamic_model_t::NSTATE; ++j)
             fg[k++] = _q[i][j] - _q[i-1][j] - (_s[i]-_s[i-1])*((1.0-_sigma)*_dqdt[i-1][j] + _sigma*_dqdt[i][j]);
 
-        // algebraic constraints: dqa^{i} = 0.0
+        // (5.4) algebraic constraints: dqa^{i} = 0.0
         for (size_t j = 0; j < Dynamic_model_t::NALGEBRAIC; ++j)
             fg[k++] = _dqa[i][j];
 
-        // Inequality constraints: -0.11 < kappa < 0.11, -0.11 < lambda < 0.11
+        // (5.5) Problem dependent extra constraints
         auto c_extra = _car.optimal_laptime_extra_constraints();
 
         for (size_t j = 0; j < Dynamic_model_t::N_OL_EXTRA_CONSTRAINTS; ++j)
             fg[k++] = c_extra[j];
 
-        for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
-            fg[k++] = _u[i][j] - _u[i-1][j] - (_s[i]-_s[i-1])*((1.0-_sigma)*_dudt[i-1][j]*_dqdt[i-1][Dynamic_model_t::Road_type::ITIME]+_sigma*_dudt[i][j]*_dqdt[i][Dynamic_model_t::Road_type::ITIME]);
+        // (5.6) Time derivative of full mesh controls
+        for (const auto& control_variable : _control_variables)
+        {
+            if (control_variable.optimal_control_type == FULL_MESH)
+            {
+                const auto& u = control_variable.u;
+                const auto& dudt = control_variable.dudt;
+                fg[k++] = u[i] - u[i-1] - (_s[i]-_s[i-1])
+                    *((1.0-_sigma)*dudt[i-1]*_dqdt[i-1][Dynamic_model_t::Road_type::ITIME]+_sigma*dudt[i]*_dqdt[i][Dynamic_model_t::Road_type::ITIME]);
+            }
+        }
     }
 
-    // Add the periodic element if track is closed
+    // (5.7) Add the periodic element if track is closed
     const scalar& L = _car.get_road().track_length();
     if constexpr (isClosed)
     {
-        // (1) Fitness function: 
+        // (5.7.1) Fitness function: 
 
-        // (1.1) Integral of time
+        // (5.7.1.1) Integral of time
         fg[0] += (L-_s.back())*((1.0-_sigma)*_dqdt.back()[Dynamic_model_t::Road_type::ITIME] + _sigma*_dqdt.front()[Dynamic_model_t::Road_type::ITIME]);
 
-        // (1.2) Penalisation to the controls
-        for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
-            fg[0] += 0.5*_dissipations[j]*(_dudt.back()[j]*_dudt.back()[j] + _dudt.front()[j]*_dudt.front()[j])*(L-_s.back());
+        // (5.7.1.2) Penalisation to the controls
+        for (const auto& control_variable : _control_variables)
+        {
+            if ( control_variable.optimal_control_type == FULL_MESH )
+            {
+                const auto& dudt = control_variable.dudt;
+                const auto& dissipation = control_variable.dissipation;
+                fg[0] += 0.5*dissipation*(dudt.back()*dudt.back() + dudt.front()*dudt.front())*(L-_s.back());
+            }
+        }
 
         // Equality constraints: 
 
-        // q^{i} = q^{i-1} + 0.5.ds.[dqdt^{i} + dqdt^{i-1}] (before time)
+        // (5.7.2) q^{i} = q^{i-1} + 0.5.ds.[dqdt^{i} + dqdt^{i-1}] (before time)
         for (size_t j = 0; j < Dynamic_model_t::Road_type::ITIME; ++j)
             fg[k++] = _q.front()[j] - _q.back()[j] - (L-_s.back())*((1.0-_sigma)*_dqdt.back()[j] + _sigma*_dqdt.front()[j]);
 
-        // q^{i} = q^{i-1} + 0.5.ds.[dqdt^{i} + dqdt^{i-1}] (before time)
+        // (5.7.3) q^{i} = q^{i-1} + 0.5.ds.[dqdt^{i} + dqdt^{i-1}] (before time)
         for (size_t j = Dynamic_model_t::Road_type::ITIME+1; j < Dynamic_model_t::NSTATE; ++j)
             fg[k++] = _q.front()[j] - _q.back()[j] - (L-_s.back())*((1.0-_sigma)*_dqdt.back()[j] + _sigma*_dqdt.front()[j]);
 
-        // algebraic constraints: dqa^{0} = 0
+        // (5.7.3) algebraic constraints: dqa^{0} = 0
         for (size_t j = 0; j < Dynamic_model_t::NALGEBRAIC; ++j)
             fg[k++] = _dqa.front()[j];
 
-        // Inequality constraints: -0.11 < kappa < 0.11, -0.11 < lambda < 0.11
-        _car(_q[0],_qa[0],_u[0],_s[0]);
+        // (5.7.4) Inequality constraints: -0.11 < kappa < 0.11, -0.11 < lambda < 0.11
+        _car(_q[0],_qa[0],_control_variables.control_array_at_s(_car,0,_s[0]),_s[0]);
         auto c_extra = _car.optimal_laptime_extra_constraints();
 
         for (size_t j = 0; j < Dynamic_model_t::N_OL_EXTRA_CONSTRAINTS; ++j)
             fg[k++] = c_extra[j];
 
-        for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
-            fg[k++] = _u.front()[j] - _u.back()[j] - (L-_s.back())*((1.0-_sigma)*_dudt.back()[j]*_dqdt.back()[Dynamic_model_t::Road_type::ITIME]+_sigma*_dudt.front()[j]*_dqdt.front()[Dynamic_model_t::Road_type::ITIME]);
-
+        // (5.7.5) Time derivative of the control variables
+        for (const auto& control_variable : _control_variables)
+        {
+            if (control_variable.optimal_control_type == FULL_MESH)
+            {
+                const auto& u = control_variable.u;
+                const auto& dudt = control_variable.dudt;
+                fg[k++] = u.front() - u.back() - (L-_s.back())
+                    *((1.0-_sigma)*dudt.back()*_dqdt.back()[Dynamic_model_t::Road_type::ITIME]+_sigma*dudt.front()*_dqdt.front()[Dynamic_model_t::Road_type::ITIME]);
+            }
+        }
     }
 
     assert(k == FG::_n_constraints+1);
+}
+
+//
+// Implementation of the helper class Control_variables ----------------------------------------------------:-
+//
+
+template<typename Dynamic_model_t>
+template<typename T>
+void Optimal_laptime<Dynamic_model_t>::Control_variables<T>::check_inputs()
+{
+    for (auto& control_variable : *this)
+    {
+        switch(control_variable.optimal_control_type)
+        {
+         case(DONT_OPTIMIZE):
+            // Check that s_hypermesh is empty, and that u only contains one value 
+            if ( control_variable.s_hypermesh.size() > 0 ) 
+                throw std::runtime_error("[ERROR] Control_variables::check_inputs() -> "
+                    "In \"don't optimize\" mode, s_hypermesh should be empty");
+
+            if ( control_variable.u.size() > 0 )
+                throw std::runtime_error("[ERROR] Control_variables::check_inputs() -> "
+                    "In \"don't optimize\" mode, u should be empty. Its size is " + std::to_string(control_variable.u.size()) );
+
+            if ( control_variable.dudt.size() != 0 )
+                throw std::runtime_error("[ERROR] Control_variables::check_inputs() -> "
+                    "In \"don't optimize\" mode, dudt should be empty");
+
+            control_variable.dissipation = 0.0;
+
+            break;
+
+         case(CONSTANT):
+            // Check that s_hypermesh is empty, and that u only contains one value 
+            if ( control_variable.s_hypermesh.size() > 0 ) 
+                throw std::runtime_error("[ERROR] Control_variables::check_inputs() -> "
+                    "In \"constant optimization\" mode, s_hypermesh should be empty");
+
+            if ( control_variable.u.size() != 1 )
+                throw std::runtime_error("[ERROR] Control_variables::check_inputs() -> "
+                    "In \"constant optimization\" mode, u should contain only one value");
+
+            if ( control_variable.dudt.size() != 0 )
+                throw std::runtime_error("[ERROR] Control_variables::check_inputs() -> "
+                    "In \"constant optimization\" mode, dudt should be empty");
+
+            control_variable.dissipation = 0.0;
+
+            break;
+         case(HYPERMESH):
+            // Check that the size of s_hypermesh equals the size of u
+            if ( control_variable.s_hypermesh.size() != control_variable.u.size() )
+                throw std::runtime_error("[ERROR] Control_variables::check_inputs() -> "
+                    "In \"hypermesh optimization\" mode, size(s_hypermesh) should be equal to size(u)");
+
+            if ( control_variable.u.size() != 0 )
+                throw std::runtime_error("[ERROR] Control_variables::check_inputs() -> "
+                    "In \"hypermesh optimization\" mode, dudt should be empty");
+
+            control_variable.dissipation = 0.0;
+
+            break;
+         case(FULL_MESH): 
+            // Check that s_hypermesh is empty, the size of u will be checked later 
+            if ( control_variable.s_hypermesh.size() > 0 ) 
+                throw std::runtime_error("[ERROR] Control_variables::check_inputs() -> "
+                    "In \"full-mesh optimize\" mode, s_hypermesh should be empty");
+
+            if ( (control_variable.u.size() != control_variable.dudt.size()) && (control_variable.dudt.size() != 0) )
+                throw std::runtime_error("[ERROR] Control_variables::check_inputs() -> "
+                    "In \"full-mesh optimize\" mode, dudt should either have the same size as u, or be empty");
+
+            if ( control_variable.dissipation < 0.0 )
+                throw std::runtime_error("[ERROR] Control_variables::check_inputs() -> dissipation must be non-negative");
+
+            break;
+         default:
+            throw std::runtime_error("[ERROR] Control_variables::check_inputs() -> optimization mode not recognized");
+    
+            break;
+        }
+    }
+}
+
+
+template<typename Dynamic_model_t>
+template<typename T>
+void Optimal_laptime<Dynamic_model_t>::Control_variables<T>::compute_statistics()
+{
+    // (1) Reset values
+    number_of_constant_optimizations        = 0;
+    number_of_hypermesh_optimization_points = 0;
+    number_of_full_optimizations            = 0;
+
+    for (const auto& control_variable : *this)
+    {
+        switch(control_variable.optimal_control_type)
+        {
+         case(DONT_OPTIMIZE):
+            // Do nothing
+            break;
+         case(CONSTANT):
+            ++number_of_constant_optimizations;
+            break;
+         case(HYPERMESH):
+            number_of_hypermesh_optimization_points += control_variable.s_hypermesh.size();
+            break;
+         case(FULL_MESH): 
+            ++number_of_full_optimizations;
+            break;
+         default:
+            throw std::runtime_error("[ERROR] Control_variables::check_inputs() -> optimization mode not recognized");
+    
+            break;
+        }
+    }
+}
+
+
+template<typename Dynamic_model_t>
+template<typename T>
+template<typename U>
+std::enable_if_t<std::is_same_v<U,scalar>, typename Optimal_laptime<Dynamic_model_t>::template Control_variables<CppAD::AD<scalar>>> 
+    Optimal_laptime<Dynamic_model_t>::Control_variables<T>::to_CppAD() const
+{
+    // (1) Create return value
+    Control_variables<CppAD::AD<scalar>> output;
+
+    // (2) Copy the std::array storage
+    std::transform(base_type::cbegin(), base_type::cend(), output.begin(), [](const auto& scalar_control) -> auto { return scalar_control.to_CppAD(); });
+
+    // (3) Copy the statistics
+    output.number_of_constant_optimizations        = number_of_constant_optimizations;
+    output.number_of_hypermesh_optimization_points = number_of_hypermesh_optimization_points;
+    output.number_of_full_optimizations            = number_of_full_optimizations;
+
+    // (4) Return
+    return output;
+}
+
+
+template<typename Dynamic_model_t>
+template<typename T>
+template<typename U>
+std::enable_if_t<std::is_same_v<U,scalar>, typename Optimal_laptime<Dynamic_model_t>::template Control_variable<CppAD::AD<scalar>>> 
+    Optimal_laptime<Dynamic_model_t>::Control_variable<T>::to_CppAD() const
+{
+    // (1) Define the new variable of type CppAD::AD
+    Control_variable<CppAD::AD<scalar>> output;
+
+    // (2) Copy optimal control type
+    output.optimal_control_type = optimal_control_type; 
+
+    // (3) Copy hypermesh
+    output.s_hypermesh          = s_hypermesh; 
+
+    // (4) Copy control variable values
+    output.u = std::vector<CppAD::AD<scalar>>(u.size());
+    std::copy(u.cbegin(), u.cend(), output.u.begin());
+
+    output.dudt = std::vector<CppAD::AD<scalar>>(dudt.size());
+    std::copy(dudt.cbegin(), dudt.cend(), output.dudt.begin());
+
+    // (5) Copy dissipation
+    output.dissipation = dissipation;
+
+    // (6) Return
+    return output;
 }

@@ -254,4 +254,43 @@ void Axle_car_6dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTRO
     }
 }
 
+
+template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t> typename Axle_mode, size_t STATE0, size_t CONTROL0>
+template<size_t NSTATE, size_t NCONTROL>
+void Axle_car_6dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::set_state_and_control_upper_lower_and_default_values
+    (std::array<scalar, NSTATE>& q_def     , std::array<scalar, NSTATE>& q_lb     , std::array<scalar, NSTATE>& q_ub     ,
+    std::array<scalar , NCONTROL>& u_def   , std::array<scalar, NCONTROL>& u_lb   , std::array<scalar, NCONTROL>& u_ub) const
+{
+    base_type::set_state_and_control_upper_lower_and_default_values(q_def, q_lb, q_ub, u_def, u_lb, u_ub); 
+
+    if constexpr (std::is_same_v<Axle_mode<0,0>,POWERED_WITHOUT_DIFFERENTIAL<0,0>>)
+    {
+        // Set the omega of the axle
+        q_def[Axle_type::IOMEGA_AXLE] = 10.0*KMH/0.139; 
+        q_lb[Axle_type::IOMEGA_AXLE]  = 10.0*KMH/0.139;
+        q_ub[Axle_type::IOMEGA_AXLE]  = 200.0*KMH/0.139;
+
+        if ( !_engine.direct_torque() )
+        {
+            u_def[Axle_type::ITORQUE] = 0.0;
+            u_lb[Axle_type::ITORQUE]  = -1.0;
+            u_ub[Axle_type::ITORQUE]  = 1.0;    
+        }
+        else
+        {
+            u_def[Axle_type::ITORQUE] = 0.0;
+            u_lb[Axle_type::ITORQUE]  = -200.0;
+            u_ub[Axle_type::ITORQUE]  =  200.0;
+        }
+
+    }
+    
+    if constexpr (std::is_same_v<Axle_mode<0,0>,STEERING_FREE_ROLL<0,0>>)
+    {
+        u_def[Axle_type::ISTEERING] = 0.0;
+        u_lb[Axle_type::ISTEERING]  = -20.0*DEG;
+        u_ub[Axle_type::ISTEERING]  =  20.0*DEG;
+    }
+}
+
 #endif

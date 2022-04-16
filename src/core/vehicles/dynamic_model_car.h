@@ -106,6 +106,22 @@ class Dynamic_model_car
     static std::tuple<std::string,std::array<std::string,_NSTATE>,std::array<std::string,Chassis_t::NALGEBRAIC>,std::array<std::string,_NCONTROL>> 
         get_state_and_control_names();
 
+    //! Get state and control upper and lower values
+    struct State_and_control_upper_lower_and_default_values
+    {
+        std::array<scalar,_NSTATE> q_def;
+        std::array<scalar,_NSTATE> q_lb;
+        std::array<scalar,_NSTATE> q_ub;
+        std::array<scalar,NALGEBRAIC> qa_def;
+        std::array<scalar,NALGEBRAIC> qa_lb;
+        std::array<scalar,NALGEBRAIC> qa_ub;
+        std::array<scalar,_NCONTROL> u_def;
+        std::array<scalar,_NCONTROL> u_lb;
+        std::array<scalar,_NCONTROL> u_ub;
+    };
+
+    State_and_control_upper_lower_and_default_values get_state_and_control_upper_lower_and_default_values() const;
+
     //! Return the chassis
     constexpr const Chassis_t& get_chassis() const { return _chassis; }
     constexpr       Chassis_t& get_chassis()       { return _chassis; }

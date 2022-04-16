@@ -88,8 +88,6 @@ inline void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0
         // Look for the parameter in the parent class
         base_type::set_parameter(parameter, value);
     }
-
-    _brake_bias = _brake_bias_0;
 }
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
@@ -248,6 +246,9 @@ void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_
 
     // throttle
     u[ITHROTTLE] = "throttle";
+
+    // brake bias
+    u[IBRAKE_BIAS] = "brake-bias";
 }
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
@@ -265,6 +266,9 @@ void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_
     // throttle
     _throttle = u[ITHROTTLE];
 
+    // brake bias
+    _brake_bias = u[IBRAKE_BIAS];
+
     // Algebraic ---
 
     // Fz_fl
@@ -279,6 +283,56 @@ void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_
     // Fz_rr
     _Fz_rr = qa[IFZRR]*g0*base_type::get_mass();
 }
+
+
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
+template<size_t NSTATE, size_t NCONTROL>
+void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_state_and_control_upper_lower_and_default_values
+    (std::array<scalar, NSTATE>& q_def     , std::array<scalar, NSTATE>& q_lb     , std::array<scalar, NSTATE>& q_ub     ,
+    std::array<scalar , NALGEBRAIC>& qa_def, std::array<scalar, NALGEBRAIC>& qa_lb, std::array<scalar, NALGEBRAIC>& qa_ub,
+    std::array<scalar , NCONTROL>& u_def   , std::array<scalar, NCONTROL>& u_lb   , std::array<scalar, NCONTROL>& u_ub) const
+{
+    // Call function for the parent class
+    base_type::set_state_and_control_upper_lower_and_default_values(q_def, q_lb, q_ub, u_def, u_lb, u_ub, 50.0*KMH, 380.0*KMH, 50.0*KMH, 10.0);
+
+    // State ---
+    // (empty)
+
+    // Controls ---
+
+    // throttle
+    u_def[ITHROTTLE] = 0.0;
+    u_lb[ITHROTTLE]  = -1.0;
+    u_ub[ITHROTTLE]  = 1.0;
+
+    // brake bias
+    u_def[IBRAKE_BIAS] = _brake_bias_0;
+    u_lb[IBRAKE_BIAS]  = 0.0;
+    u_ub[IBRAKE_BIAS]  = 1.0;
+
+    // Algebraic ---
+
+    // Fz_fl
+    qa_def[IFZFL] = 0.25;
+    qa_lb[IFZFL] = -3.0;
+    qa_ub[IFZFL] = -0.01;
+
+    // Fz_fr
+    qa_def[IFZFR] = 0.25;
+    qa_lb[IFZFR] = -3.0;
+    qa_ub[IFZFR] = -0.01;
+
+    // Fz_rl
+    qa_def[IFZRL] = 0.25;
+    qa_lb[IFZRL] = -3.0;
+    qa_ub[IFZRL] = -0.01;
+
+    // Fz_rr
+    qa_def[IFZRR] = 0.25;
+    qa_lb[IFZRR] = -3.0;
+    qa_ub[IFZRR] = -0.01;
+}
+
 
 #endif
 

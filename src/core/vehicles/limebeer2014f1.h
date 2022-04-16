@@ -140,7 +140,10 @@ class limebeer2014f1
             qa[Dynamic_model_t::Chassis_type::IFZRR] = x[8];
         
             // Construct the controls
+            std::array<scalar,Dynamic_model_t::NCONTROL> u_def = this->get_state_and_control_upper_lower_and_default_values().u_def;
             std::array<Timeseries_t,Dynamic_model_t::NCONTROL> u;
+            std::copy(u_def.cbegin(), u_def.cend(), u.begin());
+    
             u[Dynamic_model_t::Chassis_type::front_axle_type::ISTEERING] = x[9];
             u[Dynamic_model_t::Chassis_type::ITHROTTLE]    = x[10];
         
@@ -173,24 +176,9 @@ class limebeer2014f1
         }
 
         // Optimal lap-time --------------------------------------------------------
-        std::tuple<std::vector<scalar>,std::vector<scalar>,std::vector<scalar>,std::vector<scalar>> optimal_laptime_control_bounds() const
+        std::tuple<std::vector<scalar>,std::vector<scalar>> optimal_laptime_derivative_control_bounds() const
         {
-            return {{-20.0*DEG, -1.0}, {20.0*DEG, 1.0}, {-20.0*DEG,-10.0}, {20.0*DEG, 10.0}};
-        }
-
-        static std::pair<std::vector<scalar>,std::vector<scalar>> optimal_laptime_state_bounds() 
-        {
-            return 
-            {
-                // k_fl   k_fr   k_rl   k_rr  u          v         omega  time    n  psi
-                { -0.11, -0.11, -0.11, -0.11,  50.0*KMH, -50.0*KMH, -10.0, 0.0, -10.0, -30.0*DEG},
-                {  0.11,  0.11,  0.11,  0.11, 380.0*KMH,  50.0*KMH,  10.0, 0.0,  10.0,  30.0*DEG},
-            };
-        }
-
-        static std::pair<std::vector<scalar>,std::vector<scalar>> optimal_laptime_algebraic_state_bounds()
-        {
-            return {{-3.0,-3.0,-3.0,-3.0},{-0.01,-0.01,-0.01,-0.01}};
+            return {{-20.0*DEG,-10.0}, {20.0*DEG, 10.0}};
         }
 
         std::pair<std::vector<scalar>,std::vector<scalar>> optimal_laptime_extra_constraints_bounds(const scalar s) const

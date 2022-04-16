@@ -202,6 +202,30 @@ void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::get_state_der
     dqdt[IIDOMEGA] = _dOmega;
 }
 
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
+template<size_t NSTATE, size_t NCONTROL>
+void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_state_and_control_upper_lower_and_default_values
+    (std::array<scalar, NSTATE>& q_def     , std::array<scalar, NSTATE>& q_lb     , std::array<scalar, NSTATE>& q_ub     ,
+    std::array<scalar , NCONTROL>& u_def   , std::array<scalar, NCONTROL>& u_lb   , std::array<scalar, NCONTROL>& u_ub,
+    scalar velocity_x_lb, scalar velocity_x_ub, scalar velocity_y_ub, scalar omega_ub ) const
+{
+    get_front_axle().set_state_and_control_upper_lower_and_default_values(q_def, q_lb, q_ub, u_def, u_lb, u_ub);
+    get_rear_axle().set_state_and_control_upper_lower_and_default_values(q_def, q_lb, q_ub, u_def, u_lb, u_ub);
 
+    // State -----
+    q_def[IU] = velocity_x_lb;
+    q_lb[IU]  = velocity_x_lb;
+    q_ub[IU]  = velocity_x_ub;
+
+    // v
+    q_def[IV] = 0.0;
+    q_lb[IV]  = -velocity_y_ub;
+    q_ub[IV]  =  velocity_y_ub;
+
+    // oemga
+    q_def[IOMEGA] = 0.0;    
+    q_lb[IOMEGA]  = -omega_ub;
+    q_ub[IOMEGA]  =  omega_ub;
+}
 
 #endif

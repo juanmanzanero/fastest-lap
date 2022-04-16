@@ -94,6 +94,18 @@ void Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>::set_state_and_controls(cons
 
 
 template<typename Timeseries_t, typename Tires_tuple, size_t STATE0, size_t CONTROL0>
+template<size_t NSTATE, size_t NCONTROL>
+void Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>::set_state_and_control_upper_lower_and_default_values
+    (std::array<scalar, NSTATE>& q_def     , std::array<scalar, NSTATE>& q_lb     , std::array<scalar, NSTATE>& q_ub     ,
+    std::array<scalar , NCONTROL>& u_def   , std::array<scalar, NCONTROL>& u_lb   , std::array<scalar, NCONTROL>& u_ub) const
+{
+    std::get<0>(_tires).set_state_and_control_upper_lower_and_default_values(q_def, q_lb, q_ub, u_def, u_lb, u_ub); 
+
+    if constexpr (NTIRES == 2)
+        std::get<1>(_tires).set_state_and_control_upper_lower_and_default_values(q_def, q_lb, q_ub, u_def, u_lb, u_ub);
+}
+
+template<typename Timeseries_t, typename Tires_tuple, size_t STATE0, size_t CONTROL0>
 template<typename T>
 bool Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>::set_parameter(const std::string& parameter, const T value)
 {

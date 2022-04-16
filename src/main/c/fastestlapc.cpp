@@ -22,17 +22,20 @@ std::unordered_map<std::string,scalar> table_scalar;
 // Persistent vectors
 std::unordered_map<std::string,std::vector<scalar>> table_vector;
 
-// Persistent warm start variables
-struct
+// Persistent warm start 
+template<typename vehicle_t>
+Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>& get_warm_start()
 {
-    std::vector<double> s;
-    std::vector<double> zl;
-    std::vector<double> zu;
-    std::vector<double> lambda;
-    std::vector<std::vector<double>> q;
-    std::vector<std::vector<double>> qa;
-    std::vector<std::vector<double>> u;
-} warm_start_variables;
+    static Optimal_laptime<typename limebeer2014f1_all::vehicle_ad_curvilinear> warm_start_limebeer2014f1;
+    static Optimal_laptime<typename lot2016kart_all::vehicle_ad_curvilinear> warm_start_lot2016kart;
+
+    if constexpr (std::is_same_v<vehicle_t,limebeer2014f1_all>)
+        return warm_start_limebeer2014f1;
+    else if constexpr (std::is_same_v<vehicle_t,lot2016kart_all>)
+        return warm_start_lot2016kart;
+    else
+        throw std::runtime_error("[ERROR] get_warm_start() -> vehicle_t is not supported");
+}
 
 
 void create_vehicle(struct c_Vehicle* vehicle, const char* name, const char* vehicle_type, const char* database_file)
@@ -772,62 +775,47 @@ void track_coordinates(double* x_center, double* y_center, double* x_left, doubl
 
 
 template<typename vehicle_t>
-void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, struct c_Vehicle* c_vehicle, const int n_points, const double* s, const char* options)
+struct Optimal_laptime_configuration
 {
-    // (1) Process options
-    bool warm_start                   = false;
-    bool save_warm_start              = false;
-    bool write_xml                    = false;
-    std::string xml_file_name;
-    size_t print_level                = 0;
-    scalar initial_speed              = 50.0;
-    bool is_direct                    = false;
-    bool is_closed                    = true;
-    std::array<scalar,2> dissipations = {1.0e-2, 200*200*1.0e-10};
-    bool set_initial_condition        = false;
-    scalar sigma                      = 0.5;
-    std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NSTATE>     q_start;
-    std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NALGEBRAIC> qa_start;
-    std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NCONTROL>   u_start;
-
-    std::string save_variables_prefix;
-    std::vector<std::string> variables_to_save;
-
-    if ( c_vehicle->type == LIMEBEER2014F1 )
+    // Parse the options in XML format
+    // Example:
+    //      <options>
+    //          <warm_start> false </warm_start>
+    //          <save_warm_start> true </save_warm_start>
+    //          <write_xml> true </write_xml>
+    //          <xml_file_name> run.xml </xml_file_name>
+    //          <print_level> 5 </print_level>
+    //          <initial_speed> 50.0 </initial_speed>
+    //          <sigma> 0.5 </sigma>
+    //          <save_variables>
+    //              <prefix> run/ </prefix>
+    //              <variables>
+    //                  <u/>
+    //                  <v/>
+    //                  ...
+    //              </variables>
+    //          </save_variables>
+    //          <closed_simulation> true </closed_simulation>
+    //          <initial_condition>
+    //              <q/>
+    //              <qa/>
+    //              <u/>
+    //          </initial_condition>
+    //          <control_variables>
+    //              <delta optimal_control_type="full-mesh">
+    //                  <dissipation/>
+    //              </delta>
+    //              <throttle optimal_control_type="full-mesh">
+    //                  <dissipation/>
+    //              </throttle>
+    //              <brake-bias optimal_control_type="dont optimize"/>
+    //          </control_variables>
+    //      </options>
+    //
+    Optimal_laptime_configuration(const char* options)
     {
-        is_direct = true;
-        dissipations[0] = 5.0;
-        dissipations[1] = 8.0e-4;
-    }
-    
-    if ( strlen(options) > 0 )
-    {
-        // Parse the options in XML format
-        // Example:
-        //      <options>
-        //          <warm_start> false </warm_start>
-        //          <save_warm_start> true </save_warm_start>
-        //          <write_xml> true </write_xml>
-        //          <xml_file_name> run.xml </xml_file_name>
-        //          <print_level> 5 </print_level>
-        //          <initial_speed> 50.0 </initial_speed>
-        //          <sigma> 0.5 </sigma>
-        //          <save_variables>
-        //              <prefix> run/ </prefix>
-        //              <variables>
-        //                  <u/>
-        //                  <v/>
-        //                  ...
-        //              </variables>
-        //          </save_variables>
-        //          <closed_simulation> true </closed_simulation>
-        //          <initial_condition>
-        //              <q/>
-        //              <qa/>
-        //              <u/>
-        //          </initial_condition>
-        //      </options>
-        //
+        if ( strlen(options) == 0 ) return;
+
         std::string s_options(options);
         Xml_document doc;
         doc.parse(s_options);
@@ -855,16 +843,20 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, str
 
             auto variables_node = doc.get_element("options/save_variables/variables");
 
+            variables_to_save = {};
             for (auto& variable : variables_node.get_children())
                 variables_to_save.push_back(variable.get_name());
         }
 
-        if ( doc.has_element("options/initial_speed") ) initial_speed = doc.get_element("options/initial_speed").get_value(scalar());
+        if ( doc.has_element("options/steady_state_speed") ) steady_state_speed = doc.get_element("options/initial_speed").get_value(scalar());
     
         if ( doc.has_element("options/closed_simulation") ) is_closed = doc.get_element("options/closed_simulation").get_value(bool());
 
-        if ( doc.has_element("options/initial_condition") )
+        // If open simulation, provide initial condition
+        if ( !is_closed )
         {
+            if ( !doc.has_element("options/initial_condition") ) throw std::runtime_error("For open simulations, the initial condition must be provided"
+                                                                                          "in 'options/initial_condition'");
             set_initial_condition = true;
             auto v_q_start  = table_vector.at(doc.get_element("options/initial_condition/q").get_attribute("from_table"));
             auto v_qa_start = table_vector.at(doc.get_element("options/initial_condition/qa").get_attribute("from_table"));
@@ -876,28 +868,180 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, str
         }
 
         if ( doc.has_element("options/sigma") ) sigma = doc.get_element("options/sigma").get_value(scalar());
+
+        // Prepare control variables
+        if ( doc.has_element("options/control_variables") )
+        {
+            auto [key_name, q_names, qa_names, u_names] = vehicle_t::vehicle_ad_curvilinear::get_state_and_control_names();
+            (void) key_name;
+            (void) q_names;
+            (void) qa_names;
+
+            for (auto variable : doc.get_element("options/control_variables").get_children() )
+            {
+                // Find position in the control variables array
+                const auto it_variable = std::find(u_names.cbegin(), u_names.cend(), variable.get_name());
+
+                if ( it_variable == u_names.cend() ) throw std::runtime_error("[ERROR] Control variable \"" + variable.get_name() + "\" is not recognized");
+
+                const auto i_control = std::distance(u_names.cbegin(), it_variable);
+
+                // Get type
+                control_type[i_control]  = variable.get_attribute("type");
+
+                // Switch the different cases
+                if ( control_type[i_control] == "dont optimize" )
+                {
+                    // No extra parameters are needed
+                }
+                else if ( control_type[i_control] == "constant" )
+                {
+                    throw std::runtime_error("[ERROR] To be implemented"); 
+                }
+                else if ( control_type[i_control] == "hypermesh" )
+                {
+                    throw std::runtime_error("[ERROR] To be implemented"); 
+                }
+                else if ( control_type[i_control] == "full-mesh" )
+                {
+                    // Check if the dissipation is present
+                    if ( variable.has_child("dissipation") ) dissipations[i_control] = variable.get_child("dissipation").get_value(scalar());
+                }
+                else
+                {   
+                    throw std::runtime_error("[ERROR] Optimal control type \"" + control_type[i_control] + "\" not recognized");
+                }
+            } 
+
+        }
+    } 
+ 
+    bool warm_start                   = false;                  // Use warm start
+    bool save_warm_start              = false;                  // Save simulation for warm start
+    bool write_xml                    = false;                  // Write output as xml
+    std::string xml_file_name         = "optimal_laptime.xml";  // Name of the output xml file
+    size_t print_level                = 0;                      // Print level
+    scalar steady_state_speed         = 50.0;                   // Speed used for the steady state calculation [kmh]
+    bool is_direct                    = get_default_is_direct();// Compute direct simulation
+    bool is_closed                    = true;                   // Compute closed simulation
+    bool set_initial_condition        = false;                  // If an initial condition has to be set
+    scalar sigma                      = 0.5;                    // Scheme used (0.5:Crank Nicolson, 1.0:Implicit Euler)
+    std::string save_variables_prefix = "run/";                 // Prefix used to save the variables in the table
+    std::vector<std::string> variables_to_save{};               // Variables chosen to be saved
+
+    // Control variables definition
+    std::array<std::string,vehicle_t::vehicle_ad_curvilinear::NCONTROL> control_type = get_default_control_types();
+    std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NCONTROL> dissipations = get_default_dissipations();
+
+    // For open simulations: define starting point state and controls
+    std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NSTATE>     q_start;       // Starting states (only open simulations)
+    std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NALGEBRAIC> qa_start;      // Starting algebraic states (only open simulations)
+    std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NCONTROL> u_start;         // Starting controls (only open simulations)
+
+// Helper functions ----------------------------------:-
+ 
+ private:
+    static bool get_default_is_direct() 
+    {
+        if constexpr (std::is_same_v<vehicle_t,limebeer2014f1_all>)
+            return true;
+        else if constexpr (std::is_same_v<vehicle_t,lot2016kart_all>)
+            return false;
+        else
+            throw std::runtime_error("[ERROR] get_default_control_types() not defined for this vehicle_t");
     }
     
-    // (2) Get aliases to cars
+    static std::array<std::string,vehicle_t::vehicle_ad_curvilinear::NCONTROL> get_default_control_types() 
+    {
+        if constexpr (std::is_same_v<vehicle_t,limebeer2014f1_all>)
+            return {"full-mesh", "full-mesh", "dont optimize"};
+        else if constexpr (std::is_same_v<vehicle_t,lot2016kart_all>)
+            return {"full-mesh", "full-mesh"};
+        else
+            throw std::runtime_error("[ERROR] get_default_control_types() not defined for this vehicle_t");
+    }
+    
+    static std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NCONTROL> get_default_dissipations()
+    {
+        if constexpr (std::is_same_v<vehicle_t,limebeer2014f1_all>)
+            return {5.0, 8.0e-4, 0.0};
+        else if constexpr (std::is_same_v<vehicle_t,lot2016kart_all>)
+            return {1.0e-2, 200*200*1.0e-10};
+        else
+            throw std::runtime_error("[ERROR] get_default_control_types() not defined for this vehicle_t");
+    }
+
+};
+
+template<typename vehicle_t>
+typename Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>::template Control_variables<>
+    construct_control_variables(const Optimal_laptime_configuration<vehicle_t>& conf, 
+    const size_t n_points, const std::array<scalar, vehicle_t::vehicle_ad_curvilinear::NCONTROL>& u_steady_state)
+{
+    // (1) Define control variables 
+    auto control_variables = typename Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>::Control_variables{};
+
+    // (2) Construct each control variable from the information in the configuration 
+    for (size_t j = 0; j < vehicle_t::vehicle_ad_curvilinear::NCONTROL; ++j)
+    {
+        if ( conf.control_type[j] == "dont optimize" )
+        {
+            // (2.1) Don't optimize: take the value from the output of the steady state calculation
+            control_variables[j] = Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>::create_dont_optimize();
+        }
+        else if ( conf.control_type[j] == "constant" )
+        {
+            throw std::runtime_error("[ERROR] Not implemented yet");
+        }
+        else if ( conf.control_type[j] == "hypermesh" )
+        {
+            throw std::runtime_error("[ERROR] Not implemented yet");
+        }
+        else if ( conf.control_type[j] == "full-mesh" )
+        {
+            // (2.4) Create a full mesh control variable from the steady state values
+            if ( conf.is_direct )
+            {
+                control_variables[j] = Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>::create_full_mesh(std::vector<scalar>(n_points,u_steady_state[j]),
+                                                                                                    conf.dissipations[j]);
+            }
+            else 
+            {
+                control_variables[j] = Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>::create_full_mesh(std::vector<scalar>(n_points,u_steady_state[j]),
+                                                                                                    std::vector<scalar>(n_points,0.0),
+                                                                                                    conf.dissipations[j]);
+            }
+        }
+    }
+
+    // (3) Return
+    return control_variables;
+} 
+
+
+template<typename vehicle_t>
+void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, struct c_Vehicle* c_vehicle, const int n_points, const double* s, const char* options)
+{
+    // (1) Get aliases to cars
     auto& car_curv = vehicle.get_curvilinear_ad_car();
     auto& car_curv_sc = vehicle.get_curvilinear_scalar_car();
 
     auto& car_cart = vehicle.cartesian_ad;
-    auto& car_cart_sc = vehicle.cartesian_scalar;
 
+    // (2) Process options
+    auto conf = Optimal_laptime_configuration<vehicle_t>(options);
+   
     // (3) Set the track into the curvilinear car dynamic model
     car_curv.get_road().change_track(track);
     car_curv_sc.get_road().change_track(track);
 
     // (4) Start from the steady-state values at 0g    
-    scalar v = initial_speed*KMH;
+    scalar v = conf.steady_state_speed*KMH;
 
     auto ss = Steady_state(car_cart).solve(v,0.0,0.0); 
 
     if ( c_vehicle->type == LOT2016KART )
         ss.u[1] = 0.0;
-
-    std::tie(ss.dqdt, std::ignore) = car_cart_sc(ss.q, ss.qa, ss.u, 0.0);
 
     // (5) Compute optimal laptime
 
@@ -905,92 +1049,65 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, str
     std::vector<scalar> arclength(s,s+n_points);
     Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear> opt_laptime;
     typename Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>::Options opts;
-    opts.print_level = print_level;
-    opts.sigma       = sigma;
+    opts.print_level = conf.print_level;
+    opts.sigma       = conf.sigma;
 
     // (5.2.a) Start from steady-state
-    if ( !warm_start )
+    if ( !conf.warm_start )
     {
         std::vector<std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NSTATE>> q0  = {static_cast<size_t>(n_points),ss.q};
         std::vector<std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NALGEBRAIC>> qa0 = {static_cast<size_t>(n_points),ss.qa};
-        std::vector<std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NCONTROL>> u0  = {static_cast<size_t>(n_points),ss.u};
+        auto control_variables = construct_control_variables(conf, static_cast<size_t>(n_points), ss.u); 
 
-        if ( set_initial_condition )
+        if ( conf.set_initial_condition )
         {
-            q0.front()  = q_start;
-            qa0.front() = qa_start;
-            u0.front()  = u_start;
+            q0.front()  = conf.q_start;
+            qa0.front() = conf.qa_start;
+
+            // Set only full-mesh variables
+            for (size_t j = 0; j < vehicle_t::vehicle_ad_curvilinear::NCONTROL; ++j)
+            {   
+                if ( control_variables[j].optimal_control_type == Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>::FULL_MESH)
+                {
+                    control_variables[j].u.front() = conf.u_start[j];
+                }
+            }
         }
 
-        std::vector<std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NCONTROL>> dudt0;
-
-        if ( !is_direct )
-        {
-            dudt0 = {static_cast<size_t>(n_points), {0.0}};
-        }
-
-        opt_laptime = Optimal_laptime(arclength, is_closed, is_direct, car_curv, q0, qa0, u0, dudt0, dissipations, opts);
+        opt_laptime = Optimal_laptime(arclength, conf.is_closed, conf.is_direct, car_curv, q0, qa0, control_variables, opts);
     }
     // (5.2.b) Warm start
     else
     {
-        std::vector<std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NSTATE>> q;
-        std::vector<std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NALGEBRAIC>> qa;
-        std::vector<std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NCONTROL>> u;
-        std::vector<std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NCONTROL>> dudt;
-        
-        for (const auto& q_vector : warm_start_variables.q)
-        {
-            std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NSTATE> q_arr;
-            std::copy_n(q_vector.cbegin(), vehicle_t::vehicle_ad_curvilinear::NSTATE, q_arr.begin());
-            q.push_back(q_arr);
-        }
-
-        for (const auto& qa_vector : warm_start_variables.qa)
-        {
-            std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NALGEBRAIC> qa_arr;
-            std::copy_n(qa_vector.cbegin(), vehicle_t::vehicle_ad_curvilinear::NALGEBRAIC, qa_arr.begin());
-            qa.push_back(qa_arr);
-        }
-
-        for (const auto& u_vector : warm_start_variables.u)
-        {
-            std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NCONTROL> u_arr;
-            std::copy_n(u_vector.cbegin(), vehicle_t::vehicle_ad_curvilinear::NCONTROL, u_arr.begin());
-            u.push_back(u_arr);
-        }
-
-        if ( !is_direct ) 
-        {
-            dudt = {warm_start_variables.s.size(), {0.0}};
-        }
-
-        opt_laptime = Optimal_laptime(warm_start_variables.s, is_closed, is_direct, car_curv, q, qa, u, dudt, dissipations, warm_start_variables.zl, 
-                        warm_start_variables.zu, warm_start_variables.lambda, opts);
+        opt_laptime = Optimal_laptime(get_warm_start<vehicle_t>().s, get_warm_start<vehicle_t>().is_closed, get_warm_start<vehicle_t>().is_direct, 
+                        car_curv, get_warm_start<vehicle_t>().q, 
+                        get_warm_start<vehicle_t>().qa, get_warm_start<vehicle_t>().control_variables, 
+                        get_warm_start<vehicle_t>().optimization_data.zl, get_warm_start<vehicle_t>().optimization_data.zu, 
+                        get_warm_start<vehicle_t>().optimization_data.lambda, opts);
     }
 
     // (6) Save results -----------------------------------------------------------------------
 
     // (6.1) Save xml file
-    if ( write_xml )
-        opt_laptime.xml()->save(xml_file_name);
+    if ( conf.write_xml )
+        opt_laptime.xml()->save(conf.xml_file_name);
 
     // (6.2) Save outputs
-    for (const auto& variable_name : variables_to_save)
+    for (const auto& variable_name : conf.variables_to_save)
     {
         // Check if the variable_name exists in any of the tables
-        if ( table_scalar.count(save_variables_prefix + variable_name) != 0 )
-            throw std::runtime_error(std::string("Variable \"") + save_variables_prefix + variable_name + "\" already exists in the scalar table");
+        if ( table_scalar.count(conf.save_variables_prefix + variable_name) != 0 )
+            throw std::runtime_error(std::string("Variable \"") + conf.save_variables_prefix + variable_name + "\" already exists in the scalar table");
 
-        if ( table_vector.count(save_variables_prefix + variable_name) != 0 )
-            throw std::runtime_error(std::string("Variable \"") + save_variables_prefix + variable_name + "\" already exists in the vector table");
+        if ( table_vector.count(conf.save_variables_prefix + variable_name) != 0 )
+            throw std::runtime_error(std::string("Variable \"") + conf.save_variables_prefix + variable_name + "\" already exists in the vector table");
 
         bool is_vector = true;
 
         // Scalar variables
         if ( variable_name == "laptime" )
         {
-            table_scalar.insert({save_variables_prefix+variable_name, opt_laptime.laptime});
+            table_scalar.insert({conf.save_variables_prefix+variable_name, opt_laptime.laptime});
             is_vector = false;
         }
 
@@ -1000,7 +1117,7 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, str
             std::vector<scalar> data(n_points);
             for (int i = 0; i < n_points; ++i)
             {
-                car_curv_sc(opt_laptime.q[i], opt_laptime.qa[i], opt_laptime.u[i], s[i]);
+                car_curv_sc(opt_laptime.q[i], opt_laptime.qa[i], opt_laptime.control_variables.control_array_at_s(car_curv,i,s[i]), s[i]);
     
                 if ( variable_name == "x" ) 
                     data[i] = car_curv_sc.get_road().get_x();
@@ -1027,7 +1144,7 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, str
                     data[i] = opt_laptime.q[i][vehicle_t::vehicle_scalar_curvilinear::Road_type::ITIME];
     
                 else if ( variable_name == "delta" )
-                    data[i] = opt_laptime.u[i][vehicle_t::vehicle_scalar_curvilinear::Chassis_type::Front_axle_type::ISTEERING];
+                    data[i] = opt_laptime.control_variables[vehicle_t::vehicle_scalar_curvilinear::Chassis_type::Front_axle_type::ISTEERING].u[i];
     
                 else if ( variable_name == "psi" )
                     data[i] = car_curv_sc.get_road().get_psi();
@@ -1039,12 +1156,12 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, str
                 {
                     if constexpr (std::is_same<vehicle_t, lot2016kart_all>::value)
                     {
-                        data[i] = opt_laptime.u[i][vehicle_t::vehicle_scalar_curvilinear::Chassis_type::Rear_axle_type::ITORQUE];
+                        data[i] = opt_laptime.control_variables[vehicle_t::vehicle_scalar_curvilinear::Chassis_type::Rear_axle_type::ITORQUE].u[i];
                     }
     
                     else if constexpr (std::is_same<vehicle_t, limebeer2014f1_all>::value)
                     {
-                        data[i] = opt_laptime.u[i][vehicle_t::vehicle_scalar_curvilinear::Chassis_type::ITHROTTLE];
+                        data[i] = opt_laptime.control_variables[vehicle_t::vehicle_scalar_curvilinear::Chassis_type::ITHROTTLE].u[i];
                     }
                 }
                 else if ( variable_name == "rear_axle.left_tire.x" )
@@ -1139,33 +1256,13 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, str
             }
     
             // Insert in the vector table
-            table_vector.insert({save_variables_prefix + variable_name, data});
+            table_vector.insert({conf.save_variables_prefix + variable_name, data});
         }
     }
 
     // (6.3) Save warm start for next runs
-    if (save_warm_start)
-    {
-        warm_start_variables.s  = opt_laptime.s;
-        warm_start_variables.zl = opt_laptime.optimization_data.zl;
-        warm_start_variables.zu = opt_laptime.optimization_data.zu;
-        warm_start_variables.lambda = opt_laptime.optimization_data.lambda;
-
-        warm_start_variables.q.clear();
-        warm_start_variables.qa.clear();
-        warm_start_variables.u.clear();
-
-        for (size_t i = 0; i < opt_laptime.q.size(); ++i)
-        {
-            std::vector<double> q(opt_laptime.q[i].cbegin(), opt_laptime.q[i].cend());
-            std::vector<double> qa(opt_laptime.qa[i].cbegin(), opt_laptime.qa[i].cend());
-            std::vector<double> u(opt_laptime.u[i].cbegin(), opt_laptime.u[i].cend());
-
-            warm_start_variables.q.push_back(q);
-            warm_start_variables.qa.push_back(qa);
-            warm_start_variables.u.push_back(u);
-        }
-    }
+    if (conf.save_warm_start)
+        get_warm_start<vehicle_t>() = opt_laptime;
 }
 
 

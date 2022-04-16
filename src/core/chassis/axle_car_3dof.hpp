@@ -304,4 +304,33 @@ void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTRO
     }
 }
 
+
+template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t> typename Axle_mode, size_t STATE0, size_t CONTROL0>
+template<size_t NSTATE, size_t NCONTROL>
+void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::set_state_and_control_upper_lower_and_default_values
+    (std::array<scalar, NSTATE>& q_def     , std::array<scalar, NSTATE>& q_lb     , std::array<scalar, NSTATE>& q_ub     ,
+    std::array<scalar , NCONTROL>& u_def   , std::array<scalar, NCONTROL>& u_lb   , std::array<scalar, NCONTROL>& u_ub) const
+{
+    base_type::set_state_and_control_upper_lower_and_default_values(q_def,q_lb,q_ub,u_def,u_lb,u_ub);
+
+    // State ------------
+    
+    // Kappa left
+    q_def[Axle_type::IKAPPA_LEFT] = 0.0;
+    q_lb[Axle_type::IKAPPA_LEFT]  = -0.11;
+    q_ub[Axle_type::IKAPPA_LEFT]  =  0.11;
+
+    // Kappa right
+    q_def[Axle_type::IKAPPA_RIGHT] = 0.0;
+    q_lb[Axle_type::IKAPPA_RIGHT]  = -0.11;
+    q_ub[Axle_type::IKAPPA_RIGHT]  =  0.11;
+
+    if constexpr (std::is_same_v<Axle_mode<0,0>,STEERING<0,0>>)
+    {
+        u_def[Axle_type::ISTEERING] = 0.0;
+        u_lb[Axle_type::ISTEERING] = -20.0*DEG;
+        u_ub[Axle_type::ISTEERING] =  20.0*DEG;
+    }
+}
+
 #endif

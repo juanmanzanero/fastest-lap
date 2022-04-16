@@ -64,6 +64,28 @@ void Road_curvilinear<Timeseries_t,Track_t,STATE0,CONTROL0>::set_state_and_contr
     base_type::_psi = _alpha + _theta;
 }
 
+template<typename Timeseries_t,typename Track_t,size_t STATE0, size_t CONTROL0>
+template<size_t NSTATE, size_t NCONTROL>
+void Road_curvilinear<Timeseries_t,Track_t,STATE0,CONTROL0>::set_state_and_control_upper_lower_and_default_values
+    (std::array<scalar, NSTATE>& q_def     , std::array<scalar, NSTATE>& q_lb     , std::array<scalar, NSTATE>& q_ub     ,
+    std::array<scalar , NCONTROL>& u_def   , std::array<scalar, NCONTROL>& u_lb   , std::array<scalar, NCONTROL>& u_ub) const
+{
+    // time
+    q_def[ITIME] = 0.0;
+    q_lb[ITIME]  = 0.0;
+    q_ub[ITIME]  = std::numeric_limits<scalar>::max();
+
+    // n
+    q_def[IN] = 0.0;
+    q_lb[IN]  = std::numeric_limits<scalar>::lowest();
+    q_ub[IN]  = std::numeric_limits<scalar>::max();
+
+    // alpha
+    q_def[IALPHA] = 0.0;
+    q_lb[IALPHA]  = -30.0*DEG;
+    q_ub[IALPHA]  =  30.0*DEG;
+}
+
 
 template<typename Timeseries_t,typename Track_t,size_t STATE0, size_t CONTROL0>
 template<size_t NSTATE, size_t NCONTROL>

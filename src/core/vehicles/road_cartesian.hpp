@@ -43,6 +43,30 @@ void Road_cartesian<Timeseries_t,STATE0,CONTROL0>::set_state_and_controls(const 
     base_type::_psi = q[IPSI];
 }
 
+template<typename Timeseries_t,size_t STATE0, size_t CONTROL0>
+template<size_t NSTATE, size_t NCONTROL>
+void Road_cartesian<Timeseries_t,STATE0,CONTROL0>::set_state_and_control_upper_lower_and_default_values
+    (std::array<scalar, NSTATE>& q_def     , std::array<scalar, NSTATE>& q_lb     , std::array<scalar, NSTATE>& q_ub     ,
+    std::array<scalar , NCONTROL>& u_def   , std::array<scalar, NCONTROL>& u_lb   , std::array<scalar, NCONTROL>& u_ub) const
+{
+    // time
+    q_def[IX] = 0.0;
+    q_lb[IX]  = std::numeric_limits<scalar>::lowest();
+    q_ub[IX]  = std::numeric_limits<scalar>::max();
+
+    // n
+    q_def[IY] = 0.0;
+    q_lb[IY]  = std::numeric_limits<scalar>::lowest();
+    q_ub[IY]  = std::numeric_limits<scalar>::max();
+
+    // alpha
+    q_def[IPSI] = 0.0;
+    q_lb[IPSI]  = std::numeric_limits<scalar>::lowest();
+    q_ub[IPSI]  = std::numeric_limits<scalar>::max();
+}
+
+
+
 
 template<typename Timeseries_t,size_t STATE0, size_t CONTROL0>
 template<size_t NSTATE, size_t NCONTROL>
