@@ -38,7 +38,7 @@ TEST_F(F1_optimal_laptime_test, Catalunya_discrete)
     EXPECT_EQ(n, 500);
 
     // Construct control variables
-    auto control_variables = Optimal_laptime<decltype(car)>::Control_variables{};
+    auto control_variables = Optimal_laptime<decltype(car)>::template Control_variables<>{};
 
     // steering wheel: optimize in the full mesh
     control_variables[decltype(car)::Chassis_type::front_axle_type::ISTEERING]
@@ -142,7 +142,7 @@ TEST_F(F1_optimal_laptime_test, Catalunya_adapted)
     const size_t n = s.size();
 
     // Construct control variables
-    auto control_variables = Optimal_laptime<decltype(car)>::Control_variables{};
+    auto control_variables = Optimal_laptime<decltype(car)>::template Control_variables<>{};
 
     // steering wheel: optimize in the full mesh
     control_variables[decltype(car)::Chassis_type::front_axle_type::ISTEERING]
@@ -268,7 +268,7 @@ TEST_F(F1_optimal_laptime_test, Catalunya_variable_parameter)
     const size_t n = s.size();
 
     // Construct control variables
-    auto control_variables = Optimal_laptime<decltype(car)>::Control_variables{};
+    auto control_variables = Optimal_laptime<decltype(car)>::template Control_variables<>{};
 
     // steering wheel: optimize in the full mesh
     control_variables[decltype(car)::Chassis_type::front_axle_type::ISTEERING]
@@ -400,7 +400,7 @@ TEST_F(F1_optimal_laptime_test, Catalunya_chicane)
     std::vector<std::array<scalar,limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p::NALGEBRAIC>>   qa0(n,ss.qa);
     
     // Construct control variables
-    auto control_variables = Optimal_laptime<decltype(car)>::Control_variables{};
+    auto control_variables = Optimal_laptime<decltype(car)>::template Control_variables<>{};
 
     // steering wheel: optimize in the full mesh
     control_variables[decltype(car)::Chassis_type::front_axle_type::ISTEERING]
@@ -1368,7 +1368,7 @@ TEST_F(F1_optimal_laptime_test, Melbourne_derivative)
     auto ss = Steady_state(car_cartesian).solve(v,0.0,0.0); 
 
     // Construct control variables
-    auto control_variables = Optimal_laptime<decltype(car)>::Control_variables{};
+    auto control_variables = Optimal_laptime<decltype(car)>::template Control_variables<>{};
 
     // steering wheel: optimize in the full mesh
     control_variables[decltype(car)::Chassis_type::front_axle_type::ISTEERING]

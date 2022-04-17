@@ -979,7 +979,7 @@ typename Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>::template C
     const size_t n_points, const std::array<scalar, vehicle_t::vehicle_ad_curvilinear::NCONTROL>& u_steady_state)
 {
     // (1) Define control variables 
-    auto control_variables = typename Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>::Control_variables{};
+    auto control_variables = typename Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>::template Control_variables<>{};
 
     // (2) Construct each control variable from the information in the configuration 
     for (size_t j = 0; j < vehicle_t::vehicle_ad_curvilinear::NCONTROL; ++j)
