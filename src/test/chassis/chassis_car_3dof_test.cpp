@@ -34,6 +34,7 @@ class Chassis_car_3dof_test : public ::testing::Test
 
         u_in[Front_axle_t::ISTEERING] = delta;
         u_in[Chassis_t::ITHROTTLE]    = throttle;
+        u_in[Chassis_t::IBRAKE_BIAS]  = 0.6;
 
         qa_in[Chassis_t::IFZFL] = Fz_fl/(9.81*660.0);
         qa_in[Chassis_t::IFZFR] = Fz_fr/(9.81*660.0);
