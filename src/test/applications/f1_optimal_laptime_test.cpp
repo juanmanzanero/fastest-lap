@@ -1572,3 +1572,133 @@ TEST_F(F1_optimal_laptime_test, Melbourne_derivative_warm_start)
     for (size_t i = 0; i < n; ++i)
         EXPECT_NEAR(opt_laptime.control_variables[limebeer2014f1<scalar>::Chassis_t::ITHROTTLE].u[i], throttle_saved[i], 1.0e-6);
 }
+
+
+TEST_F(F1_optimal_laptime_test, imola_adapted_hypermesh)
+{
+    // Keep valgrind, at least for one go
+    //if ( is_valgrind ) GTEST_SKIP();
+
+    Xml_document imola_xml("./database/tracks/imola/imola_adapted.xml",true);
+    Circuit_preprocessor imola_pproc(imola_xml);
+    Track_by_polynomial imola(imola_pproc);
+    
+    limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial>::Road_t road(imola);
+    limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial> car(database, road);
+
+    // Start from the steady-state values at 50km/h-0g    
+    const scalar v = 50.0*KMH;
+    auto ss = Steady_state(car_cartesian).solve(v,0.0,0.0); 
+
+    const auto& s = imola_pproc.s;
+
+    const size_t n = s.size();
+
+    // Construct control variables
+    auto control_variables = Optimal_laptime<decltype(car)>::template Control_variables<>{};
+
+    // steering wheel: optimize in the full mesh
+    control_variables[decltype(car)::Chassis_type::front_axle_type::ISTEERING]
+        = Optimal_laptime<decltype(car)>::create_full_mesh(std::vector<scalar>(n,ss.u[decltype(car)::Chassis_type::front_axle_type::ISTEERING]), 50.0e0); 
+
+    // throttle: optimize in the full mesh
+    control_variables[decltype(car)::Chassis_type::ITHROTTLE]
+        = Optimal_laptime<decltype(car)>::create_full_mesh(std::vector<scalar>(n,ss.u[decltype(car)::Chassis_type::ITHROTTLE]), 20.0*8.0e-4); 
+
+    // brake bias: don't optimize
+    control_variables[decltype(car)::Chassis_type::IBRAKE_BIAS]
+        = Optimal_laptime<decltype(car)>::create_hypermesh(std::vector<scalar>{0.0, 990.0, 1526.0, 1925.0, 2589.0, 3024.0, 3554.0},
+                                                           std::vector<scalar>(7,ss.u[decltype(car)::Chassis_type::IBRAKE_BIAS])); 
+
+    auto opts = Optimal_laptime<decltype(car)>::Options{};
+    Optimal_laptime opt_laptime(s, true, true, car, {n,ss.q}, {n,ss.qa}, control_variables, opts);
+    opt_laptime.xml()->save("f1_optimal_laptime_imola_adapted.xml");
+
+    // Check the results with a saved simulation
+    Xml_document opt_saved("data/f1_optimal_laptime_imola_adapted.xml", true);
+
+    // kappa front left
+    auto kappa_fl_saved = opt_saved.get_element("optimal_laptime/steering-kappa-left").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][limebeer2014f1<scalar>::Front_axle_t::IKAPPA_LEFT], kappa_fl_saved[i], 1.0e-6);
+    
+    // kappa front right
+    auto kappa_fr_saved = opt_saved.get_element("optimal_laptime/steering-kappa-right").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][limebeer2014f1<scalar>::Front_axle_t::IKAPPA_RIGHT], kappa_fr_saved[i], 1.0e-6);
+    
+    // kappa rear left
+    auto kappa_rl_saved = opt_saved.get_element("optimal_laptime/powered-kappa-left").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][limebeer2014f1<scalar>::Rear_axle_t::IKAPPA_LEFT], kappa_rl_saved[i], 1.0e-6);
+    
+    // kappa rear right
+    auto kappa_rr_saved = opt_saved.get_element("optimal_laptime/powered-kappa-right").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][limebeer2014f1<scalar>::Rear_axle_t::IKAPPA_RIGHT], kappa_rr_saved[i], 1.0e-6);
+
+    // u
+    auto u_saved = opt_saved.get_element("optimal_laptime/u").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][limebeer2014f1<scalar>::Chassis_t::IU], u_saved[i], 1.0e-6);
+
+    // v
+    auto v_saved = opt_saved.get_element("optimal_laptime/v").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][limebeer2014f1<scalar>::Chassis_t::IV], v_saved[i], 1.0e-6);
+
+    // omega
+    auto omega_saved = opt_saved.get_element("optimal_laptime/omega").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][limebeer2014f1<scalar>::Chassis_t::IOMEGA], omega_saved[i], 1.0e-6);
+
+    // time
+    auto time_saved = opt_saved.get_element("optimal_laptime/time").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][limebeer2014f1<scalar>::curvilinear_p::Road_t::ITIME], time_saved[i], 1.0e-6);
+
+    // n
+    auto n_saved = opt_saved.get_element("optimal_laptime/n").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][limebeer2014f1<scalar>::curvilinear_p::Road_t::IN], n_saved[i], 1.0e-6);
+
+    // alpha
+    auto alpha_saved = opt_saved.get_element("optimal_laptime/alpha").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.q[i][limebeer2014f1<scalar>::curvilinear_p::Road_t::IALPHA], alpha_saved[i], 1.0e-6);
+
+    // delta
+    auto delta_saved = opt_saved.get_element("optimal_laptime/control_variables/delta/values").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.control_variables[limebeer2014f1<scalar>::Front_axle_t::ISTEERING].u[i], delta_saved[i], 1.0e-6);
+
+    // throttle
+    auto throttle_saved = opt_saved.get_element("optimal_laptime/control_variables/throttle/values").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.control_variables[limebeer2014f1<scalar>::Chassis_t::ITHROTTLE].u[i], throttle_saved[i], 1.0e-6);
+
+    // brake-bias
+    auto brake_bias_saved = opt_saved.get_element("optimal_laptime/control_variables/brake-bias/values").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < brake_bias_saved.size(); ++i)
+        EXPECT_NEAR(opt_laptime.control_variables[limebeer2014f1<scalar>::Chassis_t::IBRAKE_BIAS].u[i], brake_bias_saved[i], 1.0e-6);
+
+    // Fz_fl
+    auto Fz_fl_saved = opt_saved.get_element("optimal_laptime/Fz_fl").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.qa[i][limebeer2014f1<scalar>::Chassis_t::IFZFL], Fz_fl_saved[i], 1.0e-6);
+
+    // Fz_fr
+    auto Fz_fr_saved = opt_saved.get_element("optimal_laptime/Fz_fr").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.qa[i][limebeer2014f1<scalar>::Chassis_t::IFZFR], Fz_fr_saved[i], 1.0e-6);
+
+    // Fz_rl
+    auto Fz_rl_saved = opt_saved.get_element("optimal_laptime/Fz_rl").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.qa[i][limebeer2014f1<scalar>::Chassis_t::IFZRL], Fz_rl_saved[i], 1.0e-6);
+
+    // Fz_rr
+    auto Fz_rr_saved = opt_saved.get_element("optimal_laptime/Fz_rr").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+        EXPECT_NEAR(opt_laptime.qa[i][limebeer2014f1<scalar>::Chassis_t::IFZRR], Fz_rr_saved[i], 1.0e-6);
+}

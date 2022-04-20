@@ -717,7 +717,7 @@ TEST(Circuit_preprocessor_test, imola_adapted)
     Circuit_preprocessor::Options opts;
     Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, opts, s_bkp, ds_bkp);
 
-    circuit.xml()->save("imola_adapted.xml");
+    circuit.xml();
 
     Xml_document solution_saved("./database/tracks/imola/imola_adapted.xml", true);
 

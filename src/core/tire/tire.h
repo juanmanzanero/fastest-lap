@@ -111,6 +111,9 @@ class Tire
     //! Get the tire torques (applied at the wheel center) [N.m]
     const Vector3d<Timeseries_t>& get_torque() const { return _T; }
 
+    //! Get the tire dissipatation (computed as F.v_contact_point)
+    const Timeseries_t get_dissipation() const { return _F.x()*(_v.x()-_omega*_R0) + _F.y()*_v.y(); }
+
     //! Get the forces projected on the parent frame
     Vector3d<Timeseries_t> get_force_in_parent() const { return _frame.get_rotation_matrix()*_F; } 
 

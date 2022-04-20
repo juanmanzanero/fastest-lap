@@ -180,6 +180,10 @@ inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(Xml_document& doc)
         // Get value
         control_variables[i].u = root.get_child("control_variables/" + u_names[i] + "/values").get_value(std::vector<scalar>());
 
+        // Get hypermesh
+        if ( control_variables[i].optimal_control_type == HYPERMESH )
+            control_variables[i].s_hypermesh = root.get_child("control_variables/" + u_names[i] + "/hypermesh").get_value(std::vector<scalar>());
+
         // Get derivative value if present
         if ( !is_direct && root.has_child("control_variables/" + u_names[i] + "/derivatives") )
             control_variables[i].dudt = root.get_child("control_variables/" + u_names[i] + "/derivatives").get_value(std::vector<scalar>());
@@ -324,6 +328,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
                 x_ub[k] = u_ub[j];
                 k.increment();
             } 
+            break;
 
          case (HYPERMESH):
             for (size_t i = 0; i < control_variables[j].u.size(); ++i)
@@ -333,6 +338,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
                 x_ub[k] = u_ub[j];
                 k.increment();
             }    
+            break;
          default:
             break;
         }
@@ -1067,11 +1073,29 @@ std::unique_ptr<Xml_document> Optimal_laptime<Dynamic_model_t>::xml() const
         }
         else if ( control_variables[i].optimal_control_type == CONSTANT )
         {   
-            throw std::runtime_error("Not implemented yet");
+            node_variable.add_attribute("type","constant");
+            s_out << control_variables[i].u.front();
+            node_variable.add_child("values").set_value(s_out.str());
+            s_out.str(""); s_out.clear();
         }
         else if ( control_variables[i].optimal_control_type == HYPERMESH )
         {
-            throw std::runtime_error("Not implemented yet");
+            node_variable.add_attribute("type","hypermesh");
+            for (size_t j = 0; j < control_variables[i].u.size()-1; ++j)
+                s_out << control_variables[i].u[j] << ", " ;
+
+            s_out << control_variables[i].u.back();
+
+            node_variable.add_child("values").set_value(s_out.str());
+            s_out.str(""); s_out.clear();
+
+            for (size_t j = 0; j < control_variables[i].s_hypermesh.size()-1; ++j)
+                s_out << control_variables[i].s_hypermesh[j] << ", " ;
+
+            s_out << control_variables[i].s_hypermesh.back();
+
+            node_variable.add_child("hypermesh").set_value(s_out.str());
+            s_out.str(""); s_out.clear();
         }
         else if ( control_variables[i].optimal_control_type == FULL_MESH )
         {
@@ -1615,7 +1639,7 @@ void Optimal_laptime<Dynamic_model_t>::Control_variables<T>::check_inputs()
                 throw std::runtime_error("[ERROR] Control_variables::check_inputs() -> "
                     "In \"hypermesh optimization\" mode, size(s_hypermesh) should be equal to size(u)");
 
-            if ( control_variable.u.size() != 0 )
+            if ( control_variable.dudt.size() != 0 )
                 throw std::runtime_error("[ERROR] Control_variables::check_inputs() -> "
                     "In \"hypermesh optimization\" mode, dudt should be empty");
 
