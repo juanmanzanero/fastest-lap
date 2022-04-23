@@ -63,6 +63,8 @@ void set_matrix_parameter(struct c_Vehicle* vehicle, const char* parameter, cons
 
 void add_variable_parameter(struct c_Vehicle* c_vehicle, const char* parameter_name, const int n, const double* s, const double* values);
 
+void change_track(struct c_Vehicle* c_vehicle, const struct c_Track* c_track);
+
 // Applications --------------------------------------------------------------------------------------------------------
 //void vehicle_equations(double* dqdt, double* dqa, struct c_Vehicle* vehicle, double* q, double* qa, double* u, double s);
 

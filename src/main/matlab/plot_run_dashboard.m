@@ -1,7 +1,8 @@
 function h=plot_run_dashboard(i,t,s,x,y,r_center,q,qa,u, x_center, y_center, x_left, y_left,...
     x_right, y_right, laptime, vehicle, vehicle_data, Fz_max)
 
-h = figure('Units','normalized','Position',[0 0 1 1]);
+screen_size = get(0,'ScreenSize');
+h = figure('Position',[0 0 screen_size(3) 1080.0/1920.0*screen_size(3)]);
 hold on;
 % (1) Plot track
 patch([x_left, x_right], [-y_left, -y_right], [13/255, 17/255, 23/255]);
@@ -24,9 +25,9 @@ surface([x(max(1,i-1400):i),x(max(1,i-1400):i)],[-y(max(1,i-1400):i),-y(max(1,i-
 colormap(cMap)
 
 % (n) Draw car
-x_rr = calllib('libfastestlapc','get_vehicle_property',vehicle,q(:,i),qa(:,i),u(:,i),s(i),'rear_axle.right_tire.x');
-y_rr = calllib('libfastestlapc','get_vehicle_property',vehicle,q(:,i),qa(:,i),u(:,i),s(i),'rear_axle.right_tire.y');
-psi = calllib('libfastestlapc','get_vehicle_property',vehicle,q(:,i),qa(:,i),u(:,i),s(i),'psi');
+x_rr = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'rear_axle.right_tire.x');
+y_rr = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'rear_axle.right_tire.y');
+psi = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'psi');
 
 plot_f1(x_rr,-y_rr,rad2deg(psi)+180,1.6+1.8, 0.73*2);
 
@@ -55,7 +56,7 @@ plot_track_map(x_center,-y_center,x(i),-y(i));
 % (n.5) Telemetry
 plot_telemetry(i,t,q,qa,u)
 
-ax_dashboard.XLim = [-3.2,  8];
+ax_dashboard.XLim = [-3.3,  8.1];
 ax_dashboard.YLim = [ax_dashboard.YLim(1)-ax_dashboard.YLim(2)+1.2,  1.2];
 ax_dashboard.Visible = 'off';
 end
@@ -121,8 +122,8 @@ a_x = zeros(1,length(i_values));
 a_y = zeros(1,length(i_values));
 
 for i_point = i_start:i
-    a_x(i_point-i_start+1) = calllib('libfastestlapc','get_vehicle_property',vehicle,q(:,i_point),qa(:,i_point),u(:,i_point),s(i_point),'ax')/9.81;
-    a_y(i_point-i_start+1) = calllib('libfastestlapc','get_vehicle_property',vehicle,q(:,i_point),qa(:,i_point),u(:,i_point),s(i_point),'ay')/9.81;
+    a_x(i_point-i_start+1) = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i_point),qa(:,i_point),u(:,i_point),s(i_point),'ax')/9.81;
+    a_y(i_point-i_start+1) = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i_point),qa(:,i_point),u(:,i_point),s(i_point),'ay')/9.81;
 end
 
 col = sqrt(a_x.^2 + a_y.^2);  % This is the color, vary with x in this case.
@@ -214,11 +215,10 @@ kappa_fl = q(1,i);
 kappa_fr = q(2,i);
 kappa_rl = q(3,i);
 kappa_rr = q(4,i);
-
-lambda_fl = calllib('libfastestlapc','get_vehicle_property',vehicle,q(:,i),qa(:,i),u(:,i),s(i),'front_axle.left_tire.lambda');
-lambda_fr = calllib('libfastestlapc','get_vehicle_property',vehicle,q(:,i),qa(:,i),u(:,i),s(i),'front_axle.right_tire.lambda');
-lambda_rl = calllib('libfastestlapc','get_vehicle_property',vehicle,q(:,i),qa(:,i),u(:,i),s(i),'rear_axle.left_tire.lambda');
-lambda_rr = calllib('libfastestlapc','get_vehicle_property',vehicle,q(:,i),qa(:,i),u(:,i),s(i),'rear_axle.right_tire.lambda');
+lambda_fl = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'front_axle.left_tire.lambda');
+lambda_fr = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'front_axle.right_tire.lambda');
+lambda_rl = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'rear_axle.left_tire.lambda');
+lambda_rr = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'rear_axle.right_tire.lambda');
 
 % (6) Compute rho
 rho_fl = sqrt((kappa_fl/kappa_max_fl)^2 + (lambda_fl/lambda_max_fl)^2);
@@ -245,15 +245,15 @@ Fref = vehicle_data.chassis.mass*9.81;
 
 
 % (8) Get tire forces
-Fx_fl = calllib('libfastestlapc','get_vehicle_property',vehicle,q(:,i),qa(:,i),u(:,i),s(i),'front_axle.left_tire.Fx');
-Fx_fr = calllib('libfastestlapc','get_vehicle_property',vehicle,q(:,i),qa(:,i),u(:,i),s(i),'front_axle.right_tire.Fx');
-Fx_rl = calllib('libfastestlapc','get_vehicle_property',vehicle,q(:,i),qa(:,i),u(:,i),s(i),'rear_axle.left_tire.Fx');
-Fx_rr = calllib('libfastestlapc','get_vehicle_property',vehicle,q(:,i),qa(:,i),u(:,i),s(i),'rear_axle.right_tire.Fx');
+Fx_fl = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'front_axle.left_tire.Fx');
+Fx_fr = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'front_axle.right_tire.Fx');
+Fx_rl = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'rear_axle.left_tire.Fx');
+Fx_rr = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'rear_axle.right_tire.Fx');
 
-Fy_fl = calllib('libfastestlapc','get_vehicle_property',vehicle,q(:,i),qa(:,i),u(:,i),s(i),'front_axle.left_tire.Fy');
-Fy_fr = calllib('libfastestlapc','get_vehicle_property',vehicle,q(:,i),qa(:,i),u(:,i),s(i),'front_axle.right_tire.Fy');
-Fy_rl = calllib('libfastestlapc','get_vehicle_property',vehicle,q(:,i),qa(:,i),u(:,i),s(i),'rear_axle.left_tire.Fy');
-Fy_rr = calllib('libfastestlapc','get_vehicle_property',vehicle,q(:,i),qa(:,i),u(:,i),s(i),'rear_axle.right_tire.Fy');
+Fy_fl = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'front_axle.left_tire.Fy');
+Fy_fr = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'front_axle.right_tire.Fy');
+Fy_rl = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'rear_axle.left_tire.Fy');
+Fy_rr = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'rear_axle.right_tire.Fy');
 
 assert( abs(-qa(1,i)*mu_x_fl*vehicle_data.chassis.mass*9.81 - Fx_fl) < 1.0e-4*abs(Fx_fl), simscape.enum.assert.action.warn);
 assert( abs(-qa(1,i)*mu_y_fl*vehicle_data.chassis.mass*9.81 - Fy_fl) < 1.0e-4*abs(Fy_fl), simscape.enum.assert.action.warn );

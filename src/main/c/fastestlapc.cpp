@@ -1279,3 +1279,18 @@ void optimal_laptime(struct c_Vehicle* c_vehicle, const struct c_Track* c_track,
                                 c_vehicle, n_points, s, options);
     }
 }
+
+
+void change_track(struct c_Vehicle* c_vehicle, const struct c_Track* c_track)
+{
+    if ( c_vehicle->type == LOT2016KART )
+    {
+        vehicles_lot2016kart.at(c_vehicle->name).get_curvilinear_ad_car().get_road().change_track(table_track.at(c_track->name));
+        vehicles_lot2016kart.at(c_vehicle->name).get_curvilinear_scalar_car().get_road().change_track(table_track.at(c_track->name));
+    }
+    else if ( c_vehicle->type == LIMEBEER2014F1 )
+    {
+        vehicles_limebeer2014f1.at(c_vehicle->name).get_curvilinear_ad_car().get_road().change_track(table_track.at(c_track->name));
+        vehicles_limebeer2014f1.at(c_vehicle->name).get_curvilinear_scalar_car().get_road().change_track(table_track.at(c_track->name));
+    }
+}
