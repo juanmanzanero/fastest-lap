@@ -1,12 +1,12 @@
 function h=plot_run_dashboard(i,t,s,x,y,r_center,q,qa,u, x_center, y_center, x_left, y_left,...
-    x_right, y_right, laptime, vehicle, vehicle_data, Fz_max)
+    x_right, y_right, laptime, vehicle, vehicle_data, Fz_max, energy)
 
 screen_size = get(0,'ScreenSize');
 h = figure('Position',[0 0 screen_size(3) 1080.0/1920.0*screen_size(3)]);
 hold on;
 % (1) Plot track
 patch([x_left, x_right], [-y_left, -y_right], [13/255, 17/255, 23/255]);
-plot(x_center,-y_center,'--','LineWidth',2,'Color',[1,1,1])
+%plot(x_center,-y_center,'--','LineWidth',2,'Color',[1,1,1])
 axis equal
 h.CurrentAxes.Visible = 'off';
 ax = gca;
@@ -40,15 +40,15 @@ ylim([-r_center(2,i)-camera_width*0.5,-r_center(2,i)+camera_width*0.5])
 ax_dashboard = axes('Position',[0.0 0.4 1.0 0.59]);
 
 hold on
-%ax_throttle_brake.Visible='off';
+
 % (n.1) Throttle and brake
-plot_throttle_brake(u(2,i),u(1,i)*20);
+plot_throttle_brake(u(2,i),u(1,i)*20,u(3,i));
 
 % (n.2) Acceleration
 plot_acceleration(q,qa,u,s,i,vehicle);
 
 % (n.3) Tires
-plot_tires(q,qa,u,s,i,vehicle,vehicle_data,Fz_max);
+plot_tires(q,qa,u,s,i,vehicle,vehicle_data,Fz_max,energy(:,i));
 
 % (n.4) Track map
 plot_track_map(x_center,-y_center,x(i),-y(i));
@@ -61,7 +61,7 @@ ax_dashboard.YLim = [ax_dashboard.YLim(1)-ax_dashboard.YLim(2)+1.2,  1.2];
 ax_dashboard.Visible = 'off';
 end
 
-function plot_throttle_brake(throttle_raw,delta_raw)
+function plot_throttle_brake(throttle_raw,delta_raw,brake_bias_raw)
 
 % Trim throttle
 throttle_raw = min(max(throttle_raw,-1),1);
@@ -103,6 +103,14 @@ plot([0.75,0.75+0.25*sin(delta_raw+deg2rad(90))],[0.5,0.5+0.25*cos(delta_raw+deg
 plot([0.75,0.75+0.25*sin(delta_raw-deg2rad(180))],[0.5,0.5+0.25*cos(delta_raw-deg2rad(180))],'-k','LineWidth',2);
 plot([0.75,0.75+0.25*sin(delta_raw+deg2rad(270))],[0.5,0.5+0.25*cos(delta_raw+deg2rad(270))],'-k','LineWidth',2);
 
+% Plot brake bias
+plot([0.35,1.10,1.10,0.35,0.35],[0.05,0.05,0.1,0.1,0.05],'-k');
+bb_mapping = @(bb)( 0.35 + (1.10-0.35)*bb );
+patch([bb_mapping(brake_bias_raw),bb_mapping(brake_bias_raw)+0.025,bb_mapping(brake_bias_raw)-0.025,bb_mapping(brake_bias_raw)],...
+    [0.08,0.0,0.0,0.08],[0.05,0.05,0.05]);
+text(1.10,-0.005,'F','FontWeight','bold','HorizontalAlignment', 'center');
+text(0.35,-0.005,'R','FontWeight','bold','HorizontalAlignment', 'center');
+text(0.5*(0.35+1.10),0.15,'brake-bias','FontName','Courier','FontWeight','bold','HorizontalAlignment', 'center');
 axis equal
 
 
@@ -154,7 +162,10 @@ colormap(cMap)
 
 end
 
-function plot_tires(q,qa,u,s,i,vehicle,vehicle_data,Fz_max)
+function plot_tires(q,qa,u,s,i,vehicle,vehicle_data,Fz_max,energy)
+
+ref_load_1 = vehicle_data.front_tire.reference_load_1;
+ref_load_2 = vehicle_data.front_tire.reference_load_2;
 xlb = -3.2;
 xub = -0.2;
 xspan = xub-xlb;
@@ -181,34 +192,34 @@ Fz_rl = -qa(3,i)*vehicle_data.chassis.mass*9.81;
 Fz_rr = -qa(4,i)*vehicle_data.chassis.mass*9.81;
 
 % (2) Get maximum grip
-mu_x_max_fl = (Fz_fl - 2000)*(vehicle_data.front_tire.mu_x_max_2  - vehicle_data.front_tire.mu_x_max_1 )/(6000 - 2000) + vehicle_data.front_tire.mu_x_max_1;
-mu_x_max_fr = (Fz_fr - 2000)*(vehicle_data.front_tire.mu_x_max_2  - vehicle_data.front_tire.mu_x_max_1 )/(6000 - 2000) + vehicle_data.front_tire.mu_x_max_1;
-mu_x_max_rl = (Fz_rl - 2000)*(vehicle_data.rear_tire.mu_x_max_2  - vehicle_data.rear_tire.mu_x_max_1 )/(6000 - 2000) + vehicle_data.rear_tire.mu_x_max_1;
-mu_x_max_rr = (Fz_rr - 2000)*(vehicle_data.rear_tire.mu_x_max_2  - vehicle_data.rear_tire.mu_x_max_1 )/(6000 - 2000) + vehicle_data.rear_tire.mu_x_max_1;
+mu_x_max_fl = (Fz_fl - ref_load_1)*(vehicle_data.front_tire.mu_x_max_2  - vehicle_data.front_tire.mu_x_max_1 )/(ref_load_2 - ref_load_1) + vehicle_data.front_tire.mu_x_max_1;
+mu_x_max_fr = (Fz_fr - ref_load_1)*(vehicle_data.front_tire.mu_x_max_2  - vehicle_data.front_tire.mu_x_max_1 )/(ref_load_2 - ref_load_1) + vehicle_data.front_tire.mu_x_max_1;
+mu_x_max_rl = (Fz_rl - ref_load_1)*(vehicle_data.rear_tire.mu_x_max_2  - vehicle_data.rear_tire.mu_x_max_1 )/(ref_load_2 - ref_load_1) + vehicle_data.rear_tire.mu_x_max_1;
+mu_x_max_rr = (Fz_rr - ref_load_1)*(vehicle_data.rear_tire.mu_x_max_2  - vehicle_data.rear_tire.mu_x_max_1 )/(ref_load_2 - ref_load_1) + vehicle_data.rear_tire.mu_x_max_1;
 
-mu_y_max_fl = (Fz_fl - 2000)*(vehicle_data.front_tire.mu_y_max_2  - vehicle_data.front_tire.mu_y_max_1 )/(6000 - 2000) + vehicle_data.front_tire.mu_y_max_1;
-mu_y_max_fr = (Fz_fr - 2000)*(vehicle_data.front_tire.mu_y_max_2  - vehicle_data.front_tire.mu_y_max_1 )/(6000 - 2000) + vehicle_data.front_tire.mu_y_max_1;
-mu_y_max_rl = (Fz_rl - 2000)*(vehicle_data.rear_tire.mu_y_max_2  - vehicle_data.rear_tire.mu_y_max_1 )/(6000 - 2000) + vehicle_data.rear_tire.mu_y_max_1;
-mu_y_max_rr = (Fz_rr - 2000)*(vehicle_data.rear_tire.mu_y_max_2  - vehicle_data.rear_tire.mu_y_max_1 )/(6000 - 2000) + vehicle_data.rear_tire.mu_y_max_1;
+mu_y_max_fl = (Fz_fl - ref_load_1)*(vehicle_data.front_tire.mu_y_max_2  - vehicle_data.front_tire.mu_y_max_1 )/(ref_load_2 - ref_load_1) + vehicle_data.front_tire.mu_y_max_1;
+mu_y_max_fr = (Fz_fr - ref_load_1)*(vehicle_data.front_tire.mu_y_max_2  - vehicle_data.front_tire.mu_y_max_1 )/(ref_load_2 - ref_load_1) + vehicle_data.front_tire.mu_y_max_1;
+mu_y_max_rl = (Fz_rl - ref_load_1)*(vehicle_data.rear_tire.mu_y_max_2  - vehicle_data.rear_tire.mu_y_max_1 )/(ref_load_2 - ref_load_1) + vehicle_data.rear_tire.mu_y_max_1;
+mu_y_max_rr = (Fz_rr - ref_load_1)*(vehicle_data.rear_tire.mu_y_max_2  - vehicle_data.rear_tire.mu_y_max_1 )/(ref_load_2 - ref_load_1) + vehicle_data.rear_tire.mu_y_max_1;
 
 
 
 
 % (4) Get maximum kappa and lambda
-mu_x_max_fl = (Fz_fl - 2000)*(vehicle_data.front_tire.mu_x_max_2  - vehicle_data.front_tire.mu_x_max_1 )/(6000 - 2000) + vehicle_data.front_tire.mu_x_max_1;
-mu_x_max_fr = (Fz_fr - 2000)*(vehicle_data.front_tire.mu_x_max_2  - vehicle_data.front_tire.mu_x_max_1 )/(6000 - 2000) + vehicle_data.front_tire.mu_x_max_1;
-mu_x_max_rl = (Fz_rl - 2000)*(vehicle_data.rear_tire.mu_x_max_2  - vehicle_data.rear_tire.mu_x_max_1 )/(6000 - 2000) + vehicle_data.rear_tire.mu_x_max_1;
-mu_x_max_rr = (Fz_rr - 2000)*(vehicle_data.rear_tire.mu_x_max_2  - vehicle_data.rear_tire.mu_x_max_1 )/(6000 - 2000) + vehicle_data.rear_tire.mu_x_max_1;
+mu_x_max_fl = (Fz_fl - ref_load_1)*(vehicle_data.front_tire.mu_x_max_2  - vehicle_data.front_tire.mu_x_max_1 )/(ref_load_2 - ref_load_1) + vehicle_data.front_tire.mu_x_max_1;
+mu_x_max_fr = (Fz_fr - ref_load_1)*(vehicle_data.front_tire.mu_x_max_2  - vehicle_data.front_tire.mu_x_max_1 )/(ref_load_2 - ref_load_1) + vehicle_data.front_tire.mu_x_max_1;
+mu_x_max_rl = (Fz_rl - ref_load_1)*(vehicle_data.rear_tire.mu_x_max_2  - vehicle_data.rear_tire.mu_x_max_1 )/(ref_load_2 - ref_load_1) + vehicle_data.rear_tire.mu_x_max_1;
+mu_x_max_rr = (Fz_rr - ref_load_1)*(vehicle_data.rear_tire.mu_x_max_2  - vehicle_data.rear_tire.mu_x_max_1 )/(ref_load_2 - ref_load_1) + vehicle_data.rear_tire.mu_x_max_1;
 
-kappa_max_fl = (Fz_fl - 2000)*(vehicle_data.front_tire.kappa_max_2  - vehicle_data.front_tire.kappa_max_1 )/(6000 - 2000) + vehicle_data.front_tire.kappa_max_1;
-kappa_max_fr = (Fz_fr - 2000)*(vehicle_data.front_tire.kappa_max_2  - vehicle_data.front_tire.kappa_max_1 )/(6000 - 2000) + vehicle_data.front_tire.kappa_max_1;
-kappa_max_rl = (Fz_rl - 2000)*(vehicle_data.rear_tire.kappa_max_2  - vehicle_data.rear_tire.kappa_max_1 )/(6000 - 2000) + vehicle_data.rear_tire.kappa_max_1;
-kappa_max_rr = (Fz_rr - 2000)*(vehicle_data.rear_tire.kappa_max_2  - vehicle_data.rear_tire.kappa_max_1 )/(6000 - 2000) + vehicle_data.rear_tire.kappa_max_1;
+kappa_max_fl = (Fz_fl - ref_load_1)*(vehicle_data.front_tire.kappa_max_2  - vehicle_data.front_tire.kappa_max_1 )/(ref_load_2 - ref_load_1) + vehicle_data.front_tire.kappa_max_1;
+kappa_max_fr = (Fz_fr - ref_load_1)*(vehicle_data.front_tire.kappa_max_2  - vehicle_data.front_tire.kappa_max_1 )/(ref_load_2 - ref_load_1) + vehicle_data.front_tire.kappa_max_1;
+kappa_max_rl = (Fz_rl - ref_load_1)*(vehicle_data.rear_tire.kappa_max_2  - vehicle_data.rear_tire.kappa_max_1 )/(ref_load_2 - ref_load_1) + vehicle_data.rear_tire.kappa_max_1;
+kappa_max_rr = (Fz_rr - ref_load_1)*(vehicle_data.rear_tire.kappa_max_2  - vehicle_data.rear_tire.kappa_max_1 )/(ref_load_2 - ref_load_1) + vehicle_data.rear_tire.kappa_max_1;
 
-lambda_max_fl = deg2rad((Fz_fl - 2000)*(vehicle_data.front_tire.lambda_max_2  - vehicle_data.front_tire.lambda_max_1 )/(6000 - 2000) + vehicle_data.front_tire.lambda_max_1);
-lambda_max_fr = deg2rad((Fz_fr - 2000)*(vehicle_data.front_tire.lambda_max_2  - vehicle_data.front_tire.lambda_max_1 )/(6000 - 2000) + vehicle_data.front_tire.lambda_max_1);
-lambda_max_rl = deg2rad((Fz_rl - 2000)*(vehicle_data.rear_tire.lambda_max_2  - vehicle_data.rear_tire.lambda_max_1 )/(6000 - 2000) + vehicle_data.rear_tire.lambda_max_1);
-lambda_max_rr = deg2rad((Fz_rr - 2000)*(vehicle_data.rear_tire.lambda_max_2  - vehicle_data.rear_tire.lambda_max_1 )/(6000 - 2000) + vehicle_data.rear_tire.lambda_max_1);
+lambda_max_fl = deg2rad((Fz_fl - ref_load_1)*(vehicle_data.front_tire.lambda_max_2  - vehicle_data.front_tire.lambda_max_1 )/(ref_load_2 - ref_load_1) + vehicle_data.front_tire.lambda_max_1);
+lambda_max_fr = deg2rad((Fz_fr - ref_load_1)*(vehicle_data.front_tire.lambda_max_2  - vehicle_data.front_tire.lambda_max_1 )/(ref_load_2 - ref_load_1) + vehicle_data.front_tire.lambda_max_1);
+lambda_max_rl = deg2rad((Fz_rl - ref_load_1)*(vehicle_data.rear_tire.lambda_max_2  - vehicle_data.rear_tire.lambda_max_1 )/(ref_load_2 - ref_load_1) + vehicle_data.rear_tire.lambda_max_1);
+lambda_max_rr = deg2rad((Fz_rr - ref_load_1)*(vehicle_data.rear_tire.lambda_max_2  - vehicle_data.rear_tire.lambda_max_1 )/(ref_load_2 - ref_load_1) + vehicle_data.rear_tire.lambda_max_1);
 
 % (5) Get current kappa and lambda
 kappa_fl = q(1,i);
@@ -255,17 +266,17 @@ Fy_fr = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u
 Fy_rl = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'rear_axle.left_tire.Fy');
 Fy_rr = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'rear_axle.right_tire.Fy');
 
-assert( abs(-qa(1,i)*mu_x_fl*vehicle_data.chassis.mass*9.81 - Fx_fl) < 1.0e-4*abs(Fx_fl), simscape.enum.assert.action.warn);
-assert( abs(-qa(1,i)*mu_y_fl*vehicle_data.chassis.mass*9.81 - Fy_fl) < 1.0e-4*abs(Fy_fl), simscape.enum.assert.action.warn );
+assert( abs(-qa(1,i)*mu_x_fl*vehicle_data.chassis.mass*9.81 - Fx_fl) < 1.0e-4*abs(Fx_fl), 'assertion failed');
+assert( abs(-qa(1,i)*mu_y_fl*vehicle_data.chassis.mass*9.81 - Fy_fl) < 1.0e-4*abs(Fy_fl), 'assertion failed' );
 
-assert( abs(-qa(2,i)*mu_x_fr*vehicle_data.chassis.mass*9.81 - Fx_fr) < 1.0e-4*abs(Fx_fr), simscape.enum.assert.action.warn );
-assert( abs(-qa(2,i)*mu_y_fr*vehicle_data.chassis.mass*9.81 - Fy_fr) < 1.0e-4*abs(Fy_fr), simscape.enum.assert.action.warn );
+assert( abs(-qa(2,i)*mu_x_fr*vehicle_data.chassis.mass*9.81 - Fx_fr) < 1.0e-4*abs(Fx_fr), 'assertion failed' );
+assert( abs(-qa(2,i)*mu_y_fr*vehicle_data.chassis.mass*9.81 - Fy_fr) < 1.0e-4*abs(Fy_fr), 'assertion failed' );
 
-assert( abs(-qa(3,i)*mu_x_rl*vehicle_data.chassis.mass*9.81 - Fx_rl) < 1.0e-4*abs(Fx_rl), simscape.enum.assert.action.warn );
-assert( abs(-qa(3,i)*mu_y_rl*vehicle_data.chassis.mass*9.81 - Fy_rl) < 1.0e-4*abs(Fy_rl), simscape.enum.assert.action.warn );
+assert( abs(-qa(3,i)*mu_x_rl*vehicle_data.chassis.mass*9.81 - Fx_rl) < 1.0e-4*abs(Fx_rl), 'assertion failed' );
+assert( abs(-qa(3,i)*mu_y_rl*vehicle_data.chassis.mass*9.81 - Fy_rl) < 1.0e-4*abs(Fy_rl), 'assertion failed' );
 
-assert( abs(-qa(4,i)*mu_x_rr*vehicle_data.chassis.mass*9.81 - Fx_rr) < 1.0e-4*abs(Fx_rr), simscape.enum.assert.action.warn );
-assert( abs(-qa(4,i)*mu_y_rr*vehicle_data.chassis.mass*9.81 - Fy_rr) < 1.0e-4*abs(Fy_rr), simscape.enum.assert.action.warn );
+assert( abs(-qa(4,i)*mu_x_rr*vehicle_data.chassis.mass*9.81 - Fx_rr) < 1.0e-4*abs(Fx_rr), 'assertion failed' );
+assert( abs(-qa(4,i)*mu_y_rr*vehicle_data.chassis.mass*9.81 - Fy_rr) < 1.0e-4*abs(Fy_rr), 'assertion failed' );
 
 % (3) Draw maximum grip ellipses
 delta = u(1,i);
@@ -289,7 +300,8 @@ plot([r_fr(1) -  1.5*scale*(-qa(2,i))*mu_y_max_fr*sin(delta), r_fr(1) +  1.5*sca
     [r_fr(2) -  1.5*scale*(-qa(2,i))*mu_y_max_fr*cos(delta), r_fr(2) +  1.5*scale*(-qa(2,i))*mu_y_max_fr*cos(delta)],'-.k')
 
 % Draw slip measurement
-max_rho = fminunc(@(x)(-sin(vehicle_data.front_tire.Qy*atan(x*pi/(2.0*atan(vehicle_data.front_tire.Qy))))),0);
+opts = optimoptions('fminunc','Display','off');
+max_rho = fminunc(@(x)(-sin(vehicle_data.front_tire.Qy*atan(x*pi/(2.0*atan(vehicle_data.front_tire.Qy))))),0,opts);
 
 plot_slip_bar(max_rho,r_fl, qa(1,i), mu_y_max_fl, rho_fl, scale);
 plot_slip_bar(max_rho,r_fr, qa(2,i), mu_y_max_fr, rho_fr, scale);
@@ -301,6 +313,22 @@ plot_normal_load_bar(r_fl+[scale*(-qa(1,i))*mu_y_max_fl,0], -qa(1,i), Fz_max)
 plot_normal_load_bar(r_fr+[scale*(-qa(2,i))*mu_y_max_fr,0], -qa(2,i), Fz_max)
 plot_normal_load_bar(r_rl+[scale*(-qa(3,i))*mu_y_max_rl,0], -qa(3,i), Fz_max)
 plot_normal_load_bar(r_rr+[scale*(-qa(4,i))*mu_y_max_rr,0], -qa(4,i), Fz_max)
+
+% Write tire properties
+dissipation_fl = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'front_axle.left_tire.dissipation');
+dissipation_fr = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'front_axle.right_tire.dissipation');
+dissipation_rl = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'rear_axle.left_tire.dissipation');
+dissipation_rr = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'rear_axle.right_tire.dissipation');
+
+write_tire_properties(r_fl-[scale*(-qa(1,i))*mu_y_max_fl,0],true,kappa_fl/(kappa_max_fl*max_rho),lambda_fl/(lambda_max_fl*max_rho),dissipation_fl,energy(1));
+write_tire_properties(r_fr+[scale*(-qa(2,i))*mu_y_max_fr,0],false,kappa_fr/(kappa_max_fr*max_rho),lambda_fr/(lambda_max_fr*max_rho),dissipation_fr,energy(2));
+write_tire_properties(r_rl-[scale*(-qa(3,i))*mu_y_max_rl,0],true,kappa_rl/(kappa_max_rl*max_rho),lambda_rl/(lambda_max_rl*max_rho),dissipation_rl,energy(3));
+write_tire_properties(r_rr+[scale*(-qa(4,i))*mu_y_max_rr,0],false,kappa_rr/(kappa_max_rr*max_rho),lambda_rr/(lambda_max_rr*max_rho),dissipation_rr,energy(4));
+
+text(-1.2,-0.8,['u=',num2str(q(5,i)*3.6,'%.2f'),'km/h'],'FontName','Courier');
+text(-1.2,-0.9,['v=',num2str(q(6,i)*3.6,'%.2f'),'km/h'],'FontName','Courier');
+text(-1.2,-1.0,['\beta=',num2str(rad2deg(q(6,i)/q(5,i)),'%.1f'),'deg'],'FontName','Courier');
+text(-1.2,-1.1,['\omega=',num2str(rad2deg(q(7,i)),'%.2f'),'rad/s'],'FontName','Courier');
 end
 
 function draw_arrow(x,y)
@@ -343,11 +371,11 @@ end
 end
 
 function plot_normal_load_bar(r_c, Fz, Fz_max)
-bar_len = 0.3;
-patch([r_c(1)+0.01,r_c(1)+0.01,r_c(1)+0.05,r_c(1)+0.05],[r_c(2)-bar_len,r_c(2),r_c(2),r_c(2)-bar_len],[1,1,1])
-plot([r_c(1)+0.01,r_c(1)+0.01,r_c(1)+0.05,r_c(1)+0.05,r_c(1)+0.01],[r_c(2)-bar_len,r_c(2),r_c(2),r_c(2),r_c(2)],'-k')
+bar_len = 0.4;
+patch([r_c(1)+0.01,r_c(1)+0.01,r_c(1)+0.08,r_c(1)+0.08],[r_c(2)-bar_len,r_c(2),r_c(2),r_c(2)-bar_len],[1,1,1])
+plot([r_c(1)+0.01,r_c(1)+0.01,r_c(1)+0.08,r_c(1)+0.08,r_c(1)+0.01],[r_c(2)-bar_len,r_c(2),r_c(2),r_c(2),r_c(2)],'-k')
 
-x_surf = [(r_c(1)+0.01)*ones(1,100);(r_c(1)+0.05)*ones(1,100)];
+x_surf = [(r_c(1)+0.01)*ones(1,100);(r_c(1)+0.08)*ones(1,100)];
 y_surf = [r_c(2)-bar_len + bar_len*linspace(0,Fz/Fz_max,100);r_c(2)-bar_len + bar_len*linspace(0,Fz/Fz_max,100)];
 col = 6*[linspace(0,Fz/Fz_max,100);linspace(0,Fz/Fz_max,100)];
 
@@ -379,8 +407,8 @@ frame_start = 3.3;
 frame_end = 7.9;
 t_span = 30;
 
-t_end = t(i) + 0.25*t_span;
-t_start = t(i) - 0.75*t_span;
+t_end = t(i) ;
+t_start = t(i) - t_span;
 
 [~,i_start] = min(abs(t-t_start));
 [~,i_end] = min(abs(t-t_end));
@@ -420,7 +448,20 @@ brake(brake>1) = 1.0;
 min_brake = min(brake);
 max_brake = max(brake);
 plot(frame_start + (frame_start-frame_end)*(t(i_start:i_end)-t_start)/(t_start-t_end),  0.5*(brake(i_start:i_end)-min_brake)/(max_brake-min_brake),'Color','#FF0000','LineWidth',2);
+end
 
-
-plot(frame_start + (frame_start-frame_end)*([t(i),t(i)]-t_start)/(t_start-t_end),[-0.05,1.05],'--r','LineWidth',1);
+function write_tire_properties(r_c,b_left,kappa,lambda,dissipation,energy)
+    box_width = 0.75;
+    box_height = 0.2;
+    v_space = 0.1;
+    if ( b_left ) 
+        r_c(1) = r_c(1) - box_width;
+    else
+        r_c(1) = r_c(1) + 0.2;
+    end
+    
+    text(r_c(1),r_c(2)+box_height,['\kappa=',num2str(round(kappa*100.0),'%3d'),'%'],'FontName','Courier');
+    text(r_c(1),r_c(2)+box_height-v_space,['\lambda=',num2str(round(-lambda*100.0),'%3d'),'%'],'FontName','Courier');
+    text(r_c(1),r_c(2)+box_height-2*v_space,['P=',num2str(-dissipation/1000.0,'%.2f'),'kW'],'FontName','Courier');
+    text(r_c(1),r_c(2)+box_height-3*v_space,['W=',num2str(-energy/1000000.0,'%.2f'),'MJ'],'FontName','Courier');
 end

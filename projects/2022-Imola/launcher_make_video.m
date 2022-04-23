@@ -1,4 +1,4 @@
-steps_1_to_3 = false;
+steps_1_to_3 = true;
 
 if ( steps_1_to_3 )
     
@@ -16,15 +16,15 @@ if ( steps_1_to_3 )
     
     % (2) Construct track
     options = '<options> <save_variables> <prefix>track/</prefix> <variables> <s/> </variables> </save_variables> </options>';
-    circuit = calllib('libfastestlapc','create_track',[],'catalunya','../../database/tracks/melbourne/melbourne_700.xml',options);
+    circuit = calllib('libfastestlapc','create_track',[],'catalunya','../../database/tracks/imola/imola_adapted.xml',options);
     
     N = calllib("libfastestlapc","download_vector_table_variable_size",'track/s');
     s = zeros(1,N);
     s = calllib("libfastestlapc","download_vector_table_variable",s,length(s), 'track/s');
-    track_length = 5264.36268833544;
+    track_length = 4896.2264874345365;
     
     % (2.1) Get track coordinates
-    [x_center,y_center,x_left,y_left,x_right,y_right,theta] = calllib('libfastestlapc','track_coordinates',zeros(1,N+1),zeros(1,N+1),zeros(1,N+1),zeros(1,N+1),zeros(1,N+1),zeros(1,N+1),zeros(1,N+1),circuit,N+1);
+    [x_center,y_center,x_left,y_left,x_right,y_right,theta] = calllib('libfastestlapc','track_coordinates',zeros(1,N),zeros(1,N),zeros(1,N),zeros(1,N),zeros(1,N),zeros(1,N),zeros(1,N),circuit,N,s);
     x_center = x_center(1:N);
     y_center = y_center(1:N);
     x_left = x_left(1:N);
@@ -37,6 +37,11 @@ if ( steps_1_to_3 )
     vehicle_data = readstruct('/Users/juanmanzanero/Documents/software/fastest-lap/database/vehicles/f1/ferrari-2022-australia.xml');
     % (3) Simulation
     options = '<options>';
+    options = [options,    '<control_variables>'];
+    options = [options,    '    <brake-bias type="hypermesh">'];
+    options = [options,    '        <hypermesh> 0.0, 990.0, 1526.0, 1925.0, 2589.0, 3024.0, 3554.0 </hypermesh>'];
+    options = [options,    '    </brake-bias>'];
+    options = [options,    '</control_variables>'];
     options = [options,    '<save_variables>'];
     options = [options,    '    <prefix>run/</prefix>'];
     options = [options,    '    <variables>'];
@@ -173,7 +178,7 @@ if ( steps_1_to_3 )
 end
 
 close all
-for i = 420
+for i = 2137
     h=plot_run_dashboard(i,t_plot,s_plot,x_plot,y_plot,r_center_plot,q_plot,qa_plot,u_plot, x_center_plot, y_center_plot, x_left_plot, y_left_plot,...
         x_right_plot, y_right_plot, run.laptime, vehicle, vehicle_data,-min(min(qa)),energy_plot);
     print(['fig_',num2str(i)],'-dpng');
