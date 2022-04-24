@@ -1,6 +1,6 @@
-steps_1_to_3 = true;
+steps_1_to_3 = false;
 
-prefix='/media/beegfs/home/r660/r660391/storage/';
+prefix='/Users/juanmanzanero/Documents/software/';
 
 addpath([prefix,'/fastest-lap/src/main/matlab'])
 
@@ -11,7 +11,7 @@ if ( steps_1_to_3 )
         unloadlibrary libfastestlapc
     end
     
-    loadlibrary([prefix,'/fastest-lap/build/lib/libfastestlapc.so'],[prefix,'/fastest-lap/src/main/c/fastestlapc.h']);
+    loadlibrary([prefix,'/fastest-lap/build/lib/libfastestlapc.dylib'],[prefix,'/fastest-lap/src/main/c/fastestlapc.h']);
     
     % (2) Construct track
     options = '<options> <save_variables> <prefix>track/</prefix> <variables> <s/> </variables> </save_variables> </options>';
@@ -34,7 +34,7 @@ if ( steps_1_to_3 )
     % (3) Construct car
     vehicle = calllib("libfastestlapc","create_vehicle",[],'vehicle','limebeer-2014-f1',[prefix,'/fastest-lap/database/vehicles/f1/redbull-2022-imola-wet.xml']);
     vehicle_data = readstruct([prefix,'/fastest-lap/database/vehicles/f1/redbull-2022-imola-wet.xml']);
-    'vehicle'
+    
     % (3) Simulation
     options = '<options>';
     options = [options,    '<control_variables>'];
@@ -186,7 +186,7 @@ else
         unloadlibrary libfastestlapc
     end
     
-    loadlibrary([prefix,'/fastest-lap/build/lib/libfastestlapc.so'],[prefix,'/fastest-lap/src/main/c/fastestlapc.h']);
+    loadlibrary([prefix,'/fastest-lap/build/lib/libfastestlapc.dylib'],[prefix,'/fastest-lap/src/main/c/fastestlapc.h']);
 
     % (2) Construct track
     options = '<options> <save_variables> <prefix>track/</prefix> <variables> <s/> </variables> </save_variables> </options>';
@@ -198,9 +198,9 @@ else
 end
 
 close all
-for i = i_start:i_end
+for i = 2627
     h=plot_run_dashboard(i,t_plot,s_plot,x_plot,y_plot,r_center_plot,q_plot,qa_plot,u_plot, x_center_plot, y_center_plot, x_left_plot, y_left_plot,...
-        x_right_plot, y_right_plot, run.laptime, vehicle, vehicle_data,-min(min(qa)),energy_plot);
-    print(['figs/fig_',num2str(i)],'-dpng');
+        x_right_plot, y_right_plot, run.laptime, vehicle, vehicle_data,-min(min(qa)),energy_plot, 'redbull');
+    print(['fig_',num2str(i)],'-dpng');
     close(h);
 end

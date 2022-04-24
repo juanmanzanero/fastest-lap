@@ -1,24 +1,44 @@
-function plot_f1(x_rr,y_rr,psi,wb,track)
+function plot_f1(x_rr,y_rr,psi,wb,track,varargin)
 
+if ( nargin > 5 )
+    skin = varargin{1};
+else
+    skin = 'generic';
+end
 
-[im_original,~,alpha_original] = imread('f1_marker.png');
-alpha_original(alpha_original < 250) = 0;
+if ( strcmpi(skin,'generic') )
+    [im_original,~,alpha_original] = imread('f1_marker.png');
     
-im = imresize(im_original,[size(im_original,1)/4,size(im_original,2)/4]);
-alpha = imresize(alpha_original,[size(im_original,1)/4,size(im_original,2)/4]);
+    tire_rr = [659,2930];
+    tire_rl = [1518,2930];
+    tire_fr = [659,1055];
+    scale = 4;
+elseif ( strcmpi(skin, 'redbull') )
+    [im_original,~,alpha_original] = imread('redbull2022_marker.png');
+    
+    tire_rr = [135, 739];
+    tire_rl = [358, 739];
+    tire_fr = [135, 257];
+    scale = 1;
+end
+
+alpha_original(alpha_original < 250) = 0;
+
+im = imresize(im_original,[size(im_original,1)/scale,size(im_original,2)/scale]);
+alpha = imresize(alpha_original,[size(im_original,1)/scale,size(im_original,2)/scale]);
 
 
-tire_rr = [659,2930];
-tire_rl = [1518,2930];
-tire_fr = [659,1055];
 
-im_light = imresize(im_original,[size(im_original,1)/8,size(im_original,2)/8]);
+%im_light = imresize(im_original,[size(im_original,1)/(scale*2),size(im_original,2)/(scale*2)]);
+
+% put im_light to zeros;
+im_light = zeros(size(im_original,1)/(scale*2),size(im_original,2)/(scale*2),3);
 
 for i = -1:1
     for j = -1:1
-        im_light(round(tire_rr(1)/8)+i,round(tire_rr(2)/8)+j,:) = [255,0,0];
-        im_light(round(tire_rl(1)/8)+i,round(tire_rl(2)/8)+j,:) = [0,255,0];
-        im_light(round(tire_fr(1)/8)+i,round(tire_fr(2)/8)+j,:) = [0,0,255];
+        im_light(round(tire_rr(1)/(scale*2))+i,round(tire_rr(2)/(scale*2))+j,:) = [255,0,0];
+        im_light(round(tire_rl(1)/(scale*2))+i,round(tire_rl(2)/(scale*2))+j,:) = [0,255,0];
+        im_light(round(tire_fr(1)/(scale*2))+i,round(tire_fr(2)/(scale*2))+j,:) = [0,0,255];
     end
 end
 

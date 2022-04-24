@@ -1,5 +1,5 @@
 function h=plot_run_dashboard(i,t,s,x,y,r_center,q,qa,u, x_center, y_center, x_left, y_left,...
-    x_right, y_right, laptime, vehicle, vehicle_data, Fz_max, energy)
+    x_right, y_right, laptime, vehicle, vehicle_data, Fz_max, energy, skin)
 
 screen_size = get(0,'ScreenSize');
 h = figure('Position',[0 0 screen_size(3) 1080.0/1920.0*screen_size(3)]);
@@ -29,8 +29,7 @@ x_rr = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(
 y_rr = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'rear_axle.right_tire.y');
 psi = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'psi');
 
-plot_f1(x_rr,-y_rr,rad2deg(psi)+180,1.6+1.8, 0.73*2);
-
+plot_f1(x_rr,-y_rr,rad2deg(psi)+180,1.6+1.8, 0.73*2, skin);
 % (3) Set camera
 camera_width = 40.0;
 xlim([r_center(1,i)-1.777*camera_width*0.5,r_center(1,i)+1.777*camera_width*0.5])
@@ -48,7 +47,7 @@ plot_throttle_brake(u(2,i),u(1,i)*20,u(3,i));
 plot_acceleration(q,qa,u,s,i,vehicle);
 
 % (n.3) Tires
-plot_tires(q,qa,u,s,i,vehicle,vehicle_data,Fz_max,energy(:,i));
+plot_tires(q,qa,u,s,i,vehicle,vehicle_data,Fz_max,energy(:,i), skin);
 
 % (n.4) Track map
 plot_track_map(x_center,-y_center,x(i),-y(i));
@@ -162,7 +161,7 @@ colormap(cMap)
 
 end
 
-function plot_tires(q,qa,u,s,i,vehicle,vehicle_data,Fz_max,energy)
+function plot_tires(q,qa,u,s,i,vehicle,vehicle_data,Fz_max,energy, skin)
 
 ref_load_1 = vehicle_data.front_tire.reference_load_1;
 ref_load_2 = vehicle_data.front_tire.reference_load_2;
@@ -183,7 +182,7 @@ plot([xlb,xlb,xub,xub,xlb],[-2.5,1.1,1.1,-2.5,-2.5],'-k','LineWidth',3)
 
 
 % Plot f1
-plot_f1(r_rr(1),r_rr(2),90,wb,track)
+plot_f1(r_rr(1),r_rr(2),90,wb,track,skin)
 
 % (1) Get normal forces
 Fz_fl = -qa(1,i)*vehicle_data.chassis.mass*9.81;
