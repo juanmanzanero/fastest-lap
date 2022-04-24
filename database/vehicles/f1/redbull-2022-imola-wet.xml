@@ -1,0 +1,97 @@
+<!--
+  This model represents the dynamics of a f1 car using a 3DOF chassis
+
+  The parameters were estimated after a minimization of the error w.r.t. 
+    Max Verstappen's fastest lap in the 2022 Emilia Romagna Grand Prix wet qualifying
+-->
+<vehicle type="limebeer-2014-f1">
+    <chassis>
+        <mass>795</mass>
+        <inertia>0, 0, 0, 0, 0, 0, 0, 0, 500</inertia>
+        <aerodynamics>
+            <rho>1.2</rho>
+            <cd>1.1657267770520516</cd>
+            <cl>3.2462512579782872</cl>
+            <area>1.5</area>
+        </aerodynamics>
+        <com>
+            <x>0</x>
+            <y>0</y>
+            <z>-0.35538510148442815</z>
+        </com>
+        <front_axle>
+            <x>1.8633188063673649</x>
+            <y>0</y>
+            <z>-0.35999999999999999</z>
+        </front_axle>
+        <rear_axle>
+            <x>-1.7366811936326352</x>
+            <y>0</y>
+            <z>-0.35999999999999999</z>
+        </rear_axle>
+        <pressure_center>
+            <x>-0.086800509085347061</x>
+            <y>0</y>
+            <z>-0.27397598514727917</z>
+        </pressure_center>
+        <brake_bias>0.59999999999999998</brake_bias>
+        <roll_balance_coefficient>0.41733742505494548</roll_balance_coefficient>
+        <Fz_max_ref2>1</Fz_max_ref2>
+    </chassis>
+    <front-tire model="tire-pacejka-simple" type="normal">
+        <radius>0.35999999999999999</radius>
+        <radial-stiffness>0</radial-stiffness>
+        <radial-damping>0</radial-damping>
+        <Fz-max-ref2>1</Fz-max-ref2>
+        <reference-load-1>2000</reference-load-1>
+        <reference-load-2>8000</reference-load-2>
+        <mu-x-max-1>1.251162765470293</mu-x-max-1>
+        <mu-x-max-2>1.283263779967365</mu-x-max-2>
+        <mu-y-max-1>1.251162765470293</mu-y-max-1>
+        <mu-y-max-2>1.283263779967365</mu-y-max-2>
+        <kappa-max-1>0.11</kappa-max-1>
+        <kappa-max-2>0.11</kappa-max-2>
+        <lambda-max-1>9</lambda-max-1>
+        <lambda-max-2>9</lambda-max-2>
+        <Qx>1.8999999999999999</Qx>
+        <Qy>1.8999999999999999</Qy>
+    </front-tire>
+    <front-axle>
+        <brakes>
+            <max_torque>4958.5486104641104</max_torque>
+        </brakes>
+        <track>1.52</track>
+        <inertia>1</inertia>
+        <smooth_throttle_coeff>1.0000000000000001e-05</smooth_throttle_coeff>
+    </front-axle>
+    <rear-tire model="tire-pacejka-simple" type="normal">
+        <radius>0.35999999999999999</radius>
+        <radial-stiffness>0</radial-stiffness>
+        <radial-damping>0</radial-damping>
+        <Fz-max-ref2>1</Fz-max-ref2>
+        <reference-load-1>2000</reference-load-1>
+        <reference-load-2>8000</reference-load-2>
+        <mu-x-max-1>1.4139891183266344</mu-x-max-1>
+        <mu-x-max-2>1.4536565565068347</mu-x-max-2>
+        <mu-y-max-1>1.4139891183266344</mu-y-max-1>
+        <mu-y-max-2>1.4536565565068347</mu-y-max-2>
+        <kappa-max-1>0.11</kappa-max-1>
+        <kappa-max-2>0.11</kappa-max-2>
+        <lambda-max-1>9</lambda-max-1>
+        <lambda-max-2>9</lambda-max-2>
+        <Qx>1.8999999999999999</Qx>
+        <Qy>1.8999999999999999</Qy>
+    </rear-tire>
+    <rear-axle>
+        <brakes>
+            <max_torque>4958.5486104641104</max_torque>
+        </brakes>
+        <engine>
+            <maximum-power>618.26206898987971</maximum-power>
+        </engine>
+        <track>1.52</track>
+        <inertia>1.55</inertia>
+        <smooth_throttle_coeff>1.0000000000000001e-05</smooth_throttle_coeff>
+        <differential_stiffness>253.09884525972495</differential_stiffness>
+    </rear-axle>
+</vehicle>

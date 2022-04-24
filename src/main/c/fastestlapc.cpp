@@ -282,6 +282,23 @@ double get_vehicle_property_generic(Vehicle_t& vehicle, const double* c_q, const
             throw std::runtime_error("[ERROR] Vehicle type is not defined");
         }
     }
+
+    else if ( property_name == "brake-bias" )
+    {
+        if constexpr (std::is_same<Vehicle_t, lot2016kart_all>::value)
+        {
+            throw std::runtime_error("[ERROR] brake-bias is not available for vehicles of type lot2016kart");
+        }
+
+        else if constexpr (std::is_same<Vehicle_t, limebeer2014f1_all>::value)
+        {
+            return u[Vehicle_t::Chassis_type::IBRAKE_BIAS];
+        }
+        else
+        {
+            throw std::runtime_error("[ERROR] Vehicle type is not defined");
+        }
+    }
     else if ( property_name == "rear_axle.left_tire.x" )
         return vehicle.get_chassis().get_rear_axle().template get_tire<0>().get_position().at(0);
 
@@ -353,6 +370,18 @@ double get_vehicle_property_generic(Vehicle_t& vehicle, const double* c_q, const
 
     else if ( property_name == "rear_axle.right_tire.Fy" )
         return vehicle.get_chassis().get_rear_axle().template get_tire<1>().get_force().y();
+
+    else if ( property_name == "front_axle.left_tire.dissipation" )
+        return vehicle.get_chassis().get_front_axle().template get_tire<0>().get_dissipation();
+
+    else if ( property_name == "front_axle.right_tire.dissipation" )
+        return vehicle.get_chassis().get_front_axle().template get_tire<1>().get_dissipation();
+
+    else if ( property_name == "rear_axle.left_tire.dissipation" )
+        return vehicle.get_chassis().get_rear_axle().template get_tire<0>().get_dissipation();
+
+    else if ( property_name == "rear_axle.right_tire.dissipation" )
+        return vehicle.get_chassis().get_rear_axle().template get_tire<1>().get_dissipation();
 
     else if ( property_name == "Fz_fl" )
     {
@@ -736,20 +765,15 @@ void gg_diagram(double* ay, double* ax_max, double* ax_min, struct c_Vehicle* c_
 }
 
 
-void track_coordinates(double* x_center, double* y_center, double* x_left, double* y_left, double* x_right, double* y_right, double* theta, struct c_Track* c_track, const int n_points)
+void track_coordinates(double* x_center, double* y_center, double* x_left, double* y_left, double* x_right, double* y_right, double* theta, struct c_Track* c_track, const int n_points, const double* s)
 {
     std::string name = c_track->name;
     auto& track = table_track.at(name);
 
-    const scalar& L = track.get_total_length();
-    const scalar ds = L/((scalar)(n_points-1));
-    
     for (int i = 0; i < n_points; ++i)
     {
-        const scalar s = ((double)i)*ds;
-
         // Compute centerline
-        auto [r_c,v_c,a_c] = track(s);
+        auto [r_c,v_c,a_c] = track(s[i]);
 
         x_center[i] = r_c[0];
         y_center[i] = r_c[1];
@@ -758,13 +782,13 @@ void track_coordinates(double* x_center, double* y_center, double* x_left, doubl
         theta[i] = atan2(v_c[1],v_c[0]);
 
         // Compute left boundary
-        auto [r_l] = track.position_at(s,track.get_right_track_limit(s));
+        auto [r_l] = track.position_at(s[i],track.get_right_track_limit(s[i]));
 
         x_left[i] = r_l[0];
         y_left[i] = r_l[1];
 
         // Compute right boundary
-        auto [r_r] = track.position_at(s,-track.get_left_track_limit(s));
+        auto [r_r] = track.position_at(s[i],-track.get_left_track_limit(s[i]));
 
         x_right[i] = r_r[0];
         y_right[i] = r_r[1];
@@ -900,7 +924,8 @@ struct Optimal_laptime_configuration
                 }
                 else if ( control_type[i_control] == "hypermesh" )
                 {
-                    throw std::runtime_error("[ERROR] To be implemented"); 
+                    // Read the hypermesh
+                    hypermeshes[i_control] = variable.get_child("hypermesh").get_value(std::vector<scalar>());
                 }
                 else if ( control_type[i_control] == "full-mesh" )
                 {
@@ -932,6 +957,7 @@ struct Optimal_laptime_configuration
     // Control variables definition
     std::array<std::string,vehicle_t::vehicle_ad_curvilinear::NCONTROL> control_type = get_default_control_types();
     std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NCONTROL> dissipations = get_default_dissipations();
+    std::array<std::vector<scalar>,vehicle_t::vehicle_ad_curvilinear::NCONTROL> hypermeshes;
 
     // For open simulations: define starting point state and controls
     std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NSTATE>     q_start;       // Starting states (only open simulations)
@@ -995,7 +1021,8 @@ typename Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>::template C
         }
         else if ( conf.control_type[j] == "hypermesh" )
         {
-            throw std::runtime_error("[ERROR] Not implemented yet");
+            control_variables[j] = Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>::create_hypermesh(conf.hypermeshes[j],
+                                                                                                                 std::vector<scalar>(conf.hypermeshes[j].size(),u_steady_state[j]));
         }
         else if ( conf.control_type[j] == "full-mesh" )
         {
@@ -1013,7 +1040,7 @@ typename Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>::template C
             }
         }
     }
-
+    
     // (3) Return
     return control_variables;
 } 
@@ -1073,7 +1100,6 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, str
                 }
             }
         }
-
         opt_laptime = Optimal_laptime(arclength, conf.is_closed, conf.is_direct, car_curv, q0, qa0, control_variables, opts);
     }
     // (5.2.b) Warm start
@@ -1164,6 +1190,22 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, str
                         data[i] = opt_laptime.control_variables[vehicle_t::vehicle_scalar_curvilinear::Chassis_type::ITHROTTLE].u[i];
                     }
                 }
+                else if ( variable_name == "brake-bias" )
+                {
+                    if constexpr (std::is_same<vehicle_t, lot2016kart_all>::value)
+                    {
+                        throw std::runtime_error("[ERROR] brake-bias is not available for vehicles of type lot2016kart");
+                    }
+            
+                    else if constexpr (std::is_same<vehicle_t, limebeer2014f1_all>::value)
+                    {
+                        data[i] = car_curv_sc.get_chassis().get_brake_bias();
+                    }
+                    else
+                    {
+                        throw std::runtime_error("[ERROR] Vehicle type is not defined");
+                    }
+                }
                 else if ( variable_name == "rear_axle.left_tire.x" )
                     data[i] = car_curv_sc.get_chassis().get_rear_axle().template get_tire<0>().get_position().at(0);
     
@@ -1199,6 +1241,18 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, str
     
                 else if ( variable_name == "rear_axle.right_tire.kappa" )
                     data[i] = car_curv_sc.get_chassis().get_rear_axle().template get_tire<1>().get_kappa();
+
+                else if ( variable_name == "front_axle.left_tire.dissipation" )
+                    data[i] = car_curv_sc.get_chassis().get_front_axle().template get_tire<0>().get_dissipation();
+            
+                else if ( variable_name == "front_axle.right_tire.dissipation" )
+                    data[i] = car_curv_sc.get_chassis().get_front_axle().template get_tire<1>().get_dissipation();
+            
+                else if ( variable_name == "rear_axle.left_tire.dissipation" )
+                    data[i] = car_curv_sc.get_chassis().get_rear_axle().template get_tire<0>().get_dissipation();
+            
+                else if ( variable_name == "rear_axle.right_tire.dissipation" )
+                    data[i] = car_curv_sc.get_chassis().get_rear_axle().template get_tire<1>().get_dissipation();
     
                 else if ( variable_name == "Fz_fl" )
                 {

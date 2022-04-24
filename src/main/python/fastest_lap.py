@@ -130,7 +130,9 @@ def optimal_laptime(vehicle, track, s, channels):
 
 	return result;
 
-def track_coordinates(track,n_points):
+def track_coordinates(track,s):
+	n_points = len(s);
+
 	c_x_center = (c.c_double*n_points)();
 	c_y_center = (c.c_double*n_points)();
 	c_x_left   = (c.c_double*n_points)();
@@ -138,7 +140,12 @@ def track_coordinates(track,n_points):
 	c_x_right  = (c.c_double*n_points)();
 	c_y_right  = (c.c_double*n_points)();
 	c_theta    = (c.c_double*n_points)();
-	c_lib.track_coordinates(c_x_center, c_y_center, c_x_left, c_y_left, c_x_right, c_y_right, c_theta, c.byref(track), c.c_int(n_points));
+	c_s = (c.c_double*len(s))();
+
+	for i in range(len(s)):
+		c_s[i] = s[i];
+
+	c_lib.track_coordinates(c_x_center, c_y_center, c_x_left, c_y_left, c_x_right, c_y_right, c_theta, c.byref(track), c.c_int(n_points), c_s);
 
 	x_center = [None] * n_points;
 	y_center = [None] * n_points;
@@ -223,6 +230,6 @@ def plot_track(x_center, y_center, x_left, y_left, x_right, y_right, theta):
 
 	return fig;
 
-def plot_optimal_laptime(x, y, track):
-	fig = plot_track(*track_coordinates(track,1000))
+def plot_optimal_laptime(s, x, y, track):
+	fig = plot_track(*track_coordinates(track,s))
 	plt.plot(x,y,linewidth=2,color="orange");
