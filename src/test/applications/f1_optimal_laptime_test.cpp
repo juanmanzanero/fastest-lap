@@ -1579,6 +1579,8 @@ TEST_F(F1_optimal_laptime_test, imola_adapted_hypermesh)
     // Keep valgrind, at least for one go
     //if ( is_valgrind ) GTEST_SKIP();
 
+    Xml_document database = {"./database/vehicles/f1/redbull-2022-imola-wet.xml", true};
+
     Xml_document imola_xml("./database/tracks/imola/imola_adapted.xml",true);
     Circuit_preprocessor imola_pproc(imola_xml);
     Track_by_polynomial imola(imola_pproc);
@@ -1612,7 +1614,7 @@ TEST_F(F1_optimal_laptime_test, imola_adapted_hypermesh)
 
     auto opts = Optimal_laptime<decltype(car)>::Options{};
     Optimal_laptime opt_laptime(s, true, true, car, {n,ss.q}, {n,ss.qa}, control_variables, opts);
-    opt_laptime.xml()->save("f1_optimal_laptime_imola_adapted.xml");
+    opt_laptime.xml();
 
     // Check the results with a saved simulation
     Xml_document opt_saved("data/f1_optimal_laptime_imola_adapted.xml", true);
