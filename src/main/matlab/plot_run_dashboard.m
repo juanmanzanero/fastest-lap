@@ -326,9 +326,9 @@ write_tire_properties(r_rl-[scale*(-qa(3,i))*mu_y_max_rl,0],true,kappa_rl/(kappa
 write_tire_properties(r_rr+[scale*(-qa(4,i))*mu_y_max_rr,0],false,kappa_rr/(kappa_max_rr*max_rho),lambda_rr/(lambda_max_rr*max_rho),dissipation_rr,energy(4));
 
 text(-1.2,-0.8,['u=',num2str(q(5,i)*3.6,'%.2f'),'km/h'],'FontName','Courier');
-text(-1.2,-0.9,['v=',num2str(q(6,i)*3.6,'%.2f'),'km/h'],'FontName','Courier');
-text(-1.2,-1.0,['\beta=',num2str(rad2deg(q(6,i)/q(5,i)),'%.1f'),'deg'],'FontName','Courier');
-text(-1.2,-1.1,['\omega=',num2str(rad2deg(q(7,i)),'%.2f'),'rad/s'],'FontName','Courier');
+text(-1.2,-0.95,['v=',num2str(q(6,i)*3.6,'%.2f'),'km/h'],'FontName','Courier');
+text(-1.2,-1.1,['\beta=',num2str(rad2deg(q(6,i)/q(5,i)),'%.1f'),'deg'],'FontName','Courier');
+text(-1.2,-1.25,['\omega=',num2str(rad2deg(q(7,i)),'%.2f'),'rad/s'],'FontName','Courier');
 end
 
 function draw_arrow(x,y)
@@ -453,7 +453,7 @@ end
 function write_tire_properties(r_c,b_left,kappa,lambda,dissipation,energy)
     box_width = 0.75;
     box_height = 0.2;
-    v_space = 0.1;
+    v_space = 0.15;
     if ( b_left ) 
         r_c(1) = r_c(1) - box_width;
     else

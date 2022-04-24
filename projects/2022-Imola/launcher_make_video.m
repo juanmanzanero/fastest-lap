@@ -1,22 +1,21 @@
 steps_1_to_3 = true;
 
+prefix='/media/beegfs/home/r660/r660391/storage/';
+
+addpath([prefix,'/fastest-lap/src/main/matlab'])
+
 if ( steps_1_to_3 )
-    
-    clear all
-    clc
-    close all
-    format long
     
     % (1) Load library
     if libisloaded('libfastestlapc')
         unloadlibrary libfastestlapc
     end
     
-    loadlibrary('/Users/juanmanzanero/Documents/software/fastest-lap/build/lib/libfastestlapc.dylib','/Users/juanmanzanero/Documents/software/fastest-lap/src/main/c/fastestlapc.h');
+    loadlibrary([prefix,'/fastest-lap/build/lib/libfastestlapc.so'],[prefix,'/fastest-lap/src/main/c/fastestlapc.h']);
     
     % (2) Construct track
     options = '<options> <save_variables> <prefix>track/</prefix> <variables> <s/> </variables> </save_variables> </options>';
-    circuit = calllib('libfastestlapc','create_track',[],'catalunya','../../database/tracks/imola/imola_adapted.xml',options);
+    circuit = calllib('libfastestlapc','create_track',[],'imola',[prefix,'/fastest-lap/database/tracks/imola/imola_adapted.xml'],options);
     
     N = calllib("libfastestlapc","download_vector_table_variable_size",'track/s');
     s = zeros(1,N);
@@ -33,8 +32,9 @@ if ( steps_1_to_3 )
     y_right = y_right(1:N);
     
     % (3) Construct car
-    vehicle = calllib("libfastestlapc","create_vehicle",[],'vehicle','limebeer-2014-f1','/Users/juanmanzanero/Documents/software/fastest-lap/database/vehicles/f1/ferrari-2022-australia.xml');
-    vehicle_data = readstruct('/Users/juanmanzanero/Documents/software/fastest-lap/database/vehicles/f1/ferrari-2022-australia.xml');
+    vehicle = calllib("libfastestlapc","create_vehicle",[],'vehicle','limebeer-2014-f1',[prefix,'/fastest-lap/database/vehicles/f1/redbull-2022-imola-wet.xml']);
+    vehicle_data = readstruct([prefix,'/fastest-lap/database/vehicles/f1/redbull-2022-imola-wet.xml']);
+    'vehicle'
     % (3) Simulation
     options = '<options>';
     options = [options,    '<control_variables>'];
@@ -160,7 +160,7 @@ if ( steps_1_to_3 )
     
     % (4.2) Interpolate the solution to the points given by the FPS
     dt = 1/30;
-    t_plot = -8:dt:80.0;
+    t_plot = -8:dt:run.laptime+5;
     
     s_plot = interp1(q(8,:), s, t_plot,'spline')';
     q_plot = interp1(q(8,:), q', t_plot,'spline')';
@@ -174,13 +174,33 @@ if ( steps_1_to_3 )
     % (4.2.1) Correct s so that is inside [0,track_length]
     s_plot(s_plot < 0) = s_plot(s_plot < 0) + track_length;
     s_plot(s_plot > track_length) = s_plot(s_plot > track_length) - track_length;
+
+    save('run.mat');
+
+else
+
+    load('run.mat');
     
+    % (1) Load library
+    if libisloaded('libfastestlapc')
+        unloadlibrary libfastestlapc
+    end
+    
+    loadlibrary([prefix,'/fastest-lap/build/lib/libfastestlapc.so'],[prefix,'/fastest-lap/src/main/c/fastestlapc.h']);
+
+    % (2) Construct track
+    options = '<options> <save_variables> <prefix>track/</prefix> <variables> <s/> </variables> </save_variables> </options>';
+    circuit = calllib('libfastestlapc','create_track',[],'imola',[prefix,'/fastest-lap/database/tracks/imola/imola_adapted.xml'],options);
+
+    % (3) Construct vehicle and link track
+    vehicle = calllib("libfastestlapc","create_vehicle",[],'vehicle','limebeer-2014-f1',[prefix,'/fastest-lap/database/vehicles/f1/redbull-2022-imola-wet.xml']);
+    calllib("libfastestlapc","change_track",vehicle,circuit); 
 end
 
 close all
-for i = 2137
+for i = i_start:i_end
     h=plot_run_dashboard(i,t_plot,s_plot,x_plot,y_plot,r_center_plot,q_plot,qa_plot,u_plot, x_center_plot, y_center_plot, x_left_plot, y_left_plot,...
         x_right_plot, y_right_plot, run.laptime, vehicle, vehicle_data,-min(min(qa)),energy_plot);
-    print(['fig_',num2str(i)],'-dpng');
+    print(['figs/fig_',num2str(i)],'-dpng');
     close(h);
 end
