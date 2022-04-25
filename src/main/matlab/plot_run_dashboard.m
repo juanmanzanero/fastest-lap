@@ -30,6 +30,7 @@ y_rr = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(
 psi = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'psi');
 
 plot_f1(x_rr,-y_rr,rad2deg(psi)+180,1.6+1.8, 0.73*2, skin);
+
 % (3) Set camera
 camera_width = 40.0;
 xlim([r_center(1,i)-1.777*camera_width*0.5,r_center(1,i)+1.777*camera_width*0.5])
@@ -47,7 +48,8 @@ plot_throttle_brake(u(2,i),u(1,i)*20,u(3,i));
 plot_acceleration(q,qa,u,s,i,vehicle);
 
 % (n.3) Tires
-plot_tires(q,qa,u,s,i,vehicle,vehicle_data,Fz_max,energy(:,i), skin);
+understeer_ind = rad2deg(calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'chassis.understeer_oversteer_indicator'));
+plot_tires(q,qa,u,s,i,vehicle,vehicle_data,Fz_max,energy(:,i), understeer_ind, skin);
 
 % (n.4) Track map
 plot_track_map(x_center,-y_center,x(i),-y(i));
@@ -161,7 +163,7 @@ colormap(cMap)
 
 end
 
-function plot_tires(q,qa,u,s,i,vehicle,vehicle_data,Fz_max,energy, skin)
+function plot_tires(q,qa,u,s,i,vehicle,vehicle_data,Fz_max,energy, understeer_ind, skin)
 
 ref_load_1 = vehicle_data.front_tire.reference_load_1;
 ref_load_2 = vehicle_data.front_tire.reference_load_2;
@@ -328,6 +330,22 @@ text(-1.2,-0.8,['u=',num2str(q(5,i)*3.6,'%.2f'),'km/h'],'FontName','Courier');
 text(-1.2,-0.95,['v=',num2str(q(6,i)*3.6,'%.2f'),'km/h'],'FontName','Courier');
 text(-1.2,-1.1,['\beta=',num2str(rad2deg(q(6,i)/q(5,i)),'%.1f'),'deg'],'FontName','Courier');
 text(-1.2,-1.25,['\omega=',num2str(rad2deg(q(7,i)),'%.2f'),'rad/s'],'FontName','Courier');
+
+% Write the understeer/oversteer indicator
+
+if ( abs(understeer_ind) < 0.1 )
+    % Neutral steering
+    patch([-1.1,-0.3,-0.3,-1.1,-1.1],[0.7,0.7,0.9,0.9,0.7],[0.9290, 0.6940, 0.1250],'LineStyle','none');
+    text(-0.7,0.8,'Neutral','HorizontalAlignment','Center','FontName','Courier','FontWeight','bold');    
+elseif ( understeer_ind < 0.0 )
+    % Under steering
+    patch([-1.1,-0.3,-0.3,-1.1,-1.1],[0.7,0.7,0.9,0.9,0.7],[0, 0.4470, 0.7410],'LineStyle','none');
+    text(-0.7,0.8,'Understeer','Color',[1,1,1],'HorizontalAlignment','Center','FontName','Courier','FontWeight','bold');            
+else
+    % Over steering
+    patch([-1.1,-0.3,-0.3,-1.1,-1.1],[0.7,0.7,0.9,0.9,0.7],[0.8500, 0.3250, 0.0980],'LineStyle','none');
+    text(-0.7,0.8,'Oversteer','Color',[1,1,1],'HorizontalAlignment','Center','FontName','Courier','FontWeight','bold');                
+end
 end
 
 function draw_arrow(x,y)
@@ -462,5 +480,5 @@ function write_tire_properties(r_c,b_left,kappa,lambda,dissipation,energy)
     text(r_c(1),r_c(2)+box_height,['\kappa=',num2str(round(kappa*100.0),'%3d'),'%'],'FontName','Courier');
     text(r_c(1),r_c(2)+box_height-v_space,['\lambda=',num2str(round(-lambda*100.0),'%3d'),'%'],'FontName','Courier');
     text(r_c(1),r_c(2)+box_height-2*v_space,['P=',num2str(-dissipation/1000.0,'%.2f'),'kW'],'FontName','Courier');
-    text(r_c(1),r_c(2)+box_height-3*v_space,['W=',num2str(-energy/1000000.0,'%.2f'),'MJ'],'FontName','Courier');
+    text(r_c(1),r_c(2)+box_height-3*v_space,['E=',num2str(-energy/1000000.0,'%.2f'),'MJ'],'FontName','Courier');
 end

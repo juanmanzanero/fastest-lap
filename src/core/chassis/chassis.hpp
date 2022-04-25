@@ -140,6 +140,55 @@ inline Vector3d<Timeseries_t> Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0
 
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
+inline Timeseries_t Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::get_understeer_oversteer_indicator() const
+{
+ if constexpr(FrontAxle_t::NTIRES == 2)
+ {
+    // (1) Get ideal curvature: kappa = omega/vtot         
+    const auto kappa = _omega/sqrt(_u*_u + _v*_v);
+
+    // (2) Get tires position
+    const auto track = get_front_axle().get_track();  // Distance between the two front tires
+    const auto x_com = -get_rear_axle().get_frame().get_position_and_velocity_in_target(_road_frame).first.x(); // Distance from rear axle to CoM
+    const auto wb    = get_front_axle().get_frame().get_position_and_velocity_in_target(_road_frame).first.x() + x_com; // Wheel-base
+
+    // (3) Get tires steering angle
+    const auto delta_left  = get_front_axle().template get_tire<0>().get_frame().get_rotation_angles().front();
+    const auto delta_right = get_front_axle().template get_tire<1>().get_frame().get_rotation_angles().front();
+
+    // (4) Define the inside and outside tires: if kappa > 0, the interior tire is the right
+    const auto delta_inside = ( kappa >= 0.0 ? delta_right : - delta_left );
+    const auto delta_outside = ( kappa >= 0.0 ? delta_left : - delta_right );
+    const auto abs_kappa = ( kappa >= 0.0 ? kappa : -kappa );
+
+    // (5) Compute the ideal steering angles for the inside and outside tires
+    const auto delta_inside_ideal = atan(wb*abs_kappa /(sqrt(1.0 - abs_kappa*abs_kappa*x_com*x_com) - 0.5*track*abs_kappa));
+    const auto delta_outside_ideal = atan(wb*abs_kappa /(sqrt(1.0 - abs_kappa*abs_kappa*x_com*x_com) + 0.5*track*abs_kappa));
+
+    // (6) Compute the difference between real and ideal steering angles
+    const auto d_delta_inside = delta_inside_ideal - delta_inside;
+    const auto d_delta_outside = delta_outside_ideal - delta_outside;
+
+    // (7) Compute the oversteering parameter
+
+    // (7.1) If they have different sign, the steering is neutral
+    if ( d_delta_inside*d_delta_outside <= 0.0 )
+    {
+        return Timeseries_t{0.0};
+    }
+    else
+    {
+        // (7.2) If they are positive (ideal delta bigger than real, the car is oversteering)
+        if ( d_delta_inside > 0.0 )
+            return ( d_delta_inside > d_delta_outside ? d_delta_outside : d_delta_inside );
+        else
+            return ( d_delta_inside > d_delta_outside ? d_delta_inside : d_delta_outside );
+    }
+ }
+}
+
+
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
 void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::update(Timeseries_t x, Timeseries_t y, Timeseries_t psi)
 {
     const Timeseries_t dx = _u*cos(psi) - _v*sin(psi);

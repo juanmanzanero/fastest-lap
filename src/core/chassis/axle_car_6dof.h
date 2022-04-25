@@ -214,6 +214,9 @@ class Axle_car_6dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
     const Vector3d<Timeseries_t> get_tire_velocity(Tires tire) const { 
                         return {0.0, 0.0, _ds[tire] + _dphi*_y_tire[tire]  }; }
 
+    //! Return the track (the distance between the two tires)
+    const scalar& get_track() const { return _track; }
+
     //! Get a certain tire mechanical or geometrical parameter by name
     //! @param[in] parameter_name: name of the parameter
     scalar get_parameter(const std::string& parameter_name) const;

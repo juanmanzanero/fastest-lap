@@ -455,6 +455,9 @@ double get_vehicle_property_generic(Vehicle_t& vehicle, const double* c_q, const
         return cross(velocity,acceleration).z()/norm(velocity);
     }
 
+    else if ( property_name == "chassis.understeer_oversteer_indicator" )
+        return vehicle.get_chassis().get_understeer_oversteer_indicator();
+
     else
     {
         throw std::runtime_error("Variable \"" + property_name + "\" is not defined");
@@ -1302,10 +1305,16 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, str
                     }
                 }
 
+                else if ( variable_name == "chassis.understeer_oversteer_indicator" )
+                {
+                    data[i] = car_curv_sc.get_chassis().get_understeer_oversteer_indicator();
+                }
                 else
                 {
                     throw std::runtime_error("Variable \"" + variable_name + "\" is not defined");
                 }
+
+
     
             }
     

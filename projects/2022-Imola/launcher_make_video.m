@@ -198,7 +198,7 @@ else
 end
 
 close all
-for i = 2627
+for i = i_start:i_end
     h=plot_run_dashboard(i,t_plot,s_plot,x_plot,y_plot,r_center_plot,q_plot,qa_plot,u_plot, x_center_plot, y_center_plot, x_left_plot, y_left_plot,...
         x_right_plot, y_right_plot, run.laptime, vehicle, vehicle_data,-min(min(qa)),energy_plot, 'redbull');
     print(['fig_',num2str(i)],'-dpng');
