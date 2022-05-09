@@ -71,8 +71,17 @@ if ( ${PYTHON_API_ABSOLUTE_PATH} )
 else()
 	file(RELATIVE_PATH libdir_python ${CMAKE_SOURCE_DIR}/examples/python/ ${CMAKE_BINARY_DIR}/lib)
 endif()
-configure_file(${CMAKE_SOURCE_DIR}/src/main/python/fastest_lap.py ${CMAKE_SOURCE_DIR}/examples/python/fastest_lap.py)
-file(GENERATE OUTPUT ${CMAKE_SOURCE_DIR}/examples/python/fastest_lap.py INPUT ${CMAKE_SOURCE_DIR}/examples/python/fastest_lap.py)
+
+if ( MSYS AND ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+    set(CONSTRUCT_LIBFASTESTLAPC OFF)
+else()
+    set(CONSTRUCT_LIBFASTESTLAPC ON)
+endif()
+
+if (${CONSTRUCT_LIBFASTESTLAPC})
+    configure_file(${CMAKE_SOURCE_DIR}/src/main/python/fastest_lap.py ${CMAKE_SOURCE_DIR}/examples/python/fastest_lap.py)
+    file(GENERATE OUTPUT ${CMAKE_SOURCE_DIR}/examples/python/fastest_lap.py INPUT ${CMAKE_SOURCE_DIR}/examples/python/fastest_lap.py)
+endif()
 
 install(DIRECTORY "${CMAKE_BINARY_DIR}/thirdparty/lib/"
         DESTINATION "${CMAKE_INSTALL_PREFIX}/lib")
