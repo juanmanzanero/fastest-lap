@@ -101,7 +101,7 @@ class Chassis
     const Timeseries_t& get_domega() const { return _dOmega; }
 
     //! Get the chassis mass [kg]
-    constexpr const scalar& get_mass() const { return _m; } 
+    constexpr const Timeseries_t& get_mass() const { return _m; } 
 
     //! Get the chassis inertia matrix [kg.m2]
     constexpr const sMatrix3x3& get_inertia() const { return _I; }
@@ -202,7 +202,7 @@ class Chassis
     Frame<Timeseries_t> _chassis_frame;  //! Frame<Timeseries_t> with center on the CoG and parallel axes to the road frame
 
     // Mass properties
-    scalar _m;     //! [c] chassis mass [kg]
+    Timeseries_t _m;     //! [c] chassis mass [kg]
     sMatrix3x3 _I; //! [c] chassis inertia matrix [kg.m2]
 
     // Aerodynamic properties

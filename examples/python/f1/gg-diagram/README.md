@@ -12,7 +12,8 @@ from fastest_lap import KMH
 
 ```python
 # Load vehicle
-vehicle=fastest_lap.load_vehicle("car","limebeer-2014-f1","../../../../database/vehicles/f1/limebeer-2014-f1.xml");
+vehicle = "car"
+fastest_lap.load_vehicle(vehicle,"limebeer-2014-f1","../../../../database/vehicles/f1/limebeer-2014-f1.xml");
 ```
 
 
@@ -40,8 +41,3 @@ mplcyberpunk.add_glow_effects()
 ![png](output_4_0.png)
     
 
-
-
-```python
-
-```

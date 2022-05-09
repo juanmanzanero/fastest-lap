@@ -22,7 +22,8 @@ The call to load_vehicle takes three arguments: the car given name, the model ty
 
 ```python
 # Load vehicle
-vehicle_xml=fastest_lap.load_vehicle("car-via-xml","limebeer-2014-f1","../../../../database/limebeer-2014-f1.xml");
+vehicle_xml="car-via-xml"
+fastest_lap.load_vehicle(vehicle_xml,"limebeer-2014-f1","../../../../database/vehicles/f1/limebeer-2014-f1.xml");
 ```
 
 ## 2 Via the set_parameter functions
@@ -32,7 +33,8 @@ The second method consists in creating a default car, and then supply the parame
 
 ```python
 # Load empty vehicle
-vehicle_manual=fastest_lap.load_vehicle("car-manual","limebeer-2014-f1","");
+vehicle_manual="car-manual";
+fastest_lap.load_vehicle(vehicle_manual,"limebeer-2014-f1","");
 ```
 
 
@@ -55,10 +57,18 @@ fastest_lap.set_scalar_parameter(vehicle_manual,"vehicle/chassis/aerodynamics/rh
 fastest_lap.set_scalar_parameter(vehicle_manual,"vehicle/chassis/aerodynamics/area", 1.5);
 fastest_lap.set_scalar_parameter(vehicle_manual,"vehicle/chassis/aerodynamics/cd", 0.9);
 fastest_lap.set_scalar_parameter(vehicle_manual,"vehicle/chassis/aerodynamics/cl", 3.0);
-fastest_lap.set_vector_parameter(vehicle_manual,"vehicle/chassis/com", [0.0, 0.0, -0.3]);
-fastest_lap.set_vector_parameter(vehicle_manual,"vehicle/chassis/front_axle", [1.8, 0.0, -0.33]);
-fastest_lap.set_vector_parameter(vehicle_manual,"vehicle/chassis/rear_axle", [-1.6, 0.0, -0.33]);
-fastest_lap.set_vector_parameter(vehicle_manual,"vehicle/chassis/pressure_center", [-0.1, 0.0, -0.3]);
+fastest_lap.set_scalar_parameter(vehicle_manual,"vehicle/chassis/com/x", 0.0);
+fastest_lap.set_scalar_parameter(vehicle_manual,"vehicle/chassis/com/y", 0.0);
+fastest_lap.set_scalar_parameter(vehicle_manual,"vehicle/chassis/com/z", -0.3);
+fastest_lap.set_scalar_parameter(vehicle_manual,"vehicle/chassis/front_axle/x", 1.8);
+fastest_lap.set_scalar_parameter(vehicle_manual,"vehicle/chassis/front_axle/y", 0.0);
+fastest_lap.set_scalar_parameter(vehicle_manual,"vehicle/chassis/front_axle/z", -0.33);
+fastest_lap.set_scalar_parameter(vehicle_manual,"vehicle/chassis/rear_axle/x", 1.6);
+fastest_lap.set_scalar_parameter(vehicle_manual,"vehicle/chassis/rear_axle/y", 0.0);
+fastest_lap.set_scalar_parameter(vehicle_manual,"vehicle/chassis/rear_axle/z", -0.33);                                 
+fastest_lap.set_scalar_parameter(vehicle_manual,"vehicle/chassis/pressure_center/x", -0.1);                                 
+fastest_lap.set_scalar_parameter(vehicle_manual,"vehicle/chassis/pressure_center/y", 0.0);                                 
+fastest_lap.set_scalar_parameter(vehicle_manual,"vehicle/chassis/pressure_center/z", -0.3);                                                                  
 fastest_lap.set_scalar_parameter(vehicle_manual,"vehicle/chassis/brake_bias", 0.6);
 fastest_lap.set_scalar_parameter(vehicle_manual,"vehicle/chassis/roll_balance_coefficient", 0.5);
 fastest_lap.set_scalar_parameter(vehicle_manual,"vehicle/chassis/Fz_max_ref2", 1.0);

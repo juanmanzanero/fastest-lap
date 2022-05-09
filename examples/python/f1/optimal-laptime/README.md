@@ -14,13 +14,14 @@ from fastest_lap import KMH
 
 ```python
 # Load vehicle
-vehicle=fastest_lap.load_vehicle("car","limebeer-2014-f1","../../../../database/vehicles/f1/mercedes-2020-catalunya.xml");
+vehicle = "car"
+fastest_lap.load_vehicle(vehicle,"limebeer-2014-f1","../../../../database/vehicles/f1/mercedes-2020-catalunya.xml");
 ```
 
 
 ```python
 # Load track
-(track,s)=fastest_lap.load_track("../../../../database/tracks/catalunya/catalunya_discrete.xml","catalunya");
+(track,s)=fastest_lap.load_track("../../../../database/tracks/catalunya/catalunya_adapted.xml","catalunya");
 ```
 
 
@@ -46,7 +47,7 @@ v        = data["v"]
 
 ```python
 import numpy as np
-fastest_lap.plot_optimal_laptime(np.array(x),y,track);
+fastest_lap.plot_optimal_laptime(s,x,y,track);
 plt.gca().invert_xaxis()
 
 ```
@@ -144,18 +145,21 @@ mer_color = fastf1.plotting.team_color('MER')
 
 ```
 
-    core           INFO 	Loading laps for Spanish Grand Prix - Qualifying [v2.1.11]
+    utils          INFO 	NumExpr defaulting to 4 threads.
+    /Users/juanmanzanero/opt/anaconda3/lib/python3.8/site-packages/fastf1/core.py:1095: FutureWarning: `Session.load_laps` is deprecated and will beremoved in a future version.
+    Use `Session.load` instead.
+      warnings.warn("`Session.load_laps` is deprecated and will be"
+    core           INFO 	Loading data for Spanish Grand Prix - Qualifying [v2.2.3]
+    api            INFO 	Using cached data for driver_info
     api            INFO 	Using cached data for timing_data
     api            INFO 	Using cached data for timing_app_data
     core           INFO 	Processing timing data...
-    api            INFO 	Using cached data for driver_info
     api            INFO 	Using cached data for session_status_data
-    utils          INFO 	NumExpr defaulting to 4 threads.
     api            INFO 	Using cached data for track_status_data
     api            INFO 	Using cached data for car_data
     api            INFO 	Using cached data for position_data
     api            INFO 	Using cached data for weather_data
-    core           INFO 	Loaded data for 20 drivers: ['7', '99', '8', '31', '18', '4', '3', '6', '77', '10', '63', '33', '20', '5', '26', '44', '11', '55', '16', '23']
+    core           INFO 	Finished loading data for 20 drivers: ['44', '77', '33', '11', '18', '23', '55', '4', '16', '10', '5', '26', '3', '7', '31', '20', '8', '63', '6', '99']
 
 
 
@@ -175,9 +179,17 @@ plt.suptitle(f"Fastest Lap Comparison \n "
 plt.show()
 ```
 
+    /Users/juanmanzanero/opt/anaconda3/lib/python3.8/site-packages/fastf1/core.py:919: FutureWarning: The property `Session.weekend` has been renamed to `Session.event`.
+     The old property will be removed ina future version.
+      warnings.warn("The property `Session.weekend` has been renamed to "
+    /Users/juanmanzanero/opt/anaconda3/lib/python3.8/site-packages/fastf1/events.py:634: FutureWarning: The `Weekend.name` property is deprecated and will beremoved in a future version.
+    Use `Event['EventName']` or `Event.EventName` instead.
+      warnings.warn(
+
+
 
     
-![png](output_13_0.png)
+![png](output_13_1.png)
     
 
 
@@ -202,9 +214,17 @@ plt.suptitle(f"Fastest Lap Comparison \n "
 plt.show()
 ```
 
+    /Users/juanmanzanero/opt/anaconda3/lib/python3.8/site-packages/fastf1/core.py:919: FutureWarning: The property `Session.weekend` has been renamed to `Session.event`.
+     The old property will be removed ina future version.
+      warnings.warn("The property `Session.weekend` has been renamed to "
+    /Users/juanmanzanero/opt/anaconda3/lib/python3.8/site-packages/fastf1/events.py:634: FutureWarning: The `Weekend.name` property is deprecated and will beremoved in a future version.
+    Use `Event['EventName']` or `Event.EventName` instead.
+      warnings.warn(
+
+
 
     
-![png](output_14_0.png)
+![png](output_14_1.png)
     
 
 

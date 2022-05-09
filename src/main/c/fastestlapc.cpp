@@ -37,29 +37,25 @@ Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>& get_warm_start()
         throw std::runtime_error("[ERROR] get_warm_start() -> vehicle_t is not supported");
 }
 
+void set_print_level(int print_level)
+{
+    out.set_print_level(print_level);
+}
 
-void create_vehicle(struct c_Vehicle* vehicle, const char* name, const char* vehicle_type, const char* database_file)
+void create_vehicle(const char* vehicle_name, const char* vehicle_type, const char* database_file)
 {
     const std::string s_database = database_file;
+    const std::string s_name = vehicle_name;
 
-    // Copy the vehicle name
-    vehicle->name = new char[strlen(name)+1];
-    memcpy(vehicle->name, name, strlen(name));
-    vehicle->name[strlen(name)] = '\0';
- 
-    // Copy the database file path
-    vehicle->database_file = new char[strlen(database_file)+1];
-    memcpy(vehicle->database_file, database_file, strlen(database_file));
-    vehicle->database_file[strlen(database_file)] = '\0';
+    // Check if the vehicle exists
+    if ( vehicles_lot2016kart.count(s_name) != 0 )
+        throw std::runtime_error(std::string("Vehicle of type roberto-lot-kart-2016 with name \"") + s_name + "\" already exists"); 
+
+    if ( vehicles_limebeer2014f1.count(s_name) != 0 )
+        throw std::runtime_error(std::string("Vehicle of type limebeer-2014-f1 with name \"") + s_name + "\" already exists"); 
 
     if ( std::string(vehicle_type) == "roberto-lot-kart-2016" )
     {
-        // Check if the vehicle exists
-        if ( vehicles_lot2016kart.count(name) != 0 )
-            throw std::runtime_error(std::string("Vehicle of type roberto-lot-kart-2016 with name \"") + name + "\" already exists"); 
-
-        vehicle->type = LOT2016KART;
-
         // Open the database as Xml
         Xml_document database = { database_file, true }; 
 
@@ -69,7 +65,7 @@ void create_vehicle(struct c_Vehicle* vehicle, const char* name, const char* veh
         if ( vehicle_type_db != std::string(vehicle_type) )
             throw std::runtime_error("vehicle type read from the database is not \"roberto-lot-kart-2016\"");
 
-        auto out = vehicles_lot2016kart.insert({name,{database}});
+        auto out = vehicles_lot2016kart.insert({s_name,{database}});
         if (out.second==false) 
         {
             throw std::runtime_error("The insertion to the map failed");
@@ -77,12 +73,6 @@ void create_vehicle(struct c_Vehicle* vehicle, const char* name, const char* veh
     }
     else if ( std::string(vehicle_type) == "limebeer-2014-f1" )
     {
-        // Check if the vehicle exists
-        if ( vehicles_limebeer2014f1.count(name) != 0 )
-            throw std::runtime_error(std::string("Vehicle of type limebeer-2014-f1 with name \"") + name + "\" already exists"); 
-
-        vehicle->type = LIMEBEER2014F1;
-        
         if ( strlen(database_file) > 0 )
         {
             // Open the database as Xml
@@ -94,7 +84,7 @@ void create_vehicle(struct c_Vehicle* vehicle, const char* name, const char* veh
             if ( vehicle_type_db != std::string(vehicle_type) )
                 throw std::runtime_error("vehicle type read from the database is not \"limebeer-2014-f1\"");
 
-            auto out = vehicles_limebeer2014f1.insert({name,{database}});
+            auto out = vehicles_limebeer2014f1.insert({s_name,{database}});
 
             if (out.second==false) 
             {
@@ -104,7 +94,7 @@ void create_vehicle(struct c_Vehicle* vehicle, const char* name, const char* veh
         else
         {
             // Construct a default car
-            auto out = vehicles_limebeer2014f1.insert({name,{}});
+            auto out = vehicles_limebeer2014f1.insert({s_name,{}});
 
             if (out.second==false) 
             {
@@ -121,6 +111,7 @@ void create_vehicle(struct c_Vehicle* vehicle, const char* name, const char* veh
 
 void create_track(struct c_Track* track, const char* name, const char* track_file, const char* options)
 {
+    out(2) << "[INFO] Fastest-lap API -> [start] create track" << std::endl;
     // (1) Check that the track does not exists in the map
     if ( table_track.count(name) != 0 )
         throw std::runtime_error(std::string("Track with name \"") + name + "\" already exists"); 
@@ -155,6 +146,9 @@ void create_track(struct c_Track* track, const char* name, const char* track_fil
             for (auto& variables : doc.get_element("options/save_variables/variables").get_children() )
                 variables_to_save.push_back(variables.get_name());
         }
+
+        out(2) << "List of options: " << std::endl;
+        out(2) << doc;
     }
 
     // (3) Open the track
@@ -215,6 +209,8 @@ void create_track(struct c_Track* track, const char* name, const char* track_fil
         else
             throw std::runtime_error(std::string("Variable \"") + variable_name + "\" is not implemented");
     }
+
+    out(2) << "[INFO] Fastest-lap API -> [end] create track" << std::endl;
 }
 
 template<typename Vehicle_t>
@@ -465,15 +461,16 @@ double get_vehicle_property_generic(Vehicle_t& vehicle, const double* c_q, const
 }
 
 
-double get_vehicle_property(struct c_Vehicle* c_vehicle, const double* q, const double* qa, const double* u, const double s, const char* property_name)
+double get_vehicle_property(const char* c_vehicle_name, const double* q, const double* qa, const double* u, const double s, const char* property_name)
 {
-    if ( c_vehicle->type == LOT2016KART )
+    const std::string vehicle_name(c_vehicle_name);
+    if ( vehicles_lot2016kart.count(vehicle_name) != 0)
     {
-        return get_vehicle_property_generic(vehicles_lot2016kart.at(c_vehicle->name).curvilinear_scalar, q, qa, u, s, property_name);
+        return get_vehicle_property_generic(vehicles_lot2016kart.at(vehicle_name).curvilinear_scalar, q, qa, u, s, property_name);
     }
-    else if ( c_vehicle->type == LIMEBEER2014F1 )
+    else if ( vehicles_limebeer2014f1.count(vehicle_name) != 0 )
     {
-        return get_vehicle_property_generic(vehicles_limebeer2014f1.at(c_vehicle->name).curvilinear_scalar, q, qa, u, s, property_name);
+        return get_vehicle_property_generic(vehicles_limebeer2014f1.at(vehicle_name).curvilinear_scalar, q, qa, u, s, property_name);
     }
     else
     {
@@ -482,15 +479,16 @@ double get_vehicle_property(struct c_Vehicle* c_vehicle, const double* q, const 
 }
 
 
-void save_vehicle_as_xml(struct c_Vehicle* c_vehicle, const char* file_name)
+void save_vehicle_as_xml(const char* c_vehicle_name, const char* file_name)
 {
-    if ( c_vehicle->type == LOT2016KART )
+    const std::string vehicle_name(c_vehicle_name);
+    if ( vehicles_lot2016kart.count(vehicle_name) != 0)
     {
-        vehicles_lot2016kart.at(c_vehicle->name).curvilinear_scalar.xml()->save(std::string(file_name));
+        vehicles_lot2016kart.at(vehicle_name).curvilinear_scalar.xml()->save(std::string(file_name));
     }
-    else if ( c_vehicle->type == LIMEBEER2014F1 )
+    else if ( vehicles_limebeer2014f1.count(vehicle_name) != 0 )
     {
-        vehicles_limebeer2014f1.at(c_vehicle->name).curvilinear_scalar.xml()->save(std::string(file_name));
+        vehicles_limebeer2014f1.at(vehicle_name).curvilinear_scalar.xml()->save(std::string(file_name));
     }
     else
     {
@@ -610,66 +608,72 @@ void clear_tables_by_prefix(const char* prefix_c)
 }
 
 
-void delete_vehicle(struct c_Vehicle* c_vehicle)
+void delete_vehicle(const char* c_vehicle_name)
 {
-    if ( c_vehicle->type == LIMEBEER2014F1 )
-        vehicles_limebeer2014f1.erase(c_vehicle->name);
-
-    else if ( c_vehicle->type == LOT2016KART )
-        vehicles_lot2016kart.erase(c_vehicle->name);
-    
+    const std::string vehicle_name(c_vehicle_name);
+    if ( vehicles_lot2016kart.count(vehicle_name) != 0)
+    {
+        vehicles_lot2016kart.erase(vehicle_name);
+    }
+    else if ( vehicles_limebeer2014f1.count(vehicle_name) != 0 )
+    {
+        vehicles_limebeer2014f1.erase(vehicle_name);
+    }
     else
-        throw std::runtime_error("Vehicle type is not recognized");
+    {
+        throw std::runtime_error("[ERROR] libfastestlapc::delete_vehicle -> vehicle type is not defined");
+    }
 }
 
-void set_scalar_parameter(struct c_Vehicle* c_vehicle, const char* parameter, const double value)
+void set_scalar_parameter(const char* c_vehicle_name, const char* parameter, const double value)
 {
-    if ( c_vehicle->type == LIMEBEER2014F1 )
+    const std::string vehicle_name(c_vehicle_name);
+    if ( vehicles_limebeer2014f1.count(vehicle_name) != 0 )
     {
-        vehicles_limebeer2014f1.at(c_vehicle->name).set_parameter(parameter, value);
+        vehicles_limebeer2014f1.at(vehicle_name).set_parameter(parameter, value);
     }
 }
 
 
-void set_vector_parameter(struct c_Vehicle* c_vehicle, const char* parameter, const double value[3])
+void set_vector_parameter(const char* c_vehicle_name, const char* parameter, const double value[3])
 {
-    if ( c_vehicle->type == LIMEBEER2014F1 )
+    const std::string vehicle_name(c_vehicle_name);
+    if ( vehicles_limebeer2014f1.count(vehicle_name) != 0 )
     {
         sVector3d v_value = { value[0], value[1], value[2] };
-        vehicles_limebeer2014f1.at(c_vehicle->name).set_parameter(parameter, v_value);
+        vehicles_limebeer2014f1.at(vehicle_name).set_parameter(parameter, v_value);
     }
 }
 
 
-void set_matrix_parameter(struct c_Vehicle* c_vehicle, const char* parameter, const double value[9])
+void set_matrix_parameter(const char* c_vehicle_name, const char* parameter, const double value[9])
 {
-    if ( c_vehicle->type == LIMEBEER2014F1 )
+    const std::string vehicle_name(c_vehicle_name);
+    if ( vehicles_limebeer2014f1.count(vehicle_name) != 0 )
     {
         sMatrix3x3 m_value = { value[0], value[1], value[2], value[3], value[4], value[5], value[6], value[7], value[8] };
-        vehicles_limebeer2014f1.at(c_vehicle->name).set_parameter(parameter, m_value);
+        vehicles_limebeer2014f1.at(vehicle_name).set_parameter(parameter, m_value);
     }
 }
 
 
-void add_variable_parameter(struct c_Vehicle* c_vehicle, const char* parameter_name, const int n, const double* s, const double* values)
+void vehicle_declare_fixed_parameter(const char* c_vehicle_name, const char* parameter_name, const double parameter_value)
 {
-    std::vector<scalar> v_s(s,s+n);
-    std::vector<scalar> v_values(values,values+n);
-
-    sPolynomial p(v_s,v_values,1,true);
-    
-    if ( c_vehicle->type == LIMEBEER2014F1 )
-        vehicles_limebeer2014f1.at(c_vehicle->name).add_variable_parameter(std::string(parameter_name), p);
-
-    else if ( c_vehicle->type == LOT2016KART )
-        vehicles_lot2016kart.at(c_vehicle->name).add_variable_parameter(std::string(parameter_name), p);
-
+    const std::string vehicle_name(c_vehicle_name);
+    if ( vehicles_limebeer2014f1.count(vehicle_name) != 0 )
+    {
+        vehicles_limebeer2014f1.at(vehicle_name).add_parameter(std::string(parameter_name), parameter_value);
+    }
+    else if ( vehicles_lot2016kart.count(vehicle_name) != 0)
+    {
+        vehicles_lot2016kart.at(vehicle_name).add_parameter(std::string(parameter_name), parameter_value);
+    }
     else
         throw std::runtime_error("Vehicle type not recognized");
 }
 
 
-void vehicle_equations(double* dqdt, double* dqa, double** jac_dqdt, double** jac_dqa, double*** h_dqdt, double*** h_dqa, struct c_Vehicle* vehicle, double* q, double* qa, double* u, double s)
+void vehicle_equations(double* dqdt, double* dqa, double** jac_dqdt, double** jac_dqa, double*** h_dqdt, double*** h_dqa, const char* vehicle, double* q, double* qa, double* u, double s)
 {
 
 
@@ -712,32 +716,33 @@ void compute_propagation(Vehicle_t car, double* c_q, double* c_qa, double* c_u, 
     std::copy_n(qa.begin(), Vehicle_t::NALGEBRAIC, c_qa);
 }
 
-void propagate(double* q, double* qa, double* u, struct c_Vehicle* c_vehicle, struct c_Track* c_track, double s, double ds, double* u_next, bool use_circuit, const char* options)
+void propagate(double* q, double* qa, double* u, const char* c_vehicle_name, struct c_Track* c_track, double s, double ds, double* u_next, bool use_circuit, const char* options)
 {
-    if ( c_vehicle->type == LOT2016KART )
+    const std::string vehicle_name(c_vehicle_name);
+    if ( vehicles_lot2016kart.count(vehicle_name) != 0 )
     {
         if ( use_circuit )
         {
-            vehicles_lot2016kart.at(c_vehicle->name).curvilinear_ad.get_road().change_track(table_track.at(c_track->name));
-            vehicles_lot2016kart.at(c_vehicle->name).curvilinear_scalar.get_road().change_track(table_track.at(c_track->name));
-            compute_propagation(vehicles_lot2016kart.at(c_vehicle->name).curvilinear_ad, q, qa, u, s, ds, u_next, options);
+            vehicles_lot2016kart.at(vehicle_name).curvilinear_ad.get_road().change_track(table_track.at(c_track->name));
+            vehicles_lot2016kart.at(vehicle_name).curvilinear_scalar.get_road().change_track(table_track.at(c_track->name));
+            compute_propagation(vehicles_lot2016kart.at(vehicle_name).curvilinear_ad, q, qa, u, s, ds, u_next, options);
         }
         else
         {
-            compute_propagation(vehicles_lot2016kart.at(c_vehicle->name).cartesian_ad, q, qa, u, s, ds, u_next, options);
+            compute_propagation(vehicles_lot2016kart.at(vehicle_name).cartesian_ad, q, qa, u, s, ds, u_next, options);
         }
     }
-    else
+    else if ( vehicles_limebeer2014f1.count(vehicle_name) != 0 )
     {
         if ( use_circuit )
         {
-            vehicles_limebeer2014f1.at(c_vehicle->name).curvilinear_ad.get_road().change_track(table_track.at(c_track->name));
-            vehicles_limebeer2014f1.at(c_vehicle->name).curvilinear_scalar.get_road().change_track(table_track.at(c_track->name));
-            compute_propagation(vehicles_limebeer2014f1.at(c_vehicle->name).curvilinear_ad, q, qa, u, s, ds, u_next, options);
+            vehicles_limebeer2014f1.at(vehicle_name).curvilinear_ad.get_road().change_track(table_track.at(c_track->name));
+            vehicles_limebeer2014f1.at(vehicle_name).curvilinear_scalar.get_road().change_track(table_track.at(c_track->name));
+            compute_propagation(vehicles_limebeer2014f1.at(vehicle_name).curvilinear_ad, q, qa, u, s, ds, u_next, options);
         }
         else
         {
-            compute_propagation(vehicles_limebeer2014f1.at(c_vehicle->name).cartesian_ad, q, qa, u, s, ds, u_next, options);
+            compute_propagation(vehicles_limebeer2014f1.at(vehicle_name).cartesian_ad, q, qa, u, s, ds, u_next, options);
         }
     }
 }
@@ -758,13 +763,17 @@ void compute_gg_diagram(vehicle_t& car, double* ay, double* ax_max, double* ax_m
 }
 
 
-void gg_diagram(double* ay, double* ax_max, double* ax_min, struct c_Vehicle* c_vehicle, double v, const int n_points)
+void gg_diagram(double* ay, double* ax_max, double* ax_min, const char* c_vehicle_name, double v, const int n_points)
 {
-    if ( c_vehicle->type == LOT2016KART )
-        compute_gg_diagram(vehicles_lot2016kart.at(c_vehicle->name).cartesian_ad, ay, ax_max, ax_min, v, n_points);
-
-    else if ( c_vehicle->type == LIMEBEER2014F1 )
-        compute_gg_diagram(vehicles_limebeer2014f1.at(c_vehicle->name).cartesian_ad, ay, ax_max, ax_min, v, n_points);
+    const std::string vehicle_name(c_vehicle_name);
+    if ( vehicles_lot2016kart.count(vehicle_name) != 0 )
+    {
+        compute_gg_diagram(vehicles_lot2016kart.at(vehicle_name).cartesian_ad, ay, ax_max, ax_min, v, n_points);
+    }
+    else if ( vehicles_limebeer2014f1.count(vehicle_name) != 0 )
+    {
+        compute_gg_diagram(vehicles_limebeer2014f1.at(vehicle_name).cartesian_ad, ay, ax_max, ax_min, v, n_points);
+    }
 }
 
 
@@ -1050,7 +1059,7 @@ typename Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>::template C
 
 
 template<typename vehicle_t>
-void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, struct c_Vehicle* c_vehicle, const int n_points, const double* s, const char* options)
+void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, const int n_points, const double* s, const char* options)
 {
     // (1) Get aliases to cars
     auto& car_curv = vehicle.get_curvilinear_ad_car();
@@ -1070,7 +1079,7 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, str
 
     auto ss = Steady_state(car_cart).solve(v,0.0,0.0); 
 
-    if ( c_vehicle->type == LOT2016KART )
+    if constexpr (std::is_same_v<vehicle_t,lot2016kart_all>)
         ss.u[1] = 0.0;
 
     // (5) Compute optimal laptime
@@ -1329,31 +1338,33 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, str
 }
 
 
-void optimal_laptime(struct c_Vehicle* c_vehicle, const struct c_Track* c_track, const int n_points, const double* s, const char* options) 
+void optimal_laptime(const char* c_vehicle_name, const struct c_Track* c_track, const int n_points, const double* s, const char* options) 
 {
-    if ( c_vehicle->type == LOT2016KART )
+    const std::string vehicle_name(c_vehicle_name);
+    if ( vehicles_lot2016kart.count(vehicle_name) != 0 )
     {
-        compute_optimal_laptime(vehicles_lot2016kart.at(c_vehicle->name), table_track.at(c_track->name), 
-                                c_vehicle, n_points, s, options);
+        compute_optimal_laptime(vehicles_lot2016kart.at(vehicle_name), table_track.at(c_track->name), 
+                                n_points, s, options);
     }
-    else if ( c_vehicle->type == LIMEBEER2014F1 )
+    else if ( vehicles_limebeer2014f1.count(vehicle_name) != 0 )
     {
-        compute_optimal_laptime(vehicles_limebeer2014f1.at(c_vehicle->name), table_track.at(c_track->name), 
-                                c_vehicle, n_points, s, options);
+        compute_optimal_laptime(vehicles_limebeer2014f1.at(vehicle_name), table_track.at(c_track->name), 
+                                n_points, s, options);
     }
 }
 
 
-void change_track(struct c_Vehicle* c_vehicle, const struct c_Track* c_track)
+void change_track(const char* c_vehicle_name, const struct c_Track* c_track)
 {
-    if ( c_vehicle->type == LOT2016KART )
+    const std::string vehicle_name(c_vehicle_name);
+    if ( vehicles_lot2016kart.count(vehicle_name) != 0 )
     {
-        vehicles_lot2016kart.at(c_vehicle->name).get_curvilinear_ad_car().get_road().change_track(table_track.at(c_track->name));
-        vehicles_lot2016kart.at(c_vehicle->name).get_curvilinear_scalar_car().get_road().change_track(table_track.at(c_track->name));
+        vehicles_lot2016kart.at(vehicle_name).get_curvilinear_ad_car().get_road().change_track(table_track.at(c_track->name));
+        vehicles_lot2016kart.at(vehicle_name).get_curvilinear_scalar_car().get_road().change_track(table_track.at(c_track->name));
     }
-    else if ( c_vehicle->type == LIMEBEER2014F1 )
+    else if ( vehicles_limebeer2014f1.count(vehicle_name) != 0 )
     {
-        vehicles_limebeer2014f1.at(c_vehicle->name).get_curvilinear_ad_car().get_road().change_track(table_track.at(c_track->name));
-        vehicles_limebeer2014f1.at(c_vehicle->name).get_curvilinear_scalar_car().get_road().change_track(table_track.at(c_track->name));
+        vehicles_limebeer2014f1.at(vehicle_name).get_curvilinear_ad_car().get_road().change_track(table_track.at(c_track->name));
+        vehicles_limebeer2014f1.at(vehicle_name).get_curvilinear_scalar_car().get_road().change_track(table_track.at(c_track->name));
     }
 }

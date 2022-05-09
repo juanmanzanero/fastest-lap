@@ -74,7 +74,7 @@ inline void Chassis_car_6dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0
     
     Frame<Timeseries_t>& road_frame = base_type::get_road_frame();
 
-    const scalar& m = base_type::get_mass();
+    const Timeseries_t& m = base_type::get_mass();
 
     // Update frame
     base_type::get_chassis_frame().set_origin(_x_com + Vector3d<Timeseries_t>(0.0, 0.0, _z), {0.0, 0.0, _dz});
@@ -150,7 +150,7 @@ inline Vector3d<Timeseries_t> Chassis_car_6dof<Timeseries_t,FrontAxle_t,RearAxle
     const Timeseries_t& u = vel[X];
     const Timeseries_t& v = vel[Y];
 
-    const scalar& m = base_type::get_mass();
+    const Timeseries_t& m = base_type::get_mass();
     const sMatrix3x3& I = base_type::get_inertia();
     const scalar h = -_x_com[2];
 

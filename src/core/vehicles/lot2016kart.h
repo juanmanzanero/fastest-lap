@@ -218,15 +218,15 @@ struct lot2016kart_all
     // Get curvilinear scalar car for the polynomial track
     lot2016kart<scalar>::curvilinear_p& get_curvilinear_scalar_car() { return curvilinear_scalar; }
 
-    void add_variable_parameter(const std::string& parameter_name, const sPolynomial& parameter_value)
+    template<typename ... Args> 
+    void add_parameter(const std::string& parameter_name, Args&& ... args)
     {
-        cartesian_scalar.add_variable_parameter(parameter_name, parameter_value);
-        curvilinear_scalar.add_variable_parameter(parameter_name, parameter_value);
+        cartesian_scalar.add_parameter(parameter_name, std::forward<Args>(args)...);
+        curvilinear_scalar.add_parameter(parameter_name, std::forward<Args>(args)...);
 
-        cartesian_ad.add_variable_parameter(parameter_name, parameter_value);
-        curvilinear_ad.add_variable_parameter(parameter_name, parameter_value);
+        cartesian_ad.add_parameter(parameter_name, std::forward<Args>(args)...);
+        curvilinear_ad.add_parameter(parameter_name, std::forward<Args>(args)...);
     }
-
 
     lot2016kart<scalar>::cartesian                 cartesian_scalar;
     lot2016kart<scalar>::curvilinear_p             curvilinear_scalar;

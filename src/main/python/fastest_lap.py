@@ -6,14 +6,8 @@ import pathlib
 
 KMH=1.0/3.6;
 
-libname=str(pathlib.Path(__file__).parent.absolute()) + "/" + "${libdir_python}/$<TARGET_FILE_NAME:fastestlapc>"
+libname="${libdir_python}/$<TARGET_FILE_NAME:fastestlapc>"
 c_lib = c.CDLL(libname)
-
-class c_Vehicle(c.Structure):
-    _fields_ = [("name", c.c_char_p),
-                ("type", c.c_int),
-                 ("database_file", c.c_char_p),
-               ]
 
 class c_Track(c.Structure):
     _fields_ = [("name", c.c_char_p),
@@ -26,10 +20,9 @@ def load_vehicle(name,vehicle_type,database_file):
 	database_file = c.c_char_p((database_file).encode('utf-8'))
 	vehicle_type = c.c_char_p((vehicle_type).encode('utf-8'))
 
-	vehicle = c_Vehicle()
-	c_lib.create_vehicle(c.byref(vehicle),name,vehicle_type,database_file)
+	c_lib.create_vehicle(name,vehicle_type,database_file)
 
-	return vehicle;
+	return;
 
 def load_track(track_file,name):
 	options="<options> <save_variables> <prefix>track/</prefix> <variables> <s/> </variables> </save_variables> </options>";
@@ -55,29 +48,33 @@ def load_track(track_file,name):
 	return track,s;
 
 def set_scalar_parameter(vehicle,parameter_name,parameter_value):
+	vehicle = c.c_char_p((vehicle).encode('utf-8'))
 	parameter_name = c.c_char_p((parameter_name).encode('utf-8'));
-	c_lib.set_scalar_parameter(c.byref(vehicle),parameter_name,c.c_double(parameter_value))
-	return vehicle;
+	c_lib.set_scalar_parameter(vehicle,parameter_name,c.c_double(parameter_value))
+	return ;
 
 def set_vector_parameter(vehicle,parameter_name,parameter_value):
+	vehicle = c.c_char_p((vehicle).encode('utf-8'))
 	parameter_name = c.c_char_p((parameter_name).encode('utf-8'));
 	c_parameter_value = (c.c_double*3)(parameter_value[0],parameter_value[1],parameter_value[2]);
-	c_lib.set_vector_parameter(c.byref(vehicle),parameter_name,c_parameter_value)
-	return vehicle;
+	c_lib.set_vector_parameter(vehicle,parameter_name,c_parameter_value)
+	return ;
 
 def set_matrix_parameter(vehicle,parameter_name,parameter_value):
+	vehicle = c.c_char_p((vehicle).encode('utf-8'))
 	parameter_name = c.c_char_p((parameter_name).encode('utf-8'));
 	c_parameter_value = (c.c_double*9)(parameter_value[0],parameter_value[1],parameter_value[2],  
 	                                   parameter_value[3],parameter_value[4],parameter_value[5],  
 	                                   parameter_value[6],parameter_value[7],parameter_value[8]); 
-	c_lib.set_matrix_parameter(c.byref(vehicle),parameter_name,c_parameter_value)
-	return vehicle;
+	c_lib.set_matrix_parameter(vehicle,parameter_name,c_parameter_value)
+	return ;
 
 def gg_diagram(vehicle,speed,n_points):
+	vehicle = c.c_char_p((vehicle).encode('utf-8'))
 	ay_c = (c.c_double*n_points)();
 	ax_max_c = (c.c_double*n_points)();
 	ax_min_c = (c.c_double*n_points)();
-	c_lib.gg_diagram(ay_c, ax_max_c, ax_min_c, c.byref(vehicle), c.c_double(speed), c.c_int(n_points));
+	c_lib.gg_diagram(ay_c, ax_max_c, ax_min_c, vehicle, c.c_double(speed), c.c_int(n_points));
 
 	ay = [None] * n_points;
 	ay_minus = [None] * n_points;
@@ -93,6 +90,7 @@ def gg_diagram(vehicle,speed,n_points):
 	return ay,ay_minus,ax_max,ax_min;
 
 def optimal_laptime(vehicle, track, s, channels):
+	vehicle = c.c_char_p((vehicle).encode('utf-8'))
 
 	# Get channels ready to be written by C++
 	n_channels = len(channels);
@@ -112,7 +110,7 @@ def optimal_laptime(vehicle, track, s, channels):
 	
 	c_options = c.c_char_p((options).encode('utf-8'));
 
-	c_lib.optimal_laptime(c.byref(vehicle), c.byref(track), c.c_int(len(s)), c_s, c_options);
+	c_lib.optimal_laptime(vehicle, c.byref(track), c.c_int(len(s)), c_s, c_options);
 
 	# Get the results
 	result = dict();

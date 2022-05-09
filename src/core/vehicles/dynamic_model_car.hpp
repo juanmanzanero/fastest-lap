@@ -13,6 +13,24 @@ std::enable_if_t<NALG==0,std::array<Timeseries_t,_NSTATE>> Dynamic_model_car<Tim
 
 
 template<typename Timeseries_t, typename Chassis_t, typename RoadModel_t, size_t _NSTATE, size_t _NCONTROL>
+template<typename T>
+void Dynamic_model_car<Timeseries_t,Chassis_t,RoadModel_t,_NSTATE,_NCONTROL>::set_parameter(const std::string& parameter, const T value) 
+{ 
+    // (1) Set the value of the parameter
+    get_chassis().set_parameter(parameter,value); 
+
+    // (2) Check if the parameter is an optimization parameter, if so, change its value also there.
+    if constexpr ( std::is_same_v<T,scalar> || std::is_same_v<T,CppAD::AD<scalar>> )
+    {
+        const auto it_p = std::find_if(_parameters.begin(), _parameters.end(), [&](const auto& p) -> auto { return p.get_path() == parameter; });
+
+        if ( it_p != _parameters.cend() )
+            std::fill(it_p->get_values().begin(), it_p->get_values().end(), value);
+    }
+}
+
+
+template<typename Timeseries_t, typename Chassis_t, typename RoadModel_t, size_t _NSTATE, size_t _NCONTROL>
 std::pair<std::array<Timeseries_t,_NSTATE>,std::array<Timeseries_t,Chassis_t::NALGEBRAIC>> Dynamic_model_car<Timeseries_t,Chassis_t,RoadModel_t,_NSTATE,_NCONTROL>::operator()
     (const std::array<Timeseries_t,_NSTATE>& q, const std::array<Timeseries_t,NALGEBRAIC>& qa, const std::array<Timeseries_t,_NCONTROL>& u, scalar t)
 {
@@ -20,8 +38,8 @@ std::pair<std::array<Timeseries_t,_NSTATE>,std::array<Timeseries_t,Chassis_t::NA
     std::array<Timeseries_t,NALGEBRAIC> dqa;
 
     // (1) Set the variable parameters
-    for (auto const& [name, value] : _variable_parameters )
-        set_parameter(name, value(t));
+    for (auto const& parameter : _parameters )
+        get_chassis().set_parameter(parameter.get_path(), parameter(t));
 
     // (2) Set state and controls
     _chassis.set_state_and_controls(q,qa,u);

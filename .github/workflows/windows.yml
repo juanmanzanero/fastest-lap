@@ -30,7 +30,7 @@ jobs:
       uses: msys2/setup-msys2@v2
       with:
          msystem: MSYS
-         update: false
+         update: true
          install: >-
            git
            gcc
@@ -78,7 +78,7 @@ jobs:
       uses: msys2/setup-msys2@v2
       with:
          msystem: MSYS
-         update: false
+         update: true
          install: >-
            git
            gcc

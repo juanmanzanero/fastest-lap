@@ -1,5 +1,3 @@
-include(python)
-
 # Google tests 
 find_package(GTest PATHS ${CMAKE_BINARY_DIR})
 

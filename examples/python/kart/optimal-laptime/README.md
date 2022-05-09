@@ -11,10 +11,10 @@ import fastest_lap
 from fastest_lap import KMH
 ```
 
-
 ```python
 # Load vehicle
-vehicle=fastest_lap.load_vehicle("car","roberto-lot-kart-2016","../../../../database/vehicles/kart/roberto-lot-kart-2016.xml");
+vehicle = "car"
+fastest_lap.load_vehicle(vehicle,"roberto-lot-kart-2016","../../../../database/vehicles/kart/roberto-lot-kart-2016.xml");
 ```
 
 
@@ -37,7 +37,7 @@ throttle = data["throttle"];
 
 
 ```python
-fastest_lap.plot_optimal_laptime(x,y,track);
+fastest_lap.plot_optimal_laptime(s,x,y,track);
 plt.gca().invert_yaxis();
 ```
 

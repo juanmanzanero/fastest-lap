@@ -16,7 +16,8 @@ mass = 795.0;
 power = power*mass;
 max_torque = max_torque*mass*9.81;
 
-vehicle = calllib("libfastestlapc","create_vehicle",[],'vehicle','limebeer-2014-f1','');
+vehicle = 'vehicle';
+calllib("libfastestlapc","create_vehicle",vehicle,'limebeer-2014-f1','');
 
 calllib("libfastestlapc","set_scalar_parameter",vehicle,'vehicle/front-axle/track', track);
 calllib("libfastestlapc","set_scalar_parameter",vehicle,'vehicle/front-axle/inertia', 1.0);

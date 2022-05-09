@@ -206,7 +206,7 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
     // Variables    ----------------------------------------------------------------
 
     // Setteable variables
-    scalar       _brake_bias_0; //! [in] Initial value for the brake bias (to be read from database)
+    Timeseries_t _brake_bias_0; //! [in] Initial value for the brake bias (to be read from database)
 
     // Control variables
     Timeseries_t _throttle;     //! [in] throttle: 1-full throttle, -1-hard brake

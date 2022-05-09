@@ -8,11 +8,11 @@ if libisloaded('libfastestlapc')
     unloadlibrary libfastestlapc
 end
 
-loadlibrary('../../build/lib/libfastestlapc.dylib','../../src/main/c/fastestlapc.h');
+loadlibrary('../../../build/lib/libfastestlapc.dylib','../../../src/main/c/fastestlapc.h');
 
 % (2) Construct track
 options = '<options> <save_variables> <prefix>track/</prefix> <variables> <s/> </variables> </save_variables> </options>';
-circuit = calllib('libfastestlapc','create_track',[],'melbourne','../../database/tracks/melbourne/melbourne_adapted.xml',options);
+circuit = calllib('libfastestlapc','create_track',[],'melbourne','../../../database/tracks/melbourne/melbourne_adapted.xml',options);
 
 
 len_s = calllib("libfastestlapc","download_vector_table_variable_size",'track/s');

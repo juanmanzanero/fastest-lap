@@ -1,5 +1,6 @@
 #include "lion/thirdparty/include/cppad/ipopt/solve.hpp"
 #include "lion/math/ipopt_cppad_handler.hpp"
+#include "lion/math/sensitivity_analysis.h"
 
 template<typename Dynamic_model_t>
 inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const std::vector<scalar>& s_, const bool is_closed_, const bool is_direct_,
@@ -41,7 +42,7 @@ inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const std::vector<scala
 
 
 template<typename Dynamic_model_t>
-void Optimal_laptime<Dynamic_model_t>::check_inputs(const Dynamic_model_t& car)
+inline void Optimal_laptime<Dynamic_model_t>::check_inputs(const Dynamic_model_t& car)
 {
     if ( s.size() <= 1 )
         throw std::runtime_error("Provide at least two values of arclength");
@@ -206,6 +207,76 @@ inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(Xml_document& doc)
     optimization_data.zu     = root.get_child("optimization_data").get_child("zu").get_value(std::vector<scalar>());
     optimization_data.lambda = root.get_child("optimization_data").get_child("lambda").get_value(std::vector<scalar>());
 }
+
+
+template<typename Dynamic_model_t>
+template<typename FG_t>
+inline typename Optimal_laptime<Dynamic_model_t>::Export_solution 
+    Optimal_laptime<Dynamic_model_t>::export_solution(FG_t& fg, const std::vector<scalar>& x) const
+{
+    // (1) Create output
+    Export_solution output;
+
+    // (1.1) Copy the structure of the control variables
+    output.control_variables = control_variables;
+    output.control_variables.clear();
+
+    // (2) Transform x to CppAD
+    std::vector<CppAD::AD<scalar>> x_cppad(x.size(),0.0),fg_eval(fg.get_n_constraints()+1,0.0);
+    std::copy(x.cbegin(), x.cend(), x_cppad.begin());
+    fg(fg_eval,x_cppad);
+  
+    assert(fg.get_states().size() == n_points);
+    assert(fg.get_algebraic_states().size() == n_points);
+
+    // (3) Export states
+    output.q = std::vector<std::array<scalar,Dynamic_model_t::NSTATE>>(n_points);
+    
+    for (size_t i = 0; i < n_points; ++i)
+        for (size_t j = 0; j < Dynamic_model_t::NSTATE; ++j)
+            output.q[i][j] = Value(fg.get_state(i)[j]);
+
+    // (4) Export algebraic states
+    output.qa = std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>>(n_points);
+    
+    for (size_t i = 0; i < n_points; ++i)
+        for (size_t j = 0; j < Dynamic_model_t::NALGEBRAIC; ++j)
+            output.qa[i][j] = Value(fg.get_algebraic_state(i)[j]);
+
+    // (5) Export control variables
+    for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
+    {
+        switch (output.control_variables[j].optimal_control_type) 
+        {
+         case (CONSTANT):
+            std::transform(fg.get_control(j).u.cbegin(), fg.get_control(j).u.cend(), output.control_variables[j].u.begin(), 
+                [](const auto& u_cppad) -> auto { return Value(u_cppad); });
+            break;
+        
+         case (HYPERMESH):
+            std::transform(fg.get_control(j).u.cbegin(), fg.get_control(j).u.cend(), output.control_variables[j].u.begin(), 
+                [](const auto& u_cppad) -> auto { return Value(u_cppad); });
+            break;
+
+         case (FULL_MESH):
+            std::transform(fg.get_control(j).u.cbegin(), fg.get_control(j).u.cend(), output.control_variables[j].u.begin(), 
+                [](const auto& u_cppad) -> auto { return Value(u_cppad); });
+
+            std::transform(fg.get_control(j).dudt.cbegin(), fg.get_control(j).dudt.cend(), output.control_variables[j].dudt.begin(), 
+                [](const auto& u_cppad) -> auto { return Value(u_cppad); });
+            break;
+
+         default:
+            // do nothing
+            break;
+        }
+    }
+
+    return output;
+}
+
+
+
 
 
 template<typename Dynamic_model_t>
@@ -501,66 +572,49 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
         throw std::runtime_error("Optimization did not succeed");
     }
 
-    // (9) Export the solution
-
-    // (9.1) Load the latest solution vector to the fitness function object
-    std::vector<CppAD::AD<scalar>> x_final(result.x.size(),0.0),fg_final(fg.get_n_constraints()+1,0.0);
-    std::copy(result.x.cbegin(), result.x.cend(), x_final.begin());
-    fg(fg_final,x_final);
-
-    assert(fg.get_states().size()           == n_points);
-    assert(fg.get_algebraic_states().size() == n_points);
-
-    // (9.2) Export states
-    q = std::vector<std::array<scalar,Dynamic_model_t::NSTATE>>(n_points);
-    
-    for (size_t i = 0; i < n_points; ++i)
-        for (size_t j = 0; j < Dynamic_model_t::NSTATE; ++j)
-            q[i][j] = Value(fg.get_state(i)[j]);
-
-    // (9.3) Export algebraic states
-    qa = std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>>(n_points);
-    
-    for (size_t i = 0; i < n_points; ++i)
-        for (size_t j = 0; j < Dynamic_model_t::NALGEBRAIC; ++j)
-            qa[i][j] = Value(fg.get_algebraic_state(i)[j]);
-
-    // (9.4) Export control variables
-    control_variables.clear();
-    
-    for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
+    // (8.5) Check optimality (disabled by default)
+    if ( options.check_optimality )
     {
-        switch (control_variables[j].optimal_control_type) 
+        auto sensitivity_opts = typename Sensitivity_analysis<FG_direct<isClosed>>::Options{};
+        sensitivity_opts.ipopt_bound_relax_factor = 1.0e-8;
+        auto sensitivity_analysis = Sensitivity_analysis<FG_direct<isClosed>>(fg, car.get_parameters().get_all_parameters_as_scalar(), 
+                                                                              result.x, result.s, result.lambda, result.zl, result.zu, 
+                                                                              result.vl, result.vu, x_lb, x_ub, c_lb, c_ub, sensitivity_opts);
+        const auto& optimality_check = sensitivity_analysis.optimality_check;
+    
+        if ( !optimality_check.success ) 
         {
-         case (CONSTANT):
-            std::transform(fg.get_control(j).u.cbegin(), fg.get_control(j).u.cend(), control_variables[j].u.begin(), 
-                [](const auto& u_cppad) -> auto { return Value(u_cppad); });
-            break;
-        
-         case (HYPERMESH):
-            std::transform(fg.get_control(j).u.cbegin(), fg.get_control(j).u.cend(), control_variables[j].u.begin(), 
-                [](const auto& u_cppad) -> auto { return Value(u_cppad); });
-            break;
-
-         case (FULL_MESH):
-            std::transform(fg.get_control(j).u.cbegin(), fg.get_control(j).u.cend(), control_variables[j].u.begin(), 
-                [](const auto& u_cppad) -> auto { return Value(u_cppad); });
-            break;
-
-         default:
-            // do nothing
-            break;
+            std::ostringstream s_out;
+            s_out << "[ERROR] Requested optimality check for optimal laptime problem has failed" << std::endl;
+            s_out << "        Big components of the gradient vector are:" << std::endl;
+            for (size_t i = 0; i < optimality_check.id_not_ok.size(); ++i)
+                s_out << "            " << optimality_check.id_not_ok[i] << ": " << optimality_check.nlp_error[optimality_check.id_not_ok[i]] << std::endl;
+            throw std::runtime_error(s_out.str());
         }
+
+        dxdp = sensitivity_analysis.dxdp;
+
+        // dxdp contains the solution but also the slack variables and the lagrange multipliers, discard everything except the solution (goes first)
+        for (auto& dxdpi : dxdp)
+            dxdpi.resize(fg.get_n_variables());
     }
 
-    // (9.5) Export time, x, y, and psi
+    // (9) Export the solution
+
+    // (9.1) Export states
+    const auto solution_exported = export_solution(fg, result.x);
+    q                 = solution_exported.q;
+    qa                = solution_exported.qa;
+    control_variables = solution_exported.control_variables;
+
+    // (9.2) Export time, x, y, and psi
     const scalar& L = car.get_road().track_length();
 
     x_coord = std::vector<scalar>(fg.get_states().size());
     y_coord = std::vector<scalar>(fg.get_states().size());
     psi = std::vector<scalar>(fg.get_states().size());
 
-    // (9.5.1) Compute the first point
+    // (9.2.1) Compute the first point
     auto u_i = fg.get_controls().control_array_at_s(car, 0, s.front());
     auto dtimeds_first = fg.get_car()(fg.get_state(0),fg.get_algebraic_state(0),u_i,s[0]).first[Dynamic_model_t::Road_type::ITIME];
     auto dtimeds_prev = dtimeds_first;
@@ -569,7 +623,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
     y_coord.front() = Value(fg.get_car().get_road().get_y());
     psi.front() = Value(fg.get_car().get_road().get_psi());
 
-    // (9.5.2) Compute the rest of the points
+    // (9.2.2) Compute the rest of the points
     for (size_t i = 1; i < fg.get_states().size(); ++i)
     {
         u_i = fg.get_controls().control_array_at_s(car, i, s[i]);
@@ -583,16 +637,110 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
         psi[i]     = Value(fg.get_car().get_road().get_psi());
     }
 
-    // (9.5.4) Compute the laptime
+    // (9.2.4) Compute the laptime
     laptime = q.back()[Dynamic_model_t::Road_type::ITIME];
 
     if (isClosed)
         laptime += Value((L-s.back())*((1.0-options.sigma)*dtimeds_prev + options.sigma*dtimeds_first));
 
-    // (9.6) Save optimization data
+    // (9.3) Save optimization data
+    optimization_data.x      = result.x;
+    optimization_data.x_lb   = x_lb;
+    optimization_data.x_ub   = x_ub;
+    optimization_data.c_lb   = c_lb;
+    optimization_data.c_ub   = c_ub;
     optimization_data.zl     = result.zl;
     optimization_data.zu     = result.zu;
     optimization_data.lambda = result.lambda;
+    optimization_data.s      = result.s;
+    optimization_data.vl     = result.vl;
+    optimization_data.vu     = result.vu;
+
+    // (9.4) Save sensitivity analysis data
+
+    // (9.4.2) State and control vectors
+    if ( options.check_optimality )
+    {
+        const size_t n_parameters = car.get_parameters().get_all_parameters_as_scalar().size();
+        dqdp.resize(n_parameters);
+        dqadp.resize(n_parameters);
+        dcontrol_variablesdp.resize(n_parameters);
+        dlaptimedp.resize(n_parameters);
+
+        for (size_t i = 0; i < n_parameters; ++i)
+        {
+            const auto solution_exported = export_solution(fg, dxdp[i]);
+            dqdp[i]                 = solution_exported.q;
+            dqadp[i]                = solution_exported.qa;
+            dcontrol_variablesdp[i] = solution_exported.control_variables;
+
+            // If open simulation, kill the first derivative
+            if ( !isClosed )
+            {
+                std::fill(dqdp[i].front().begin(), dqdp[i].front().end(), 0.0);
+                std::fill(dqadp[i].front().begin(), dqadp[i].front().end(), 0.0);
+                std::fill(dcontrol_variablesdp[i].front().u.begin(), dcontrol_variablesdp[i].front().u.end(), 0.0);
+                std::fill(dcontrol_variablesdp[i].front().dudt.begin(), dcontrol_variablesdp[i].front().dudt.end(), 0.0);
+            }
+
+            // Compute the derivative of the time
+            fg.get_car().get_road().update_track(s[0]);
+            const auto& kappa_i = fg.get_car().get_road().get_curvature();
+            const auto& n_i = q[0][Dynamic_model_t::Road_type::IN];
+            const auto& dndp_i = dqdp[i][0][Dynamic_model_t::Road_type::IN];
+
+            const auto& u_i = q[0][Dynamic_model_t::Chassis_type::IU];
+            const auto& dudp_i = dqdp[i][0][Dynamic_model_t::Chassis_type::IU];
+
+            const auto& v_i = q[0][Dynamic_model_t::Chassis_type::IV];
+            const auto& dvdp_i = dqdp[i][0][Dynamic_model_t::Chassis_type::IV];
+
+            const auto& alpha_i = q[0][Dynamic_model_t::Road_type::IALPHA];
+            const auto& dalphadp_i = dqdp[i][0][Dynamic_model_t::Road_type::IALPHA];
+    
+            auto d2timedsdp = [](const auto& kappa, const auto& n, const auto& dndp, 
+                                 const auto& u, const auto& dudp, const auto& v, const auto& dvdp, 
+                                 const auto& alpha, const auto& dalphadp) -> auto
+            { 
+                const auto u_n = u*cos(alpha) - v*sin(alpha);
+                const auto r   = 1.0 - kappa*n;
+                return -kappa*dndp/u_n - cos(alpha)*r/(u_n*u_n)*dudp + sin(alpha)*r/(u_n*u_n)*dvdp + r*(v*cos(alpha)+u*sin(alpha))/(u_n*u_n)*dalphadp;
+            };
+
+            auto d2timedsdp_first = d2timedsdp(kappa_i, n_i, dndp_i, u_i, dudp_i, v_i, dvdp_i, alpha_i, dalphadp_i);
+            auto d2timedsdp_prev = d2timedsdp_first;
+
+            // (9.2.2) Compute the rest of the points
+            for (size_t j = 1; j < fg.get_states().size(); ++j)
+            {
+                fg.get_car().get_road().update_track(s[j]);
+                const auto& kappa_i = fg.get_car().get_road().get_curvature();
+                const auto& n_i = q[j][Dynamic_model_t::Road_type::IN];
+                const auto& dndp_i = dqdp[i][j][Dynamic_model_t::Road_type::IN];
+    
+                const auto& u_i = q[j][Dynamic_model_t::Chassis_type::IU];
+                const auto& dudp_i = dqdp[i][j][Dynamic_model_t::Chassis_type::IU];
+    
+                const auto& v_i = q[j][Dynamic_model_t::Chassis_type::IV];
+                const auto& dvdp_i = dqdp[i][j][Dynamic_model_t::Chassis_type::IV];
+    
+                const auto& alpha_i = q[j][Dynamic_model_t::Road_type::IALPHA];
+                const auto& dalphadp_i = dqdp[i][j][Dynamic_model_t::Road_type::IALPHA];
+
+                auto d2timedsdp_i = d2timedsdp(kappa_i, n_i, dndp_i, u_i, dudp_i, v_i, dvdp_i, alpha_i, dalphadp_i);
+                dqdp[i][j][Dynamic_model_t::Road_type::ITIME] = dqdp[i][j-1][Dynamic_model_t::Road_type::ITIME] 
+                    + (s[j]-s[j-1])*(options.sigma*d2timedsdp_i + (1.0-options.sigma)*d2timedsdp_prev);
+                d2timedsdp_prev = d2timedsdp_i;
+            }
+
+            // (9.2.4) Compute the laptime
+            dlaptimedp[i] = dqdp[i].back()[Dynamic_model_t::Road_type::ITIME];
+
+            if (isClosed)
+                dlaptimedp[i] += Value((L-s.back())*((1.0-options.sigma)*d2timedsdp_prev + options.sigma*d2timedsdp_first));
+
+        } 
+    }
 }
 
 template<typename Dynamic_model_t>
@@ -900,60 +1048,40 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
         throw std::runtime_error("Optimization did not succeed");
     }
 
+    // (8.5) Check optimality (disabled by default)
+    if ( options.check_optimality )
+    {
+        auto sensitivity_analysis = Sensitivity_analysis<FG_derivative<isClosed>>(fg, result.x, result.s, result.lambda, result.zl, result.zu, result.vl, result.vu, x_lb, x_ub, c_lb, c_ub, {});
+        const auto& optimality_check = sensitivity_analysis.optimality_check;
+    
+        if ( !optimality_check.success ) 
+        {
+            std::ostringstream s_out;
+            s_out << "[ERROR] Requested optimality check for optimal laptime problem has failed" << std::endl;
+            s_out << "        Big components of the gradient vector are:" << std::endl;
+            for (size_t i = 0; i < optimality_check.id_not_ok.size(); ++i)
+                s_out << "            " << optimality_check.id_not_ok[i] << ": " << optimality_check.nlp_error[optimality_check.id_not_ok[i]] << std::endl;
+            throw std::runtime_error(s_out.str());
+        }
+
+        out(2) << "[INFO] Optimal laptime -> requested optimality check has passed" << std::endl;
+    }
+
     // (9) Export the solution
 
-    // (9.1) Load the latest solution vector to the fitness function object
+    // (9.1) Export states
+    const auto solution_exported = export_solution(fg, result.x);
+    q                 = solution_exported.q;
+    qa                = solution_exported.qa;
+    control_variables = solution_exported.control_variables;
+
+    // (9.2) Load the latest solution vector to the fitness function object
     std::vector<CppAD::AD<scalar>> x_final(result.x.size(),0.0),fg_final(fg.get_n_constraints()+1,0.0);
     std::copy(result.x.cbegin(), result.x.cend(), x_final.begin());
     fg(fg_final,x_final);
   
     assert(fg.get_states().size() == n_points);
     assert(fg.get_algebraic_states().size() == n_points);
-
-    // (9.2) Export states
-    q = std::vector<std::array<scalar,Dynamic_model_t::NSTATE>>(n_points);
-    
-    for (size_t i = 0; i < n_points; ++i)
-        for (size_t j = 0; j < Dynamic_model_t::NSTATE; ++j)
-            q[i][j] = Value(fg.get_state(i)[j]);
-
-    // (9.3) Export algebraic states
-    qa = std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>>(n_points);
-    
-    for (size_t i = 0; i < n_points; ++i)
-        for (size_t j = 0; j < Dynamic_model_t::NALGEBRAIC; ++j)
-            qa[i][j] = Value(fg.get_algebraic_state(i)[j]);
-
-    // (9.4) Export control variables
-    control_variables.clear();
-
-    for (size_t j = 0; j < Dynamic_model_t::NCONTROL; ++j)
-    {
-        switch (control_variables[j].optimal_control_type) 
-        {
-         case (CONSTANT):
-            std::transform(fg.get_control(j).u.cbegin(), fg.get_control(j).u.cend(), control_variables[j].u.begin(), 
-                [](const auto& u_cppad) -> auto { return Value(u_cppad); });
-            break;
-        
-         case (HYPERMESH):
-            std::transform(fg.get_control(j).u.cbegin(), fg.get_control(j).u.cend(), control_variables[j].u.begin(), 
-                [](const auto& u_cppad) -> auto { return Value(u_cppad); });
-            break;
-
-         case (FULL_MESH):
-            std::transform(fg.get_control(j).u.cbegin(), fg.get_control(j).u.cend(), control_variables[j].u.begin(), 
-                [](const auto& u_cppad) -> auto { return Value(u_cppad); });
-
-            std::transform(fg.get_control(j).dudt.cbegin(), fg.get_control(j).dudt.cend(), control_variables[j].dudt.begin(), 
-                [](const auto& u_cppad) -> auto { return Value(u_cppad); });
-            break;
-
-         default:
-            // do nothing
-            break;
-        }
-    }
 
     // (9.5) Export time, x, y, and psi
     const scalar& L = car.get_road().track_length();
@@ -993,9 +1121,17 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
         laptime += Value((L-s.back())*((1.0-options.sigma)*dtimeds_prev+options.sigma*dtimeds_first));
 
     // (9.6) Save optimization data
+    optimization_data.x      = result.x;
+    optimization_data.x_lb   = x_lb;
+    optimization_data.x_ub   = x_ub;
+    optimization_data.c_lb   = c_lb;
+    optimization_data.c_ub   = c_ub;
     optimization_data.zl     = result.zl;
     optimization_data.zu     = result.zu;
     optimization_data.lambda = result.lambda;
+    optimization_data.s      = result.s;
+    optimization_data.vl     = result.vl;
+    optimization_data.vu     = result.vu;
 }
 
 

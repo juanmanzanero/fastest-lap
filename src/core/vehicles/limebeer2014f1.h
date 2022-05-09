@@ -257,14 +257,16 @@ struct limebeer2014f1_all
         curvilinear_ad.set_parameter(parameter, value);
     }
 
-    void add_variable_parameter(const std::string& parameter_name, const sPolynomial& parameter_value)
+    template<typename ... Args> 
+    void add_parameter(const std::string& parameter_name, Args&& ... args)
     {
-        cartesian_scalar.add_variable_parameter(parameter_name, parameter_value);
-        curvilinear_scalar.add_variable_parameter(parameter_name, parameter_value);
+        cartesian_scalar.add_parameter(parameter_name, std::forward<Args>(args)...);
+        curvilinear_scalar.add_parameter(parameter_name, std::forward<Args>(args)...);
 
-        cartesian_ad.add_variable_parameter(parameter_name, parameter_value);
-        curvilinear_ad.add_variable_parameter(parameter_name, parameter_value);
+        cartesian_ad.add_parameter(parameter_name, std::forward<Args>(args)...);
+        curvilinear_ad.add_parameter(parameter_name, std::forward<Args>(args)...);
     }
+
 
     limebeer2014f1<scalar>::cartesian                 cartesian_scalar;
     limebeer2014f1<scalar>::curvilinear_p             curvilinear_scalar;

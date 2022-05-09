@@ -21,6 +21,7 @@ class Optimal_laptime
         scalar sigma = 0.5;                 // 0: explicit euler, 0.5: crank-nicolson, 1.0: implicit euler
         size_t maximum_iterations = 3000;
         bool   throw_if_fail = true;
+        bool   check_optimality = false;
     };
 
     //! Helper classes to encapsulate control variables ---------------------------------------------:-
@@ -299,11 +300,25 @@ class Optimal_laptime
 
     size_t iter_count;  //! Number of iterations spent in IPOPT
 
+    std::vector<std::vector<std::array<scalar,Dynamic_model_t::NSTATE>>>     dqdp;
+    std::vector<std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>>> dqadp;
+    std::vector<Control_variables<>>                                         dcontrol_variablesdp;
+    std::vector<std::vector<scalar>>                                         dxdp;
+    std::vector<scalar>                                                      dlaptimedp;
+
     struct 
     {
+        std::vector<scalar> x;
+        std::vector<scalar> x_lb;
+        std::vector<scalar> x_ub;
+        std::vector<scalar> c_lb;
+        std::vector<scalar> c_ub;
         std::vector<scalar> zl;     //! Lagrange multipliers of the variable lower bounds
         std::vector<scalar> zu;     //! Lagrange multipliers of the variable upper bounds
         std::vector<scalar> lambda; //! Lagrange multipliers of the optimization constraints
+        std::vector<scalar> s;
+        std::vector<scalar> vl;
+        std::vector<scalar> vu;
     } optimization_data;            //! Auxiliary class to store the optimization data
 
     double laptime;
@@ -311,6 +326,17 @@ class Optimal_laptime
  private:
     
     void check_inputs(const Dynamic_model_t& car);
+
+    struct Export_solution
+    {
+        std::vector<std::array<scalar,Dynamic_model_t::NSTATE>> q;
+        std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>> qa;
+        Control_variables<> control_variables;
+    };
+
+    template<typename FG_t>
+    Export_solution export_solution(FG_t& fg, const std::vector<scalar>& x) const;
+    
 
     //! Auxiliary class to hold data structures to compute the fitness function and constraints
     class FG
@@ -400,6 +426,13 @@ class Optimal_laptime
                  n_elements*n_constraints_per_element<true>(control_variables_0), 
                  car, s, q0, qa0, u0, control_variables_0, sigma) {}
 
+        void operator()(ADvector& fg, const ADvector& x, const ADvector& p) 
+        { 
+            FG::_car.set_all_parameters(p);
+
+            (*this)(fg, x);
+        }
+    
         void operator()(ADvector& fg, const ADvector& x);
     };
 
@@ -428,6 +461,13 @@ class Optimal_laptime
                     + control_variables_0.number_of_hypermesh_optimization_points,
                  n_elements*n_constraints_per_element<false>(control_variables_0),
                  car, s, q0, qa0, u0, control_variables_0, sigma), _dudt0(dudt0) {}
+
+        void operator()(ADvector& fg, const ADvector& x, const ADvector& p) 
+        { 
+            FG::_car.set_all_parameters(p);
+
+            (*this)(fg, x);
+        }
 
         void operator()(ADvector& fg, const ADvector& x);
 

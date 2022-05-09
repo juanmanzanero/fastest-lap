@@ -306,7 +306,7 @@ void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_
     u_ub[ITHROTTLE]  = 1.0;
 
     // brake bias
-    u_def[IBRAKE_BIAS] = _brake_bias_0;
+    u_def[IBRAKE_BIAS] = Value(_brake_bias_0);
     u_lb[IBRAKE_BIAS]  = 0.0;
     u_ub[IBRAKE_BIAS]  = 1.0;
 
