@@ -45,6 +45,8 @@ STRUCT c_Track
 
 extern fastestlapc_API void set_print_level(int print_level);
 
+extern fastestlapc_API void print_tables(); 
+
 // Factories -----------------------------------------------------------------------------------------------------------
 extern fastestlapc_API void create_vehicle(const char* vehicle_name, const char* vehicle_type, const char* database_file);
 
@@ -76,7 +78,7 @@ extern fastestlapc_API void set_vector_parameter(const char* vehicle_name, const
 
 extern fastestlapc_API void set_matrix_parameter(const char* vehicle_name, const char* parameter, const double value[9]);
 
-extern fastestlapc_API void add_variable_parameter(const char* c_vehicle, const char* parameter_name, const int n, const double* s, const double* values);
+extern fastestlapc_API void vehicle_declare_new_constant_parameter(const char* c_vehicle_name, const char* parameter_path, const char* parameter_alias, const double parameter_value);
 
 extern fastestlapc_API void change_track(const char* c_vehicle, const struct c_Track* c_track);
 
