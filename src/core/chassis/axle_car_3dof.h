@@ -219,7 +219,7 @@ class Axle_car_3dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
 
     // Mechanical
     scalar _I;                          //! [c] Inertia
-    scalar _differential_stiffness;     //! [c] Differential stiffness [N.m.s/rad]
+    Timeseries_t _differential_stiffness;     //! [c] Differential stiffness [N.m.s/rad]
 
     // Numerical
     scalar _throttle_smooth_pos;        //! [c] Coefficient used to smooth throttle/brake

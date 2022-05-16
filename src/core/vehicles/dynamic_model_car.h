@@ -143,6 +143,13 @@ class Dynamic_model_car
     template<typename ... Args> 
     void add_parameter(const std::string& parameter_path, Args&& ... args)
     {
+        // Check that the parameter was not already loaded
+        for (const auto& p : _parameters)
+        {
+            if ( p.get_path() == parameter_path )
+                throw std::runtime_error("[ERROR] Parameter::add_parameter -> parameter already exists");
+        }
+
         _parameters.emplace_back(parameter_path, std::forward<Args>(args)...);
     }
 
@@ -157,13 +164,13 @@ class Dynamic_model_car
     {
      public:
         //! Construct a constant parameter
-        Parameter(const std::string& path, const scalar& value) 
-        : _path(path), _values{value}, _mesh{} 
+        Parameter(const std::string& path, const std::string& alias, const scalar& value) 
+        : _path(path), _aliases{alias}, _values{value}, _mesh{} 
         {}
 
         //! Construct a varying parameter
-        Parameter(const std::string& path, const std::vector<scalar>& values, const std::vector<std::pair<scalar,size_t>>& mesh) 
-        : _path(path), _values(values.size()), _mesh(mesh)
+        Parameter(const std::string& path, const std::vector<std::string>& aliases, const std::vector<scalar>& values, const std::vector<std::pair<scalar,size_t>>& mesh) 
+        : _path(path), _aliases(aliases), _values(values.size()), _mesh(mesh)
         {
             // (1) Copy the parameters, which will transform their values from scalar to Timeseries_t
             std::copy(values.cbegin(), values.cend(), _values.begin());
@@ -171,6 +178,10 @@ class Dynamic_model_car
             // (2) Check that there are at least two parameters
             if ( _values.size() < 2 )
                 throw std::runtime_error("[ERROR] A spatially-varying parameter should be provided with at least two parameters");
+
+            // (3) Check that the same number of aliases and values were given
+            if ( _aliases.size() != _values.size() )
+                throw std::runtime_error("[ERROR] The number of aliases must match the number of values"); 
 
             // (3) Check that the mesh is sorted
             if ( !std::is_sorted(_mesh.cbegin(), _mesh.cend(), [](const auto& lhs, const auto& rhs) -> auto { return lhs.first <= rhs.first; }) )
@@ -230,8 +241,12 @@ class Dynamic_model_car
         //! Get the parameter path
         const std::string& get_path() const { return _path; }
 
+        //! Get the parameter aliases
+        const std::vector<std::string>& get_aliases() const { return _aliases; }
+
      private:
         std::string _path;                           // Path to the parameter. To compute gradients w.r.t. it, make sure it points to a CppAD variable
+        std::vector<std::string>  _aliases;          // Aliases 
         std::vector<Timeseries_t> _values;           // Values of the parameter
         std::vector<std::pair<scalar,size_t>> _mesh; // (Optional) mesh for varying parameters: (arclength, parameter_index)
     };
@@ -256,6 +271,23 @@ class Dynamic_model_car
 
             return p;
         }
+
+        std::vector<std::string> get_all_parameters_aliases() const
+        {
+            std::vector<std::string> p(get_number_of_parameters());
+    
+            auto it_p = p.begin();
+            for (const auto& parameter : *this)
+            {
+                std::copy(parameter.get_aliases().cbegin(), parameter.get_aliases().cend(), it_p);
+                it_p += parameter.get_values().size();
+            }
+
+            assert(it_p == p.cend());
+
+            return p;
+        }
+
 
         void set_all_parameters(const std::vector<Timeseries_t>& inputs)
         {

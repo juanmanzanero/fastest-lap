@@ -194,14 +194,14 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
  private:
 
     // Geometrical properties
-    sVector3d _x_com;              //! [c] Center of mass position[m]
-    sVector3d _x_front_axle;       //! [c] Center of front axle [m]
-    sVector3d _x_rear_axle;        //! [c] Center of the rear axle [m]
-    sVector3d _x_aero;             //! [c] Aerodynamic center [m]
+    Vector3d<Timeseries_t> _x_com;              //! [c] Center of mass position[m]
+    Vector3d<Timeseries_t> _x_front_axle;       //! [c] Center of front axle [m]
+    Vector3d<Timeseries_t> _x_rear_axle;        //! [c] Center of the rear axle [m]
+    Vector3d<Timeseries_t> _x_aero;             //! [c] Aerodynamic center [m]
 
     // Mechanical properties
-    scalar    _roll_balance_coeff; //! [c] Coefficient in [0,1], usually 1/2, such that: Fz_fr − Fz_fl = D(Fz_fr + Fz_rr − Fz_fl − Fz_rl)
-    scalar    _Fz_max_ref2;        //! [c] Square of the parasitic smooth positive force when Fz = 0
+    Timeseries_t   _roll_balance_coeff; //! [c] Coefficient in [0,1], usually 1/2, such that: Fz_fr − Fz_fl = D(Fz_fr + Fz_rr − Fz_fl − Fz_rl)
+    scalar         _Fz_max_ref2;        //! [c] Square of the parasitic smooth positive force when Fz = 0
 
     // Variables    ----------------------------------------------------------------
 

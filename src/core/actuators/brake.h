@@ -48,7 +48,7 @@ class Brake
 
  private:
     std::string _path;
-    scalar _Tmax;
+    Timeseries_t _Tmax;
 
     DECLARE_PARAMS({ "max_torque", _Tmax }); 
 };

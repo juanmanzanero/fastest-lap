@@ -118,28 +118,27 @@ struct Pacejka_standard_model
 
 
 //! Implementation of a simpler pacejka model with fewer parameters
+template<typename Timeseries_t>
 struct Pacejka_simple_model
 {
     //! Compute extra constants from the inputs
     void initialise();
 
     //! Compute the combined longitudinal force
-    template<typename Timeseries_t>
     Timeseries_t force_combined_longitudinal_magic(Timeseries_t kappa, Timeseries_t lambda, Timeseries_t Fz) const;
 
     //! Compute the combined lateral force
-    template<typename Timeseries_t>
     Timeseries_t force_combined_lateral_magic(Timeseries_t kappa, Timeseries_t lambda, Timeseries_t Fz) const;
 
     // Constants
     scalar _Fz1 = 0.0;            //! [c] Reference load 1
     scalar _Fz2 = 0.0;            //! [c] Reference load 2
     
-    scalar _mu_x_max1 = 0.0;      //! [c] peak longitudinal friction coefficient at load 1
-    scalar _mu_x_max2 = 0.0;      //! [c] peak longitudinal friction coefficient at load 2
+    Timeseries_t _mu_x_max1 = 0.0;      //! [c] peak longitudinal friction coefficient at load 1
+    Timeseries_t _mu_x_max2 = 0.0;      //! [c] peak longitudinal friction coefficient at load 2
 
-    scalar _mu_y_max1 = 0.0;      //! [c] peak lateral friction coefficient at load 1
-    scalar _mu_y_max2 = 0.0;      //! [c] peak lateral friction coefficient at load 2
+    Timeseries_t _mu_y_max1 = 0.0;      //! [c] peak lateral friction coefficient at load 1
+    Timeseries_t _mu_y_max2 = 0.0;      //! [c] peak lateral friction coefficient at load 2
 
     scalar _kappa_max1 = 0.0;     //! [c] slip coefficient for the friction peak at load 1
     scalar _kappa_max2 = 0.0;     //! [c] slip coefficient for the friction peak at load 2
@@ -308,7 +307,7 @@ template<typename Timeseries_t,size_t STATE0, size_t CONTROL0>
 using Tire_pacejka_std = Tire_pacejka<Timeseries_t,Pacejka_standard_model,STATE0,CONTROL0>;
 
 template<typename Timeseries_t,size_t STATE0, size_t CONTROL0>
-using Tire_pacejka_simple = Tire_pacejka<Timeseries_t,Pacejka_simple_model,STATE0,CONTROL0>;
+using Tire_pacejka_simple = Tire_pacejka<Timeseries_t,Pacejka_simple_model<Timeseries_t>,STATE0,CONTROL0>;
 
 #include "tire_pacejka.hpp"
 

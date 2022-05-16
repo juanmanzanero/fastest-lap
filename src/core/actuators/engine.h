@@ -56,7 +56,7 @@ class Engine
     bool _direct_torque = true;
     bool _only_max_power;
 
-    scalar _maximum_power;      
+    Timeseries_t _maximum_power;      
 
     DECLARE_PARAMS({ "maximum-power", _maximum_power }); 
 };

@@ -207,8 +207,8 @@ class Chassis
 
     // Aerodynamic properties
     scalar _rho;   //! [c] air density [kg/m3]
-    scalar _cd;    //! [c] drag coefficient [-]      
-    scalar _cl;    //! [c] lift coefficient [-]      
+    Timeseries_t _cd;    //! [c] drag coefficient [-]      
+    Timeseries_t _cl;    //! [c] lift coefficient [-]      
     scalar _A;     //! [c] frontal area [m2]
     
     FrontAxle_t _front_axle; //! Front axle

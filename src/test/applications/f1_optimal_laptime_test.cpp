@@ -221,9 +221,10 @@ TEST_F(F1_optimal_laptime_test, Catalunya_variable_parameter)
     limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial>::Road_t road(catalunya);
     limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial> car(database, road);
 
+    std::vector<std::string> parameter_aliases = {"power-1", "power-2"};
     std::vector<scalar> parameter_values = {735.499, 1000.0}; 
     std::vector<std::pair<scalar,size_t>> parameter_mesh = { {0.0, 0}, {2900.0, 0}, {3100.0,1}, {5000.0,1} };
-    car.add_parameter("vehicle/rear-axle/engine/maximum-power", parameter_values, parameter_mesh);
+    car.add_parameter("vehicle/rear-axle/engine/maximum-power", parameter_aliases, parameter_values, parameter_mesh);
 
     // Start from the steady-state values at 50km/h-0g    
     const scalar v = 50.0*KMH;
