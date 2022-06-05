@@ -11,6 +11,7 @@ import fastest_lap
 from fastest_lap import KMH
 ```
 
+
 ```python
 # Load vehicle
 vehicle = "car"
@@ -20,7 +21,8 @@ fastest_lap.load_vehicle(vehicle,"roberto-lot-kart-2016","../../../../database/v
 
 ```python
 # Load track
-(track,s)=fastest_lap.load_track("../../../../database/tracks/vendrell/vendrell.xml","catalunya");
+track="vendrell"
+s=fastest_lap.load_track("../../../../database/tracks/vendrell/vendrell.xml",track);
 ```
 
 

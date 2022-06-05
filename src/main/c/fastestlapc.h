@@ -36,13 +36,6 @@ extern "C" {
 
 ENUM c_Vehicle_type { LOT2016KART, LIMEBEER2014F1 };
 
-STRUCT c_Track
-{
-    char* name;
-    char* track_file;
-    bool is_closed;
-};
-
 extern fastestlapc_API void set_print_level(int print_level);
 
 extern fastestlapc_API void print_tables(); 
@@ -50,7 +43,7 @@ extern fastestlapc_API void print_tables();
 // Factories -----------------------------------------------------------------------------------------------------------
 extern fastestlapc_API void create_vehicle(const char* vehicle_name, const char* vehicle_type, const char* database_file);
 
-extern fastestlapc_API void create_track(struct c_Track* track, const char* name, const char* track_file, const char* options);
+extern fastestlapc_API void create_track(const char* name, const char* track_file, const char* options);
 
 extern fastestlapc_API void delete_vehicle(const char* vehicle_name);
 
@@ -83,18 +76,20 @@ extern fastestlapc_API void vehicle_declare_new_constant_parameter(const char* c
 extern fastestlapc_API void vehicle_declare_new_variable_parameter(const char* c_vehicle_name, const char* parameter_path, const char* parameter_alias, const int n_parameters, const double* parameter_values,
     const int mesh_size, const int* mesh_parameter_indexes, const double* mesh_points);
 
-extern fastestlapc_API void change_track(const char* c_vehicle, const struct c_Track* c_track);
+extern fastestlapc_API void change_track(const char* c_vehicle, const char* c_track);
 
 // Applications --------------------------------------------------------------------------------------------------------
 //void vehicle_equations(double* dqdt, double* dqa, const char* vehicle_name, double* q, double* qa, double* u, double s);
 
-extern fastestlapc_API void propagate(double* q, double* qa, double* u, const char* vehicle_name, struct c_Track* track, double s, double ds, double* u_next, bool use_circuit, const char* options);
+extern fastestlapc_API void propagate(double* q, double* qa, double* u, const char* vehicle_name, char* c_track_name, double s, double ds, double* u_next, bool use_circuit, const char* options);
 
 extern fastestlapc_API void gg_diagram(double* ay, double* ax_max, double* ax_min, const char* vehicle_name, double v, const int n_points);
 
-extern fastestlapc_API void optimal_laptime(const char* c_vehicle, const struct c_Track* c_track, const int n_points, const double* s, const char* options);
+extern fastestlapc_API void optimal_laptime(const char* c_vehicle, const char* c_track_name, const int n_points, const double* s, const char* options);
 
-extern fastestlapc_API void track_coordinates(double* x_center, double* y_center, double* x_left, double* y_left, double* x_right, double* y_right, double* theta, struct c_Track* c_track, const int n_points, const double* s);
+extern fastestlapc_API void track_coordinates(double* x_center, double* y_center, double* x_left, double* y_left, double* x_right, double* y_right, double* theta, const char* c_track_name, const int n_points, const double* s);
+
+extern fastestlapc_API void circuit_preprocessor(const char* options);
 
 
 #ifdef __cplusplus

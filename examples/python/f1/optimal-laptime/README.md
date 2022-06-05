@@ -21,7 +21,8 @@ fastest_lap.load_vehicle(vehicle,"limebeer-2014-f1","../../../../database/vehicl
 
 ```python
 # Load track
-(track,s)=fastest_lap.load_track("../../../../database/tracks/catalunya/catalunya_adapted.xml","catalunya");
+track="catalunya"
+s=fastest_lap.load_track("../../../../database/tracks/catalunya/catalunya_adapted.xml",track);
 ```
 
 

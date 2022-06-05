@@ -9,12 +9,6 @@ KMH=1.0/3.6;
 libname="${libdir_python}/$<TARGET_FILE_NAME:fastestlapc>"
 c_lib = c.CDLL(libname)
 
-class c_Track(c.Structure):
-    _fields_ = [("name", c.c_char_p),
-                ("track_file", c.c_char_p),
-                ("is_closed", c.c_bool)
-               ]
-
 def load_vehicle(name,vehicle_type,database_file):
 	name = c.c_char_p((name).encode('utf-8'))
 	database_file = c.c_char_p((database_file).encode('utf-8'))
@@ -30,8 +24,7 @@ def load_track(track_file,name):
 	c_track_file = c.c_char_p((track_file).encode('utf-8'));
 	c_options = c.c_char_p((options).encode('utf-8'));
 
-	track = c_Track();
-	c_lib.create_track(c.byref(track),c_name,c_track_file,c_options);
+	c_lib.create_track(c_name,c_track_file,c_options);
 
 	# Get the results
 	c_variable = c.c_char_p(("track/s").encode('utf-8'));
@@ -45,7 +38,35 @@ def load_track(track_file,name):
 	# Clean up
 	c_lib.clear_tables_by_prefix(c.c_char_p(("track/").encode('utf-8')));
 
-	return track,s;
+	return s;
+
+def circuit_preprocessor(options):
+	c_options = c.c_char_p((options).encode('utf-8'));
+	c_lib.circuit_preprocessor(c_options);
+	
+	return;
+
+def download_vector(name):
+	c_variable = c.c_char_p((name).encode('utf-8'))	
+
+	n = c_lib.download_vector_table_variable_size(c_variable)
+
+	c_data = (c.c_double*n)();
+	c_lib.download_vector_table_variable(c_data, c.c_int(n), c_variable);
+	data = [None]*n;
+	for i in range(n):
+		data[i] = c_data[i];
+
+	return data;
+
+def print_tables():
+	c_lib.print_tables()
+	return;
+
+def clear_tables_by_prefix(prefix):
+	prefix = c.c_char_p((prefix).encode('utf-8'))
+	c_lib.clear_tables_by_prefix(prefix);
+	return;
 
 def set_scalar_parameter(vehicle,parameter_name,parameter_value):
 	vehicle = c.c_char_p((vehicle).encode('utf-8'))
@@ -91,6 +112,7 @@ def gg_diagram(vehicle,speed,n_points):
 
 def optimal_laptime(vehicle, track, s, channels):
 	vehicle = c.c_char_p((vehicle).encode('utf-8'))
+	track   = c.c_char_p((track).encode('utf-8'))
 
 	# Get channels ready to be written by C++
 	n_channels = len(channels);
@@ -110,7 +132,7 @@ def optimal_laptime(vehicle, track, s, channels):
 	
 	c_options = c.c_char_p((options).encode('utf-8'));
 
-	c_lib.optimal_laptime(vehicle, c.byref(track), c.c_int(len(s)), c_s, c_options);
+	c_lib.optimal_laptime(vehicle, track, c.c_int(len(s)), c_s, c_options);
 
 	# Get the results
 	result = dict();
@@ -129,6 +151,8 @@ def optimal_laptime(vehicle, track, s, channels):
 	return result;
 
 def track_coordinates(track,s):
+	track   = c.c_char_p((track).encode('utf-8'))
+
 	n_points = len(s);
 
 	c_x_center = (c.c_double*n_points)();
@@ -143,7 +167,7 @@ def track_coordinates(track,s):
 	for i in range(len(s)):
 		c_s[i] = s[i];
 
-	c_lib.track_coordinates(c_x_center, c_y_center, c_x_left, c_y_left, c_x_right, c_y_right, c_theta, c.byref(track), c.c_int(n_points), c_s);
+	c_lib.track_coordinates(c_x_center, c_y_center, c_x_left, c_y_left, c_x_right, c_y_right, c_theta, track, c.c_int(n_points), c_s);
 
 	x_center = [None] * n_points;
 	y_center = [None] * n_points;

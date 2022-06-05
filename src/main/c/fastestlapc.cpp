@@ -110,7 +110,7 @@ void create_vehicle(const char* vehicle_name, const char* vehicle_type, const ch
     }
 }
 
-void create_track(struct c_Track* track, const char* name, const char* track_file, const char* options)
+void create_track(const char* name, const char* track_file, const char* options)
 {
     out(2) << "[INFO] Fastest-lap API -> [start] create track" << std::endl;
     // (1) Check that the track does not exists in the map
@@ -155,15 +155,7 @@ void create_track(struct c_Track* track, const char* name, const char* track_fil
     // (3) Open the track
     // Copy the track name
     const std::string s_track_file = track_file;
-    track->name = new char[strlen(name)+1];
-    memcpy(track->name, name, strlen(name));
-    track->name[strlen(name)] = '\0';
  
-    // Copy the track file path
-    track->track_file = new char[strlen(track_file)+1];
-    memcpy(track->track_file, track_file, strlen(track_file));
-    track->track_file[strlen(track_file)] = '\0';
-
     // Open the track as Xml
     Xml_document track_xml = { track_file, true }; 
 
@@ -183,8 +175,6 @@ void create_track(struct c_Track* track, const char* name, const char* track_fil
     // Read format: only discrete tracks are supported by the C API
     const std::string track_format = track_xml.get_root_element().get_attribute("format");
 
-    track->is_closed = is_closed;
-    
     if ( track_format != "discrete")
         throw std::runtime_error(std::string("Track format \"") + track_format + "\" is not supported");
 
@@ -634,7 +624,7 @@ void print_tables()
         std::cout << "    -> " << val.first << std::endl;
     std::cout << std::endl;
 
-    std::cout << "Table vector: " << table_scalar.size() << " vectors" << std::endl;
+    std::cout << "Table vector: " << table_vector.size() << " vectors" << std::endl;
 
     for (const auto& vec : table_vector)
         std::cout << "    -> " << vec.first << " (" << vec.second.size() << ")" << std::endl;
@@ -790,15 +780,16 @@ void compute_propagation(Vehicle_t car, double* c_q, double* c_qa, double* c_u, 
     std::copy_n(qa.begin(), Vehicle_t::NALGEBRAIC, c_qa);
 }
 
-void propagate(double* q, double* qa, double* u, const char* c_vehicle_name, struct c_Track* c_track, double s, double ds, double* u_next, bool use_circuit, const char* options)
+void propagate(double* q, double* qa, double* u, const char* c_vehicle_name, const char* c_track_name, double s, double ds, double* u_next, bool use_circuit, const char* options)
 {
     const std::string vehicle_name(c_vehicle_name);
+    const std::string track_name(c_track_name);
     if ( vehicles_lot2016kart.count(vehicle_name) != 0 )
     {
         if ( use_circuit )
         {
-            vehicles_lot2016kart.at(vehicle_name).curvilinear_ad.get_road().change_track(table_track.at(c_track->name));
-            vehicles_lot2016kart.at(vehicle_name).curvilinear_scalar.get_road().change_track(table_track.at(c_track->name));
+            vehicles_lot2016kart.at(vehicle_name).curvilinear_ad.get_road().change_track(table_track.at(track_name));
+            vehicles_lot2016kart.at(vehicle_name).curvilinear_scalar.get_road().change_track(table_track.at(track_name));
             compute_propagation(vehicles_lot2016kart.at(vehicle_name).curvilinear_ad, q, qa, u, s, ds, u_next, options);
         }
         else
@@ -810,8 +801,8 @@ void propagate(double* q, double* qa, double* u, const char* c_vehicle_name, str
     {
         if ( use_circuit )
         {
-            vehicles_limebeer2014f1.at(vehicle_name).curvilinear_ad.get_road().change_track(table_track.at(c_track->name));
-            vehicles_limebeer2014f1.at(vehicle_name).curvilinear_scalar.get_road().change_track(table_track.at(c_track->name));
+            vehicles_limebeer2014f1.at(vehicle_name).curvilinear_ad.get_road().change_track(table_track.at(track_name));
+            vehicles_limebeer2014f1.at(vehicle_name).curvilinear_scalar.get_road().change_track(table_track.at(track_name));
             compute_propagation(vehicles_limebeer2014f1.at(vehicle_name).curvilinear_ad, q, qa, u, s, ds, u_next, options);
         }
         else
@@ -851,9 +842,9 @@ void gg_diagram(double* ay, double* ax_max, double* ax_min, const char* c_vehicl
 }
 
 
-void track_coordinates(double* x_center, double* y_center, double* x_left, double* y_left, double* x_right, double* y_right, double* theta, struct c_Track* c_track, const int n_points, const double* s)
+void track_coordinates(double* x_center, double* y_center, double* x_left, double* y_left, double* x_right, double* y_right, double* theta, const char* c_track_name, const int n_points, const double* s)
 {
-    std::string name = c_track->name;
+    std::string name(c_track_name);
     auto& track = table_track.at(name);
 
     for (int i = 0; i < n_points; ++i)
@@ -1438,33 +1429,379 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
 }
 
 
-void optimal_laptime(const char* c_vehicle_name, const struct c_Track* c_track, const int n_points, const double* s, const char* options) 
+void optimal_laptime(const char* c_vehicle_name, const char* c_track_name, const int n_points, const double* s, const char* options) 
 {
     const std::string vehicle_name(c_vehicle_name);
+    const std::string track_name(c_track_name);
     if ( vehicles_lot2016kart.count(vehicle_name) != 0 )
     {
-        compute_optimal_laptime(vehicles_lot2016kart.at(vehicle_name), table_track.at(c_track->name), 
+        compute_optimal_laptime(vehicles_lot2016kart.at(vehicle_name), table_track.at(track_name), 
                                 n_points, s, options);
     }
     else if ( vehicles_limebeer2014f1.count(vehicle_name) != 0 )
     {
-        compute_optimal_laptime(vehicles_limebeer2014f1.at(vehicle_name), table_track.at(c_track->name), 
+        compute_optimal_laptime(vehicles_limebeer2014f1.at(vehicle_name), table_track.at(track_name), 
                                 n_points, s, options);
     }
 }
 
 
-void change_track(const char* c_vehicle_name, const struct c_Track* c_track)
+void change_track(const char* c_vehicle_name, const char* c_track_name)
 {
     const std::string vehicle_name(c_vehicle_name);
+    const std::string track_name(c_track_name);
+    
     if ( vehicles_lot2016kart.count(vehicle_name) != 0 )
     {
-        vehicles_lot2016kart.at(vehicle_name).get_curvilinear_ad_car().get_road().change_track(table_track.at(c_track->name));
-        vehicles_lot2016kart.at(vehicle_name).get_curvilinear_scalar_car().get_road().change_track(table_track.at(c_track->name));
+        vehicles_lot2016kart.at(vehicle_name).get_curvilinear_ad_car().get_road().change_track(table_track.at(track_name));
+        vehicles_lot2016kart.at(vehicle_name).get_curvilinear_scalar_car().get_road().change_track(table_track.at(track_name));
     }
     else if ( vehicles_limebeer2014f1.count(vehicle_name) != 0 )
     {
-        vehicles_limebeer2014f1.at(vehicle_name).get_curvilinear_ad_car().get_road().change_track(table_track.at(c_track->name));
-        vehicles_limebeer2014f1.at(vehicle_name).get_curvilinear_scalar_car().get_road().change_track(table_track.at(c_track->name));
+        vehicles_limebeer2014f1.at(vehicle_name).get_curvilinear_ad_car().get_road().change_track(table_track.at(track_name));
+        vehicles_limebeer2014f1.at(vehicle_name).get_curvilinear_scalar_car().get_road().change_track(table_track.at(track_name));
+    }
+}
+
+
+struct Circuit_preprocessor_configuration
+{
+//  Options:
+//
+//      * Mandatory inputs:
+//          kml_files/left: name of the left kml file
+//          kml_files/right: name of the right kml file
+//          mode: two possible values: equally-spaced, refined (only if_closed == true)
+//          is_closed: true/false
+//          · if is_closed == false: open_track_boundaries_coordinates/start
+//          · if is_closed == false: open_track_boundaries_coordinates/finish
+//          · if mode == equally-spaced: give number_of_elements
+//          . if mode == refined: give mesh_refinement/s and mesh_refinement/ds
+//
+//      * Optional inputs:
+//          xml_file_name: name of the XML file to export the track
+//          save_variables/prefix: prefix used to store the output variables in the table         
+//          insert_table_name: name used to insert the track itself into the table
+    enum Mode { EQUALLY_SPACED, REFINED };
+
+    Circuit_preprocessor_configuration(const char* options)
+    {
+        Xml_document doc;
+        doc.parse(std::string(options));
+
+        // Inputs ----------------------------------------------------------:-
+
+        // Check that KML files are present
+        if ( !doc.has_element("options/kml_files") )       throw std::runtime_error("[ERROR] circuit_preprocessor_validate_options -> missing mandatory node options/kml_files");
+        if ( !doc.has_element("options/kml_files/left") )  throw std::runtime_error("[ERROR] circuit_preprocessor_validate_options -> missing mandatory node options/kml_files/left");
+        if ( !doc.has_element("options/kml_files/right") ) throw std::runtime_error("[ERROR] circuit_preprocessor_validate_options -> missing mandatory node options/kml_files/right");
+
+        kml_file_left = doc.get_element("options/kml_files/left").get_value();
+        kml_file_right = doc.get_element("options/kml_files/right").get_value();
+
+        // Check that the mode is present
+        if ( !doc.has_element("options/mode") ) throw std::runtime_error("[ERROR] circuit_preprocessor_validate_options -> missing mandatory node options/mode");
+
+        std::string mode_str = doc.get_element("options/mode").get_value();
+
+        if      ( mode_str == "equally-spaced" ) mode = EQUALLY_SPACED;
+        else if ( mode_str == "refined"        ) mode = REFINED;
+        else throw std::runtime_error("[ERROR] circuit_preprocessor_validate_options -> invalid value for \"mode\".\nAvailable options are: \"equally-spaced\" and \"refined\"");
+
+        // Check that is_closed is present
+        if ( !doc.has_element("options/is_closed") ) throw std::runtime_error("[ERROR] circuit_preprocessor_validate_options -> missing mandatory node options/is_closed");
+        is_closed = doc.get_element("options/is_closed").get_value(bool());
+
+        // Check that open tracks must be generated with equally spaced nodes
+        if ( !is_closed && (mode == REFINED) ) throw std::runtime_error("[ERROR] circuit_preprocessor_validate_options -> open tracks must be computed with mode=\"equally-spaced\"");
+
+        switch (mode)
+        {
+         // Get number of equally spaced elements
+         case (EQUALLY_SPACED):
+            if ( !doc.has_element("options/number_of_elements") ) throw std::runtime_error("[ERROR] circuit_preprocessor_validate_options -> missing node options/number_of_element, mandatory in equally-spaced mode");
+            n_el = doc.get_element("options/number_of_elements").get_value(int());
+            
+            break;
+
+         // Get arclength distribution if refined
+         case (REFINED):
+            if ( !doc.has_element("options/mesh_refinement") ) throw std::runtime_error("[ERROR] circuit_preprocessor_validate_options -> missing node options/mesh_refinement, mandatory in refined mode");
+            if ( !doc.has_element("options/mesh_refinement/s") ) throw std::runtime_error("[ERROR] circuit_preprocessor_validate_options -> missing node options/mesh_refinement/s, mandatory in refined mode");
+            if ( !doc.has_element("options/mesh_refinement/ds") ) throw std::runtime_error("[ERROR] circuit_preprocessor_validate_options -> missing node options/mesh_refinement/ds, mandatory in refined mode");
+
+            s_distribution = doc.get_element("options/mesh_refinement/s").get_value(std::vector<scalar>()); 
+            ds_distribution = doc.get_element("options/mesh_refinement/ds").get_value(std::vector<scalar>()); 
+
+            break;
+
+         default:
+            throw std::runtime_error("[ERROR] circuit_preprocessor_validate_options -> mode was not recognized");
+        }
+
+    
+        if ( doc.has_element("options/optimization") )
+        {
+            if ( doc.has_element("options/optimization/cost_curvature") ) eps_k = doc.get_element("options/optimization/cost_curvature").get_value(scalar());
+            if ( doc.has_element("options/optimization/cost_track_limits_smoothness") ) 
+                eps_n = doc.get_element("options/optimization/cost_track_limits_smoothness").get_value(scalar());
+            if ( doc.has_element("options/optimization/cost_track_limits_errors") ) 
+                eps_d = doc.get_element("options/optimization/cost_track_limits_errors").get_value(scalar());
+            if ( doc.has_element("options/optimization/cost_curvature") ) eps_c = doc.get_element("options/optimization/cost_curvature").get_value(scalar());
+            if ( doc.has_element("options/optimization/maximum_kappa") )    
+                maximum_kappa = doc.get_element("options/optimization/maximum_kappa").get_value(scalar());
+            if ( doc.has_element("options/optimization/maximum_dkappa") )    
+                maximum_dkappa = doc.get_element("options/optimization/maximum_dkappa").get_value(scalar());
+        }
+
+        if ( doc.has_element("options/print_level") ) print_level = doc.get_element("options/print_level").get_value(scalar());
+
+        // Outputs ---------------------------------------------------:-
+        if ( doc.has_element("options/xml_file_name") )
+        {
+            save_as_xml = true;
+            xml_file_name = doc.get_element("options/xml_file_name").get_value();
+        }
+
+        if ( doc.has_element("options/save_variables") )
+        {
+            save_variables_to_table = true;
+            if ( !doc.has_element("options/save_variables/prefix") ) throw std::runtime_error("[ERROR] circuit_preprocessor_validate_options -> missing node \"options/save_variables/prefix\", mandatory when save_variables is given");
+            save_variables_prefix = doc.get_element("options/save_variables/prefix").get_value();
+        } 
+
+        if ( doc.has_element("options/insert_table_name") )
+        {   
+            save_to_table = true;
+            insert_table_name = doc.get_element("options/insert_table_name").get_value();
+        }
+    }
+
+    // Input options
+    std::string kml_file_left;
+    std::string kml_file_right;
+    Mode mode      = EQUALLY_SPACED;
+    bool is_closed = false;
+    size_t n_el    = 0;
+    std::vector<scalar> s_distribution;
+    std::vector<scalar> ds_distribution;
+
+    scalar eps_d                     = Circuit_preprocessor::Options().eps_d;
+    scalar eps_k                     = Circuit_preprocessor::Options().eps_k;
+    scalar eps_n                     = Circuit_preprocessor::Options().eps_n;
+    scalar eps_c                     = Circuit_preprocessor::Options().eps_c;
+    scalar maximum_kappa             = Circuit_preprocessor::Options().maximum_kappa;
+    scalar maximum_dkappa            = Circuit_preprocessor::Options().maximum_dkappa;
+    scalar maximum_dn                = Circuit_preprocessor::Options().maximum_dn;
+    scalar maximum_distance_find     = Circuit_preprocessor::Options().maximum_distance_find;
+    scalar adaption_aspect_ratio_max = Circuit_preprocessor::Options().adaption_aspect_ratio_max;
+    int print_level                  = 0;
+
+    // Output options
+    bool save_to_table           = false;
+    bool save_as_xml             = false;
+    bool save_variables_to_table = false;
+
+    std::string xml_file_name;
+    std::string save_variables_prefix;
+    std::string insert_table_name;
+};
+
+
+void circuit_preprocessor(const char* options)
+{
+//        Interface to circuit preprocessor
+//        =================================
+    Circuit_preprocessor_configuration conf(options);
+
+    // Read KML files
+    Xml_document kml_file_left(conf.kml_file_left, true);
+    Xml_document kml_file_right(conf.kml_file_right, true);
+
+    // Construct options
+    auto preprocessor_options = Circuit_preprocessor::Options{};
+    preprocessor_options.eps_d = conf.eps_d ;
+    preprocessor_options.eps_k = conf.eps_k ;
+    preprocessor_options.eps_n = conf.eps_n ;
+    preprocessor_options.eps_c = conf.eps_c ;
+
+    preprocessor_options.maximum_kappa = conf.maximum_kappa ;
+    preprocessor_options.maximum_dkappa = conf.maximum_dkappa ;
+    preprocessor_options.maximum_dn     = conf.maximum_dn     ;
+    preprocessor_options.maximum_distance_find = conf.maximum_distance_find ;
+
+    preprocessor_options.adaption_aspect_ratio_max = conf.adaption_aspect_ratio_max ;
+
+    preprocessor_options.print_level = conf.print_level ;
+
+    // (2) Construct circuit
+    Circuit_preprocessor circuit_preprocessor;
+
+    switch (conf.mode)
+    {
+     case (Circuit_preprocessor_configuration::EQUALLY_SPACED):
+        if ( conf.is_closed )
+        {
+            circuit_preprocessor = Circuit_preprocessor(kml_file_left, kml_file_right, preprocessor_options, conf.n_el);
+        }
+        else
+        {
+            throw std::runtime_error("[ERROR] Not implemented");
+        }
+
+        break;
+
+     case (Circuit_preprocessor_configuration::REFINED):
+        circuit_preprocessor = Circuit_preprocessor(kml_file_left, kml_file_right, preprocessor_options, conf.s_distribution, conf.ds_distribution);
+
+        break;
+
+     default:
+        throw std::runtime_error("[ERROR] circuit_preprocessor -> preprocessor mode not recognized");
+    }
+
+    // (3) Handle outputs
+
+    // (3.1) Save track to the table
+    if ( conf.save_to_table )
+    {
+        if ( table_track.count(conf.insert_table_name) != 0 )
+            throw std::runtime_error(std::string("Track \"") + conf.insert_table_name + "\" already exists in the track table");
+
+        table_track.insert({conf.insert_table_name, {circuit_preprocessor}});
+    }
+
+    // (3.2) Save track as XML
+    if ( conf.save_as_xml )
+    {
+        circuit_preprocessor.xml()->save(conf.xml_file_name); 
+    }
+
+    // (3.3) Save variables to table
+    if ( conf.save_variables_to_table )
+    {
+        // (3.3.1) Arclength
+        if ( table_vector.count(conf.save_variables_prefix + "arclength") != 0 )
+            throw std::runtime_error(std::string("Variable \"") + conf.save_variables_prefix + "arclength" + "\" already exists in the vector table");
+
+        table_vector.insert({conf.save_variables_prefix + "arclength", circuit_preprocessor.s});
+
+        // (3.3.2) centerline/x
+        if ( table_vector.count(conf.save_variables_prefix + "centerline/x") != 0 )
+            throw std::runtime_error(std::string("Variable \"") + conf.save_variables_prefix + "centerline/x" + "\" already exists in the vector table");
+
+        std::vector<scalar> centerline_x(circuit_preprocessor.s.size());
+        std::transform(circuit_preprocessor.r_centerline.cbegin(), circuit_preprocessor.r_centerline.cend(), centerline_x.begin(), 
+            [](const auto& r) -> auto { return r.x(); });
+
+        table_vector.insert({conf.save_variables_prefix + "centerline/x", centerline_x});
+        
+        // (3.3.3) centerline/y
+        if ( table_vector.count(conf.save_variables_prefix + "centerline/y") != 0 )
+            throw std::runtime_error(std::string("Variable \"") + conf.save_variables_prefix + "centerline/y" + "\" already exists in the vector table");
+
+        std::vector<scalar> centerline_y(circuit_preprocessor.s.size());
+        std::transform(circuit_preprocessor.r_centerline.cbegin(), circuit_preprocessor.r_centerline.cend(), centerline_y.begin(), 
+            [](const auto& r) -> auto { return r.y(); });
+
+        table_vector.insert({conf.save_variables_prefix + "centerline/y", centerline_y});
+
+        // (3.3.4) left/x
+        if ( table_vector.count(conf.save_variables_prefix + "left/x") != 0 )
+            throw std::runtime_error(std::string("Variable \"") + conf.save_variables_prefix + "left/x" + "\" already exists in the vector table");
+
+        std::vector<scalar> left_x(circuit_preprocessor.s.size());
+        std::transform(circuit_preprocessor.r_left.cbegin(), circuit_preprocessor.r_left.cend(), left_x.begin(), 
+            [](const auto& r) -> auto { return r.x(); });
+
+        table_vector.insert({conf.save_variables_prefix + "left/x", left_x});
+        
+        // (3.3.5) left/y
+        if ( table_vector.count(conf.save_variables_prefix + "left/y") != 0 )
+            throw std::runtime_error(std::string("Variable \"") + conf.save_variables_prefix + "left/y" + "\" already exists in the vector table");
+
+        std::vector<scalar> left_y(circuit_preprocessor.s.size());
+        std::transform(circuit_preprocessor.r_left.cbegin(), circuit_preprocessor.r_left.cend(), left_y.begin(), 
+            [](const auto& r) -> auto { return r.y(); });
+
+        table_vector.insert({conf.save_variables_prefix + "left/y", left_y});
+
+        // (3.3.6) right/x
+        if ( table_vector.count(conf.save_variables_prefix + "right/x") != 0 )
+            throw std::runtime_error(std::string("Variable \"") + conf.save_variables_prefix + "right/x" + "\" already exists in the vector table");
+
+        std::vector<scalar> right_x(circuit_preprocessor.s.size());
+        std::transform(circuit_preprocessor.r_right.cbegin(), circuit_preprocessor.r_right.cend(), right_x.begin(), 
+            [](const auto& r) -> auto { return r.x(); });
+
+        table_vector.insert({conf.save_variables_prefix + "right/x", right_x});
+        
+        // (3.3.7) right/y
+        if ( table_vector.count(conf.save_variables_prefix + "right/y") != 0 )
+            throw std::runtime_error(std::string("Variable \"") + conf.save_variables_prefix + "right/y" + "\" already exists in the vector table");
+
+        std::vector<scalar> right_y(circuit_preprocessor.s.size());
+        std::transform(circuit_preprocessor.r_right.cbegin(), circuit_preprocessor.r_right.cend(), right_y.begin(), 
+            [](const auto& r) -> auto { return r.y(); });
+
+        table_vector.insert({conf.save_variables_prefix + "right/y", right_y});
+
+        // (3.3.8) left_measured/x
+        if ( table_vector.count(conf.save_variables_prefix + "left_measured/x") != 0 )
+            throw std::runtime_error(std::string("Variable \"") + conf.save_variables_prefix + "left_measured/x" + "\" already exists in the vector table");
+
+        std::vector<scalar> left_measured_x(circuit_preprocessor.s.size());
+        std::transform(circuit_preprocessor.r_left_measured.cbegin(), circuit_preprocessor.r_left_measured.cend(), left_measured_x.begin(), 
+            [](const auto& r) -> auto { return r.x(); });
+
+        table_vector.insert({conf.save_variables_prefix + "left_measured/x", left_measured_x});
+        
+        // (3.3.9) left_measured/y
+        if ( table_vector.count(conf.save_variables_prefix + "left_measured/y") != 0 )
+            throw std::runtime_error(std::string("Variable \"") + conf.save_variables_prefix + "left_measured/y" + "\" already exists in the vector table");
+
+        std::vector<scalar> left_measured_y(circuit_preprocessor.s.size());
+        std::transform(circuit_preprocessor.r_left_measured.cbegin(), circuit_preprocessor.r_left_measured.cend(), left_measured_y.begin(), 
+            [](const auto& r) -> auto { return r.y(); });
+
+        table_vector.insert({conf.save_variables_prefix + "left_measured/y", left_measured_y});
+
+        // (3.3.10) right_measured/x
+        if ( table_vector.count(conf.save_variables_prefix + "right_measured/x") != 0 )
+            throw std::runtime_error(std::string("Variable \"") + conf.save_variables_prefix + "right_measured/x" + "\" already exists in the vector table");
+
+        std::vector<scalar> right_measured_x(circuit_preprocessor.s.size());
+        std::transform(circuit_preprocessor.r_right_measured.cbegin(), circuit_preprocessor.r_right_measured.cend(), right_measured_x.begin(), 
+            [](const auto& r) -> auto { return r.x(); });
+
+        table_vector.insert({conf.save_variables_prefix + "right_measured/x", right_measured_x});
+        
+        // (3.3.11) right_measured/y
+        if ( table_vector.count(conf.save_variables_prefix + "right_measured/y") != 0 )
+            throw std::runtime_error(std::string("Variable \"") + conf.save_variables_prefix + "right_measured/y" + "\" already exists in the vector table");
+
+        std::vector<scalar> right_measured_y(circuit_preprocessor.s.size());
+        std::transform(circuit_preprocessor.r_right_measured.cbegin(), circuit_preprocessor.r_right_measured.cend(), right_measured_y.begin(), 
+            [](const auto& r) -> auto { return r.y(); });
+
+        table_vector.insert({conf.save_variables_prefix + "right_measured/y", right_measured_y});
+
+        // (3.3.12) Curvature
+        if ( table_vector.count(conf.save_variables_prefix + "kappa") != 0 )
+            throw std::runtime_error(std::string("Variable \"") + conf.save_variables_prefix + "kappa" + "\" already exists in the vector table");
+
+        table_vector.insert({conf.save_variables_prefix + "kappa", circuit_preprocessor.kappa});
+
+        // (3.3.13) Distance to left
+        if ( table_vector.count(conf.save_variables_prefix + "nl") != 0 )
+            throw std::runtime_error(std::string("Variable \"") + conf.save_variables_prefix + "nl" + "\" already exists in the vector table");
+
+        table_vector.insert({conf.save_variables_prefix + "nl", circuit_preprocessor.nl});
+
+        // (3.3.13) Distance to right
+        if ( table_vector.count(conf.save_variables_prefix + "nr") != 0 )
+            throw std::runtime_error(std::string("Variable \"") + conf.save_variables_prefix + "nr" + "\" already exists in the vector table");
+
+        table_vector.insert({conf.save_variables_prefix + "nr", circuit_preprocessor.nr});
     }
 }
