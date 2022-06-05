@@ -2,14 +2,12 @@
 
 
 ```python
-# Put parent folder in the pythonpath
 import sys,os,inspect
-
 import matplotlib.pyplot as plt
 import numpy as np
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))))
 import fastest_lap
-from fastest_lap import KMH
 ```
 
 
@@ -29,8 +27,6 @@ options += "    </save_variables>"
 options += "</options>"
 
 fastest_lap.circuit_preprocessor(options)
-
-
 ```
 
 
@@ -54,15 +50,12 @@ def plot_turn(i_start,i_end,title):
     nr = fastest_lap.download_vector("track/nr");    
     
     # (2) Generate plots
-#    fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2,figsize=(20,20));
-    
     fig = plt.figure(constrained_layout=True, figsize=(15,11))
     gs = fig.add_gridspec(ncols=2, nrows=3, height_ratios=[4,1,1])
     ax1 = fig.add_subplot(gs[0, 0])
     ax3 = fig.add_subplot(gs[0, 1])    
     ax2 = fig.add_subplot(gs[1, :])    
     ax4 = fig.add_subplot(gs[2, :])    
-
     
     # (2.1) Zoomed GPS
     ax1.plot(x_left[i_start:i_end],y_left[i_start:i_end],'.w',visible='off');
@@ -76,6 +69,7 @@ def plot_turn(i_start,i_end,title):
     ax1.plot(x_left_measured,y_left_measured,'y'); ax1.plot(x_right_measured,y_right_measured,'y'); 
     ax1.set_xlim(xlim); ax1.set_ylim(ylim)
     ax1.set_title('GPS',fontweight='bold',fontsize=32)
+    
     # (2.2) Curvature
     ax2.plot(s[i_start:i_end],kappa[i_start:i_end],'.-w');
     ax2.set_title('curvature',fontweight='bold',fontsize=32)
@@ -94,6 +88,17 @@ def plot_turn(i_start,i_end,title):
 
 ```python
 plot_turn(2*100,2*130,"Turns 1-2");
+plot_turn(2*130,2*180,"Turn 3");
+plot_turn(2*190,2*225,"Turn 4");
+plot_turn(2*240,2*260,"Turn 5");
+plot_turn(2*260,2*280,"Turn 6");
+plot_turn(2*280,2*310,"Turns 7-8");
+plot_turn(2*320,2*345,"Turn 9");
+plot_turn(2*380,2*415,"Turns 10-11");
+plot_turn(2*413,2*440,"Turn 12");
+plot_turn(2*445,2*460,"Turn 13");
+plot_turn(2*460,2*476,"Turns 14-15");
+plot_turn(2*475,2*495,"Turn 16");
 ```
 
 
@@ -103,122 +108,67 @@ plot_turn(2*100,2*130,"Turns 1-2");
 
 
 
-```python
-plot_turn(2*130,2*180,"Turn 3");
-```
-
-
     
-![png](output_5_0.png)
+![png](output_4_1.png)
     
 
 
 
-```python
-plot_turn(2*190,2*225,"Turn 4");
-```
-
-
     
-![png](output_6_0.png)
+![png](output_4_2.png)
     
 
 
 
-```python
-plot_turn(2*240,2*260,"Turn 5")
-```
-
-
     
-![png](output_7_0.png)
+![png](output_4_3.png)
     
 
 
 
-```python
-plot_turn(2*260,2*280,"Turn 6")
-```
-
-
     
-![png](output_8_0.png)
+![png](output_4_4.png)
     
 
 
 
-```python
-plot_turn(2*280,2*310,"Turn 7-8")
-```
-
-
     
-![png](output_9_0.png)
+![png](output_4_5.png)
     
 
 
 
-```python
-plot_turn(2*320,2*345,"Turn 9")
-```
-
-
     
-![png](output_10_0.png)
+![png](output_4_6.png)
     
 
 
 
-```python
-plot_turn(2*380,2*415,"Turns 10-11")
-```
-
-
     
-![png](output_11_0.png)
+![png](output_4_7.png)
     
 
 
 
-```python
-plot_turn(2*413,2*440,"Turn 12")
-```
-
-
     
-![png](output_12_0.png)
+![png](output_4_8.png)
     
 
 
 
-```python
-plot_turn(2*445,2*460,"Turn 13")
-```
-
-
     
-![png](output_13_0.png)
+![png](output_4_9.png)
     
 
 
 
-```python
-plot_turn(2*460,2*476,"Turns 14-15")
-```
-
-
     
-![png](output_14_0.png)
+![png](output_4_10.png)
     
 
 
 
-```python
-plot_turn(2*475,2*495,"Turn 16")
-```
-
-
     
-![png](output_15_0.png)
+![png](output_4_11.png)
     
 
