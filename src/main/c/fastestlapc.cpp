@@ -159,19 +159,6 @@ void create_track(const char* name, const char* track_file, const char* options)
     // Open the track as Xml
     Xml_document track_xml = { track_file, true }; 
 
-    // Read type: open or closed
-    const std::string track_type = track_xml.get_root_element().get_attribute("type");
-    bool is_closed;
-
-    if ( track_type == "closed" )
-        is_closed = true;
-
-    else if ( track_type == "open" )
-        is_closed = false;
-
-    else
-        throw std::runtime_error("Track attribute type \"" + track_type + "\" shall be \"open\" or \"closed\"");
-
     // Read format: only discrete tracks are supported by the C API
     const std::string track_format = track_xml.get_root_element().get_attribute("format");
 
