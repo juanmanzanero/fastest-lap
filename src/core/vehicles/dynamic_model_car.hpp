@@ -22,9 +22,9 @@ void Dynamic_model_car<Timeseries_t,Chassis_t,RoadModel_t,_NSTATE,_NCONTROL>::se
     // (2) Check if the parameter is an optimization parameter, if so, change its value also there.
     if constexpr ( std::is_same_v<T,scalar> || std::is_same_v<T,CppAD::AD<scalar>> )
     {
-        const auto it_p = std::find_if(_parameters.begin(), _parameters.end(), [&](const auto& p) -> auto { return p.get_path() == parameter; });
+        const auto it_p = std::find_if(base_type::get_parameters().begin(), base_type::get_parameters().end(), [&](const auto& p) -> auto { return p.get_path() == parameter; });
 
-        if ( it_p != _parameters.cend() )
+        if ( it_p != base_type::get_parameters().cend() )
             std::fill(it_p->get_values().begin(), it_p->get_values().end(), value);
     }
 }
@@ -38,7 +38,7 @@ std::pair<std::array<Timeseries_t,_NSTATE>,std::array<Timeseries_t,Chassis_t::NA
     std::array<Timeseries_t,NALGEBRAIC> dqa;
 
     // (1) Set the variable parameters
-    for (auto const& parameter : _parameters )
+    for (auto const& parameter : base_type::get_parameters() )
         get_chassis().set_parameter(parameter.get_path(), parameter(t));
 
     // (2) Set state and controls

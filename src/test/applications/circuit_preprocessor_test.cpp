@@ -3,6 +3,95 @@
 
 extern bool is_valgrind;
 
+/*
+TEST(Circuit_preprocessor_test, miami_2000)
+{
+    #ifndef NDEBUG
+          GTEST_SKIP();
+    #endif
+
+    if ( is_valgrind ) GTEST_SKIP();
+
+    Xml_document coord_left_kml("./database/tracks/miami/miami_left.kml", true);
+    Xml_document coord_right_kml("./database/tracks/miami/miami_right.kml", true);
+    
+    Circuit_preprocessor::Options opts;
+    opts.print_level = 5;
+    opts.eps_c *= 5.0;
+    Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, opts, 2000);
+
+    circuit.xml()->save("miami_2000.xml");
+
+    Xml_document solution_saved("./database/tracks/miami/miami_1000.xml", true);
+
+    const std::vector<scalar> s     = solution_saved.get_element("circuit/data/arclength").get_value(std::vector<scalar>());
+    const std::vector<scalar> x     = solution_saved.get_element("circuit/data/centerline/x").get_value(std::vector<scalar>());
+    const std::vector<scalar> y     = solution_saved.get_element("circuit/data/centerline/y").get_value(std::vector<scalar>());
+    const std::vector<scalar> theta = solution_saved.get_element("circuit/data/theta").get_value(std::vector<scalar>());
+    const std::vector<scalar> kappa = solution_saved.get_element("circuit/data/kappa").get_value(std::vector<scalar>());
+    const std::vector<scalar> nl    = solution_saved.get_element("circuit/data/nl").get_value(std::vector<scalar>());
+    const std::vector<scalar> nr    = solution_saved.get_element("circuit/data/nr").get_value(std::vector<scalar>());
+    const std::vector<scalar> dkappa = solution_saved.get_element("circuit/data/dkappa").get_value(std::vector<scalar>());
+    const std::vector<scalar> dnl    = solution_saved.get_element("circuit/data/dnl").get_value(std::vector<scalar>());
+    const std::vector<scalar> dnr    = solution_saved.get_element("circuit/data/dnr").get_value(std::vector<scalar>());
+
+    EXPECT_EQ(circuit.n_points,700);
+    EXPECT_EQ(circuit.r_centerline.size(),700);
+    EXPECT_EQ(circuit.theta.size(),700);
+    EXPECT_EQ(circuit.kappa.size(),700);
+    EXPECT_EQ(circuit.nl.size(),700);
+    EXPECT_EQ(circuit.nr.size(),700);
+    EXPECT_EQ(circuit.dkappa.size(),700);
+    EXPECT_EQ(circuit.dnl.size(),700);
+    EXPECT_EQ(circuit.dnr.size(),700);
+
+    // compare centerline
+    for (size_t i = 0; i < circuit.n_points; ++i)
+    {
+        EXPECT_NEAR(circuit.r_centerline[i].x(), x[i]     , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.r_centerline[i].y(), y[i]     , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.theta[i]           , theta[i] , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.kappa[i]           , kappa[i] , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.nl[i]              , nl[i]    , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.nr[i]              , nr[i]    , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.dkappa[i]          , dkappa[i], 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.dnl[i]             , dnl[i]   , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.dnr[i]             , dnr[i]   , 1.0e-8) << " with i = " << i;
+    }
+
+    for (size_t i = 0; i < circuit.n_points-1; ++i)
+    {
+        EXPECT_NEAR(circuit.r_centerline[i+1].x()-circuit.r_centerline[i].x(), 
+                    (circuit.s[i+1]-circuit.s[i])*0.5*(cos(circuit.theta[i])+cos(circuit.theta[i+1])), 1.0e-7);
+        EXPECT_NEAR(circuit.r_centerline[i+1].y()-circuit.r_centerline[i].y(), 
+                    (circuit.s[i+1]-circuit.s[i])*0.5*(sin(circuit.theta[i])+sin(circuit.theta[i+1])), 1.0e-7);
+    }
+
+
+
+    // Check that the reference coordinates are recovered
+    std::vector<scalar> coord_left  = coord_left_kml.get_element("kml/Document/Placemark/LineString/coordinates").get_value(std::vector<scalar>());
+    std::vector<scalar> coord_right = coord_right_kml.get_element("kml/Document/Placemark/LineString/coordinates").get_value(std::vector<scalar>());
+
+    EXPECT_EQ(circuit.r_left_measured.size()*3, coord_left.size());
+    EXPECT_EQ(circuit.r_right_measured.size()*3, coord_right.size());
+
+    scalar theta0 = coord_right[0];
+    scalar phi0 = coord_right[1];
+
+    for (size_t i = 0; i < circuit.r_left_measured.size(); ++i)
+    {
+        scalar lon = coord_left[3*i];
+        scalar lat = coord_left[3*i+1];
+    
+        EXPECT_DOUBLE_EQ(lon, circuit.r_left_measured[i].x()/(circuit.R_earth*cos(phi0*DEG))*RAD + theta0);
+        EXPECT_DOUBLE_EQ(lat, circuit.r_left_measured[i].y()/(circuit.R_earth)*RAD + phi0);
+    }
+}
+*/
+
+
+
 TEST(Circuit_preprocessor_test, museo_closed)
 {
     Xml_document coord_left_kml("./database/tracks/fa_museo/Museo_short_left.kml", true);
@@ -498,6 +587,7 @@ TEST(Circuit_preprocessor_test, catalunya_adapted_by_coords)
     }
 }
 
+
 TEST(Circuit_preprocessor_test, catalunya_adapted_by_ds_distribution)
 {
     #ifndef NDEBUG
@@ -786,5 +876,105 @@ TEST(Circuit_preprocessor_test, imola_adapted)
     }
 }
 
+TEST(Circuit_preprocessor_test, catalunya_2022_adapted)
+{
+    #ifndef NDEBUG
+        GTEST_SKIP();
+    #endif
+
+    if ( is_valgrind ) GTEST_SKIP();
+
+    Xml_document coord_left_kml("./database/tracks/catalunya_2022/catalunya_2022_left.kml", true);
+    Xml_document coord_right_kml("./database/tracks/catalunya_2022/catalunya_2022_right.kml", true);
+
+    std::vector<scalar> s_distr = {0.0};
+
+    while (s_distr.back() < 5000.0 )
+        s_distr.push_back(s_distr.back() + 4.5);
+
+    std::vector<scalar> ds_distr(s_distr.size());
+    for (size_t i = 0; i < s_distr.size(); ++i)
+    {
+        ds_distr[i] = 9.0;
+        if (s_distr[i] > 950.0 && s_distr[i] < 1200.0)
+            ds_distr[i] = 4.5;
+
+        if (s_distr[i] > 1150.0 && s_distr[i] < 1418.0)
+            ds_distr[i] = 4.5;
+
+        if (s_distr[i] > 3633.17 && s_distr[i] < 3850.0)
+            ds_distr[i] = 4.5;
+
+        if (s_distr[i] > 4050.0 && s_distr[i] < 4430.0)
+            ds_distr[i] = 2.5;
+    }
 
 
+    Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, {}, s_distr, ds_distr);
+
+    circuit.xml();
+
+    Xml_document solution_saved("./database/tracks/catalunya_2022/catalunya_2022_adapted.xml", true);
+
+    const std::vector<scalar> s     = solution_saved.get_element("circuit/data/arclength").get_value(std::vector<scalar>());
+    const std::vector<scalar> x     = solution_saved.get_element("circuit/data/centerline/x").get_value(std::vector<scalar>());
+    const std::vector<scalar> y     = solution_saved.get_element("circuit/data/centerline/y").get_value(std::vector<scalar>());
+    const std::vector<scalar> theta = solution_saved.get_element("circuit/data/theta").get_value(std::vector<scalar>());
+    const std::vector<scalar> kappa = solution_saved.get_element("circuit/data/kappa").get_value(std::vector<scalar>());
+    const std::vector<scalar> nl    = solution_saved.get_element("circuit/data/nl").get_value(std::vector<scalar>());
+    const std::vector<scalar> nr    = solution_saved.get_element("circuit/data/nr").get_value(std::vector<scalar>());
+    const std::vector<scalar> dkappa = solution_saved.get_element("circuit/data/dkappa").get_value(std::vector<scalar>());
+    const std::vector<scalar> dnl    = solution_saved.get_element("circuit/data/dnl").get_value(std::vector<scalar>());
+    const std::vector<scalar> dnr    = solution_saved.get_element("circuit/data/dnr").get_value(std::vector<scalar>());
+
+    EXPECT_EQ(circuit.n_points,700);
+    EXPECT_EQ(circuit.r_centerline.size(),700);
+    EXPECT_EQ(circuit.theta.size(),700);
+    EXPECT_EQ(circuit.kappa.size(),700);
+    EXPECT_EQ(circuit.nl.size(),700);
+    EXPECT_EQ(circuit.nr.size(),700);
+    EXPECT_EQ(circuit.dkappa.size(),700);
+    EXPECT_EQ(circuit.dnl.size(),700);
+    EXPECT_EQ(circuit.dnr.size(),700);
+
+    // compare centerline
+    for (size_t i = 0; i < circuit.n_points; ++i)
+    {
+        EXPECT_NEAR(circuit.r_centerline[i].x(), x[i]     , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.r_centerline[i].y(), y[i]     , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.theta[i]           , theta[i] , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.kappa[i]           , kappa[i] , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.nl[i]              , nl[i]    , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.nr[i]              , nr[i]    , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.dkappa[i]          , dkappa[i], 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.dnl[i]             , dnl[i]   , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.dnr[i]             , dnr[i]   , 1.0e-8) << " with i = " << i;
+    }
+
+    for (size_t i = 0; i < circuit.n_points-1; ++i)
+    {
+        EXPECT_NEAR(circuit.r_centerline[i+1].x()-circuit.r_centerline[i].x(), 
+                    (circuit.s[i+1]-circuit.s[i])*0.5*(cos(circuit.theta[i])+cos(circuit.theta[i+1])), 1.0e-7);
+        EXPECT_NEAR(circuit.r_centerline[i+1].y()-circuit.r_centerline[i].y(), 
+                    (circuit.s[i+1]-circuit.s[i])*0.5*(sin(circuit.theta[i])+sin(circuit.theta[i+1])), 1.0e-7);
+    }
+
+    // Check that the reference coordinates are recovered
+    std::vector<scalar> coord_left  = coord_left_kml.get_element("kml/Document/Placemark/LineString/coordinates").get_value(std::vector<scalar>());
+    std::vector<scalar> coord_right = coord_right_kml.get_element("kml/Document/Placemark/LineString/coordinates").get_value(std::vector<scalar>());
+
+    EXPECT_EQ(circuit.r_left_measured.size()*3, coord_left.size());
+    EXPECT_EQ(circuit.r_right_measured.size()*3, coord_right.size());
+
+    scalar theta0 = coord_right[0];
+    scalar phi0 = coord_right[1];
+
+    for (size_t i = 0; i < circuit.r_left_measured.size(); ++i)
+    {
+        scalar lon = coord_left[3*i];
+        scalar lat = coord_left[3*i+1];
+    
+        EXPECT_DOUBLE_EQ(lon, circuit.r_left_measured[i].x()/(circuit.R_earth*cos(phi0*DEG))*RAD + theta0);
+        EXPECT_DOUBLE_EQ(lat, circuit.r_left_measured[i].y()/(circuit.R_earth)*RAD + phi0);
+    }
+}

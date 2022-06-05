@@ -22,6 +22,10 @@ class Optimal_laptime
         size_t maximum_iterations = 3000;
         bool   throw_if_fail = true;
         bool   check_optimality = false;
+        bool   retape = false;
+        scalar nlp_tolerance = 1.0e-10;
+        scalar constraints_viol_tolerance = 1.0e-10;
+        scalar acceptable_tolerance = 1.0e-8;
     };
 
     //! Helper classes to encapsulate control variables ---------------------------------------------:-

@@ -1,8 +1,4 @@
-if ( MSYS AND ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-    set(CONSTRUCT_LIBFASTESTLAPC OFF)
-else()
     set(CONSTRUCT_LIBFASTESTLAPC ON)
-endif()
     
 if ( ${CONSTRUCT_LIBFASTESTLAPC} )
     add_library(fastestlapc SHARED ./fastestlapc.cpp)

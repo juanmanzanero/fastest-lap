@@ -138,6 +138,9 @@ class Chassis
     //! Get understeer(<0) or oversteer(>0) indicator
     Timeseries_t get_understeer_oversteer_indicator() const;
 
+    //! Get the drag coefficient
+    const Timeseries_t& get_drag_coefficient() const { return _cd; }
+
     //! Add an additional external force
     //! @param[in] F: force to be added [N]
     constexpr void set_external_force(const Vector3d<Timeseries_t>& F) { _Fext = F; } 

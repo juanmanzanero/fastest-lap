@@ -539,27 +539,29 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
     // (8) Run optimization
 
     // (8.1) Prepare options
-    std::string ipoptoptions;
-    ipoptoptions += "Integer print_level  ";
-    ipoptoptions += std::to_string(options.print_level);
-    ipoptoptions += "\n";
-    ipoptoptions += "Integer max_iter ";
-    ipoptoptions += std::to_string(options.maximum_iterations);
-    ipoptoptions += "\n";
-    ipoptoptions += "String  sb           yes\n";
-    ipoptoptions += "Sparse true forward\n";
-    ipoptoptions += "Numeric tol          1e-10\n";
-    ipoptoptions += "Numeric constr_viol_tol  1e-10\n";
-    ipoptoptions += "Numeric acceptable_tol  1e-8\n";
+    std::ostringstream ipoptoptions; ipoptoptions << std::setprecision(17);
+    ipoptoptions << "Integer print_level " << options.print_level << std::endl;
+    ipoptoptions << "Integer max_iter " << options.maximum_iterations << std::endl;
+    ipoptoptions << "String  sb           yes\n";
+    ipoptoptions << "Sparse true forward\n";
+
+    if ( options.retape )
+    {
+        ipoptoptions << "Retape true\n";
+    }
+
+    ipoptoptions << "Numeric tol "             << options.nlp_tolerance              << std::endl;
+    ipoptoptions << "Numeric constr_viol_tol " << options.constraints_viol_tolerance << std::endl;
+    ipoptoptions << "Numeric acceptable_tol "  << options.acceptable_tolerance       << std::endl;
 
     // (8.2) Return object
     CppAD::ipopt_cppad_result<std::vector<scalar>> result;
 
     // (8.3) Solve the problem
     if ( !warm_start )
-        CppAD::ipopt_cppad_solve<std::vector<scalar>, FG_direct<isClosed>>(ipoptoptions, x0, x_lb, x_ub, c_lb, c_ub, fg, result);
+        CppAD::ipopt_cppad_solve<std::vector<scalar>, FG_direct<isClosed>>(ipoptoptions.str(), x0, x_lb, x_ub, c_lb, c_ub, fg, result);
     else
-        CppAD::ipopt_cppad_solve<std::vector<scalar>, FG_direct<isClosed>>(ipoptoptions, x0, x_lb, x_ub, c_lb, c_ub, 
+        CppAD::ipopt_cppad_solve<std::vector<scalar>, FG_direct<isClosed>>(ipoptoptions.str(), x0, x_lb, x_ub, c_lb, c_ub, 
             optimization_data.lambda, optimization_data.zl, optimization_data.zu, fg, result);
     
 
@@ -1018,27 +1020,31 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
     // (8) Run optimization
 
     // (8.1) Prepare options
-    std::string ipoptoptions;
-    ipoptoptions += "Integer print_level  ";
-    ipoptoptions += std::to_string(options.print_level);
-    ipoptoptions += "\n";
-    ipoptoptions += "String  sb           yes\n";
-    ipoptoptions += "Sparse true forward\n";
-    ipoptoptions += "Numeric tol          1e-10\n";
-    ipoptoptions += "Numeric constr_viol_tol  1e-10\n";
-    ipoptoptions += "Numeric acceptable_tol  1e-8\n";
+    std::ostringstream ipoptoptions; ipoptoptions << std::setprecision(17);
+    ipoptoptions << "Integer print_level " << options.print_level        << std::endl;
+    ipoptoptions << "Integer max_iter "    << options.maximum_iterations << std::endl;
+    ipoptoptions << "String  sb           yes\n";
+    ipoptoptions << "Sparse true forward\n";
+
+    if ( options.retape )
+    {
+        ipoptoptions << "Retape true\n";
+    }
+
+    ipoptoptions << "Numeric tol "             << options.nlp_tolerance              << std::endl;
+    ipoptoptions << "Numeric constr_viol_tol " << options.constraints_viol_tolerance << std::endl;
+    ipoptoptions << "Numeric acceptable_tol "  << options.acceptable_tolerance       << std::endl;
 
     // (8.2) Return object
     CppAD::ipopt_cppad_result<std::vector<scalar>> result;
 
     // (8.3) Solve the problem
     if ( !warm_start )
-        CppAD::ipopt_cppad_solve<std::vector<scalar>, FG_derivative<isClosed>>(ipoptoptions, x0, x_lb, x_ub, c_lb, c_ub, fg, result);
+        CppAD::ipopt_cppad_solve<std::vector<scalar>, FG_derivative<isClosed>>(ipoptoptions.str(), x0, x_lb, x_ub, c_lb, c_ub, fg, result);
     else
-        CppAD::ipopt_cppad_solve<std::vector<scalar>, FG_derivative<isClosed>>(ipoptoptions, x0, x_lb, x_ub, c_lb, c_ub, 
+        CppAD::ipopt_cppad_solve<std::vector<scalar>, FG_derivative<isClosed>>(ipoptoptions.str(), x0, x_lb, x_ub, c_lb, c_ub, 
             optimization_data.lambda, optimization_data.zl, optimization_data.zu, fg, result);
  
-
     // (8.4) Check success flag
     success = result.status == CppAD::ipopt_cppad_result<std::vector<scalar>>::success; 
     iter_count = result.iter_count;

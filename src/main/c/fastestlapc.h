@@ -80,6 +80,9 @@ extern fastestlapc_API void set_matrix_parameter(const char* vehicle_name, const
 
 extern fastestlapc_API void vehicle_declare_new_constant_parameter(const char* c_vehicle_name, const char* parameter_path, const char* parameter_alias, const double parameter_value);
 
+extern fastestlapc_API void vehicle_declare_new_variable_parameter(const char* c_vehicle_name, const char* parameter_path, const char* parameter_alias, const int n_parameters, const double* parameter_values,
+    const int mesh_size, const int* mesh_parameter_indexes, const double* mesh_points);
+
 extern fastestlapc_API void change_track(const char* c_vehicle, const struct c_Track* c_track);
 
 // Applications --------------------------------------------------------------------------------------------------------

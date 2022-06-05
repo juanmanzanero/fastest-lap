@@ -2,6 +2,7 @@
 #include <iostream>
 #include <unordered_map>
 #include <algorithm>
+#include <regex>
 
 #include "src/core/vehicles/lot2016kart.h"
 #include "src/core/vehicles/limebeer2014f1.h"
@@ -636,7 +637,7 @@ void print_tables()
     std::cout << "Table vector: " << table_scalar.size() << " vectors" << std::endl;
 
     for (const auto& vec : table_vector)
-        std::cout << "    -> " << vec.first.size() << std::endl;
+        std::cout << "    -> " << vec.first << " (" << vec.second.size() << ")" << std::endl;
 }
 
 
@@ -699,6 +700,47 @@ void vehicle_declare_new_constant_parameter(const char* c_vehicle_name, const ch
     else if ( vehicles_lot2016kart.count(vehicle_name) != 0)
     {
         vehicles_lot2016kart.at(vehicle_name).add_parameter(std::string(parameter_path), std::string(parameter_alias), parameter_value);
+    }
+    else
+        throw std::runtime_error("Vehicle type not recognized");
+}
+
+void vehicle_declare_new_variable_parameter(const char* c_vehicle_name, const char* c_parameter_path, const char* c_parameter_alias, const int n_parameters, const double* c_parameter_values,
+    const int mesh_size, const int* c_mesh_parameter_indexes, const double* c_mesh_points) 
+{
+    // (1) Transform C to C++ inputs
+    const std::string vehicle_name(c_vehicle_name);
+    const std::string parameter_alias(c_parameter_alias);
+    const std::string parameter_path(c_parameter_path);
+    const std::vector<scalar> parameter_values(c_parameter_values, c_parameter_values + n_parameters);
+    std::vector<std::pair<scalar,size_t>> mesh(mesh_size);
+
+    for (size_t i = 0; i < static_cast<size_t>(mesh_size); ++i)
+    {
+        mesh[i] = std::make_pair(c_mesh_points[i], static_cast<size_t>(c_mesh_parameter_indexes[i]));
+    }
+
+    // (2) Unwrap the parameter aliases into a vector of aliases. They are separated as key1;key2;key3
+    std::regex exp("\\S(.*?);");
+    std::smatch res;
+    std::string::const_iterator searchStart( parameter_alias.cbegin() );
+    std::vector<std::string> parameter_aliases;
+    while ( std::regex_search( searchStart, parameter_alias.cend(), res, exp ) )
+    {
+        std::string parameter_name_found = std::string(res[0]); parameter_name_found.pop_back();
+        parameter_aliases.push_back(parameter_name_found);
+        searchStart = res.suffix().first;
+    }
+    parameter_aliases.push_back(std::regex_replace(std::string(searchStart , parameter_alias.cend()), std::regex("^ +| +$|( ) +"), "$1"));
+
+    // (3) Create the parameter
+    if ( vehicles_limebeer2014f1.count(vehicle_name) != 0 )
+    {
+        vehicles_limebeer2014f1.at(vehicle_name).add_parameter(parameter_path, parameter_aliases, parameter_values, mesh);
+    }
+    else if ( vehicles_lot2016kart.count(vehicle_name) != 0)
+    {
+        vehicles_lot2016kart.at(vehicle_name).add_parameter(parameter_path, parameter_aliases, parameter_values, mesh);
     }
     else
         throw std::runtime_error("Vehicle type not recognized");
@@ -937,6 +979,8 @@ struct Optimal_laptime_configuration
 
         if ( doc.has_element("options/sigma") ) sigma = doc.get_element("options/sigma").get_value(scalar());
 
+        if ( doc.has_element("options/compute_sensitivity") ) compute_sensitivity = doc.get_element("options/compute_sensitivity").get_value(bool());
+
         // Prepare control variables
         if ( doc.has_element("options/control_variables") )
         {
@@ -994,6 +1038,7 @@ struct Optimal_laptime_configuration
     bool is_direct                    = get_default_is_direct();// Compute direct simulation
     bool is_closed                    = true;                   // Compute closed simulation
     bool set_initial_condition        = false;                  // If an initial condition has to be set
+    bool compute_sensitivity          = false;                  // To compute sensitivity w.r.t. parameters
     scalar sigma                      = 0.5;                    // Scheme used (0.5:Crank Nicolson, 1.0:Implicit Euler)
     std::string save_variables_prefix = "run/";                 // Prefix used to save the variables in the table
     std::vector<std::string> variables_to_save{};               // Variables chosen to be saved
@@ -1120,8 +1165,9 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
     std::vector<scalar> arclength(s,s+n_points);
     Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear> opt_laptime;
     typename Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>::Options opts;
-    opts.print_level = conf.print_level;
-    opts.sigma       = conf.sigma;
+    opts.print_level      = conf.print_level;
+    opts.sigma            = conf.sigma;
+    opts.check_optimality = conf.compute_sensitivity;
 
     // (5.2.a) Start from steady-state
     if ( !conf.warm_start )
@@ -1173,7 +1219,8 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
             throw std::runtime_error(std::string("Variable \"") + conf.save_variables_prefix + variable_name + "\" already exists in the vector table");
 
         bool is_vector = true;
-        const auto parameter_aliases = car_curv_sc.get_parameters().get_all_parameters_aliases(); 
+        const auto& car_curv_sc_const = car_curv_sc;
+        const auto parameter_aliases = car_curv_sc_const.get_parameters().get_all_parameters_aliases(); 
 
         // Scalar variables
         if ( variable_name == "laptime" )
@@ -1182,7 +1229,7 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
             is_vector = false;
 
             // Save the derivative w.r.t. the parameters
-            for (size_t i = 0; i < car_curv_sc.get_parameters().get_number_of_parameters(); ++i)
+            for (size_t i = 0; i < car_curv_sc_const.get_parameters().get_number_of_parameters(); ++i)
             {
                 table_scalar.insert({conf.save_variables_prefix + "derivatives/" + variable_name + "/" + parameter_aliases[i], opt_laptime.dlaptimedp[i]});
             }
@@ -1192,7 +1239,7 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
         if ( is_vector ) 
         {
             std::vector<scalar> data(n_points,0.0);
-            std::vector<std::vector<scalar>> ddatadp(car_curv_sc.get_parameters().get_number_of_parameters(), std::vector<scalar>(n_points,0.0)); 
+            std::vector<std::vector<scalar>> ddatadp(car_curv_sc_const.get_parameters().get_number_of_parameters(), std::vector<scalar>(n_points,0.0)); 
             for (int i = 0; i < n_points; ++i)
             {
                 car_curv_sc(opt_laptime.q[i], opt_laptime.qa[i], opt_laptime.control_variables.control_array_at_s(car_curv,i,s[i]), s[i]);
@@ -1216,7 +1263,7 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
                 {
                     data[i] = opt_laptime.q[i][vehicle_t::vehicle_scalar_curvilinear::Chassis_type::IU];
     
-                    for (size_t p = 0; p < car_curv_sc.get_parameters().get_number_of_parameters(); ++p)
+                    for (size_t p = 0; p < car_curv_sc_const.get_parameters().get_number_of_parameters(); ++p)
                     {
                         ddatadp[p][i] = opt_laptime.dqdp[p][i][vehicle_t::vehicle_scalar_curvilinear::Chassis_type::IU];
                     }
@@ -1364,6 +1411,11 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
                 {
                     data[i] = car_curv_sc.get_chassis().get_understeer_oversteer_indicator();
                 }
+
+                else if ( variable_name == "chassis.aerodynamics.cd" )
+                {       
+                    data[i] = car_curv_sc.get_chassis().get_drag_coefficient();
+                }
                 else
                 {
                     throw std::runtime_error("Variable \"" + variable_name + "\" is not defined");
@@ -1375,7 +1427,7 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
             table_vector.insert({conf.save_variables_prefix + variable_name, data});
 
             // Insert derivatives in the table
-            for (size_t p = 0; p < car_curv_sc.get_parameters().get_number_of_parameters(); ++p)
+            for (size_t p = 0; p < car_curv_sc_const.get_parameters().get_number_of_parameters(); ++p)
                 table_vector.insert({conf.save_variables_prefix + "derivatives/" + variable_name + "/" + parameter_aliases[p], ddatadp[p]});
         }
     }
