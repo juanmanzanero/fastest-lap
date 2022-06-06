@@ -72,7 +72,7 @@ else()
 	file(RELATIVE_PATH libdir_python ${CMAKE_SOURCE_DIR}/examples/python/ ${CMAKE_BINARY_DIR}/lib)
 endif()
 
-if ( MSYS AND ${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+if ( MSYS AND ${CMAKE_BUILD_TYPE} AND ${CMAKE_BUILD_TYPE} STREQUAL "Debug" )
     set(CONSTRUCT_LIBFASTESTLAPC OFF)
 else()
     set(CONSTRUCT_LIBFASTESTLAPC ON)
