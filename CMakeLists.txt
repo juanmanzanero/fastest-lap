@@ -50,6 +50,10 @@ if("${isSystemDir}" STREQUAL "-1")
     set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 endif("${isSystemDir}" STREQUAL "-1")
 
+# default build type is Release
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
 
 message("	Configure Fastest-lap")
 message("	=====================")
@@ -72,7 +76,7 @@ else()
 	file(RELATIVE_PATH libdir_python ${CMAKE_SOURCE_DIR}/examples/python/ ${CMAKE_BINARY_DIR}/lib)
 endif()
 
-if ( MSYS AND ${CMAKE_BUILD_TYPE} AND ${CMAKE_BUILD_TYPE} STREQUAL "Debug" )
+if ( MSYS AND ${CMAKE_BUILD_TYPE} STREQUAL "Debug" )
     set(CONSTRUCT_LIBFASTESTLAPC OFF)
 else()
     set(CONSTRUCT_LIBFASTESTLAPC ON)
