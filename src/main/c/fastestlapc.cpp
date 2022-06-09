@@ -875,6 +875,12 @@ struct Optimal_laptime_configuration
     //          <print_level> 5 </print_level>
     //          <initial_speed> 50.0 </initial_speed>
     //          <sigma> 0.5 </sigma>
+    //          <integral_constraints>
+    //              <variable_name>
+    //                  <lower_bound/>
+    //                  <upper_bound/>
+    //              </variable_name>
+    //          </integral_constraints>
     //          <save_variables>
     //              <prefix> run/ </prefix>
     //              <variables>
@@ -1005,6 +1011,17 @@ struct Optimal_laptime_configuration
             } 
 
         }
+
+        // Prepare integral constraints
+        if ( doc.has_element("options/integral_constraints") )
+        {
+            for (auto& variable : doc.get_element("options/integral_constraints").get_children() )
+            {
+                integral_constraints.push_back({variable.get_name(), 
+                                                variable.get_child("lower_bound").get_value(scalar()),
+                                                variable.get_child("upper_bound").get_value(scalar())});
+            }
+        }
     } 
  
     bool warm_start                   = false;                  // Use warm start
@@ -1020,6 +1037,7 @@ struct Optimal_laptime_configuration
     scalar sigma                      = 0.5;                    // Scheme used (0.5:Crank Nicolson, 1.0:Implicit Euler)
     std::string save_variables_prefix = "run/";                 // Prefix used to save the variables in the table
     std::vector<std::string> variables_to_save{};               // Variables chosen to be saved
+    std::vector<std::tuple<std::string,scalar,scalar>> integral_constraints;
 
     // Control variables definition
     std::array<std::string,vehicle_t::vehicle_ad_curvilinear::NCONTROL> control_type = get_default_control_types();
@@ -1142,10 +1160,20 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
     // (5.1) Get arclength
     std::vector<scalar> arclength(s,s+n_points);
     Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear> opt_laptime;
+
+    // (5.2) Write options
     typename Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>::Options opts;
     opts.print_level      = conf.print_level;
     opts.sigma            = conf.sigma;
     opts.check_optimality = conf.compute_sensitivity;
+
+    for (auto& integral_constraint : conf.integral_constraints)
+    {
+        opts.integral_quantities.push_back({std::get<0>(integral_constraint), 
+                                            std::get<1>(integral_constraint),
+                                            std::get<2>(integral_constraint)});
+    }
+    
 
     // (5.2.a) Start from steady-state
     if ( !conf.warm_start )
@@ -1211,6 +1239,32 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
             {
                 table_scalar.insert({conf.save_variables_prefix + "derivatives/" + variable_name + "/" + parameter_aliases[i], opt_laptime.dlaptimedp[i]});
             }
+        }
+        else if ( variable_name.find("integral_quantities.") == 0 )
+        {
+            // (6.2.1) Get the variable
+            std::string integral_quantity_name = variable_name;
+            integral_quantity_name.erase(0, std::string("integral_quantities.").length());
+    
+            // (6.2.2) Look for the variable in the list
+            const auto it = std::find(vehicle_t::vehicle_ad_curvilinear::Integral_quantities::names.cbegin(), 
+                                      vehicle_t::vehicle_ad_curvilinear::Integral_quantities::names.cend(),
+                                      integral_quantity_name);
+
+            if (it == vehicle_t::vehicle_ad_curvilinear::Integral_quantities::names.cend())
+            {
+                std::ostringstream s_out;
+                s_out << "[ERROR] Requested integral constraint was not found." << std::endl;
+                s_out << "[ERROR] Available options are: " << vehicle_t::vehicle_ad_curvilinear::Integral_quantities::names;
+                throw std::runtime_error(s_out.str()); 
+            }
+
+            // (6.2.3) Fill the integral constraint information
+            const size_t index = std::distance(vehicle_t::vehicle_ad_curvilinear::Integral_quantities::names.cbegin(),it);
+
+            table_scalar.insert({conf.save_variables_prefix + variable_name, opt_laptime.integral_quantities[index].value});
+
+            is_vector = false;
         }
 
         // Vector variables

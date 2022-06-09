@@ -47,6 +47,8 @@ class Engine
 
     constexpr const scalar& gear_ratio() const { return _gear_ratio; }
 
+    const Timeseries_t& get_power() const { return _power; }
+
  private:
     std::string _path;
 
@@ -57,6 +59,9 @@ class Engine
     bool _only_max_power;
 
     Timeseries_t _maximum_power;      
+
+    // Variables
+    Timeseries_t _power;
 
     DECLARE_PARAMS({ "maximum-power", _maximum_power }); 
 };

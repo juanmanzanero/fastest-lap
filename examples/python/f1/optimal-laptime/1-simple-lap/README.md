@@ -6,7 +6,7 @@
 import sys,os,inspect
 
 import matplotlib.pyplot as plt
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))))))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))))))
 import fastest_lap
 from fastest_lap import KMH
 ```
@@ -15,31 +15,49 @@ from fastest_lap import KMH
 ```python
 # Load vehicle
 vehicle = "car"
-fastest_lap.load_vehicle(vehicle,"limebeer-2014-f1","../../../../database/vehicles/f1/mercedes-2020-catalunya.xml");
+fastest_lap.load_vehicle(vehicle,"limebeer-2014-f1","../../../../../database/vehicles/f1/mercedes-2020-catalunya.xml");
 ```
 
 
 ```python
 # Load track
 track="catalunya"
-s=fastest_lap.load_track("../../../../database/tracks/catalunya/catalunya_adapted.xml",track);
+s=fastest_lap.load_track("../../../../../database/tracks/catalunya/catalunya_adapted.xml",track);
 ```
 
 
 ```python
 # Compute optimal laptime
-data = fastest_lap.optimal_laptime(vehicle,track,s,["x","y","delta","throttle","u","s","time","psi","omega","v"]);
-x        = data["x"];
-y        = data["y"];
-delta    = data["delta"];
-throttle = data["throttle"];
-u        = data["u"]
-s        = data["s"]
-time     = data["time"]
-psi      = data["psi"]
-omega    = data["omega"]
-v        = data["v"]
+options  = "<options>"
+options += "    <save_variables>"
+options += "        <prefix>run/</prefix>"
+options += "        <variables>"
+options += "            <x/>"
+options += "            <y/>"
+options += "            <delta/>"
+options += "            <throttle/>"
+options += "            <u/>"
+options += "            <s/>"
+options += "            <time/>"
+options += "            <psi/>"
+options += "            <omega/>"
+options += "            <v/>"
+options += "        </variables>"
+options += "    </save_variables>"
+options += "    <print_level> 5 </print_level>"
+options += "</options>"
 
+fastest_lap.optimal_laptime(vehicle,track,s,options);
+x        = fastest_lap.download_vector("run/x");
+y        = fastest_lap.download_vector("run/y");
+delta    = fastest_lap.download_vector("run/delta");
+throttle = fastest_lap.download_vector("run/throttle");
+u        = fastest_lap.download_vector("run/u");
+s        = fastest_lap.download_vector("run/s");
+time     = fastest_lap.download_vector("run/time");
+psi      = fastest_lap.download_vector("run/psi");
+omega    = fastest_lap.download_vector("run/omega");
+v       = fastest_lap.download_vector("run/v");
 
 ```
 
@@ -303,3 +321,8 @@ plt.gca().set_aspect('equal')
 ![png](output_16_4.png)
     
 
+
+
+```python
+
+```

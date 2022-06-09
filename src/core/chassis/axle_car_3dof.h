@@ -175,6 +175,9 @@ class Axle_car_3dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
     //! @param[in] tire: which tire (LEFT/RIGHT)
     const Vector3d<Timeseries_t> get_tire_velocity(Tires tire) const { return {0.0,0.0,0.0}; }
 
+    //! Get the engine
+    const Engine<Timeseries_t>& get_engine() const { return _engine; }
+
     //! Get a certain tire mechanical or geometrical parameter by name
     //! @param[in] parameter_name: name of the parameter
     scalar get_parameter(const std::string& parameter_name) const;

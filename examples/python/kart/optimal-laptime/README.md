@@ -28,11 +28,36 @@ s=fastest_lap.load_track("../../../../database/tracks/vendrell/vendrell.xml",tra
 
 ```python
 # Compute optimal laptime
-data = fastest_lap.optimal_laptime(vehicle,track,s,["x","y","delta","throttle"]);
-x = data["x"];
-y = data["y"];
-delta = data["delta"];
-throttle = data["throttle"];
+options  = "<options>"
+options += "    <save_variables>"
+options += "        <prefix>run/</prefix>"
+options += "        <variables>"
+options += "            <x/>"
+options += "            <y/>"
+options += "            <delta/>"
+options += "            <throttle/>"
+options += "            <u/>"
+options += "            <s/>"
+options += "            <time/>"
+options += "            <psi/>"
+options += "            <omega/>"
+options += "            <v/>"
+options += "        </variables>"
+options += "    </save_variables>"
+options += "    <print_level> 5 </print_level>"
+options += "</options>"
+
+fastest_lap.optimal_laptime(vehicle,track,s,options);
+x        = fastest_lap.download_vector("run/x");
+y        = fastest_lap.download_vector("run/y");
+delta    = fastest_lap.download_vector("run/delta");
+throttle = fastest_lap.download_vector("run/throttle");
+u        = fastest_lap.download_vector("run/u");
+s        = fastest_lap.download_vector("run/s");
+time     = fastest_lap.download_vector("run/time");
+psi      = fastest_lap.download_vector("run/psi");
+omega    = fastest_lap.download_vector("run/omega");
+v       = fastest_lap.download_vector("run/v");
 ```
 
 ## GPS

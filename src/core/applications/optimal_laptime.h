@@ -17,15 +17,23 @@ class Optimal_laptime
 
     struct Options
     {
-        size_t print_level = 0;
-        scalar sigma = 0.5;                 // 0: explicit euler, 0.5: crank-nicolson, 1.0: implicit euler
-        size_t maximum_iterations = 3000;
-        bool   throw_if_fail = true;
-        bool   check_optimality = false;
-        bool   retape = false;
-        scalar nlp_tolerance = 1.0e-10;
+        struct Integral_quantity_conf
+        {
+            std::string name;
+            scalar lower_bound;
+            scalar upper_bound;
+        };
+
+        size_t print_level                = 0;
+        scalar sigma                      = 0.5;     // 0: explicit euler, 0.5: crank-nicolson, 1.0: implicit euler
+        size_t maximum_iterations         = 3000;
+        bool   throw_if_fail              = true;
+        bool   check_optimality           = false;
+        bool   retape                     = false;
+        scalar nlp_tolerance              = 1.0e-10;
         scalar constraints_viol_tolerance = 1.0e-10;
-        scalar acceptable_tolerance = 1.0e-8;
+        scalar acceptable_tolerance       = 1.0e-8;
+        std::vector<Integral_quantity_conf> integral_quantities = {};
     };
 
     //! Helper classes to encapsulate control variables ---------------------------------------------:-
@@ -286,6 +294,35 @@ class Optimal_laptime
     std::unique_ptr<Xml_document> xml() const;
 
     Options options;
+    
+    struct Integral_quantity
+    {
+        std::string name;
+        scalar      value;
+        bool        restrict;
+        scalar      lower_bound;
+        scalar      upper_bound;
+    };
+    
+    struct Integral_quantities : public std::array<Integral_quantity,Dynamic_model_t::Integral_quantities::N_INTEGRAL_QUANTITIES>
+    {
+        using base_type = std::array<Integral_quantity,Dynamic_model_t::Integral_quantities::N_INTEGRAL_QUANTITIES>;
+        static constexpr const size_t N = Dynamic_model_t::Integral_quantities::N_INTEGRAL_QUANTITIES;
+    
+        size_t get_n_restricted() const { return std::count_if(base_type::cbegin(), base_type::cend(), [](const auto& t) -> auto { return t.restrict; }); }
+
+        template<typename Timeseries_t>
+        std::vector<Timeseries_t> get_restricted_quantities(
+            const std::array<Timeseries_t,Dynamic_model_t::Integral_quantities::N_INTEGRAL_QUANTITIES>& full_values) const
+        {
+            std::vector<Timeseries_t> values(get_n_restricted());
+    
+            std::copy_if(full_values.cbegin(), full_values.cend(), values.begin(), 
+                         [this,i=0] (const auto& v) mutable -> auto { return (*this)[i++].restrict; });
+
+            return values;
+        }
+    } integral_quantities;
 
     // Outputs
     bool success;
@@ -325,7 +362,7 @@ class Optimal_laptime
         std::vector<scalar> vu;
     } optimization_data;            //! Auxiliary class to store the optimization data
 
-    double laptime;
+    scalar laptime;
 
  private:
     
@@ -336,6 +373,7 @@ class Optimal_laptime
         std::vector<std::array<scalar,Dynamic_model_t::NSTATE>> q;
         std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>> qa;
         Control_variables<> control_variables;
+        Integral_quantities integral_quantities;
     };
 
     template<typename FG_t>
@@ -359,11 +397,13 @@ class Optimal_laptime
            const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& qa0, 
            const std::array<scalar,Dynamic_model_t::NCONTROL>& u0, 
            const Control_variables<>& control_variables_0,
+           const Integral_quantities& integral_quantities,
            const scalar sigma 
           ) : _n_elements(n_elements), _n_points(n_points), _car(car), _s(s), _q0(q0), 
-              _qa0(qa0), _u0(u0), _sigma(sigma), _n_variables(n_variables),
+              _qa0(qa0), _u0(u0), _integral_quantities(integral_quantities), _sigma(sigma), _n_variables(n_variables),
               _n_constraints(n_constraints), _q(n_points,{0.0}), _qa(n_points), _control_variables(control_variables_0.to_CppAD().clear()), 
-              _dqdt(n_points,{0.0}), _dqa(n_points) {}
+              _dqdt(n_points,{0.0}), _dqa(n_points), _integral_quantities_integrands(n_points), 
+              _integral_quantities_values() {}
 
      public:
         const size_t& get_n_variables() const { return _n_variables; }
@@ -382,6 +422,8 @@ class Optimal_laptime
 
         const Control_variable<Timeseries_t>& get_control(const size_t i) const { return _control_variables[i]; }
 
+        const std::array<Timeseries_t,Integral_quantities::N>& get_integral_quantities_values() const { return _integral_quantities_values; }
+
         Dynamic_model_t& get_car() { return _car; }
 
      protected:
@@ -393,6 +435,8 @@ class Optimal_laptime
         std::array<scalar,Dynamic_model_t::NSTATE> _q0;        //! [c] State vector for the initial node
         std::array<scalar,Dynamic_model_t::NALGEBRAIC> _qa0;   //! [c] Algebraic state vector for the initial node
         std::array<scalar,Dynamic_model_t::NCONTROL> _u0;      //! [c] Control vector for the initial node
+        Integral_quantities _integral_quantities;
+        
         scalar _sigma;
 
         size_t _n_variables;                                                    //! [c] Number of total variables (NSTATE+NCONTROL-1).(n-1)
@@ -403,6 +447,9 @@ class Optimal_laptime
 
         std::vector<std::array<Timeseries_t,Dynamic_model_t::NSTATE>> _dqdt;    //! All state derivative vectors
         std::vector<std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC>> _dqa; //! All algebraic state derivative vectors
+
+        std::vector<std::array<Timeseries_t,Integral_quantities::N>> _integral_quantities_integrands;
+        std::array<Timeseries_t,Integral_quantities::N>              _integral_quantities_values;
     };
 
 
@@ -411,6 +458,7 @@ class Optimal_laptime
     class FG_direct : public FG
     {
      public:
+        using base_type = FG;
         using ADvector = typename FG::ADvector;
 
         FG_direct(const size_t n_elements, 
@@ -421,14 +469,16 @@ class Optimal_laptime
                   const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& qa0, 
                   const std::array<scalar,Dynamic_model_t::NCONTROL>& u0,
                   const Control_variables<>& control_variables_0,
+                  const Integral_quantities& integral_quantities,
                   const scalar sigma
           ) : FG(n_elements, 
                  n_points,
                  n_elements*n_variables_per_point<true>(control_variables_0) 
                     + control_variables_0.number_of_constant_optimizations 
                     + control_variables_0.number_of_hypermesh_optimization_points,
-                 n_elements*n_constraints_per_element<true>(control_variables_0), 
-                 car, s, q0, qa0, u0, control_variables_0, sigma) {}
+                 n_elements*n_constraints_per_element<true>(control_variables_0)  
+                    + integral_quantities.get_n_restricted(),
+                 car, s, q0, qa0, u0, control_variables_0, integral_quantities, sigma) {}
 
         void operator()(ADvector& fg, const ADvector& x, const ADvector& p) 
         { 
@@ -437,7 +487,16 @@ class Optimal_laptime
             (*this)(fg, x);
         }
     
-        void operator()(ADvector& fg, const ADvector& x);
+        void operator()(ADvector& fg, const ADvector& x)
+        {
+            if ( base_type::_integral_quantities.get_n_restricted() > 0 )
+                compute<true>(fg, x);
+            else
+                compute<false>(fg, x);
+        }
+
+        template<bool compute_integrated_quantities>
+        void compute(ADvector& fg, const ADvector& x);
     };
 
 
@@ -446,6 +505,7 @@ class Optimal_laptime
     class FG_derivative : public FG
     {
      public:
+        using base_type = FG;
         using ADvector = typename FG::ADvector;
 
         FG_derivative(const size_t n_elements, 
@@ -457,14 +517,16 @@ class Optimal_laptime
                       const std::array<scalar,Dynamic_model_t::NCONTROL>& u0,
                       const std::array<scalar,Dynamic_model_t::NCONTROL>& dudt0,
                       const Control_variables<>& control_variables_0,
+                      const Integral_quantities& integral_quantities,
                       const scalar sigma
           ) : FG(n_elements, 
                  n_points,
                  n_elements*n_variables_per_point<false>(control_variables_0) 
                     + control_variables_0.number_of_constant_optimizations 
                     + control_variables_0.number_of_hypermesh_optimization_points,
-                 n_elements*n_constraints_per_element<false>(control_variables_0),
-                 car, s, q0, qa0, u0, control_variables_0, sigma), _dudt0(dudt0) {}
+                 n_elements*n_constraints_per_element<false>(control_variables_0) 
+                    + integral_quantities.get_n_restricted(),
+                 car, s, q0, qa0, u0, control_variables_0, integral_quantities, sigma), _dudt0(dudt0) {}
 
         void operator()(ADvector& fg, const ADvector& x, const ADvector& p) 
         { 
@@ -473,7 +535,16 @@ class Optimal_laptime
             (*this)(fg, x);
         }
 
-        void operator()(ADvector& fg, const ADvector& x);
+        void operator()(ADvector& fg, const ADvector& x)
+        {
+            if ( base_type::_integral_quantities.get_n_restricted() > 0 )
+                compute<true>(fg, x);
+            else
+                compute<false>(fg, x);
+        }
+
+        template<bool compute_integrated_quantities>
+        void compute(ADvector& fg, const ADvector& x);
 
      private:
         const std::array<scalar,Dynamic_model_t::NCONTROL> _dudt0;

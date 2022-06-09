@@ -59,6 +59,11 @@ def download_vector(name):
 
 	return data;
 
+def download_scalar(name):
+	c_lib.download_scalar_table_variable.restype = c.c_double
+	c_variable = c.c_char_p((name).encode('utf-8'))	
+	return c_lib.download_scalar_table_variable(c_variable)
+
 def print_tables():
 	c_lib.print_tables()
 	return;
@@ -110,45 +115,21 @@ def gg_diagram(vehicle,speed,n_points):
 
 	return ay,ay_minus,ax_max,ax_min;
 
-def optimal_laptime(vehicle, track, s, channels):
+def optimal_laptime(vehicle, track, s, options):
 	vehicle = c.c_char_p((vehicle).encode('utf-8'))
 	track   = c.c_char_p((track).encode('utf-8'))
 
 	# Get channels ready to be written by C++
-	n_channels = len(channels);
-	c_channels_name = ((c.c_char_p)*n_channels)();
-	c_channels_data = (c.POINTER(c.c_double)*n_channels)()
 	c_s = (c.c_double*len(s))();
 
 	for i in range(len(s)):
 		c_s[i] = s[i];
 
-	options = "<options> <save_variables> <prefix>run/</prefix> <variables>";
-
-	for channel in channels:
-		options += "<" + channel + "/> ";
-
-	options += "</variables> </save_variables> </options>";
-	
 	c_options = c.c_char_p((options).encode('utf-8'));
 
 	c_lib.optimal_laptime(vehicle, track, c.c_int(len(s)), c_s, c_options);
 
-	# Get the results
-	result = dict();
-	for channel in channels:
-		c_data = (c.c_double*len(s))();
-		c_variable = c.c_char_p(("run/" + channel).encode('utf-8'));
-		c_lib.download_vector_table_variable(c_data, c.c_int(len(s)), c_variable);
-		data = [None]*len(s);
-		for i in range(len(s)):
-			data[i] = c_data[i];
-		result[channel] = data;	
-
-	# Clean up
-	c_lib.clear_tables_by_prefix(c.c_char_p(("run/").encode('utf-8')));
-
-	return result;
+	return;
 
 def track_coordinates(track,s):
 	track   = c.c_char_p((track).encode('utf-8'))

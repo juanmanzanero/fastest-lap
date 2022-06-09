@@ -33,8 +33,10 @@ inline Timeseries_t Engine<Timeseries_t>::operator()(const Timeseries_t throttle
         return throttle_percentage;
 
     else if ( _only_max_power )
-        return throttle_percentage*(_maximum_power*1.0e3)/angular_speed;
-
+    {
+        _power = throttle_percentage*(_maximum_power*1.0e3);
+        return _power/angular_speed;
+    }
     else
     {
         const double ang_speed_dbl = gear_ratio()*Value(angular_speed);

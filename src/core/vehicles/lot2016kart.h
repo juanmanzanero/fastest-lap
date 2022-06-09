@@ -186,6 +186,19 @@ class lot2016kart
                 this->get_chassis().get_rear_axle().template get_tire<1>().get_lambda() 
             };
         }
+
+        // Integral quantities
+        struct Integral_quantities
+        {
+            enum { N_INTEGRAL_QUANTITIES };
+
+            inline const static std::vector<std::string> names = {};
+        };
+
+        std::array<Timeseries_t,Integral_quantities::N_INTEGRAL_QUANTITIES> compute_integral_quantities() const
+        {
+            return {};
+        }
     };
 
  public:

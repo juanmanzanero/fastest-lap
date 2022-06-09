@@ -8,7 +8,7 @@ inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const std::vector<scala
     const std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>>& qa0,
     Control_variables<> control_variables_0, 
     const Options opts)
-: options(opts), is_closed(is_closed_), is_direct(is_direct_), warm_start(false), 
+: options(opts), integral_quantities(), is_closed(is_closed_), is_direct(is_direct_), warm_start(false), 
   s(s_), q(q0), qa(qa0), control_variables(control_variables_0.check()),
   optimization_data()
 {
@@ -29,7 +29,7 @@ inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const std::vector<scala
     const std::vector<scalar>& zu,
     const std::vector<scalar>& lambda,
     const Options opts)
-: options(opts), is_closed(is_closed_), is_direct(is_direct_), warm_start(true), 
+: options(opts), integral_quantities(), is_closed(is_closed_), is_direct(is_direct_), warm_start(true), 
   s(s_), q(q0), qa(qa0), control_variables(control_variables_0.check()),
   optimization_data({.zl{zl},.zu{zu},.lambda{lambda}})
 {
@@ -107,8 +107,41 @@ inline void Optimal_laptime<Dynamic_model_t>::check_inputs(const Dynamic_model_t
             }
         }
     }
-}
+        
+    // (4) Set integral constraints
 
+    // (4.1) Initialization
+    for (size_t i = 0; i < Integral_quantities::N; ++i)
+    {
+        integral_quantities[i].name        = Dynamic_model_t::Integral_quantities::names[i];
+        integral_quantities[i].restrict    = false;
+        integral_quantities[i].value       = 0.0;
+        integral_quantities[i].lower_bound = std::numeric_limits<scalar>::lowest();
+        integral_quantities[i].upper_bound = std::numeric_limits<scalar>::max();
+    }
+
+    // (4.2) Set active constraints
+    for (size_t i = 0; i < options.integral_quantities.size(); ++i)
+    {
+        const auto it = std::find(Dynamic_model_t::Integral_quantities::names.cbegin(), 
+                                  Dynamic_model_t::Integral_quantities::names.cend(),
+                                  options.integral_quantities[i].name);
+
+        if (it == Dynamic_model_t::Integral_quantities::names.cend())
+        {
+            std::ostringstream s_out;
+            s_out << "[ERROR] Requested integral constraint was not found." << std::endl;
+            s_out << "[ERROR] Available options are: " << Dynamic_model_t::Integral_quantities::names;
+            throw std::runtime_error(s_out.str()); 
+        }
+
+        // (4.2) Fill the integral constraint information
+        const size_t index = std::distance(Dynamic_model_t::Integral_quantities::names.cbegin(),it);
+        integral_quantities[index].restrict    = true;
+        integral_quantities[index].lower_bound = options.integral_quantities[i].lower_bound;
+        integral_quantities[index].upper_bound = options.integral_quantities[i].upper_bound;
+    }
+}
 
 
 template<typename Dynamic_model_t>
@@ -221,10 +254,13 @@ inline typename Optimal_laptime<Dynamic_model_t>::Export_solution
     output.control_variables = control_variables;
     output.control_variables.clear();
 
+    // (1.2) Copy the structure of the integral quantities
+    output.integral_quantities = integral_quantities;
+
     // (2) Transform x to CppAD
     std::vector<CppAD::AD<scalar>> x_cppad(x.size(),0.0),fg_eval(fg.get_n_constraints()+1,0.0);
     std::copy(x.cbegin(), x.cend(), x_cppad.begin());
-    fg(fg_eval,x_cppad);
+    fg.template compute<true>(fg_eval,x_cppad);
   
     assert(fg.get_states().size() == n_points);
     assert(fg.get_algebraic_states().size() == n_points);
@@ -271,6 +307,10 @@ inline typename Optimal_laptime<Dynamic_model_t>::Export_solution
             break;
         }
     }
+
+    // (6) Export integral quantities
+    for (size_t i = 0; i < Integral_quantities::N; ++i)
+        output.integral_quantities[i].value = Value(fg.get_integral_quantities_values()[i]);
 
     return output;
 }
@@ -326,7 +366,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
     auto u0 = control_variables.control_array_at_s(car, 0, s.front());
 
     // (2) Construct fitness function functor
-    FG_direct<isClosed> fg(n_elements,n_points,car,s,q.front(),qa.front(),u0,control_variables, options.sigma);
+    FG_direct<isClosed> fg(n_elements,n_points,car,s,q.front(),qa.front(),u0,control_variables, integral_quantities, options.sigma);
 
     // (3) Construct vectors of initial optimization point, and variable upper/lower bounds
     std::vector<scalar> x0(fg.get_n_variables(),0.0);
@@ -496,6 +536,17 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
         }
     }
 
+    // (6) Add the integral constraints
+    for (const auto& integral_quantity : integral_quantities)
+    {
+        if (integral_quantity.restrict)
+        {
+            c_lb[kc] = integral_quantity.lower_bound;
+            c_ub[kc] = integral_quantity.upper_bound;
+            kc.increment();
+        }
+    }        
+
     // (6) Check the dimensions of the counter used to fill the vectors
     if ( k != fg.get_n_variables() )
     {
@@ -608,6 +659,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
     q                 = solution_exported.q;
     qa                = solution_exported.qa;
     control_variables = solution_exported.control_variables;
+    integral_quantities = solution_exported.integral_quantities;
 
     // (9.2) Export time, x, y, and psi
     const scalar& L = car.get_road().track_length();
@@ -774,7 +826,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
     auto [u0, dudt0] = control_variables.control_array_and_derivative_at_s(car, 0, s.front());
 
     // (2) Construct fitness function functor
-    FG_derivative<isClosed> fg(n_elements,n_points,car,s,q.front(),qa.front(),u0,dudt0,control_variables,options.sigma);
+    FG_derivative<isClosed> fg(n_elements,n_points,car,s,q.front(),qa.front(),u0,dudt0,control_variables,integral_quantities,options.sigma);
 
     // (3) Construct vectors of initial optimization point, and variable upper/lower bounds
     std::vector<scalar> x0(fg.get_n_variables(),0.0);
@@ -976,6 +1028,17 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
         }
     }
 
+    // (6) Add the integral constraints
+    for (const auto& integral_quantity : integral_quantities)
+    {
+        if (integral_quantity.restrict)
+        {
+            c_lb[kc] = integral_quantity.lower_bound;
+            c_ub[kc] = integral_quantity.upper_bound;
+            kc.increment();
+        }
+    }        
+
     // (6) Check the dimensions of the counter used to fill the vectors
     if ( k != fg.get_n_variables() )
     {
@@ -1080,6 +1143,8 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
     q                 = solution_exported.q;
     qa                = solution_exported.qa;
     control_variables = solution_exported.control_variables;
+    integral_quantities = solution_exported.integral_quantities;
+
 
     // (9.2) Load the latest solution vector to the fitness function object
     std::vector<CppAD::AD<scalar>> x_final(result.x.size(),0.0),fg_final(fg.get_n_constraints()+1,0.0);
@@ -1335,21 +1400,25 @@ std::unique_ptr<Xml_document> Optimal_laptime<Dynamic_model_t>::xml() const
 
 template<typename Dynamic_model_t>
 template<bool isClosed>
-inline void Optimal_laptime<Dynamic_model_t>::FG_direct<isClosed>::operator()(FG_direct<isClosed>::ADvector& fg, const Optimal_laptime<Dynamic_model_t>::FG_direct<isClosed>::ADvector& x)
+template<bool compute_integrated_quantities>
+inline void Optimal_laptime<Dynamic_model_t>::FG_direct<isClosed>::compute(FG_direct<isClosed>::ADvector& fg, const Optimal_laptime<Dynamic_model_t>::FG_direct<isClosed>::ADvector& x)
 {
     // (1) Useful aliases
-    auto& _n_points          = FG::_n_points;
-    auto& _car               = FG::_car;
-    auto& _s                 = FG::_s;
-    auto& _q0                = FG::_q0;
-    auto& _qa0               = FG::_qa0;
-    auto& _u0                = FG::_u0;
-    auto& _q                 = FG::_q;
-    auto& _qa                = FG::_qa;
-    auto& _control_variables = FG::_control_variables;
-    auto& _dqdt              = FG::_dqdt;
-    auto& _dqa               = FG::_dqa ;
-    auto& _sigma             = FG::_sigma;
+    auto& _n_points                       = FG::_n_points;
+    auto& _car                            = FG::_car;
+    auto& _s                              = FG::_s;
+    auto& _q0                             = FG::_q0;
+    auto& _qa0                            = FG::_qa0;
+    auto& _u0                             = FG::_u0;
+    auto& _q                              = FG::_q;
+    auto& _qa                             = FG::_qa;
+    auto& _control_variables              = FG::_control_variables;
+    auto& _integral_quantities            = FG::_integral_quantities;
+    auto& _integral_quantities_values     = FG::_integral_quantities_values;
+    auto& _integral_quantities_integrands = FG::_integral_quantities_integrands;
+    auto& _dqdt                           = FG::_dqdt;
+    auto& _dqa                            = FG::_dqa ;
+    auto& _sigma                          = FG::_sigma;
 
     // (2) Check dimensions
     assert(x.size() == FG::_n_variables);
@@ -1425,8 +1494,14 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_direct<isClosed>::operator()(FG
 
     // (5) Write fitness function and constraints
     fg[0] = 0.0;
-    
     std::tie(_dqdt[0], _dqa[0]) = _car(_q[0],_qa[0],_control_variables.control_array_at_s(_car, 0,_s[0]),_s[0]);
+
+    if constexpr (compute_integrated_quantities)
+    {
+        std::fill(_integral_quantities_values.begin(), _integral_quantities_values.end(), 0.0);
+        _integral_quantities_integrands[0] = _dqdt[0][Dynamic_model_t::Road_type::ITIME]*_car.compute_integral_quantities();
+    }
+
     k = 1;  // Reset the counter
     for (size_t i = 1; i < _n_points; ++i)
     {
@@ -1454,6 +1529,13 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_direct<isClosed>::operator()(FG
 
         for (size_t j = 0; j < Dynamic_model_t::N_OL_EXTRA_CONSTRAINTS; ++j)
             fg[k++] = c_extra[j];
+
+        if constexpr ( compute_integrated_quantities )
+        {
+            // (5.6) Compute integral quantities
+            _integral_quantities_integrands[i] = _dqdt[i][Dynamic_model_t::Road_type::ITIME]*_car.compute_integral_quantities();
+            _integral_quantities_values += (_s[i]-_s[i-1])*((1.0-_sigma)*_integral_quantities_integrands[i-1] + _sigma*_integral_quantities_integrands[i]);
+        }
     }
 
     // (5.6) Add a penalisation to the controls
@@ -1506,6 +1588,18 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_direct<isClosed>::operator()(FG
                 fg[0] += control_variable.dissipation*(derivative*derivative)*(L-_s.back());
             }
         }
+
+        if constexpr ( compute_integrated_quantities )
+        {
+            // (5.7.6) Compute integral quantities
+            _integral_quantities_values += (L-_s.back())*((1.0-_sigma)*_integral_quantities_integrands.front() + _sigma*_integral_quantities_integrands.back());
+        }
+    }
+
+    if constexpr ( compute_integrated_quantities )
+    {
+        for (const auto& restricted_integral_quantity : _integral_quantities.get_restricted_quantities(_integral_quantities_values))
+            fg[k++] = restricted_integral_quantity;
     }
 
     assert(k == FG::_n_constraints+1);
@@ -1514,7 +1608,8 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_direct<isClosed>::operator()(FG
 
 template<typename Dynamic_model_t>
 template<bool isClosed>
-inline void Optimal_laptime<Dynamic_model_t>::FG_derivative<isClosed>::operator()(FG_derivative<isClosed>::ADvector& fg, const Optimal_laptime<Dynamic_model_t>::FG_derivative<isClosed>::ADvector& x)
+template<bool compute_integrated_quantities>
+inline void Optimal_laptime<Dynamic_model_t>::FG_derivative<isClosed>::compute(FG_derivative<isClosed>::ADvector& fg, const Optimal_laptime<Dynamic_model_t>::FG_derivative<isClosed>::ADvector& x)
 {
     // (1) Useful aliases
     auto& _n_points          = FG::_n_points;
@@ -1526,6 +1621,9 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_derivative<isClosed>::operator(
     auto& _q                 = FG::_q;
     auto& _qa                = FG::_qa;
     auto& _control_variables = FG::_control_variables;
+    auto& _integral_quantities            = FG::_integral_quantities;
+    auto& _integral_quantities_values     = FG::_integral_quantities_values;
+    auto& _integral_quantities_integrands = FG::_integral_quantities_integrands;
     auto& _dqdt              = FG::_dqdt;
     auto& _dqa               = FG::_dqa ;
     auto& _sigma             = FG::_sigma;
@@ -1615,8 +1713,14 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_derivative<isClosed>::operator(
 
     // (5) Write fitness function and constraints
     fg[0] = 0.0;
+    std::tie(_dqdt[0], _dqa[0]) = _car(_q[0],_qa[0],_control_variables.control_array_at_s(_car, 0,_s[0]),_s[0]);
 
-    std::tie(_dqdt[0], _dqa[0]) = _car(_q[0],_qa[0],_control_variables.control_array_at_s(_car,0,_s[0]),_s[0]);
+    if constexpr ( compute_integrated_quantities )
+    {
+        std::fill(_integral_quantities_values.begin(), _integral_quantities_values.end(), 0.0);
+        _integral_quantities_integrands[0] = _dqdt[0][Dynamic_model_t::Road_type::ITIME]*_car.compute_integral_quantities();
+    }
+
     k = 1;  // Reset the counter
     for (size_t i = 1; i < _n_points; ++i)
     {
@@ -1668,6 +1772,13 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_derivative<isClosed>::operator(
                 fg[k++] = u[i] - u[i-1] - (_s[i]-_s[i-1])
                     *((1.0-_sigma)*dudt[i-1]*_dqdt[i-1][Dynamic_model_t::Road_type::ITIME]+_sigma*dudt[i]*_dqdt[i][Dynamic_model_t::Road_type::ITIME]);
             }
+        }
+
+        if constexpr ( compute_integrated_quantities )
+        {
+            // (5.7) Compute integral quantities
+            _integral_quantities_integrands[i] = _dqdt[i][Dynamic_model_t::Road_type::ITIME]*_car.compute_integral_quantities();
+            _integral_quantities_values += (_s[i]-_s[i-1])*((1.0-_sigma)*_integral_quantities_integrands[i-1] + _sigma*_integral_quantities_integrands[i]);
         }
     }
 
@@ -1723,6 +1834,18 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_derivative<isClosed>::operator(
                     *((1.0-_sigma)*dudt.back()*_dqdt.back()[Dynamic_model_t::Road_type::ITIME]+_sigma*dudt.front()*_dqdt.front()[Dynamic_model_t::Road_type::ITIME]);
             }
         }
+
+        if constexpr ( compute_integrated_quantities )
+        {
+            // (5.7.6) Compute integral quantities
+            _integral_quantities_values += (L-_s.back())*((1.0-_sigma)*_integral_quantities_integrands.front() + _sigma*_integral_quantities_integrands.back());
+        }
+    }
+
+    if constexpr ( compute_integrated_quantities )
+    {
+        for (const auto& restricted_integral_quantity : _integral_quantities.get_restricted_quantities(_integral_quantities_values))
+            fg[k++] = restricted_integral_quantity;
     }
 
     assert(k == FG::_n_constraints+1);

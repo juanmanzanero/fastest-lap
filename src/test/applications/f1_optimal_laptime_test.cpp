@@ -825,3 +825,120 @@ TEST_F(F1_optimal_laptime_test, imola_adapted_hypermesh)
 
     check_optimal_laptime(opt_laptime, opt_saved, n);
 }
+
+
+TEST_F(F1_optimal_laptime_test, Catalunya_engine_energy_limited)
+{
+    Xml_document catalunya_xml("./database/tracks/catalunya/catalunya_discrete.xml",true);
+    Circuit_preprocessor catalunya_pproc(catalunya_xml);
+    Track_by_polynomial catalunya(catalunya_pproc);
+    
+    limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial>::Road_t road(catalunya);
+    limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial> car(database, road);
+
+    // Engine energy limits require a higher value of the smooth throttle coefficient
+    car.set_parameter("vehicle/rear-axle/smooth_throttle_coeff", 1.0e-2);
+
+    // Start from the steady-state values at 50km/h-0g    
+    const scalar v = 50.0*KMH;
+    auto ss = Steady_state(car_cartesian).solve(v,0.0,0.0); 
+
+    const auto& s = catalunya_pproc.s;
+
+    const size_t n = s.size();
+
+    // Construct control variables
+    auto control_variables = Optimal_laptime<decltype(car)>::template Control_variables<>{};
+
+    // steering wheel: optimize in the full mesh
+    control_variables[decltype(car)::Chassis_type::front_axle_type::ISTEERING]
+        = Optimal_laptime<decltype(car)>::create_full_mesh(std::vector<scalar>(n,ss.u[decltype(car)::Chassis_type::front_axle_type::ISTEERING]), 50.0e0); 
+
+    // throttle: optimize in the full mesh
+    control_variables[decltype(car)::Chassis_type::ITHROTTLE]
+        = Optimal_laptime<decltype(car)>::create_full_mesh(std::vector<scalar>(n,ss.u[decltype(car)::Chassis_type::ITHROTTLE]), 20.0*8.0e-4); 
+
+    // brake bias: don't optimize
+    control_variables[decltype(car)::Chassis_type::IBRAKE_BIAS]
+        = Optimal_laptime<decltype(car)>::create_dont_optimize(); 
+
+    auto opts = Optimal_laptime<decltype(car)>::Options{};
+
+    // Run something on valgrind but not the big thing
+    if ( is_valgrind ) 
+    {
+        opts.maximum_iterations = 1;
+    }
+
+    opts.integral_quantities = { {"engine-energy", 0.0, 24.0} };
+    Optimal_laptime opt_laptime(s, true, true, car, {n,ss.q}, {n,ss.qa}, control_variables, opts);
+    opt_laptime.xml();
+
+    if ( is_valgrind )
+        return;
+
+    // Check the results with a saved simulation
+    Xml_document opt_saved("data/f1_optimal_laptime_catalunya_engine_energy_limited.xml", true);
+
+    check_optimal_laptime(opt_laptime, opt_saved, n);
+
+    EXPECT_NEAR(opt_laptime.integral_quantities.front().value, 24.0, 1.0e-4);
+}
+
+
+TEST_F(F1_optimal_laptime_test, Catalunya_tire_energy_limited)
+{
+    Xml_document catalunya_xml("./database/tracks/catalunya/catalunya_discrete.xml",true);
+    Circuit_preprocessor catalunya_pproc(catalunya_xml);
+    Track_by_polynomial catalunya(catalunya_pproc);
+    
+    limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial>::Road_t road(catalunya);
+    limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial> car(database, road);
+
+    // Start from the steady-state values at 50km/h-0g    
+    const scalar v = 50.0*KMH;
+    auto ss = Steady_state(car_cartesian).solve(v,0.0,0.0); 
+
+    const auto& s = catalunya_pproc.s;
+
+    const size_t n = s.size();
+
+    // Construct control variables
+    auto control_variables = Optimal_laptime<decltype(car)>::template Control_variables<>{};
+
+    // steering wheel: optimize in the full mesh
+    control_variables[decltype(car)::Chassis_type::front_axle_type::ISTEERING]
+        = Optimal_laptime<decltype(car)>::create_full_mesh(std::vector<scalar>(n,ss.u[decltype(car)::Chassis_type::front_axle_type::ISTEERING]), 50.0e0); 
+
+    // throttle: optimize in the full mesh
+    control_variables[decltype(car)::Chassis_type::ITHROTTLE]
+        = Optimal_laptime<decltype(car)>::create_full_mesh(std::vector<scalar>(n,ss.u[decltype(car)::Chassis_type::ITHROTTLE]), 20.0*8.0e-4); 
+
+    // brake bias: don't optimize
+    control_variables[decltype(car)::Chassis_type::IBRAKE_BIAS]
+        = Optimal_laptime<decltype(car)>::create_dont_optimize(); 
+
+    auto opts = Optimal_laptime<decltype(car)>::Options{};
+    opts.print_level = 5;
+
+    // Run something on valgrind but not the big thing
+    if ( is_valgrind ) 
+    {
+        opts.maximum_iterations = 1;
+    }
+
+    opts.integral_quantities = { {"tire-fl-energy", 0.0, 0.8}, {"tire-fr-energy", 0.0, 0.8}, {"tire-rl-energy", 0.0, 0.8}, {"tire-rr-energy", 0.0, 0.8} };
+    Optimal_laptime opt_laptime(s, true, true, car, {n,ss.q}, {n,ss.qa}, control_variables, opts);
+    opt_laptime.xml();
+
+    if ( is_valgrind )
+        return;
+
+    // Check the results with a saved simulation
+    Xml_document opt_saved("data/f1_optimal_laptime_catalunya_tire_energy_limited.xml", true);
+
+    check_optimal_laptime(opt_laptime, opt_saved, n);
+
+    for (size_t i = 1; i < 5; ++i)
+        EXPECT_TRUE(opt_laptime.integral_quantities[i].value < 0.8 + 1.0e-6);
+}
