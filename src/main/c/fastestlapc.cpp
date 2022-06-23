@@ -1235,9 +1235,12 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
             is_vector = false;
 
             // Save the derivative w.r.t. the parameters
-            for (size_t i = 0; i < car_curv_sc_const.get_parameters().get_number_of_parameters(); ++i)
+            if ( opts.check_optimality )
             {
-                table_scalar.insert({conf.save_variables_prefix + "derivatives/" + variable_name + "/" + parameter_aliases[i], opt_laptime.dlaptimedp[i]});
+                for (size_t i = 0; i < car_curv_sc_const.get_parameters().get_number_of_parameters(); ++i)
+                {
+                    table_scalar.insert({conf.save_variables_prefix + "derivatives/" + variable_name + "/" + parameter_aliases[i], opt_laptime.dlaptimedp[i]});
+                }
             }
         }
         else if ( variable_name.find("integral_quantities.") == 0 )
@@ -1295,9 +1298,12 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
                 {
                     data[i] = opt_laptime.q[i][vehicle_t::vehicle_scalar_curvilinear::Chassis_type::IU];
     
-                    for (size_t p = 0; p < car_curv_sc_const.get_parameters().get_number_of_parameters(); ++p)
+                    if ( opts.check_optimality )
                     {
-                        ddatadp[p][i] = opt_laptime.dqdp[p][i][vehicle_t::vehicle_scalar_curvilinear::Chassis_type::IU];
+                        for (size_t p = 0; p < car_curv_sc_const.get_parameters().get_number_of_parameters(); ++p)
+                        {
+                            ddatadp[p][i] = opt_laptime.dqdp[p][i][vehicle_t::vehicle_scalar_curvilinear::Chassis_type::IU];
+                        }
                     }
                 }
                 else if ( variable_name == "v" )
@@ -1459,8 +1465,11 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
             table_vector.insert({conf.save_variables_prefix + variable_name, data});
 
             // Insert derivatives in the table
-            for (size_t p = 0; p < car_curv_sc_const.get_parameters().get_number_of_parameters(); ++p)
-                table_vector.insert({conf.save_variables_prefix + "derivatives/" + variable_name + "/" + parameter_aliases[p], ddatadp[p]});
+            if ( opts.check_optimality )
+            {
+                for (size_t p = 0; p < car_curv_sc_const.get_parameters().get_number_of_parameters(); ++p)
+                    table_vector.insert({conf.save_variables_prefix + "derivatives/" + variable_name + "/" + parameter_aliases[p], ddatadp[p]});
+            }
         }
     }
 

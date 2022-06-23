@@ -303,7 +303,7 @@ void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_
     // throttle
     u_def[ITHROTTLE] = 0.0;
     u_lb[ITHROTTLE]  = -1.0;
-    u_ub[ITHROTTLE]  = 1.0;
+    u_ub[ITHROTTLE]  = _maximum_throttle;
 
     // brake bias
     u_def[IBRAKE_BIAS] = Value(_brake_bias_0);

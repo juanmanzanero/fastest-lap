@@ -72,6 +72,7 @@
         <brake_bias> 0.6 </brake_bias>
         <roll_balance_coefficient> 0.5 </roll_balance_coefficient>
         <Fz_max_ref2> 1.0 </Fz_max_ref2>
+        <maximum_throttle> 1.0 </maximum_throttle>
     </chassis>
 
     <front-tire model="tire-pacejka-simple" type="normal">

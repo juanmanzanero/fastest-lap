@@ -207,7 +207,7 @@ typename Dynamic_model_car<Timeseries_t,Chassis_t,RoadModel_t,_NSTATE,_NCONTROL>
     _road.set_state_and_control_upper_lower_and_default_values(q_def, q_lb, q_ub, u_def, u_lb, u_ub);
 
     // (4) Return
-    return (State_and_control_upper_lower_and_default_values)
+    return State_and_control_upper_lower_and_default_values 
     {
         .q_def  = q_def , .q_lb  = q_lb , .q_ub  = q_ub , 
         .qa_def = qa_def, .qa_lb = qa_lb, .qa_ub = qa_ub, 
