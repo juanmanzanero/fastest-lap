@@ -21,11 +21,8 @@ Fastest-lap an open source (`MIT <https://github.com/juanmanzanero/fastest-lap/b
 
    installation
 
+.. toctree::
+   :maxdepth: 2
+   :caption: Blog
 
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   lift_and_coast
