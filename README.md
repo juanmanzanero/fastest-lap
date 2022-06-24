@@ -72,7 +72,20 @@ Fastest-lap uses several open-source libraries:
 [loggercpp]: https://github.com/juanmanzanero/logger-cpp
 [lioncpp]: https://github.com/juanmanzanero/lion-cpp
 
-### Compilation
+### Installation
+
+#### Windows 10
+
+Precompiled binaries are available to download for every release.
+  - [v0.1](https://github.com/juanmanzanero/fastest-lap/releases/tag/v0.1)
+
+Download and unzip. The contents of the zip folder are:
+  - bin: the dynamic libraries. Fastest-lap C++ core is there. If fastest-lap is used from MATLAB, point `loadlibrary()` to this directory.
+  - include: fastestlapc.h and fastest_lap.py. To use python scripts, make sure this folder is on the `PYTHONPATH`
+  - examples: python notebook examples.
+  - database: car and track data
+
+#### Mac and Linux
 
 This project uses CMake to build the source code and produce the binaries.
 
@@ -126,6 +139,7 @@ A Docker build environment is provided and can be used to compile the shared lib
 ```shell
 sh ./src/scripts/linux/docker_compile.sh
 ```
+
 
 ### References
 
