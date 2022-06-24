@@ -5,6 +5,7 @@ Fastest-lap is a vehicle dynamics simulator. It can be used to understand vehicl
 [![MacOS](https://github.com/juanmanzanero/fastest-lap/actions/workflows/macos.yml/badge.svg)](https://github.com/juanmanzanero/fastest-lap/actions/workflows/macos.yml)
 [![Linux](https://github.com/juanmanzanero/fastest-lap/actions/workflows/linux.yml/badge.svg)](https://github.com/juanmanzanero/fastest-lap/actions/workflows/linux.yml)
 [![Windows](https://github.com/juanmanzanero/fastest-lap/actions/workflows/windows.yml/badge.svg)](https://github.com/juanmanzanero/fastest-lap/actions/workflows/windows.yml)
+[![Documentation Status](https://readthedocs.org/projects/fastest-lap/badge/?version=latest)](https://fastest-lap.readthedocs.io/en/latest/?badge=latest)
 
 
 ![test](https://user-images.githubusercontent.com/26557659/173203219-077be886-7c84-49a8-a4c7-762c9f6933f7.png)
@@ -140,6 +141,10 @@ A Docker build environment is provided and can be used to compile the shared lib
 sh ./src/scripts/linux/docker_compile.sh
 ```
 
+
+### Documentation
+
+Read the latest fastest-lap [online documentation](http://fastest-lap.readthedocs.io/)
 
 ### References
 
