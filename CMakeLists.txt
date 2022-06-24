@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 # set the project name
-project(fastest-lap VERSION 0.1)
+project(fastest-lap VERSION 0.1.5)
 
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/thirdparty)
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/thirdparty/include)
