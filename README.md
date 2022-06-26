@@ -6,7 +6,7 @@ Fastest-lap is a vehicle dynamics simulator. It can be used to understand vehicl
 [![Linux](https://github.com/juanmanzanero/fastest-lap/actions/workflows/linux.yml/badge.svg)](https://github.com/juanmanzanero/fastest-lap/actions/workflows/linux.yml)
 [![Windows](https://github.com/juanmanzanero/fastest-lap/actions/workflows/windows.yml/badge.svg)](https://github.com/juanmanzanero/fastest-lap/actions/workflows/windows.yml)
 [![Documentation Status](https://readthedocs.org/projects/fastest-lap/badge/?version=latest)](https://fastest-lap.readthedocs.io/en/latest/?badge=latest)
-
+[![codecov](https://codecov.io/gh/juanmanzanero/fastest-lap/branch/main/graph/badge.svg?token=YOS7XJ8ZGP)](https://codecov.io/gh/juanmanzanero/fastest-lap)
 
 ![test](https://user-images.githubusercontent.com/26557659/173203219-077be886-7c84-49a8-a4c7-762c9f6933f7.png)
 
