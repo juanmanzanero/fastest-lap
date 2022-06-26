@@ -7,7 +7,7 @@ macro(new_test)
     file(GLOB_RECURSE TEST_SOURCES LIST_DIRECTORIES false *.h *.cpp ../main.cpp)
     
     set(SOURCES ${TEST_SOURCES})
-    
+
     add_executable(${BINARY} ${TEST_SOURCES})
     
     add_test(NAME ${BINARY} COMMAND ${BINARY})
@@ -41,7 +41,6 @@ macro(new_test)
                         COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_BINARY_DIR}/thirdparty/bin/msys-blas-3.dll ${CMAKE_BINARY_DIR}/src/test/${binary_name}/msys-blas-3.dll)
     endif()
     
-	
 endmacro()
 
 add_subdirectory(./actuators)
@@ -49,7 +48,6 @@ add_subdirectory(./applications)
 add_subdirectory(./chassis)
 add_subdirectory(./tire)
 add_subdirectory(./vehicles)
-
 
 # Create a test if code coverage
 if (CODE_COVERAGE)
@@ -65,9 +63,41 @@ if (CODE_COVERAGE)
 
 	add_executable(${BINARY} ${TEST_SOURCES})
 
-	target_link_libraries(${BINARY} PUBLIC gtest)
+    target_link_libraries(${BINARY} LINK_PRIVATE GTest::gtest lion::lion)
 
-	set_target_properties(${BINARY} PROPERTIES EXCLUDE_FROM_ALL 1 EXCLUDE_FROM_DEFAULT_BUILD 1)
+	set_target_properties(${BINARY} PROPERTIES 
+        EXCLUDE_FROM_ALL 1 
+        EXCLUDE_FROM_DEFAULT_BUILD 1
+    )
 
 	target_code_coverage(${BINARY} AUTO ALL EXCLUDE test/* build/googletest-src/*) 
+
+    # Copy required files
+    add_custom_target(${BINARY}_link_database ALL
+                      COMMAND ${CMAKE_COMMAND} -E create_symlink 
+                      ${CMAKE_SOURCE_DIR}/database 
+                      ${CMAKE_BINARY_DIR}/src/test/database
+                     )
+    file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/src/test/data)
+
+    add_custom_command(TARGET ${BINARY} PRE_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/src/test/applications/data/ ${CMAKE_BINARY_DIR}/src/test/data)
+
+    add_custom_command(TARGET ${BINARY} PRE_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/src/test/actuators/data/ ${CMAKE_BINARY_DIR}/src/test/data)
+
+    add_custom_command(TARGET ${BINARY} PRE_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/src/test/chassis/data/ ${CMAKE_BINARY_DIR}/src/test/data)
+
+    add_custom_command(TARGET ${BINARY} PRE_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/src/test/tire/data/ ${CMAKE_BINARY_DIR}/src/test/data)
+
+    add_custom_command(TARGET ${BINARY} PRE_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/src/test/vehicles/data/ ${CMAKE_BINARY_DIR}/src/test/data)
+
 endif()
