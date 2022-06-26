@@ -47,6 +47,12 @@ jobs:
       working-directory: ${{runner.workspace}}/build
       shell: bash
       run: make ccov-all
+      
+    - uses: actions/upload-artifact@v2 
+      with:
+        name: upload artifact (dbg)
+        path: ${{runner.workspace}}/build/ccov
+        retention-days: 7    
     
     - name: Create coverage.info
       working-directory: ${{runner.workspace}}/build/ccov
