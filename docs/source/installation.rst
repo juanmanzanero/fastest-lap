@@ -1,6 +1,8 @@
 Installation
 ============
 
+Fastest-lap is ready to use once you have the dynamic library ``fastest-lap-VERSION.dll`` (Windows) ``libfastestlapc-VERSION.dylib`` (Mac) or ``libfastestlapc-VERSION.so``, plus other libraries such as Ipopt and Mumps. The following steps describe how to get such library. 
+
 Windows 10
 ----------
 

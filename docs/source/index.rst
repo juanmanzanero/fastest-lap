@@ -20,6 +20,7 @@ Fastest-lap an open source (`MIT <https://github.com/juanmanzanero/fastest-lap/b
    :caption: Tutorials
 
    installation
+   quickstart
 
 .. toctree::
    :maxdepth: 2
