@@ -47,24 +47,36 @@ jobs:
       working-directory: ${{runner.workspace}}/build
       shell: bash
       run: make ccov-all
-      
+   
+    - name: Create coverage.info
+      working-directory: ${{runner.workspace}}/build/ccov
+      shell: bash
+      run: cp all-merged.info coverage.info
+
     - uses: actions/upload-artifact@v2 
       with:
         name: upload artifact (dbg)
         path: ${{runner.workspace}}/build/ccov
         retention-days: 7    
+ 
+  upload_to_codecov:
+
+    runs-on: ubuntu-latest
     
-    - name: Create coverage.info
-      working-directory: ${{runner.workspace}}/build/ccov
-      shell: bash
-      run: cp all-merged.info coverage.info
+    needs: [run]
+    
+    steps:
+    - uses: actions/download-artifact@v2
+      with:
+        name: download artifacts
+        path: ${{runner.workspace}}
       
     - name: Download codecov uploader
-      working-directory: ${{runner.workspace}}/build/ccov
+      working-directory: ${{runner.workspace}}
       shell: bash
       run: curl -Os https://uploader.codecov.io/latest/linux/codecov && chmod +x ./codecov
       
     - name: Upload coverage report
-      working-directory: ${{runner.workspace}}/build/ccov
+      working-directory: ${{runner.workspace}}
       shell: bash
       run: ./codecov    
