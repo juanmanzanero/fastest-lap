@@ -24,6 +24,12 @@ Fastest-lap an open source (`MIT <https://github.com/juanmanzanero/fastest-lap/b
 
 .. toctree::
    :maxdepth: 2
+   :caption: User-manual
+
+   overview
+
+.. toctree::
+   :maxdepth: 2
    :caption: Blog
 
    lift_and_coast
