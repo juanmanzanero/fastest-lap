@@ -55,7 +55,7 @@ jobs:
 
     - uses: actions/upload-artifact@v2 
       with:
-        name: upload artifact (dbg)
+        name: coverage_artifacts
         path: ${{runner.workspace}}/build/ccov
         retention-days: 7    
  
@@ -68,8 +68,13 @@ jobs:
     steps:
     - uses: actions/download-artifact@v2
       with:
-        name: download artifacts
+        name: coverage_artifacts
         path: ${{runner.workspace}}
+      
+    - name: List folder contents
+      working-directory: ${{runner.workspace}}
+      shell: bash
+      run: ls -alFrt
       
     - name: Download codecov uploader
       working-directory: ${{runner.workspace}}
