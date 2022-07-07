@@ -8,6 +8,7 @@ else()
     set(CONSTRUCT_LIBFASTESTLAPC ON)
 endif()
 
+
 if ( ${CONSTRUCT_LIBFASTESTLAPC} )
     add_library(fastestlapc SHARED ./fastestlapc.cpp)
     

@@ -5,6 +5,7 @@
 #include "lion/math/polynomial.h"
 #include "lion/io/Xml_document.h"
 #include "lion/io/database_parameters.h"
+#include "src/core/foundation/fastest_lap_exception.h"
 
 template<typename Timeseries_t>
 class Engine
@@ -30,7 +31,7 @@ class Engine
 
         // If not found, throw an exception
         if ( !found )
-            throw std::runtime_error("Parameter \"" + parameter + "\" was not found");
+            throw fastest_lap_exception("Parameter \"" + parameter + "\" was not found");
     }
 
     void fill_xml(Xml_document& doc) const 

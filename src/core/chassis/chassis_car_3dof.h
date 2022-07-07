@@ -1,6 +1,7 @@
 #ifndef __CHASSIS_CAR_3DOF_H__
 #define __CHASSIS_CAR_3DOF_H__
 
+#include "src/core/foundation/fastest_lap_exception.h"
 #include "chassis.h"
 #include <array>
 #include <vector>
@@ -134,7 +135,7 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
          case (IFZFR): return _neg_Fz_fr; break; 
          case (IFZRL): return _neg_Fz_rl; break; 
          case (IFZRR): return _neg_Fz_rr; break; 
-         default:      throw std::runtime_error("Id is incorrect");
+         default:      throw fastest_lap_exception("Id is incorrect");
         }
     }
 

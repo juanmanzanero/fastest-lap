@@ -8,93 +8,199 @@ KMH=1.0/3.6;
 
 libname="${libdir_python}/$<TARGET_FILE_NAME:fastestlapc>"
 c_lib = c.CDLL(libname)
+c_lib.download_scalar.restype       = c.c_double;
+c_lib.track_download_length.restype = c.c_double;
 
-def load_vehicle(name,vehicle_type,database_file):
+# Print -----------------------------------------------------------------------------
+
+def set_print_level(print_level):
+	c_lib.set_print_level(c.c_int(print_level));
+	return;
+
+def print_variables():
+	c_lib.print_variables()
+	return;
+
+def print_variable(variable_name):
+	variable_name = c.c_char_p((variable_name).encode('utf-8'));
+	
+	n_char = pow(2,20);
+	c_data = (c.c_char*n_char)();
+	c_lib.print_variable_to_string(c_data, c.c_int(n_char), variable_name);
+	print(c_data.value.decode())
+	return;
+
+# Factories -------------------------------------------------------------------------
+
+def create_vehicle_from_xml(name,database_file):
 	name = c.c_char_p((name).encode('utf-8'))
 	database_file = c.c_char_p((database_file).encode('utf-8'))
+
+	c_lib.create_vehicle_from_xml(name,database_file)
+
+	return;
+
+def create_vehicle_empty(name,vehicle_type):
+	name = c.c_char_p((name).encode('utf-8'))
 	vehicle_type = c.c_char_p((vehicle_type).encode('utf-8'))
 
-	c_lib.create_vehicle(name,vehicle_type,database_file)
+	c_lib.create_vehicle_empty(name,vehicle_type)
 
 	return;
 
-def load_track(track_file,name):
-	options="<options> <save_variables> <prefix>track/</prefix> <variables> <s/> </variables> </save_variables> </options>";
+def create_track_from_xml(name,track_file):
 	c_name = c.c_char_p((name).encode('utf-8'));
 	c_track_file = c.c_char_p((track_file).encode('utf-8'));
-	c_options = c.c_char_p((options).encode('utf-8'));
 
-	c_lib.create_track(c_name,c_track_file,c_options);
+	c_lib.create_track_from_xml(c_name,c_track_file);
 
-	# Get the results
-	c_variable = c.c_char_p(("track/s").encode('utf-8'));
-	n_points = c_lib.download_vector_table_variable_size(c_variable);
-	c_s = (c.c_double*n_points)();
-	c_lib.download_vector_table_variable(c_s, c.c_int(n_points), c_variable);
-	s = [None]*n_points;
-	for i in range(n_points):
-		s[i] = c_s[i];
-
-	# Clean up
-	c_lib.clear_tables_by_prefix(c.c_char_p(("track/").encode('utf-8')));
-
-	return s;
-
-def circuit_preprocessor(options):
-	c_options = c.c_char_p((options).encode('utf-8'));
-	c_lib.circuit_preprocessor(c_options);
-	
 	return;
+
+def create_vector(name, data):
+	name = c.c_char_p((name).encode('utf-8'))
+	n = len(data)
+	c_data = (c.c_double*n)();
+
+	for i in range(n):
+		c_data[i] = data[i];
+
+	c_lib.create_vector(name, c.c_int(n), c_data);
+	return;
+
+def create_scalar(name, data):
+	name = c.c_char_p((name).encode('utf-8'))
+	c_lib.create_scalar(name, c.c_double(data));
+	return;
+
+def copy_variable(old_name, new_name):
+	old_name = c.c_char_p((old_name).encode('utf-8'))
+	new_name = c.c_char_p((new_name).encode('utf-8'))
+
+	c_lib.copy_variable(old_name, new_name);
+	return;
+
+def move_variable(old_name, new_name):
+	old_name = c.c_char_p((old_name).encode('utf-8'))
+	new_name = c.c_char_p((new_name).encode('utf-8'))
+
+	c_lib.move_variable(old_name, new_name);
+	return;
+
+
+# Destructors ---------------------------------------------------------------------------------------------------------
+
+def delete_variables():
+	c_lib.delete_variables();
+	return;
+
+def delete_variable(name):
+	name = c.c_char_p((prefix).encode('utf-8'))
+	c_lib.delete_variable(name);
+
+def delete_variables_by_prefix(prefix):
+	prefix = c.c_char_p((prefix).encode('utf-8'))
+	c_lib.delete_variables_by_prefix(prefix);
+	return;
+
+# Getters --------------------------------------------------------------
+
+def download_scalar(name):
+	c_variable = c.c_char_p((name).encode('utf-8'))	
+	return c_lib.download_scalar(c_variable)
+
+def download_vector_size(name):
+	c_variable = c.c_char_p((name).encode('utf-8'))	
+	return c_lib.download_vector_size(c_variable);
 
 def download_vector(name):
 	c_variable = c.c_char_p((name).encode('utf-8'))	
-
-	n = c_lib.download_vector_table_variable_size(c_variable)
+	n = c_lib.download_vector_size(c_variable)
 
 	c_data = (c.c_double*n)();
-	c_lib.download_vector_table_variable(c_data, c.c_int(n), c_variable);
+	c_lib.download_vector(c_data, c.c_int(n), c_variable);
 	data = [None]*n;
 	for i in range(n):
 		data[i] = c_data[i];
 
 	return data;
 
-def download_scalar(name):
-	c_lib.download_scalar_table_variable.restype = c.c_double
-	c_variable = c.c_char_p((name).encode('utf-8'))	
-	return c_lib.download_scalar_table_variable(c_variable)
+def vehicle_get_property(vehicle_name, q, qa, u, s, property_name):
+	c_vehicle_name = c.c_char_p((vehicle_name).encode('utf-8'))	
+	c_property_name = c.c_char_p((property_name).encode('utf-8'))	
+	
+	c_q = (c.c_double*len(q))();
+	for i in range(len(q)):
+		c_q[i] = q[i];
 
-def print_tables():
-	c_lib.print_tables()
+	c_qa = (c.c_double*len(qa))();
+	for i in range(len(qa)):
+		c_qa[i] = qa[i];
+
+	c_u = (c.c_double*len(u))();
+	for i in range(len(u)):
+		c_u[i] = u[i];
+
+	c_lib.vehicle_get_property(c_vehicle_name, c_q, c_qa, c_u, c.c_double(s), c_property_name);
 	return;
 
-def clear_tables_by_prefix(prefix):
-	prefix = c.c_char_p((prefix).encode('utf-8'))
-	c_lib.clear_tables_by_prefix(prefix);
+def vehicle_save_as_xml(vehicle_name, xml_file_name):
+	c_vehicle_name = c.c_char_p((vehicle_name).encode('utf-8'));
+	c_xml_file_name = c.c_char_p((xml_file_name).encode('utf-8'));
+
+	c_lib.vehicle_save_as_xml(c_vehicle_name, c_xml_file_name);
 	return;
 
-def set_scalar_parameter(vehicle,parameter_name,parameter_value):
+def track_download_length(track_name):
+	c_track_name = c.c_char_p((track_name).encode('utf-8'));
+	return c_lib.track_download_length(c_track_name);
+
+def track_download_data(track_name, variable_name):
+	c_track_name = c.c_char_p((track_name).encode('utf-8'));
+	c_variable_name = c.c_char_p((variable_name).encode('utf-8'));
+
+	n_points = c_lib.track_download_number_of_points(c_track_name);
+	c_data = (c.c_double*n_points)();
+	c_lib.track_download_data(c_data, c_track_name, c.c_int(n_points), c_variable_name);
+
+	data = [None]*n_points;
+	for i in range(n_points):
+		data[i] = c_data[i];
+
+	return data;
+
+
+
+# Modifiers ---------------------------------------------------------------------------
+
+
+def vehicle_set_parameter(vehicle,parameter_name,parameter_value):
 	vehicle = c.c_char_p((vehicle).encode('utf-8'))
 	parameter_name = c.c_char_p((parameter_name).encode('utf-8'));
-	c_lib.set_scalar_parameter(vehicle,parameter_name,c.c_double(parameter_value))
+	c_lib.vehicle_set_parameter(vehicle,parameter_name,c.c_double(parameter_value))
 	return ;
 
-def set_vector_parameter(vehicle,parameter_name,parameter_value):
-	vehicle = c.c_char_p((vehicle).encode('utf-8'))
-	parameter_name = c.c_char_p((parameter_name).encode('utf-8'));
-	c_parameter_value = (c.c_double*3)(parameter_value[0],parameter_value[1],parameter_value[2]);
-	c_lib.set_vector_parameter(vehicle,parameter_name,c_parameter_value)
-	return ;
+def vehicle_declare_new_constant_parameter(vehicle_name, parameter_path, parameter_alias, parameter_value):
+	c_vehicle_name = c.c_char_p((vehicle_name).encode('utf-8'));
+	c_parameter_path = c.c_char_p((parameter_path).encode('utf-8'));
+	c_parameter_alias = c.c_char_p((parameter_alias).encode('utf-8'));
 
-def set_matrix_parameter(vehicle,parameter_name,parameter_value):
-	vehicle = c.c_char_p((vehicle).encode('utf-8'))
-	parameter_name = c.c_char_p((parameter_name).encode('utf-8'));
-	c_parameter_value = (c.c_double*9)(parameter_value[0],parameter_value[1],parameter_value[2],  
-	                                   parameter_value[3],parameter_value[4],parameter_value[5],  
-	                                   parameter_value[6],parameter_value[7],parameter_value[8]); 
-	c_lib.set_matrix_parameter(vehicle,parameter_name,c_parameter_value)
-	return ;
+	c_lib.vehicle_declare_new_constant_parameter(c_vehicle_name, c_parameter_path, c_parameter_alias, c.c_double(parameter_value));
+	return;
 
+def vehicle_change_track(vehicle_name, track_name):
+	c_vehicle_name = c.c_char_p((vehicle_name).encode('utf-8'));
+	c_track_name = c.c_char_p((track_name).encode('utf-8'));
+	
+	c_lib.vehicle_change_track(c_vehicle_name, c_track_name);
+	return;
+
+# Applications ------------------------------------------------------------------------
+
+def circuit_preprocessor(options):
+	c_options = c.c_char_p((options).encode('utf-8'));
+	c_lib.circuit_preprocessor(c_options);
+	
+	return;
 def gg_diagram(vehicle,speed,n_points):
 	vehicle = c.c_char_p((vehicle).encode('utf-8'))
 	ay_c = (c.c_double*n_points)();
@@ -131,41 +237,14 @@ def optimal_laptime(vehicle, track, s, options):
 
 	return;
 
-def track_coordinates(track,s):
-	track   = c.c_char_p((track).encode('utf-8'))
-
-	n_points = len(s);
-
-	c_x_center = (c.c_double*n_points)();
-	c_y_center = (c.c_double*n_points)();
-	c_x_left   = (c.c_double*n_points)();
-	c_y_left   = (c.c_double*n_points)();
-	c_x_right  = (c.c_double*n_points)();
-	c_y_right  = (c.c_double*n_points)();
-	c_theta    = (c.c_double*n_points)();
-	c_s = (c.c_double*len(s))();
-
-	for i in range(len(s)):
-		c_s[i] = s[i];
-
-	c_lib.track_coordinates(c_x_center, c_y_center, c_x_left, c_y_left, c_x_right, c_y_right, c_theta, track, c.c_int(n_points), c_s);
-
-	x_center = [None] * n_points;
-	y_center = [None] * n_points;
-	x_left   = [None] * n_points;
-	y_left   = [None] * n_points;
-	x_right  = [None] * n_points;
-	y_right  = [None] * n_points;
-	theta    = [None] * n_points;
-
-	for i in range(n_points):
-        	x_center[i] = c_x_center[i];
-        	y_center[i] = c_y_center[i];
-        	x_left[i]   = c_x_left[i];
-        	y_left[i]   = c_y_left[i];
-        	x_right[i]  = c_x_right[i];
-        	y_right[i]  = c_y_right[i];
-        	theta[i]    = c_theta[i];   
+def track_coordinates(track):
+	x_center =  np.array(track_download_data(track,"centerline.x"));
+	y_center = -np.array(track_download_data(track,"centerline.y"));
+	x_left   =  np.array(track_download_data(track,"left.x"));
+	y_left   = -np.array(track_download_data(track,"left.y"));
+	x_right  =  np.array(track_download_data(track,"right.x"));
+	y_right  = -np.array(track_download_data(track,"right.y"));
+	theta    = -np.array(track_download_data(track,"heading-angle"));
 
 	return x_center, y_center, x_left, y_left, x_right, y_right, theta;
 
@@ -234,5 +313,5 @@ def plot_track(x_center, y_center, x_left, y_left, x_right, y_right, theta):
 	return fig;
 
 def plot_optimal_laptime(s, x, y, track):
-	fig = plot_track(*track_coordinates(track,s))
+	fig = plot_track(*track_coordinates(track))
 	plt.plot(x,y,linewidth=2,color="orange");

@@ -4,6 +4,7 @@
 #include "lion/math/matrix_extensions.h"
 #include "lion/propagators/explicit_euler.h"
 #include <math.h>
+#include "src/core/foundation/fastest_lap_exception.h"
 
 template<class DynamicModel_t>
 inline Track_run<DynamicModel_t>::Track_run(const DynamicModel_t& vehicle, const std::array<typename DynamicModel_t::Timeseries_type,DynamicModel_t::NSTATE>& q0, 
@@ -110,7 +111,7 @@ template<class DynamicModel_t>
 void Track_run<DynamicModel_t>::set_control_points(const std::vector<typename DynamicModel_t::Timeseries_type>& x)
 {
     if ( x.size() != number_total_variables() ) 
-        throw std::runtime_error("Incorrect size of input vector. Input = " + std::to_string(x.size()) + " | Expected = " + std::to_string(number_total_variables()));
+        throw fastest_lap_exception("Incorrect size of input vector. Input = " + std::to_string(x.size()) + " | Expected = " + std::to_string(number_total_variables()));
 
     auto ix = x.cbegin();
 
@@ -138,7 +139,7 @@ void Track_run<DynamicModel_t>::set_control_points(const std::vector<typename Dy
     }
 
     if (ix != x.cend())
-        throw std::runtime_error("Something went wrong");
+        throw fastest_lap_exception("Something went wrong");
 }
 
 

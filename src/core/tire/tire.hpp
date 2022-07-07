@@ -3,6 +3,7 @@
 
 #include <iomanip>
 #include "lion/thirdparty/include/logger.hpp"
+#include "src/core/foundation/fastest_lap_exception.h"
 
 template<typename Timeseries_t, size_t STATE0, size_t CONTROL0>
 inline Tire<Timeseries_t,STATE0,CONTROL0>::Tire(const std::string& name, Xml_document& database, 
@@ -33,10 +34,10 @@ void Tire<Timeseries_t,STATE0,CONTROL0>::set_parameter(const std::string& parame
         const auto found = ::set_parameter(get_parameters(), parameter, _path, value); 
 
         if ( !found )    
-            throw std::runtime_error(std::string("Parameter \"") + parameter + "\" was not found in Tire");
+            throw fastest_lap_exception(std::string("Parameter \"") + parameter + "\" was not found in Tire");
     }
     else
-        throw std::runtime_error(std::string("Parameter \"") + parameter + "\" was not found in Tire");
+        throw fastest_lap_exception(std::string("Parameter \"") + parameter + "\" was not found in Tire");
 }
 
 

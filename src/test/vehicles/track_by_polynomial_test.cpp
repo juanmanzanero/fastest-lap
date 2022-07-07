@@ -1,5 +1,7 @@
 #include "gtest/gtest.h"
 #include "src/core/vehicles/track_by_polynomial.h"
+#include "src/main/c/fastestlapc.h"
+#include <unordered_map>
 
 TEST(Track_by_polynomial_test, evaluation_at_nodes)
 {
@@ -27,3 +29,75 @@ TEST(Track_by_polynomial_test, evaluation_at_nodes)
         EXPECT_NEAR(d2r.y(), -circuit.kappa[i]*cos(-circuit.theta[i]), 1.0e-15);
     }
 }
+
+#ifdef TEST_LIBFASTESTLAPC
+std::unordered_map<std::string,Track_by_polynomial>& get_table_track();
+
+TEST(Track_by_polynomial_test, create_track_c_api)
+{
+    set_print_level(0);
+    create_track_from_xml("test_track", "./database/tracks/catalunya/catalunya_discrete.xml");
+    
+    // Create the track herein
+    Xml_document catalunya = {"./database/tracks/catalunya/catalunya_discrete.xml", true};
+    const Circuit_preprocessor circuit(catalunya);
+    Track_by_polynomial track(circuit);
+
+    // Check that the track is on the table
+    EXPECT_EQ(get_table_track().count("test_track"), 1);
+
+    // Compare number of points
+    EXPECT_EQ(circuit.n_points, track_download_number_of_points("test_track"));
+
+    // Compare variables
+    std::vector<scalar> var(circuit.n_points);
+
+    track_download_data(var.data(), "test_track", circuit.n_points, "arclength");
+    for (size_t i = 0; i < circuit.n_points; ++i)
+        EXPECT_EQ(circuit.s[i], var[i]);
+
+    track_download_data(var.data(), "test_track", circuit.n_points, "heading-angle");
+    for (size_t i = 0; i < circuit.n_points; ++i)
+        EXPECT_EQ(circuit.theta[i], var[i]);
+
+    track_download_data(var.data(), "test_track", circuit.n_points, "curvature");
+    for (size_t i = 0; i < circuit.n_points; ++i)
+        EXPECT_EQ(circuit.kappa[i], var[i]);
+
+    track_download_data(var.data(), "test_track", circuit.n_points, "distance-left-boundary");
+    for (size_t i = 0; i < circuit.n_points; ++i)
+        EXPECT_EQ(circuit.nl[i], var[i]);
+
+    track_download_data(var.data(), "test_track", circuit.n_points, "distance-right-boundary");
+    for (size_t i = 0; i < circuit.n_points; ++i)
+        EXPECT_EQ(circuit.nr[i], var[i]);
+
+    track_download_data(var.data(), "test_track", circuit.n_points, "left.x");
+    for (size_t i = 0; i < circuit.n_points; ++i)
+        EXPECT_EQ(circuit.r_left[i].x(), var[i]);
+
+    track_download_data(var.data(), "test_track", circuit.n_points, "left.y");
+    for (size_t i = 0; i < circuit.n_points; ++i)
+        EXPECT_EQ(circuit.r_left[i].y(), var[i]);
+
+    track_download_data(var.data(), "test_track", circuit.n_points, "right.x");
+    for (size_t i = 0; i < circuit.n_points; ++i)
+        EXPECT_EQ(circuit.r_right[i].x(), var[i]);
+
+    track_download_data(var.data(), "test_track", circuit.n_points, "right.y");
+    for (size_t i = 0; i < circuit.n_points; ++i)
+        EXPECT_EQ(circuit.r_right[i].y(), var[i]);
+
+    track_download_data(var.data(), "test_track", circuit.n_points, "centerline.x");
+    for (size_t i = 0; i < circuit.n_points; ++i)
+        EXPECT_EQ(circuit.r_centerline[i].x(), var[i]);
+
+    track_download_data(var.data(), "test_track", circuit.n_points, "centerline.y");
+    for (size_t i = 0; i < circuit.n_points; ++i)
+        EXPECT_EQ(circuit.r_centerline[i].y(), var[i]);
+
+    // Delete
+    delete_variable("test_track");
+    EXPECT_EQ(get_table_track().count("test_track"), 0);
+}
+#endif

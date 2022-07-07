@@ -66,6 +66,11 @@ jobs:
         path: database
         retention-days: 1 
 
+    - name: copy libfastestlapc
+      shell: bash
+      working-directory: ${{runner.workspace}}/build
+      run: cp -rf ${{runner.workspace}}/build/lib/* ${{runner.workspace}}/build/thirdparty/lib
+
     - uses: actions/upload-artifact@v2 
       with:
         name: libraries_release
@@ -127,6 +132,11 @@ jobs:
         name: database_debug
         path: database
         retention-days: 1 
+
+    - name: copy libfastestlapc
+      shell: bash
+      working-directory: ${{runner.workspace}}/build
+      run: cp -rf ${{runner.workspace}}/build/lib/* ${{runner.workspace}}/build/thirdparty/lib
 
     - uses: actions/upload-artifact@v2 
       with:

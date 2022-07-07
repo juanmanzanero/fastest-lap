@@ -27,6 +27,8 @@ Fastest-lap an open source (`MIT <https://github.com/juanmanzanero/fastest-lap/b
    :caption: User-manual
 
    overview
+   variable_types
+   functions
 
 .. toctree::
    :maxdepth: 2

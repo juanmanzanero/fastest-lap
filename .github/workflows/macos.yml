@@ -69,6 +69,11 @@ jobs:
         path: database
         retention-days: 1 
 
+    - name: copy libfastestlapc
+      shell: bash
+      working-directory: ${{runner.workspace}}/build
+      run: cp -rfv ${{runner.workspace}}/build/lib/* ${{runner.workspace}}/build/thirdparty/lib
+
     - uses: actions/upload-artifact@v2 
       with:
         name: libraries_release
@@ -133,6 +138,11 @@ jobs:
         path: database
         retention-days: 1 
 
+    - name: copy libfastestlapc
+      shell: bash
+      working-directory: ${{runner.workspace}}/build
+      run: cp -rvf ${{runner.workspace}}/build/lib/* ${{runner.workspace}}/build/thirdparty/lib
+
     - uses: actions/upload-artifact@v2 
       with:
         name: libraries_debug
@@ -171,7 +181,7 @@ jobs:
       shell: bash     
       # Execute tests defined by the CMake configuration.  
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-      run: cp ./tire/tire_test . && chmod +x ./tire_test && export LD_LIBRARY_PATH=${{runner.workspace}}:${LD_LIBRARY_PATH} && ./tire_test
+      run: cp ./tire/tire_test . && chmod +x ./tire_test && export DYLD_LIBRARY_PATH=${{runner.workspace}}:${DYLD_LIBRARY_PATH} && ./tire_test
 
   tire_test_debug:
   
@@ -204,7 +214,7 @@ jobs:
       shell: bash     
       # Execute tests defined by the CMake configuration.  
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-      run: cp ./tire/tire_test . && chmod +x ./tire_test && export LD_LIBRARY_PATH=${{runner.workspace}}:${LD_LIBRARY_PATH} && ./tire_test
+      run: cp ./tire/tire_test . && chmod +x ./tire_test && export DYLD_LIBRARY_PATH=${{runner.workspace}}:${DYLD_LIBRARY_PATH} && ./tire_test
 
   chassis_test_release:
   
@@ -237,7 +247,7 @@ jobs:
       shell: bash     
       # Execute tests defined by the CMake configuration.  
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-      run: cp ./chassis/chassis_test . && chmod +x ./chassis_test && export LD_LIBRARY_PATH=${{runner.workspace}}:${LD_LIBRARY_PATH} && ./chassis_test
+      run: cp ./chassis/chassis_test . && chmod +x ./chassis_test && export DYLD_LIBRARY_PATH=${{runner.workspace}}:${DYLD_LIBRARY_PATH} && ./chassis_test
     
   chassis_test_debug:
   
@@ -270,7 +280,7 @@ jobs:
       shell: bash     
       # Execute tests defined by the CMake configuration.  
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-      run: cp ./chassis/chassis_test . && chmod +x ./chassis_test && export LD_LIBRARY_PATH=${{runner.workspace}}:${LD_LIBRARY_PATH} && ./chassis_test
+      run: cp ./chassis/chassis_test . && chmod +x ./chassis_test && export DYLD_LIBRARY_PATH=${{runner.workspace}}:${DYLD_LIBRARY_PATH} && ./chassis_test
 
   vehicles_test_release:
   
@@ -308,7 +318,7 @@ jobs:
       shell: bash     
       # Execute tests defined by the CMake configuration.  
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-      run: cp vehicles/vehicles_test . && chmod +x ./vehicles_test && export LD_LIBRARY_PATH=${{runner.workspace}}:${LD_LIBRARY_PATH} && ./vehicles_test
+      run: cp vehicles/vehicles_test . && chmod +x ./vehicles_test && export DYLD_LIBRARY_PATH=${{runner.workspace}}:${DYLD_LIBRARY_PATH} && ./vehicles_test
 
   vehicles_test_debug:
   
@@ -346,7 +356,7 @@ jobs:
       shell: bash     
       # Execute tests defined by the CMake configuration.  
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-      run: cp vehicles/vehicles_test . && chmod +x ./vehicles_test && export LD_LIBRARY_PATH=${{runner.workspace}}:${LD_LIBRARY_PATH} && ./vehicles_test
+      run: cp vehicles/vehicles_test . && chmod +x ./vehicles_test && export DYLD_LIBRARY_PATH=${{runner.workspace}}:${DYLD_LIBRARY_PATH} && ./vehicles_test
 
   applications_test_release:
   
@@ -384,7 +394,7 @@ jobs:
       shell: bash     
       # Execute tests defined by the CMake configuration.  
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-      run: cp applications/applications_test . && chmod +x ./applications_test && export LD_LIBRARY_PATH=${{runner.workspace}}:${LD_LIBRARY_PATH} && ./applications_test
+      run: cp applications/applications_test . && chmod +x ./applications_test && export DYLD_LIBRARY_PATH=${{runner.workspace}}:${DYLD_LIBRARY_PATH} && ./applications_test
 
   applications_test_debug:
   
@@ -422,7 +432,7 @@ jobs:
       shell: bash     
       # Execute tests defined by the CMake configuration.  
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-      run: cp applications/applications_test . && chmod +x ./applications_test && export LD_LIBRARY_PATH=${{runner.workspace}}:${LD_LIBRARY_PATH} && ./applications_test
+      run: cp applications/applications_test . && chmod +x ./applications_test && export DYLD_LIBRARY_PATH=${{runner.workspace}}:${DYLD_LIBRARY_PATH} && ./applications_test
 
   actuators_test_release:
   
@@ -455,7 +465,7 @@ jobs:
       shell: bash     
       # Execute tests defined by the CMake configuration.  
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-      run: cp actuators/actuators_test . && chmod +x ./actuators_test && export LD_LIBRARY_PATH=${{runner.workspace}}:${LD_LIBRARY_PATH} && ./actuators_test
+      run: cp actuators/actuators_test . && chmod +x ./actuators_test && export DYLD_LIBRARY_PATH=${{runner.workspace}}:${DYLD_LIBRARY_PATH} && ./actuators_test
 
   actuators_test_debug:
   
@@ -488,7 +498,7 @@ jobs:
       shell: bash     
       # Execute tests defined by the CMake configuration.  
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-      run: cp actuators/actuators_test . && chmod +x ./actuators_test && export LD_LIBRARY_PATH=${{runner.workspace}}:${LD_LIBRARY_PATH} && ./actuators_test
+      run: cp actuators/actuators_test . && chmod +x ./actuators_test && export DYLD_LIBRARY_PATH=${{runner.workspace}}:${DYLD_LIBRARY_PATH} && ./actuators_test
 
   remove_artifacts_release:
   

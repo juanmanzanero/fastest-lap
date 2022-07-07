@@ -5,6 +5,7 @@
 #include "lion/math/polynomial.h"
 #include "lion/math/matrix_extensions.h"
 #include "lion/math/ipopt_cppad_handler.hpp"
+#include "src/core/foundation/fastest_lap_exception.h"
 
 inline std::pair<std::vector<Circuit_preprocessor::Coordinates>,std::vector<Circuit_preprocessor::Coordinates>>
     Circuit_preprocessor::read_kml(Xml_document& coord_left_kml, Xml_document& coord_right_kml)
@@ -14,10 +15,10 @@ inline std::pair<std::vector<Circuit_preprocessor::Coordinates>,std::vector<Circ
     const std::vector<scalar> coord_right_raw = coord_right_kml.get_element("kml/Document/Placemark/LineString/coordinates").get_value(std::vector<scalar>());
 
     if ( coord_left_raw.size() % 3 != 0 )
-        throw std::runtime_error("Error processing google-earth placemark: size must be multiple of 3");
+        throw fastest_lap_exception("Error processing google-earth placemark: size must be multiple of 3");
 
     if ( coord_right_raw.size() % 3 != 0 )
-        throw std::runtime_error("Error processing google-earth placemark: size must be multiple of 3");
+        throw fastest_lap_exception("Error processing google-earth placemark: size must be multiple of 3");
 
     const size_t n_left = coord_left_raw.size()/3;
     std::vector<Coordinates> coord_left(n_left);
@@ -40,14 +41,14 @@ inline Circuit_preprocessor::Circuit_preprocessor(Xml_document& doc)
     Xml_element root = doc.get_root_element();
 
     if ( root.get_attribute("format") != "discrete" )
-        throw std::runtime_error("Track should be of type \"discrete\"");
+        throw fastest_lap_exception("Track should be of type \"discrete\"");
 
     if ( root.get_attribute("type") == "closed" )
         is_closed = true;
     else if ( root.get_attribute("type") == "open" )
         is_closed = false;
     else
-        throw std::runtime_error("Incorrect track type, should be \"open\" or \"closed\"");
+        throw fastest_lap_exception("Incorrect track type, should be \"open\" or \"closed\"");
 
     // Get a header with the errors 
     auto header = root.get_child("header");
@@ -329,7 +330,7 @@ inline void Circuit_preprocessor::compute(const std::vector<scalar>& s_center, c
 
     if ( result.status != CppAD::ipopt_cppad_result<std::vector<scalar>>::success )
     {
-        throw std::runtime_error("Optimization did not succeed");
+        throw fastest_lap_exception("Optimization did not succeed");
     }
 
     // Load the solution
@@ -988,18 +989,18 @@ inline std::pair<std::vector<Circuit_preprocessor::Coordinates>, std::vector<Cir
 
     // Check that the provided starting point is inside the track
     if ( dot(v_start-v_left_start,v_start-v_right_start) > -0.8*norm(v_start-v_left_start)*norm(v_start-v_right_start) )
-        throw std::runtime_error("The provided starting point does not lie within the track");
+        throw fastest_lap_exception("The provided starting point does not lie within the track");
 
     // Check that the provided finish point is inside the track
     if ( dot(v_finish-v_left_finish,v_finish-v_right_finish) > -0.8*norm(v_finish-v_left_finish)*norm(v_finish-v_right_finish) )
-        throw std::runtime_error("The provided finishing point does not lie within the track");
+        throw fastest_lap_exception("The provided finishing point does not lie within the track");
 
     // Check that i_start < i_finish
     if ( i_left_finish[0] < i_left_start[0] )
-        throw std::runtime_error("The provided starting point is ahead of the provided finish point");
+        throw fastest_lap_exception("The provided starting point is ahead of the provided finish point");
 
     if ( i_right_finish[0] < i_right_start[0] )
-        throw std::runtime_error("The provided starting point is ahead of the provided finish point");
+        throw fastest_lap_exception("The provided starting point is ahead of the provided finish point");
     
     // (4) Trim the left boundary
     std::vector<Coordinates> coord_left_trim = { {v_left_start.x(), v_left_start.y()} };

@@ -13,7 +13,7 @@ inline Track_by_polynomial::Track_by_polynomial(Xml_document& doc)
         *this = Track_by_polynomial(circuit);
     }
     else
-        throw std::runtime_error("Format is not recognized. Options are \"by-polynomial\" and \"discrete\"");
+        throw fastest_lap_exception("Format is not recognized. Options are \"by-polynomial\" and \"discrete\"");
 }
 
 

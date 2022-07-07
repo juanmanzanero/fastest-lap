@@ -6,6 +6,7 @@
 #include "lion/foundation/constants.h"
 #include "lion/thirdparty/include/logger.hpp"
 #include "lion/thirdparty/include/cppad/ipopt/solve.hpp"
+#include "src/core/foundation/fastest_lap_exception.h"
 
 template<typename Dynamic_model_t>
 template<typename T>
@@ -310,7 +311,7 @@ std::enable_if_t<std::is_same<T,scalar>::value,std::pair<typename Steady_state<D
 
     // Check that the lateral acceleration is lower than the maximum
     if ( ay > result_max_lat_acc.ay )
-        throw std::runtime_error("Acceleraton provided is higher than the maximum achievable");
+        throw fastest_lap_exception("Acceleraton provided is higher than the maximum achievable");
 
     // (3)
     // Compute the steady state with ax = ax_aymax.ay/ay_max
@@ -383,7 +384,7 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,std::pair<typename Ste
 
     // Check that the lateral acceleration is lower than the maximum
     if ( ay > result_max_lat_acc.ay )
-        throw std::runtime_error("Acceleraton provided is higher than the maximum achievable");
+        throw fastest_lap_exception("Acceleraton provided is higher than the maximum achievable");
 
     // (3)
     // Compute the steady state with ax = ax_aymax.ay/ay_max

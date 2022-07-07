@@ -219,7 +219,15 @@ class Chassis
 
     DECLARE_PARAMS(
         { "mass", _m },
-        { "inertia", _I },
+        { "inertia/Ixx", _I.xx() },
+        { "inertia/Ixy", _I.xy() },
+        { "inertia/Ixz", _I.xz() },
+        { "inertia/Iyx", _I.yx() },
+        { "inertia/Iyy", _I.yy() },
+        { "inertia/Iyz", _I.yz() },
+        { "inertia/Izx", _I.zx() },
+        { "inertia/Izy", _I.zy() },
+        { "inertia/Izz", _I.zz() },
         { "aerodynamics/rho", _rho },
         { "aerodynamics/cd", _cd },
         { "aerodynamics/cl", _cl },

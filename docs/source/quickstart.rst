@@ -22,22 +22,22 @@ We start by including the ``fastest_lap`` module. In this tutorial, every string
 
 This command imports the Fastest-lap python API functions, and also loads the C++ library. The C++ library is a collection of functions responsible of the computations, plus its internal memory where cars, circuits, and results are stored. From this point, Fastest-lap is ready.
 
-We can create a car model by calling ``load_vehicle()``
+We can create a car model by calling ``create_vehicle()``
 
 .. code-block:: python
 
     vehicle_name = "car"
-    fastest_lap.load_vehicle(vehicle_name,"limebeer-2014-f1","/path/to/database/vehicles/f1/mercedes-2020-catalunya.xml");
+    fastest_lap.create_vehicle(vehicle_name,"f1-3dof","/path/to/database/vehicles/f1/mercedes-2020-catalunya.xml");
 
-This creates a car of type `limebeer-2014-f1 <https://web.archive.org/web/20200320055720id_/https://ora.ox.ac.uk/objects/uuid:ce1a7106-0a2c-41af-8449-41541220809f/download_file?safe_filename=Perantoni%2Band%2BLimebeer%252C%2BOptimal%2Bcontrol%2Bfor%2Ba%2BFormula%2BOne%2Bcar%2Bwith%2Bvariable%2Bparameters.pdf&file_format=application%2Fpdf&type_of_work=Journal+article>`_ in the Fastest-lap C++ internal memory by the name of ``"car"``. If you try to create another car with the same name, the application will throw an error.
+This creates a `3dof F1 car <https://web.archive.org/web/20200320055720id_/https://ora.ox.ac.uk/objects/uuid:ce1a7106-0a2c-41af-8449-41541220809f/download_file?safe_filename=Perantoni%2Band%2BLimebeer%252C%2BOptimal%2Bcontrol%2Bfor%2Ba%2BFormula%2BOne%2Bcar%2Bwith%2Bvariable%2Bparameters.pdf&file_format=application%2Fpdf&type_of_work=Journal+article>`_ in the Fastest-lap C++ internal memory by the name of ``"car"``. If you try to create another car with the same name, the application will throw an error.
 
-Next, we can load a circuit from an XML file by calling ``load_track()``
+Next, we can load a circuit from an XML file by calling ``create_track()``
 
 
 .. code-block:: python
 
     track_name = "catalunya"
-    s = fastest_lap.load_track("/path/to/database/tracks/catalunya/catalunya_adapted.xml",track_name);
+    s = fastest_lap.create_track("/path/to/database/tracks/catalunya/catalunya_adapted.xml",track_name);
 
 This loads the circuit into the Fastest-lap C++ internal memory, by the name of ``"catalunya"``, but also returns the circuit arclength points used for the optimal laptime calculation that will follow.
 

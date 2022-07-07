@@ -1,12 +1,16 @@
 #ifndef __CHASSIS_HPP__
 #define __CHASSIS_HPP__
 
+#include "src/core/foundation/fastest_lap_exception.h"
+
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
 inline Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::Chassis(
     const FrontAxle_t& front_axle, const RearAxle_t& rear_axle, const std::string& path)
 : _inertial_frame(),
   _road_frame(Frame<Timeseries_t>(Vector3d<Timeseries_t>(0.0), Vector3d<Timeseries_t>(0.0), {0.0}, {0.0}, {Z}, _inertial_frame)),
   _chassis_frame(Frame<Timeseries_t>(Vector3d<Timeseries_t>(0.0), Vector3d<Timeseries_t>(0.0), {}, {}, {}, _road_frame)),
+  _m(0.0),
+  _I(0.0),
   _front_axle(front_axle),
   _rear_axle(rear_axle),
   _F(Vector3d<Timeseries_t>(0.0)),
@@ -94,7 +98,7 @@ void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_parameter
 
         // If not found, throw an exception
         if ( !found )
-            throw std::runtime_error("Parameter \"" + parameter + "\" was not found");
+            throw fastest_lap_exception("Parameter \"" + parameter + "\" was not found");
     }
     else
     {
@@ -105,7 +109,7 @@ void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_parameter
             found = get_rear_axle().set_parameter(parameter, value);
     
         if ( !found )
-            throw std::runtime_error("Parameter \"" + parameter + "\" was not found");
+            throw fastest_lap_exception("Parameter \"" + parameter + "\" was not found");
     }
 }
 

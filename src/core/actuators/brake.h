@@ -3,6 +3,7 @@
 
 #include "lion/foundation/types.h"
 #include "lion/io/Xml_document.h"
+#include "src/core/foundation/fastest_lap_exception.h"
 
 template<typename Timeseries_t>
 class Brake
@@ -34,7 +35,7 @@ class Brake
 
         // If not found, throw an exception
         if ( !found )
-            throw std::runtime_error("Parameter \"" + parameter + "\" was not found in brake");
+            throw fastest_lap_exception("Parameter \"" + parameter + "\" was not found in brake");
     }
 
     // Fill xml

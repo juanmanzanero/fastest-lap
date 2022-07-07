@@ -9,10 +9,11 @@ import fastest_lap
 from fastest_lap import KMH
 ```
 
+
 ```python
 # Load vehicle
 vehicle = "car"
-fastest_lap.load_vehicle(vehicle,"roberto-lot-kart-2016","../../../../database/vehicles/kart/roberto-lot-kart-2016.xml");
+fastest_lap.create_vehicle_from_xml(vehicle,"../../../../database/vehicles/kart/roberto-lot-kart-2016.xml");
 ```
 
 
@@ -23,6 +24,6 @@ fastest_lap.plot_gg(*fastest_lap.gg_diagram(vehicle,50.0*KMH,100));
 
 
     
-![png](output_3_0.png)
+![png](gg-diagram_files/gg-diagram_3_0.png)
     
 

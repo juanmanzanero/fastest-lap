@@ -15,21 +15,22 @@ from fastest_lap import KMH
 ```python
 # Load vehicle
 vehicle = "car"
-fastest_lap.load_vehicle(vehicle,"roberto-lot-kart-2016","../../../../database/vehicles/kart/roberto-lot-kart-2016.xml");
+fastest_lap.create_vehicle_from_xml(vehicle,"../../../../database/vehicles/kart/roberto-lot-kart-2016.xml");
 ```
 
 
 ```python
 # Load track
 track="vendrell"
-s=fastest_lap.load_track("../../../../database/tracks/vendrell/vendrell.xml",track);
+fastest_lap.create_track_from_xml(track,"../../../../database/tracks/vendrell/vendrell.xml");
+s = fastest_lap.track_download_data(track, "arclength");
 ```
 
 
 ```python
 # Compute optimal laptime
 options  = "<options>"
-options += "    <save_variables>"
+options += "    <output_variables>"
 options += "        <prefix>run/</prefix>"
 options += "        <variables>"
 options += "            <x/>"
@@ -43,7 +44,7 @@ options += "            <psi/>"
 options += "            <omega/>"
 options += "            <v/>"
 options += "        </variables>"
-options += "    </save_variables>"
+options += "    </output_variables>"
 options += "    <print_level> 5 </print_level>"
 options += "</options>"
 
@@ -57,7 +58,7 @@ s        = fastest_lap.download_vector("run/s");
 time     = fastest_lap.download_vector("run/time");
 psi      = fastest_lap.download_vector("run/psi");
 omega    = fastest_lap.download_vector("run/omega");
-v       = fastest_lap.download_vector("run/v");
+v        = fastest_lap.download_vector("run/v");
 ```
 
 ## GPS
@@ -70,7 +71,7 @@ plt.gca().invert_yaxis();
 
 
     
-![png](output_6_0.png)
+![png](Optimal_laptime_files/Optimal_laptime_6_0.png)
     
 
 
@@ -84,7 +85,7 @@ plt.plot(delta,color="orange");
 
 
     
-![png](output_8_0.png)
+![png](Optimal_laptime_files/Optimal_laptime_8_0.png)
     
 
 
@@ -98,7 +99,7 @@ plt.plot(throttle,color="orange");
 
 
     
-![png](output_10_0.png)
+![png](Optimal_laptime_files/Optimal_laptime_10_0.png)
     
 
 

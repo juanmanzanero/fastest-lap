@@ -4,6 +4,8 @@
 #include "lion/thirdparty/include/cppad/cppad.hpp"
 #include "src/core/applications/steady_state.h"
 #include "lion/propagators/crank_nicolson.h"
+#include <unordered_map>
+#include "src/main/c/fastestlapc.h"
 
 // Define convenient aliases
 using Front_left_tire_type  = limebeer2014f1<scalar>::Front_left_tire_type;
@@ -304,7 +306,7 @@ TEST_F(limebeer2014f1_test, set_parameter)
     car.set_parameter("vehicle/rear-axle/engine/maximum-power", 735.499);
 
     car.set_parameter("vehicle/chassis/mass", 660.0);
-    car.set_parameter("vehicle/chassis/inertia", sMatrix3x3(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 450.0));
+    car.set_parameter("vehicle/chassis/inertia/Izz", 450.0);
     car.set_parameter("vehicle/chassis/aerodynamics/rho", 1.2);
     car.set_parameter("vehicle/chassis/aerodynamics/area", 1.5);
     car.set_parameter("vehicle/chassis/aerodynamics/cd", 0.9);
@@ -406,6 +408,149 @@ TEST_F(limebeer2014f1_test, set_parameter)
             EXPECT_NEAR(dqa[j], dqa_c[j], 2.0e-15);
     }
 }
+
+#ifdef TEST_LIBFASTESTLAPC
+std::unordered_map<std::string,limebeer2014f1_all>& get_table_f1_3dof();
+std::unordered_map<std::string,Track_by_polynomial>& get_table_track();
+
+TEST_F(limebeer2014f1_test, set_parameter_c_api)
+{
+    set_print_level(0);
+    create_vehicle_empty("vehicle_test", "f1-3dof");
+    create_track_from_xml("track_test", "./database/tracks/catalunya/catalunya_discrete.xml");
+    vehicle_change_track("vehicle_test", "track_test");
+    
+    Xml_document catalunya_xml("./database/tracks/catalunya/catalunya_discrete.xml",true);
+    Track_by_polynomial catalunya(catalunya_xml);
+    limebeer2014f1<scalar>::curvilinear<Track_by_polynomial>::Road_t road(catalunya);
+    limebeer2014f1<scalar>::curvilinear<Track_by_polynomial> car_correct(database, road);
+
+    vehicle_set_parameter("vehicle_test", "vehicle/front-axle/track", 1.46);
+    vehicle_set_parameter("vehicle_test", "vehicle/front-axle/inertia", 1.0);
+    vehicle_set_parameter("vehicle_test", "vehicle/front-axle/smooth_throttle_coeff", 1.0e-5);
+    vehicle_set_parameter("vehicle_test", "vehicle/front-axle/brakes/max_torque", 5000.0);
+
+    vehicle_set_parameter("vehicle_test", "vehicle/rear-axle/track", 1.46);
+    vehicle_set_parameter("vehicle_test", "vehicle/rear-axle/inertia", 1.55);
+    vehicle_set_parameter("vehicle_test", "vehicle/rear-axle/smooth_throttle_coeff", 1.0e-5);
+    vehicle_set_parameter("vehicle_test", "vehicle/rear-axle/differential_stiffness", 10.47);
+    vehicle_set_parameter("vehicle_test", "vehicle/rear-axle/brakes/max_torque", 5000.0);
+    vehicle_set_parameter("vehicle_test", "vehicle/rear-axle/engine/maximum-power", 735.499);
+
+    vehicle_set_parameter("vehicle_test", "vehicle/chassis/mass", 660.0);
+    vehicle_set_parameter("vehicle_test", "vehicle/chassis/inertia/Izz", 450.0);
+    vehicle_set_parameter("vehicle_test", "vehicle/chassis/aerodynamics/rho", 1.2);
+    vehicle_set_parameter("vehicle_test", "vehicle/chassis/aerodynamics/area", 1.5);
+    vehicle_set_parameter("vehicle_test", "vehicle/chassis/aerodynamics/cd", 0.9);
+    vehicle_set_parameter("vehicle_test", "vehicle/chassis/aerodynamics/cl", 3.0);
+    vehicle_set_parameter("vehicle_test", "vehicle/chassis/com/x", 0.0 );
+    vehicle_set_parameter("vehicle_test", "vehicle/chassis/com/y", 0.0 );
+    vehicle_set_parameter("vehicle_test", "vehicle/chassis/com/z", -0.3 );
+    vehicle_set_parameter("vehicle_test", "vehicle/chassis/front_axle/x",1.8);
+    vehicle_set_parameter("vehicle_test", "vehicle/chassis/front_axle/y",0.0);
+    vehicle_set_parameter("vehicle_test", "vehicle/chassis/front_axle/z",-0.33);
+    vehicle_set_parameter("vehicle_test", "vehicle/chassis/rear_axle/x", -1.6);
+    vehicle_set_parameter("vehicle_test", "vehicle/chassis/rear_axle/y",  0.0);
+    vehicle_set_parameter("vehicle_test", "vehicle/chassis/rear_axle/z", -0.33);
+    vehicle_set_parameter("vehicle_test", "vehicle/chassis/pressure_center/x", -0.1);
+    vehicle_set_parameter("vehicle_test", "vehicle/chassis/pressure_center/y",  0.0);
+    vehicle_set_parameter("vehicle_test", "vehicle/chassis/pressure_center/z", -0.3);
+    vehicle_set_parameter("vehicle_test", "vehicle/chassis/brake_bias", 0.6);
+    vehicle_set_parameter("vehicle_test", "vehicle/chassis/roll_balance_coefficient", 0.5);
+    vehicle_set_parameter("vehicle_test", "vehicle/chassis/Fz_max_ref2", 1.0);
+    
+    vehicle_set_parameter("vehicle_test", "vehicle/front-tire/radius",0.330); 
+    vehicle_set_parameter("vehicle_test", "vehicle/front-tire/radial-stiffness",0.0);
+    vehicle_set_parameter("vehicle_test", "vehicle/front-tire/radial-damping",0.0);
+    vehicle_set_parameter("vehicle_test", "vehicle/front-tire/Fz-max-ref2", 1.0 );
+    vehicle_set_parameter("vehicle_test", "vehicle/front-tire/reference-load-1", 2000.0 ); 
+    vehicle_set_parameter("vehicle_test", "vehicle/front-tire/reference-load-2", 6000.0 ); 
+    vehicle_set_parameter("vehicle_test", "vehicle/front-tire/mu-x-max-1", 1.75 );
+    vehicle_set_parameter("vehicle_test", "vehicle/front-tire/mu-x-max-2", 1.40 );
+    vehicle_set_parameter("vehicle_test", "vehicle/front-tire/kappa-max-1", 0.11 );
+    vehicle_set_parameter("vehicle_test", "vehicle/front-tire/kappa-max-2", 0.10 );
+    vehicle_set_parameter("vehicle_test", "vehicle/front-tire/mu-y-max-1", 1.80 );
+    vehicle_set_parameter("vehicle_test", "vehicle/front-tire/mu-y-max-2", 1.45 );
+    vehicle_set_parameter("vehicle_test", "vehicle/front-tire/lambda-max-1", 9.0 );
+    vehicle_set_parameter("vehicle_test", "vehicle/front-tire/lambda-max-2", 8.0 );
+    vehicle_set_parameter("vehicle_test", "vehicle/front-tire/Qx", 1.9 );
+    vehicle_set_parameter("vehicle_test", "vehicle/front-tire/Qy", 1.9 );
+
+    vehicle_set_parameter("vehicle_test", "vehicle/rear-tire/radius",0.330); 
+    vehicle_set_parameter("vehicle_test", "vehicle/rear-tire/radial-stiffness",0.0);
+    vehicle_set_parameter("vehicle_test", "vehicle/rear-tire/radial-damping",0.0);
+    vehicle_set_parameter("vehicle_test", "vehicle/rear-tire/Fz-max-ref2", 1.0 );
+    vehicle_set_parameter("vehicle_test", "vehicle/rear-tire/reference-load-1", 2000.0 ); 
+    vehicle_set_parameter("vehicle_test", "vehicle/rear-tire/reference-load-2", 6000.0 ); 
+    vehicle_set_parameter("vehicle_test", "vehicle/rear-tire/mu-x-max-1", 1.75 );
+    vehicle_set_parameter("vehicle_test", "vehicle/rear-tire/mu-x-max-2", 1.40 );
+    vehicle_set_parameter("vehicle_test", "vehicle/rear-tire/kappa-max-1", 0.11 );
+    vehicle_set_parameter("vehicle_test", "vehicle/rear-tire/kappa-max-2", 0.10 );
+    vehicle_set_parameter("vehicle_test", "vehicle/rear-tire/mu-y-max-1", 1.80 );
+    vehicle_set_parameter("vehicle_test", "vehicle/rear-tire/mu-y-max-2", 1.45 );
+    vehicle_set_parameter("vehicle_test", "vehicle/rear-tire/lambda-max-1", 9.0);
+    vehicle_set_parameter("vehicle_test", "vehicle/rear-tire/lambda-max-2", 8.0);
+    vehicle_set_parameter("vehicle_test", "vehicle/rear-tire/Qx", 1.9 );
+    vehicle_set_parameter("vehicle_test", "vehicle/rear-tire/Qy", 1.9 );
+
+    EXPECT_EQ(get_table_f1_3dof().count("vehicle_test"), 1);
+
+    auto& car = get_table_f1_3dof().at("vehicle_test").get_curvilinear_scalar_car();
+
+    std::array<double,10> q0;
+    std::array<double,4> qa0;
+    auto u0 = car.get_state_and_control_upper_lower_and_default_values().u_def;
+    
+    constexpr const size_t n = 500;
+
+    // Check the results with a saved simulation
+    Xml_document opt_saved("data/f1_optimal_laptime_catalunya_discrete.xml", true);
+
+    auto arclength_saved = opt_saved.get_element("optimal_laptime/arclength").get_value(std::vector<scalar>());
+    auto kappa_fl_saved = opt_saved.get_element("optimal_laptime/steering-kappa-left").get_value(std::vector<scalar>());
+    auto kappa_fr_saved = opt_saved.get_element("optimal_laptime/steering-kappa-right").get_value(std::vector<scalar>());
+    auto kappa_rl_saved = opt_saved.get_element("optimal_laptime/powered-kappa-left").get_value(std::vector<scalar>());
+    auto kappa_rr_saved = opt_saved.get_element("optimal_laptime/powered-kappa-right").get_value(std::vector<scalar>());
+    auto u_saved        = opt_saved.get_element("optimal_laptime/u").get_value(std::vector<scalar>());
+    auto v_saved        = opt_saved.get_element("optimal_laptime/v").get_value(std::vector<scalar>());
+    auto omega_saved    = opt_saved.get_element("optimal_laptime/omega").get_value(std::vector<scalar>());
+    auto time_saved     = opt_saved.get_element("optimal_laptime/time").get_value(std::vector<scalar>());
+    auto n_saved        = opt_saved.get_element("optimal_laptime/n").get_value(std::vector<scalar>());
+    auto alpha_saved    = opt_saved.get_element("optimal_laptime/alpha").get_value(std::vector<scalar>());
+    auto delta_saved    = opt_saved.get_element("optimal_laptime/delta").get_value(std::vector<scalar>());
+    auto throttle_saved = opt_saved.get_element("optimal_laptime/throttle").get_value(std::vector<scalar>());
+    auto Fz_fl_saved    = opt_saved.get_element("optimal_laptime/Fz_fl").get_value(std::vector<scalar>());
+    auto Fz_fr_saved    = opt_saved.get_element("optimal_laptime/Fz_fr").get_value(std::vector<scalar>());
+    auto Fz_rl_saved    = opt_saved.get_element("optimal_laptime/Fz_rl").get_value(std::vector<scalar>());
+    auto Fz_rr_saved    = opt_saved.get_element("optimal_laptime/Fz_rr").get_value(std::vector<scalar>());
+
+    for (size_t i = 0; i < n; ++i)
+    {
+        q0 = {kappa_fl_saved[i], kappa_fr_saved[i], kappa_rl_saved[i], kappa_rr_saved[i], u_saved[i], v_saved[i], omega_saved[i],
+              time_saved[i], n_saved[i], alpha_saved[i]};
+
+        u0[decltype(car_correct)::Chassis_type::front_axle_type::ISTEERING] = delta_saved[i];
+        u0[decltype(car_correct)::Chassis_type::ITHROTTLE] = throttle_saved[i];
+
+        qa0 = {Fz_fl_saved[i], Fz_fr_saved[i], Fz_rl_saved[i], Fz_rr_saved[i]};
+
+        auto [dqdt, dqa] = car(q0,qa0,u0,arclength_saved[i]);
+        auto [dqdt_c, dqa_c] = car_correct(q0,qa0,u0,arclength_saved[i]);
+
+        for (size_t j = 0; j < dqdt.size(); ++j)
+            EXPECT_NEAR(dqdt[j], dqdt_c[j], 2.0e-15);
+
+        for (size_t j = 0; j < dqa.size(); ++j)
+            EXPECT_NEAR(dqa[j], dqa_c[j], 2.0e-15);
+    }
+
+    delete_variable("vehicle_test");
+    delete_variable("track_test");
+    EXPECT_EQ(get_table_f1_3dof().count("vehicle_test"), 0);
+    EXPECT_EQ(get_table_track().count("track_test"), 0);
+}
+
+#endif
 
 
 TEST_F(limebeer2014f1_test,propagation_crank_nicolson)

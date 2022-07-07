@@ -1,6 +1,8 @@
 #ifndef DYNAMIC_MODEL_H
 #define DYNAMIC_MODEL_H
 
+#include "src/core/foundation/fastest_lap_exception.h"
+
 template<typename Timeseries_t>
 class Dynamic_model
 {
@@ -15,7 +17,7 @@ class Dynamic_model
         for (const auto& p : _parameters)
         {
             if ( p.get_path() == parameter_path )
-                throw std::runtime_error("[ERROR] Parameter::add_parameter -> parameter already exists");
+                throw fastest_lap_exception("[ERROR] Parameter::add_parameter -> parameter already exists");
         }
 
         _parameters.emplace_back(parameter_path, std::forward<Args>(args)...);
@@ -43,15 +45,15 @@ class Dynamic_model
 
             // (2) Check that there are at least two parameters
             if ( _values.size() < 2 )
-                throw std::runtime_error("[ERROR] A spatially-varying parameter should be provided with at least two parameters");
+                throw fastest_lap_exception("[ERROR] A spatially-varying parameter should be provided with at least two parameters");
 
             // (3) Check that the same number of aliases and values were given
             if ( _aliases.size() != _values.size() )
-                throw std::runtime_error("[ERROR] The number of aliases must match the number of values"); 
+                throw fastest_lap_exception("[ERROR] The number of aliases must match the number of values"); 
 
             // (3) Check that the mesh is sorted
             if ( !std::is_sorted(_mesh.cbegin(), _mesh.cend(), [](const auto& lhs, const auto& rhs) -> auto { return lhs.first <= rhs.first; }) )
-                throw std::runtime_error("[ERROR] Mesh checkpoints should be sorted in ascending order");
+                throw fastest_lap_exception("[ERROR] Mesh checkpoints should be sorted in ascending order");
     
             // (4) Check that all parameters are used
             std::vector<bool> used_parameters(_values.size(), false);
@@ -59,13 +61,13 @@ class Dynamic_model
             for (const auto& [s_i, i_par] : _mesh)
             {
                 if ( i_par >= _values.size() )
-                    throw std::runtime_error("[ERROR] Error creating varying parameter, i_par is out of bounds");
+                    throw fastest_lap_exception("[ERROR] Error creating varying parameter, i_par is out of bounds");
 
                 used_parameters[i_par] = true;
             }
 
             if ( std::count(used_parameters.cbegin(), used_parameters.cend(), false) > 0 )
-                throw std::runtime_error("[ERROR] There are unused parameters");
+                throw fastest_lap_exception("[ERROR] There are unused parameters");
         }
 
         //! Get the total number of parameters

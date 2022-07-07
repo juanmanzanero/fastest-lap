@@ -5,6 +5,7 @@
 #include "lion/foundation/types.h"
 #include "src/core/vehicles/track_by_arcs.h"
 #include "src/core/vehicles/road_curvilinear.h"
+#include "src/core/foundation/fastest_lap_exception.h"
 
 template<typename Dynamic_model_t>
 class Optimal_laptime
@@ -67,7 +68,7 @@ class Optimal_laptime
 
             // (2) Error if the point found is the first node of the hypermesh
             if ( it == s_hypermesh.cbegin() )
-                throw std::runtime_error("[ERROR] Optimal_laptime::Control_variable::get_hypermesh_value_for_s -> input s(" 
+                throw fastest_lap_exception("[ERROR] Optimal_laptime::Control_variable::get_hypermesh_value_for_s -> input s(" 
                     + std::to_string(s) + ") is smaller than the first hypermesh checkpoint (" + std::to_string(s_hypermesh.front()) + ")");
 
             // (3) Compute position
@@ -81,7 +82,7 @@ class Optimal_laptime
         {
             // (1) Error if control variable is not of type hypermesh
             if (optimal_control_type != HYPERMESH )
-                throw std::runtime_error("[ERROR] Optimal_laptime::Control_variable::get_hypermesh_value_for_s can only be called for HYPERMESH parameters");
+                throw fastest_lap_exception("[ERROR] Optimal_laptime::Control_variable::get_hypermesh_value_for_s can only be called for HYPERMESH parameters");
 
             // (2) Return
             return u[get_hypermesh_position_for_s(s_hypermesh,s)]; 
@@ -92,7 +93,7 @@ class Optimal_laptime
         {
             // (1) Error if control variable is not of type hypermesh
             if (optimal_control_type != HYPERMESH )
-                throw std::runtime_error("[ERROR] Optimal_laptime::Control_variable::get_hypermesh_value_for_s can only be called for HYPERMESH parameters");
+                throw fastest_lap_exception("[ERROR] Optimal_laptime::Control_variable::get_hypermesh_value_for_s can only be called for HYPERMESH parameters");
 
             // (2) Return
             const size_t i_position = get_hypermesh_position_for_s(s_hypermesh,s);

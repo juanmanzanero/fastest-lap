@@ -7,7 +7,7 @@
                                   simulation of a GP2 race car"
            
 -->
-<vehicle type="limebeer-2014-f1">
+<vehicle type="f1-3dof">
     <front-axle model="axle-car"> 
         <track units="m"> 1.46 </track>
         <inertia units="kg.m2"> 1.00 </inertia>   <!-- (*) -->
@@ -36,10 +36,10 @@
         <!-- 
             Inertia matrix: this 3DOF model only uses Izz
         -->
-        <inertia units="kg.m">
-             0.0  0.0  0.0
-             0.0  0.0  0.0
-             0.0  0.0 450.0
+        <inertia>
+            <Ixx> 0.0 </Ixx>  <Ixy> 0.0 </Ixy> <Ixz> 5.0   </Ixz>
+            <Iyx> 0.0 </Iyx>  <Iyy> 0.0 </Iyy> <Iyz> 0.0   </Iyz>
+            <Izx> 0.0 </Izx>  <Izy> 0.0 </Izy> <Izz> 450.0 </Izz>
         </inertia>
 
         <aerodynamics>

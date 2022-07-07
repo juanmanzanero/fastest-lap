@@ -9,19 +9,39 @@
 #include "src/core/applications/steady_state.h"
 #include "src/core/applications/optimal_laptime.h"
 #include "lion/propagators/crank_nicolson.h"
+#include "src/core/foundation/fastest_lap_exception.h"
 
-// Persistent vehicles
-std::unordered_map<std::string,lot2016kart_all> vehicles_lot2016kart;
-std::unordered_map<std::string,limebeer2014f1_all> vehicles_limebeer2014f1;
+#define CATCH()  catch(fastest_lap_exception& ex) \
+ { \
+    std::cout << "[Fastest lap exception] -> " << ex.what() << std::endl; \
+    throw ex; \
+ } \
+catch(lion_exception& ex) \
+ { \
+    std::cout << "[Lion exception] -> " << ex.what() << std::endl; \
+    throw ex; \
+ }  \
+ catch(std::exception& ex) \
+ { \
+    std::cout << "[C++ exception] -> " << ex.what() << std::endl; \
+    throw ex; \
+ }
 
-// Persistent tracks
+// Tables
+std::unordered_map<std::string,lot2016kart_all>     table_kart_6dof;
+std::unordered_map<std::string,limebeer2014f1_all>  table_f1_3dof;
 std::unordered_map<std::string,Track_by_polynomial> table_track;
-
-// Persistent scalars
-std::unordered_map<std::string,scalar> table_scalar;
-
-// Persistent vectors
+std::unordered_map<std::string,scalar>              table_scalar;
 std::unordered_map<std::string,std::vector<scalar>> table_vector;
+
+
+#ifdef __cplusplus
+fastestlapc_API std::unordered_map<std::string,lot2016kart_all>& get_table_kart_6dof() { return table_kart_6dof; }
+fastestlapc_API std::unordered_map<std::string,limebeer2014f1_all>& get_table_f1_3dof() { return table_f1_3dof; }
+fastestlapc_API std::unordered_map<std::string,Track_by_polynomial>& get_table_track() { return table_track; }
+fastestlapc_API std::unordered_map<std::string,scalar>& get_table_scalar() { return table_scalar; }
+fastestlapc_API std::unordered_map<std::string,std::vector<scalar>>& get_table_vector() { return table_vector; }
+#endif
 
 // Persistent warm start 
 template<typename vehicle_t>
@@ -35,124 +55,122 @@ Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>& get_warm_start()
     else if constexpr (std::is_same_v<vehicle_t,lot2016kart_all>)
         return warm_start_lot2016kart;
     else
-        throw std::runtime_error("[ERROR] get_warm_start() -> vehicle_t is not supported");
+        throw fastest_lap_exception("[ERROR] get_warm_start() -> vehicle_t is not supported");
 }
+
+
+void check_variable_exists_in_tables(const std::string& name)
+{
+    if ( table_kart_6dof.count(name) != 0 )
+        throw fastest_lap_exception(std::string("Vehicle of type kart-6dof with name \"") + name + "\" already exists"); 
+
+    if ( table_f1_3dof.count(name) != 0 )
+        throw fastest_lap_exception(std::string("Vehicle of type f1-3dof with name \"") + name + "\" already exists"); 
+
+    if ( table_track.count(name) != 0 )
+        throw fastest_lap_exception(std::string("Track with name \"") + name + "\" already exists"); 
+
+    if ( table_scalar.count(name) != 0 )
+        throw fastest_lap_exception(std::string("Scalar with name \"") + name + "\" already exists"); 
+
+    if ( table_vector.count(name) != 0 )
+        throw fastest_lap_exception(std::string("Vector with name \"") + name + "\" already exists"); 
+}
+
 
 void set_print_level(int print_level)
 {
+ try
+ {
     out.set_print_level(print_level);
+ }
+ CATCH()
 }
 
-void create_vehicle(const char* vehicle_name, const char* vehicle_type, const char* database_file)
+
+void create_vehicle_from_xml(const char* vehicle_name, const char* database_file)
 {
+ try
+ {
     const std::string s_database = database_file;
     const std::string s_name = vehicle_name;
 
     // Check if the vehicle exists
-    if ( vehicles_lot2016kart.count(s_name) != 0 )
-        throw std::runtime_error(std::string("Vehicle of type roberto-lot-kart-2016 with name \"") + s_name + "\" already exists"); 
+    check_variable_exists_in_tables(s_name);
 
-    if ( vehicles_limebeer2014f1.count(s_name) != 0 )
-        throw std::runtime_error(std::string("Vehicle of type limebeer-2014-f1 with name \"") + s_name + "\" already exists"); 
+    // Open the database as Xml
+    Xml_document database = { database_file, true }; 
 
-    if ( std::string(vehicle_type) == "roberto-lot-kart-2016" )
+    // Get vehicle type from the database file
+    const std::string vehicle_type = database.get_root_element().get_attribute("type");
+
+    if ( vehicle_type == "kart-6dof" )
     {
-        // Open the database as Xml
-        Xml_document database = { database_file, true }; 
-
-        // Get vehicle type from the database file
-        const std::string vehicle_type_db = database.get_root_element().get_attribute("type");
-
-        if ( vehicle_type_db != std::string(vehicle_type) )
-            throw std::runtime_error("vehicle type read from the database is not \"roberto-lot-kart-2016\"");
-
-        auto out = vehicles_lot2016kart.insert({s_name,{database}});
+        auto out = table_kart_6dof.insert({s_name,{database}});
         if (out.second==false) 
         {
-            throw std::runtime_error("The insertion to the map failed");
+            throw fastest_lap_exception("The insertion to the map failed");
         }
     }
-    else if ( std::string(vehicle_type) == "limebeer-2014-f1" )
+    else if ( vehicle_type == "f1-3dof" )
     {
-        if ( strlen(database_file) > 0 )
+        auto out = table_f1_3dof.insert({s_name,{database}});
+
+        if (out.second==false) 
         {
-            // Open the database as Xml
-            Xml_document database = { database_file, true }; 
-
-            // Get vehicle type from the database file
-            const std::string vehicle_type_db = database.get_root_element().get_attribute("type");
-
-            if ( vehicle_type_db != std::string(vehicle_type) )
-                throw std::runtime_error("vehicle type read from the database is not \"limebeer-2014-f1\"");
-
-            auto out = vehicles_limebeer2014f1.insert({s_name,{database}});
-
-            if (out.second==false) 
-            {
-                throw std::runtime_error("Vehicle already exists");
-            }        
-        }
-        else
-        {
-            // Construct a default car
-            auto out = vehicles_limebeer2014f1.insert({s_name,{}});
-
-            if (out.second==false) 
-            {
-                throw std::runtime_error("The insertion to the map failed");
-            }
-        }
-
+            throw fastest_lap_exception("Vehicle already exists");
+        }        
     }
     else
     {
-        throw std::runtime_error("Vehicle type not recognized");
+        throw fastest_lap_exception("Vehicle type not recognized");
     }
+ } 
+ CATCH()
 }
 
-void create_track(const char* name, const char* track_file, const char* options)
+
+void create_vehicle_empty(const char* vehicle_name, const char* vehicle_type_c)
 {
-    out(2) << "[INFO] Fastest-lap API -> [start] create track" << std::endl;
-    // (1) Check that the track does not exists in the map
-    if ( table_track.count(name) != 0 )
-        throw std::runtime_error(std::string("Track with name \"") + name + "\" already exists"); 
+ try
+ {
+    const std::string s_name = vehicle_name;
+    const std::string vehicle_type = vehicle_type_c;
 
-    // (2) Process options
-    std::string save_variables_prefix;
-    std::vector<std::string> variables_to_save;
-    if ( strlen(options) > 0 )
+    // Check if the vehicle exists
+    check_variable_exists_in_tables(s_name);
+
+    if ( vehicle_type == "kart-6dof" )
     {
-        // Parse the options in XML format
-        // Example:
-        //      <options>
-        //          <save_variables>
-        //              <prefix>
-        //              <variables>
-        //                  <s/>
-        //                  <theta/>
-        //                  ...
-        //              </variables>
-        //          </save_variables>
-        //      </options>
-        //
-        std::string s_options(options);
-        Xml_document doc;
-        doc.parse(s_options);
-
-        // Save variables
-        if ( doc.has_element("options/save_variables") )
-        {
-            save_variables_prefix = doc.get_element("options/save_variables/prefix").get_value();
-    
-            for (auto& variables : doc.get_element("options/save_variables/variables").get_children() )
-                variables_to_save.push_back(variables.get_name());
-        }
-
-        out(2) << "List of options: " << std::endl;
-        out(2) << doc;
+        throw fastest_lap_exception("[ERROR] create_vehicle_empty -> vehicle type \"kart-6dof\" cannot be created empty. Create from XML database instead");
     }
+    else if ( vehicle_type == "f1-3dof" )
+    {
+        auto out = table_f1_3dof.insert({s_name,{}});
+        if (out.second==false) 
+        {
+            throw fastest_lap_exception("The insertion to the map failed");
+        }
+    }
+    else
+    {
+        throw fastest_lap_exception("Vehicle type not recognized");
+    }
+ } 
+ CATCH()
+}
 
-    // (3) Open the track
+
+void create_track_from_xml(const char* name, const char* track_file)
+{
+ try
+ {
+    out(2) << "[INFO] Fastest-lap API -> [start] create track" << std::endl;
+
+    // (1) Check that the track does not exists in the map
+    check_variable_exists_in_tables(std::string(name));
+
+    // (2) Open the track
     // Copy the track name
     const std::string s_track_file = track_file;
  
@@ -163,36 +181,202 @@ void create_track(const char* name, const char* track_file, const char* options)
     const std::string track_format = track_xml.get_root_element().get_attribute("format");
 
     if ( track_format != "discrete")
-        throw std::runtime_error(std::string("Track format \"") + track_format + "\" is not supported");
+        throw fastest_lap_exception(std::string("Track format \"") + track_format + "\" is not supported");
 
     table_track.insert({name,{track_xml}});
 
-    // (4) Save variables
-
-    // Get alias to the track preprocessor
-    const auto& preprocessor = table_track[name].get_preprocessor();
-
-    for (const auto& variable_name : variables_to_save )
-    {
-        // Check that the variable does not exist in any of the tables
-        if ( table_scalar.count(save_variables_prefix + variable_name) != 0 )
-            throw std::runtime_error(std::string("Variable \"") + save_variables_prefix + variable_name + "\" already exists in the scalar table");
-
-        if ( table_vector.count(save_variables_prefix + variable_name) != 0 )
-            throw std::runtime_error(std::string("Variable \"") + save_variables_prefix + variable_name + "\" already exists in the vector table");
-
-
-        if ( variable_name == "s" )
-            table_vector.insert({save_variables_prefix+variable_name, preprocessor.s});
-        else
-            throw std::runtime_error(std::string("Variable \"") + variable_name + "\" is not implemented");
-    }
-
     out(2) << "[INFO] Fastest-lap API -> [end] create track" << std::endl;
+ }
+ CATCH()
 }
 
+
+void copy_variable(const char* c_old_name, const char* c_new_name)
+{
+ try
+ {
+    const std::string old_name = c_old_name;
+    const std::string new_name = c_new_name;
+
+    // (1) Check that the new variable does not exist
+    check_variable_exists_in_tables(new_name);
+
+    // (2) Find the variable in the tables and insert it again with the new name
+    if ( table_kart_6dof.count(old_name) != 0 )
+    {
+        table_kart_6dof.insert({new_name, table_kart_6dof.at(old_name)});
+    }
+    else if ( table_f1_3dof.count(old_name) != 0 )
+    {
+        table_f1_3dof.insert({new_name, table_f1_3dof.at(old_name)});
+    }
+    else if ( table_track.count(old_name) != 0 )
+    {
+        table_track.insert({new_name, table_track.at(old_name)});
+    }
+    else if ( table_vector.count(old_name) != 0 )
+    {
+        table_vector.insert({new_name, table_vector.at(old_name)});
+    }
+    else if ( table_scalar.count(old_name) != 0 )
+    {
+        table_scalar.insert({new_name, table_scalar.at(old_name)});
+    }
+    else
+    {
+        throw fastest_lap_exception("[ERROR] copy_variable -> variable \"" + old_name + "\" does not exist");
+    }
+ }
+ CATCH()
+}
+
+void move_variable(const char* c_old_name, const char* c_new_name)
+{
+ try
+ {
+    const std::string old_name = c_old_name;
+    const std::string new_name = c_new_name;
+
+    // (1) Check that the new variable does not exist
+    check_variable_exists_in_tables(new_name);
+
+    // (2) Find the variable in the tables and insert it again with the new name. Erase the old variable
+    if ( table_kart_6dof.count(old_name) != 0 )
+    {
+        table_kart_6dof.insert({new_name, table_kart_6dof.at(old_name)});
+        table_kart_6dof.erase(old_name);
+    }
+    else if ( table_f1_3dof.count(old_name) != 0 )
+    {
+        table_f1_3dof.insert({new_name, table_f1_3dof.at(old_name)});
+        table_f1_3dof.erase(old_name);
+    }
+    else if ( table_track.count(old_name) != 0 )
+    {
+        table_track.insert({new_name, table_track.at(old_name)});
+        table_track.erase(old_name);
+    }
+    else if ( table_vector.count(old_name) != 0 )
+    {
+        table_vector.insert({new_name, table_vector.at(old_name)});
+        table_vector.erase(old_name);
+    }
+    else if ( table_scalar.count(old_name) != 0 )
+    {
+        table_scalar.insert({new_name, table_scalar.at(old_name)});
+        table_scalar.erase(old_name);
+    }
+    else
+    {
+        throw fastest_lap_exception("[ERROR] copy_variable -> variable \"" + old_name + "\" does not exist");
+    }
+ }
+ CATCH()
+}
+
+
+void print_variables()
+{
+ try
+ {
+    std::cout << "Type kart_6dof: " << table_kart_6dof.size() << " variables" << std::endl;
+
+    for (const auto& car : table_kart_6dof)
+        std::cout << "    -> " << car.first << std::endl;
+    std::cout << std::endl;
+
+    std::cout << "Type f1_3dof: " << table_f1_3dof.size() << " variables" << std::endl;
+
+    for (const auto& car : table_f1_3dof)
+        std::cout << "    -> " << car.first << std::endl;
+    std::cout << std::endl;
+
+    std::cout << "Type tracks: " << table_track.size() << " variables" << std::endl;
+
+    for (const auto& track : table_track)
+        std::cout << "    -> " << track.first << std::endl;
+    std::cout << std::endl;
+
+    std::cout << "Type scalar: " << table_scalar.size() << " variables" << std::endl;
+
+    for (const auto& val : table_scalar)
+        std::cout << "    -> " << val.first << std::endl;
+    std::cout << std::endl;
+
+    std::cout << "Type vector: " << table_vector.size() << " variables" << std::endl;
+
+    for (const auto& vec : table_vector)
+        std::cout << "    -> " << vec.first << " (" << vec.second.size() << ")" << std::endl;
+ }
+ CATCH()
+}
+
+std::string print_variable_to_std_string(const std::string& variable_name)
+{
+    std::ostringstream s_out;
+    if ( table_kart_6dof.count(variable_name) != 0 )
+    {
+        table_kart_6dof.at(variable_name).curvilinear_scalar.xml()->print(s_out);
+    }
+    else if ( table_f1_3dof.count(variable_name) != 0 )
+    {
+        table_f1_3dof.at(variable_name).curvilinear_scalar.xml()->print(s_out);
+    }
+    else if ( table_track.count(variable_name) != 0 )
+    {
+        table_track.at(variable_name).get_preprocessor().xml()->print(s_out);
+    }
+    else if ( table_vector.count(variable_name) != 0 )
+    {
+        s_out << table_vector[variable_name];
+    }
+    else if ( table_scalar.count(variable_name) != 0 )
+    {
+        s_out << table_scalar[variable_name];
+    }
+    else
+    {
+        throw fastest_lap_exception("[ERROR] print_variable_to_std_string -> variable \"" + variable_name + "\" does not exist");
+    }
+    
+    return s_out.str();
+}
+
+void print_variable(const char* c_variable_name)
+{
+ try
+ {
+    const std::string variable_name = c_variable_name;
+
+    out(1) << print_variable_to_std_string(variable_name);
+
+    return;
+ }
+ CATCH()
+}
+
+void print_variable_to_string(char* str_out, const int n_char, const char* c_variable_name)
+{
+ try 
+ {
+    const std::string variable_name = c_variable_name;
+    const std::string s_out = print_variable_to_std_string(variable_name);
+
+    if ( static_cast<size_t>(n_char) < s_out.size() )
+    {
+        throw fastest_lap_exception("[ERROR] print_variable_to_string -> Buffer size provided was not big enough. Required size is " + std::to_string(s_out.size()) + " vs the provided value of " + std::to_string(n_char));
+    }
+
+    strcpy(str_out, s_out.c_str()); 
+
+    return;
+ }
+ CATCH()
+}
+
+
 template<typename Vehicle_t>
-double get_vehicle_property_generic(Vehicle_t& vehicle, const double* c_q, const double* c_qa, const double* c_u, const double s, const char* c_property_name)
+double vehicle_get_property_generic(Vehicle_t& vehicle, const double* c_q, const double* c_qa, const double* c_u, const double s, const char* c_property_name)
 {
     // (1) Construct Cpp version of the C inputs
     std::array<scalar,Vehicle_t::NSTATE> q;
@@ -253,7 +437,7 @@ double get_vehicle_property_generic(Vehicle_t& vehicle, const double* c_q, const
         }
         else
         {
-            throw std::runtime_error("[ERROR] Vehicle type is not defined");
+            throw fastest_lap_exception("[ERROR] Vehicle type is not defined");
         }
     }
 
@@ -261,7 +445,7 @@ double get_vehicle_property_generic(Vehicle_t& vehicle, const double* c_q, const
     {
         if constexpr (std::is_same<Vehicle_t, lot2016kart_all>::value)
         {
-            throw std::runtime_error("[ERROR] brake-bias is not available for vehicles of type lot2016kart");
+            throw fastest_lap_exception("[ERROR] brake-bias is not available for vehicles of type lot2016kart");
         }
 
         else if constexpr (std::is_same<Vehicle_t, limebeer2014f1_all>::value)
@@ -270,7 +454,7 @@ double get_vehicle_property_generic(Vehicle_t& vehicle, const double* c_q, const
         }
         else
         {
-            throw std::runtime_error("[ERROR] Vehicle type is not defined");
+            throw fastest_lap_exception("[ERROR] Vehicle type is not defined");
         }
     }
     else if ( property_name == "rear_axle.left_tire.x" )
@@ -365,7 +549,7 @@ double get_vehicle_property_generic(Vehicle_t& vehicle, const double* c_q, const
         }
         else 
         {
-            throw std::runtime_error("Fz_fl is only defined for limebeer2014f1 models");
+            throw fastest_lap_exception("Fz_fl is only defined for limebeer2014f1 models");
         }
     }
 
@@ -377,7 +561,7 @@ double get_vehicle_property_generic(Vehicle_t& vehicle, const double* c_q, const
         }
         else 
         {
-            throw std::runtime_error("Fz_fr is only defined for limebeer2014f1 models");
+            throw fastest_lap_exception("Fz_fr is only defined for limebeer2014f1 models");
         }
     }
 
@@ -389,7 +573,7 @@ double get_vehicle_property_generic(Vehicle_t& vehicle, const double* c_q, const
         }
         else 
         {
-            throw std::runtime_error("Fz_rl is only defined for limebeer2014f1 models");
+            throw fastest_lap_exception("Fz_rl is only defined for limebeer2014f1 models");
         }
     }
 
@@ -401,7 +585,7 @@ double get_vehicle_property_generic(Vehicle_t& vehicle, const double* c_q, const
         }
         else 
         {
-            throw std::runtime_error("Fz_rr is only defined for limebeer2014f1 models");
+            throw fastest_lap_exception("Fz_rr is only defined for limebeer2014f1 models");
         }
     }
 
@@ -434,50 +618,195 @@ double get_vehicle_property_generic(Vehicle_t& vehicle, const double* c_q, const
 
     else
     {
-        throw std::runtime_error("Variable \"" + property_name + "\" is not defined");
+        throw fastest_lap_exception("Variable \"" + property_name + "\" is not defined");
     }
 }
 
 
-double get_vehicle_property(const char* c_vehicle_name, const double* q, const double* qa, const double* u, const double s, const char* property_name)
+double vehicle_get_property(const char* c_vehicle_name, const double* q, const double* qa, const double* u, const double s, const char* property_name)
 {
+ try
+ {
     const std::string vehicle_name(c_vehicle_name);
-    if ( vehicles_lot2016kart.count(vehicle_name) != 0)
+    if ( table_kart_6dof.count(vehicle_name) != 0)
     {
-        return get_vehicle_property_generic(vehicles_lot2016kart.at(vehicle_name).curvilinear_scalar, q, qa, u, s, property_name);
+        return vehicle_get_property_generic(table_kart_6dof.at(vehicle_name).curvilinear_scalar, q, qa, u, s, property_name);
     }
-    else if ( vehicles_limebeer2014f1.count(vehicle_name) != 0 )
+    else if ( table_f1_3dof.count(vehicle_name) != 0 )
     {
-        return get_vehicle_property_generic(vehicles_limebeer2014f1.at(vehicle_name).curvilinear_scalar, q, qa, u, s, property_name);
+        return vehicle_get_property_generic(table_f1_3dof.at(vehicle_name).curvilinear_scalar, q, qa, u, s, property_name);
     }
     else
     {
-        throw std::runtime_error("[ERROR] libfastestlapc::get_vehicle_property -> vehicle type is not defined");
+        throw fastest_lap_exception("[ERROR] libfastestlapc::vehicle_get_property -> vehicle type is not defined");
     }
+ }
+ CATCH()
 }
 
 
-void save_vehicle_as_xml(const char* c_vehicle_name, const char* file_name)
+void vehicle_save_as_xml(const char* c_vehicle_name, const char* file_name)
 {
+ try
+ {
     const std::string vehicle_name(c_vehicle_name);
-    if ( vehicles_lot2016kart.count(vehicle_name) != 0)
+    if ( table_kart_6dof.count(vehicle_name) != 0)
     {
-        vehicles_lot2016kart.at(vehicle_name).curvilinear_scalar.xml()->save(std::string(file_name));
+        table_kart_6dof.at(vehicle_name).curvilinear_scalar.xml()->save(std::string(file_name));
     }
-    else if ( vehicles_limebeer2014f1.count(vehicle_name) != 0 )
+    else if ( table_f1_3dof.count(vehicle_name) != 0 )
     {
-        vehicles_limebeer2014f1.at(vehicle_name).curvilinear_scalar.xml()->save(std::string(file_name));
+        table_f1_3dof.at(vehicle_name).curvilinear_scalar.xml()->save(std::string(file_name));
     }
     else
     {
-        throw std::runtime_error("[ERROR] libfastestlapc::get_vehicle_property -> vehicle type is not defined");
+        throw fastest_lap_exception("[ERROR] libfastestlapc::vehicle_get_property -> vehicle type is not defined");
     }
-
+ }
+ CATCH()
 }
 
 
-int download_vector_table_variable_size(const char* name_c)
+int track_download_number_of_points(const char* track_name_c)
 {
+ try
+ {
+    const std::string track_name = track_name_c;
+
+    // (1) Check that the track exists
+    if ( table_track.count(track_name) == 0)
+    {
+        throw fastest_lap_exception("[ERROR] libfastestlapc::track_download_data -> track with name \"" + track_name + "\" does not exist");
+    }
+
+    // (2) Return the number of points
+    return table_track.at(track_name).get_preprocessor().n_points;
+ }
+ CATCH()
+}
+
+
+void track_download_data(double* data, const char* track_name_c, const int n, const char* variable_name_c)
+{
+ try
+ {
+    const std::string track_name = track_name_c;
+    const std::string variable_name = variable_name_c;
+
+    // (1) Check that the track exists
+    if ( table_track.count(track_name) == 0)
+    {
+        throw fastest_lap_exception("[ERROR] libfastestlapc::track_download_data -> track with name \"" + track_name + "\" does not exist");
+    }
+
+    // (2) Check the size
+    const auto& preprocessor = table_track.at(track_name).get_preprocessor();
+
+    if ( static_cast<size_t>(n) != preprocessor.n_points )
+    {
+        throw fastest_lap_exception("[ERROR] libfastestlapc::track_download_data() -> incorrect input \"n\". The number of points in \""
+                                    + track_name + "\" is " + std::to_string(n));
+    }
+
+    std::vector<std::pair<std::string,const double*>> track_variable_map = { 
+        { "arclength", preprocessor.s.data() },
+        { "heading-angle", preprocessor.theta.data() } , 
+        { "curvature", preprocessor.kappa.data() },
+        { "distance-left-boundary", preprocessor.nl.data() },
+        { "distance-right-boundary", preprocessor.nr.data() } };
+
+     std::vector<std::pair<std::string,const sVector3d*>> track_vector_map = { 
+        { "centerline", preprocessor.r_centerline.data() },
+        { "left", preprocessor.r_left.data() } , 
+        { "right", preprocessor.r_right.data() } };
+
+
+
+    // (3) Loop the variables
+    bool is_found = false;
+
+    // (3.1) Scalar variables
+    for ( const auto& [var_name, var_data] : track_variable_map )
+    {
+        if ( variable_name == var_name )
+        {
+            is_found = true;
+            for (size_t i = 0; i < preprocessor.n_points; ++i)
+                data[i] = var_data[i];
+    
+            break;
+        }
+    }
+
+    if ( !is_found )
+    {
+        // (3.2) Vector variables
+        for ( const auto& [var_name, var_data] : track_vector_map )
+        {
+            if ( variable_name == var_name + ".x" )
+            {
+                is_found = true;
+                for (size_t i = 0; i < preprocessor.n_points; ++i)
+                    data[i] = var_data[i].x();
+        
+                break;
+            }
+            else if ( variable_name == var_name + ".y" )
+            {
+                is_found = true;
+                for (size_t i = 0; i < preprocessor.n_points; ++i)
+                    data[i] = var_data[i].y();
+        
+                break;
+            }
+        }
+    }
+
+    if ( !is_found )
+    {
+        std::ostringstream message;
+
+        message << "[ERROR] libfastestlapc::track_download_data() -> variable \"" + variable_name + "\" was not recognized\n";
+        message << "Implemented names are: " << std::endl;
+
+        for (const auto& [var_name, var_data] : track_variable_map)
+        {
+            message << "\"" << var_name << "\", ";
+        }
+        for (const auto& [var_name, var_data] : track_vector_map)
+        {
+            message << "\"" << var_name << ".x\", ";
+            message << "\"" << var_name << ".y\", ";
+        }
+        throw fastest_lap_exception(message.str());
+    }
+ }
+ CATCH()
+}
+
+
+double track_download_length(const char* c_track_name)
+{
+ try 
+ {
+    const std::string track_name = c_track_name;
+
+    // (1) Check that the track exists
+    if ( table_track.count(track_name) == 0)
+    {
+        throw fastest_lap_exception("[ERROR] libfastestlapc::track_download_data -> track with name \"" + track_name + "\" does not exist");
+    }
+
+    return table_track.at(track_name).get_preprocessor().track_length;
+ }
+ CATCH()
+}
+
+
+int download_vector_size(const char* name_c)
+{
+ try
+ {
     std::string name(name_c);
 
     // Look for the item in the table
@@ -485,16 +814,20 @@ int download_vector_table_variable_size(const char* name_c)
 
     // Check that it was found
     if ( item == table_vector.end() )
-        throw std::runtime_error(std::string("Variable \"") + name + "\" does not exists in the vector table");
+        throw fastest_lap_exception(std::string("Variable \"") + name + "\" does not exists in the vector table");
 
     const auto& table_data = item->second;
     
     return table_data.size();
+ }
+ CATCH()
 }
 
 
-double download_scalar_table_variable(const char* name_c)
+double download_scalar(const char* name_c)
 {
+ try
+ {
     std::string name(name_c);
 
     // Look for the item in the table
@@ -502,15 +835,19 @@ double download_scalar_table_variable(const char* name_c)
 
     // Check that it was found
     if ( item == table_scalar.end() )
-        throw std::runtime_error(std::string("Variable \"") + name + "\" does not exists in the scalar table");
+        throw fastest_lap_exception(std::string("Variable \"") + name + "\" does not exists in the scalar table");
 
     // Check input consistency
     return item->second;
+ }
+ CATCH()
 }
 
 
-void download_vector_table_variable(double* data, const int n, const char* name_c)
+void download_vector(double* data, const int n, const char* name_c)
 {
+ try
+ {
     std::string name(name_c);
 
     // Look for the item in the table
@@ -518,173 +855,182 @@ void download_vector_table_variable(double* data, const int n, const char* name_
 
     // Check that it was found
     if ( item == table_vector.end() )
-        throw std::runtime_error(std::string("Variable \"") + name + "\" does not exists in the vector table");
+        throw fastest_lap_exception(std::string("Variable \"") + name + "\" does not exists in the vector table");
 
     // Check input consistency
     const auto& table_data = item->second;
 
     if ( table_data.size() != static_cast<size_t>(n) )
-        throw std::runtime_error(std::string("Incorrect input size for variable \"") + name + "\". Input: " 
+        throw fastest_lap_exception(std::string("Incorrect input size for variable \"") + name + "\". Input: " 
             + std::to_string(n) + ", should be " + std::to_string(table_data.size()));
 
     // Copy the data into the provided pointer
     std::copy(table_data.cbegin(), table_data.cend(), data);
 
     return;
+ }
+ CATCH()
 }
 
 
-void load_vector_table_variable(double* data, const int n, const char* name_c)
+void create_vector(const char* name_c, const int n, double* data)
 {
+ try
+ {
     std::string name(name_c);
 
     // Check that the variable does not exist
-    if ( table_vector.count(name) != 0 )
-        throw std::runtime_error(std::string("Variable \"") + name + "\" already exists in the vector table");
+    check_variable_exists_in_tables(name);
 
     table_vector.insert({name,{data,data+n}});
+ }
+ CATCH()
 }
 
 
-void clear_tables()
+void create_scalar(const char* name_c, double value)
 {
+ try
+ {
+    std::string name(name_c);
+
+    // Check that the variable does not exist
+    check_variable_exists_in_tables(name);
+
+    table_scalar.insert({name,value});
+ }
+ CATCH()
+}
+
+
+void delete_variables()
+{
+ try
+ {
+    table_kart_6dof.clear();
+    table_f1_3dof.clear();
+    table_track.clear();
     table_scalar.clear();
     table_vector.clear();
+ }
+ CATCH()
 }
 
 
-void clear_tables_by_prefix(const char* prefix_c)
+void delete_variable(const char* c_variable_name)
 {
-    std::string prefix(prefix_c);
+ try
+ {
+    const std::string variable_name(c_variable_name);
 
-    // Scalar map
-    for (auto it = table_scalar.cbegin(); it != table_scalar.cend(); )
+    // Check that only one variable has been defined with this name across all the tables
+    const size_t n_ocurrences = table_kart_6dof.count(variable_name) + table_f1_3dof.count(variable_name)
+                                + table_track.count(variable_name) + table_vector.count(variable_name) + table_scalar.count(variable_name);
+
+    if ( n_ocurrences > 1 )
     {
-        if ( it->first.find(prefix) == 0 ) 
-        {
-            it = table_scalar.erase(it); 
-        }
-        else
-        {
-            ++it;
-        }
+        throw fastest_lap_exception("[ERROR] delete_variable -> variable \"" + variable_name + "\" has been multiply defined");
     }
 
-
-    // Vector map
-    for (auto it = table_vector.cbegin(); it != table_vector.cend(); )
+    if ( table_kart_6dof.count(variable_name) != 0)
     {
-        if ( it->first.find(prefix) == 0 ) 
-        {
-            it = table_vector.erase(it); 
-        }
-        else
-        {
-            ++it;
-        }
+        table_kart_6dof.erase(variable_name);
     }
-}
-
-void print_tables()
-{
-    std::cout << "Table vehicles_lot2016kart: " << vehicles_lot2016kart.size() << " karts" << std::endl;
-
-    for (const auto& car : vehicles_lot2016kart)
-        std::cout << "    -> " << car.first << std::endl;
-    std::cout << std::endl;
-
-    std::cout << "Table vehicles_limebeer2014f1: " << vehicles_limebeer2014f1.size() << " karts" << std::endl;
-
-    for (const auto& car : vehicles_limebeer2014f1)
-        std::cout << "    -> " << car.first << std::endl;
-    std::cout << std::endl;
-
-    std::cout << "Table tracks: " << table_track.size() << " tracks" << std::endl;
-
-    for (const auto& track : table_track)
-        std::cout << "    -> " << track.first << std::endl;
-    std::cout << std::endl;
-
-    std::cout << "Table scalar: " << table_scalar.size() << " variables" << std::endl;
-
-    for (const auto& val : table_scalar)
-        std::cout << "    -> " << val.first << std::endl;
-    std::cout << std::endl;
-
-    std::cout << "Table vector: " << table_vector.size() << " vectors" << std::endl;
-
-    for (const auto& vec : table_vector)
-        std::cout << "    -> " << vec.first << " (" << vec.second.size() << ")" << std::endl;
-}
-
-
-void delete_vehicle(const char* c_vehicle_name)
-{
-    const std::string vehicle_name(c_vehicle_name);
-    if ( vehicles_lot2016kart.count(vehicle_name) != 0)
+    else if ( table_f1_3dof.count(variable_name) != 0 )
     {
-        vehicles_lot2016kart.erase(vehicle_name);
+        table_f1_3dof.erase(variable_name);
     }
-    else if ( vehicles_limebeer2014f1.count(vehicle_name) != 0 )
+    else if ( table_track.count(variable_name) != 0)
     {
-        vehicles_limebeer2014f1.erase(vehicle_name);
+        table_track.erase(variable_name);
+    }
+    else if ( table_vector.count(variable_name) != 0 )
+    {
+        table_vector.erase(variable_name);
+    }
+    else if ( table_scalar.count(variable_name) != 0 )
+    {
+        table_scalar.erase(variable_name);
     }
     else
     {
-        throw std::runtime_error("[ERROR] libfastestlapc::delete_vehicle -> vehicle type is not defined");
+        throw fastest_lap_exception("[ERROR] delete_variable -> variable \"" + variable_name + "\" has not been defined");
     }
-}
-
-void set_scalar_parameter(const char* c_vehicle_name, const char* parameter, const double value)
-{
-    const std::string vehicle_name(c_vehicle_name);
-    if ( vehicles_limebeer2014f1.count(vehicle_name) != 0 )
-    {
-        vehicles_limebeer2014f1.at(vehicle_name).set_parameter(parameter, value);
-    }
+ }
+ CATCH()
 }
 
 
-void set_vector_parameter(const char* c_vehicle_name, const char* parameter, const double value[3])
+template<typename Table_t>
+void delete_variable_by_prefix_generic(Table_t& table, const std::string& prefix)
 {
-    const std::string vehicle_name(c_vehicle_name);
-    if ( vehicles_limebeer2014f1.count(vehicle_name) != 0 )
+    for (auto it = table.cbegin(); it != table.cend(); )
     {
-        sVector3d v_value = { value[0], value[1], value[2] };
-        vehicles_limebeer2014f1.at(vehicle_name).set_parameter(parameter, v_value);
+        if ( it->first.find(prefix) == 0 ) 
+        {
+            it = table.erase(it); 
+        }
+        else
+        {
+            ++it;
+        }
     }
 }
 
-
-void set_matrix_parameter(const char* c_vehicle_name, const char* parameter, const double value[9])
+void delete_variables_by_prefix(const char* prefix_c)
 {
+ try 
+ {
+    std::string prefix(prefix_c);
+    
+    delete_variable_by_prefix_generic(table_scalar, prefix);
+    delete_variable_by_prefix_generic(table_vector, prefix);
+    delete_variable_by_prefix_generic(table_kart_6dof, prefix);
+    delete_variable_by_prefix_generic(table_f1_3dof, prefix);
+    delete_variable_by_prefix_generic(table_track, prefix);
+ }
+ CATCH()
+}
+
+void vehicle_set_parameter(const char* c_vehicle_name, const char* parameter, const double value)
+{
+ try
+ {
     const std::string vehicle_name(c_vehicle_name);
-    if ( vehicles_limebeer2014f1.count(vehicle_name) != 0 )
+    if ( table_f1_3dof.count(vehicle_name) != 0 )
     {
-        sMatrix3x3 m_value = { value[0], value[1], value[2], value[3], value[4], value[5], value[6], value[7], value[8] };
-        vehicles_limebeer2014f1.at(vehicle_name).set_parameter(parameter, m_value);
+        table_f1_3dof.at(vehicle_name).set_parameter(parameter, value);
     }
+ }
+ CATCH()
 }
 
 
 void vehicle_declare_new_constant_parameter(const char* c_vehicle_name, const char* parameter_path, const char* parameter_alias, const double parameter_value)
 {
+ try
+ {
     const std::string vehicle_name(c_vehicle_name);
-    if ( vehicles_limebeer2014f1.count(vehicle_name) != 0 )
+    if ( table_f1_3dof.count(vehicle_name) != 0 )
     {
-        vehicles_limebeer2014f1.at(vehicle_name).add_parameter(std::string(parameter_path), std::string(parameter_alias), parameter_value);
+        table_f1_3dof.at(vehicle_name).add_parameter(std::string(parameter_path), std::string(parameter_alias), parameter_value);
     }
-    else if ( vehicles_lot2016kart.count(vehicle_name) != 0)
+    else if ( table_kart_6dof.count(vehicle_name) != 0)
     {
-        vehicles_lot2016kart.at(vehicle_name).add_parameter(std::string(parameter_path), std::string(parameter_alias), parameter_value);
+        table_kart_6dof.at(vehicle_name).add_parameter(std::string(parameter_path), std::string(parameter_alias), parameter_value);
     }
     else
-        throw std::runtime_error("Vehicle type not recognized");
+        throw fastest_lap_exception("Vehicle type not recognized");
+ }
+ CATCH()
 }
+
 
 void vehicle_declare_new_variable_parameter(const char* c_vehicle_name, const char* c_parameter_path, const char* c_parameter_alias, const int n_parameters, const double* c_parameter_values,
     const int mesh_size, const int* c_mesh_parameter_indexes, const double* c_mesh_points) 
 {
+ try
+ {
     // (1) Transform C to C++ inputs
     const std::string vehicle_name(c_vehicle_name);
     const std::string parameter_alias(c_parameter_alias);
@@ -711,16 +1057,18 @@ void vehicle_declare_new_variable_parameter(const char* c_vehicle_name, const ch
     parameter_aliases.push_back(std::regex_replace(std::string(searchStart , parameter_alias.cend()), std::regex("^ +| +$|( ) +"), "$1"));
 
     // (3) Create the parameter
-    if ( vehicles_limebeer2014f1.count(vehicle_name) != 0 )
+    if ( table_f1_3dof.count(vehicle_name) != 0 )
     {
-        vehicles_limebeer2014f1.at(vehicle_name).add_parameter(parameter_path, parameter_aliases, parameter_values, mesh);
+        table_f1_3dof.at(vehicle_name).add_parameter(parameter_path, parameter_aliases, parameter_values, mesh);
     }
-    else if ( vehicles_lot2016kart.count(vehicle_name) != 0)
+    else if ( table_kart_6dof.count(vehicle_name) != 0)
     {
-        vehicles_lot2016kart.at(vehicle_name).add_parameter(parameter_path, parameter_aliases, parameter_values, mesh);
+        table_kart_6dof.at(vehicle_name).add_parameter(parameter_path, parameter_aliases, parameter_values, mesh);
     }
     else
-        throw std::runtime_error("Vehicle type not recognized");
+        throw fastest_lap_exception("Vehicle type not recognized");
+ }
+ CATCH()
 }
 
 
@@ -767,36 +1115,41 @@ void compute_propagation(Vehicle_t car, double* c_q, double* c_qa, double* c_u, 
     std::copy_n(qa.begin(), Vehicle_t::NALGEBRAIC, c_qa);
 }
 
-void propagate(double* q, double* qa, double* u, const char* c_vehicle_name, const char* c_track_name, double s, double ds, double* u_next, bool use_circuit, const char* options)
+
+void propagate_vehicle(double* q, double* qa, double* u, const char* c_vehicle_name, const char* c_track_name, double s, double ds, double* u_next, bool use_circuit, const char* options)
 {
+ try
+ {
     const std::string vehicle_name(c_vehicle_name);
     const std::string track_name(c_track_name);
-    if ( vehicles_lot2016kart.count(vehicle_name) != 0 )
+    if ( table_kart_6dof.count(vehicle_name) != 0 )
     {
         if ( use_circuit )
         {
-            vehicles_lot2016kart.at(vehicle_name).curvilinear_ad.get_road().change_track(table_track.at(track_name));
-            vehicles_lot2016kart.at(vehicle_name).curvilinear_scalar.get_road().change_track(table_track.at(track_name));
-            compute_propagation(vehicles_lot2016kart.at(vehicle_name).curvilinear_ad, q, qa, u, s, ds, u_next, options);
+            table_kart_6dof.at(vehicle_name).curvilinear_ad.get_road().change_track(table_track.at(track_name));
+            table_kart_6dof.at(vehicle_name).curvilinear_scalar.get_road().change_track(table_track.at(track_name));
+            compute_propagation(table_kart_6dof.at(vehicle_name).curvilinear_ad, q, qa, u, s, ds, u_next, options);
         }
         else
         {
-            compute_propagation(vehicles_lot2016kart.at(vehicle_name).cartesian_ad, q, qa, u, s, ds, u_next, options);
+            compute_propagation(table_kart_6dof.at(vehicle_name).cartesian_ad, q, qa, u, s, ds, u_next, options);
         }
     }
-    else if ( vehicles_limebeer2014f1.count(vehicle_name) != 0 )
+    else if ( table_f1_3dof.count(vehicle_name) != 0 )
     {
         if ( use_circuit )
         {
-            vehicles_limebeer2014f1.at(vehicle_name).curvilinear_ad.get_road().change_track(table_track.at(track_name));
-            vehicles_limebeer2014f1.at(vehicle_name).curvilinear_scalar.get_road().change_track(table_track.at(track_name));
-            compute_propagation(vehicles_limebeer2014f1.at(vehicle_name).curvilinear_ad, q, qa, u, s, ds, u_next, options);
+            table_f1_3dof.at(vehicle_name).curvilinear_ad.get_road().change_track(table_track.at(track_name));
+            table_f1_3dof.at(vehicle_name).curvilinear_scalar.get_road().change_track(table_track.at(track_name));
+            compute_propagation(table_f1_3dof.at(vehicle_name).curvilinear_ad, q, qa, u, s, ds, u_next, options);
         }
         else
         {
-            compute_propagation(vehicles_limebeer2014f1.at(vehicle_name).cartesian_ad, q, qa, u, s, ds, u_next, options);
+            compute_propagation(table_f1_3dof.at(vehicle_name).cartesian_ad, q, qa, u, s, ds, u_next, options);
         }
     }
+ }
+ CATCH()
 }
 
 
@@ -817,48 +1170,19 @@ void compute_gg_diagram(vehicle_t& car, double* ay, double* ax_max, double* ax_m
 
 void gg_diagram(double* ay, double* ax_max, double* ax_min, const char* c_vehicle_name, double v, const int n_points)
 {
+ try
+ {
     const std::string vehicle_name(c_vehicle_name);
-    if ( vehicles_lot2016kart.count(vehicle_name) != 0 )
+    if ( table_kart_6dof.count(vehicle_name) != 0 )
     {
-        compute_gg_diagram(vehicles_lot2016kart.at(vehicle_name).cartesian_ad, ay, ax_max, ax_min, v, n_points);
+        compute_gg_diagram(table_kart_6dof.at(vehicle_name).cartesian_ad, ay, ax_max, ax_min, v, n_points);
     }
-    else if ( vehicles_limebeer2014f1.count(vehicle_name) != 0 )
+    else if ( table_f1_3dof.count(vehicle_name) != 0 )
     {
-        compute_gg_diagram(vehicles_limebeer2014f1.at(vehicle_name).cartesian_ad, ay, ax_max, ax_min, v, n_points);
+        compute_gg_diagram(table_f1_3dof.at(vehicle_name).cartesian_ad, ay, ax_max, ax_min, v, n_points);
     }
-}
-
-
-void track_coordinates(double* x_center, double* y_center, double* x_left, double* y_left, double* x_right, double* y_right, double* theta, const char* c_track_name, const int n_points, const double* s)
-{
-    std::string name(c_track_name);
-    auto& track = table_track.at(name);
-
-    for (int i = 0; i < n_points; ++i)
-    {
-        // Compute centerline
-        auto [r_c,v_c,a_c] = track(s[i]);
-
-        x_center[i] = r_c[0];
-        y_center[i] = r_c[1];
-
-        // Heading angle (theta)
-        theta[i] = atan2(v_c[1],v_c[0]);
-
-        // Compute left boundary
-        auto [r_l] = track.position_at(s[i],track.get_right_track_limit(s[i]));
-
-        x_left[i] = r_l[0];
-        y_left[i] = r_l[1];
-
-        // Compute right boundary
-        auto [r_r] = track.position_at(s[i],-track.get_left_track_limit(s[i]));
-
-        x_right[i] = r_r[0];
-        y_right[i] = r_r[1];
-    }
-    
-    return;
+ }
+ CATCH()
 }
 
 
@@ -881,14 +1205,14 @@ struct Optimal_laptime_configuration
     //                  <upper_bound/>
     //              </variable_name>
     //          </integral_constraints>
-    //          <save_variables>
+    //          <output_variables>
     //              <prefix> run/ </prefix>
     //              <variables>
     //                  <u/>
     //                  <v/>
     //                  ...
     //              </variables>
-    //          </save_variables>
+    //          </output_variables>
     //          <closed_simulation> true </closed_simulation>
     //          <initial_condition>
     //              <q/>
@@ -931,11 +1255,11 @@ struct Optimal_laptime_configuration
         if ( doc.has_element("options/print_level") ) print_level = doc.get_element("options/print_level").get_value(int());
 
         // Output variables
-        if ( doc.has_element("options/save_variables") )
+        if ( doc.has_element("options/output_variables") )
         {
-            save_variables_prefix = doc.get_element("options/save_variables/prefix").get_value();
+            output_variables_prefix = doc.get_element("options/output_variables/prefix").get_value();
 
-            auto variables_node = doc.get_element("options/save_variables/variables");
+            auto variables_node = doc.get_element("options/output_variables/variables");
 
             variables_to_save = {};
             for (auto& variable : variables_node.get_children())
@@ -949,7 +1273,7 @@ struct Optimal_laptime_configuration
         // If open simulation, provide initial condition
         if ( !is_closed )
         {
-            if ( !doc.has_element("options/initial_condition") ) throw std::runtime_error("For open simulations, the initial condition must be provided"
+            if ( !doc.has_element("options/initial_condition") ) throw fastest_lap_exception("For open simulations, the initial condition must be provided"
                                                                                           "in 'options/initial_condition'");
             set_initial_condition = true;
             auto v_q_start  = table_vector.at(doc.get_element("options/initial_condition/q").get_attribute("from_table"));
@@ -978,7 +1302,7 @@ struct Optimal_laptime_configuration
                 // Find position in the control variables array
                 const auto it_variable = std::find(u_names.cbegin(), u_names.cend(), variable.get_name());
 
-                if ( it_variable == u_names.cend() ) throw std::runtime_error("[ERROR] Control variable \"" + variable.get_name() + "\" is not recognized");
+                if ( it_variable == u_names.cend() ) throw fastest_lap_exception("[ERROR] Control variable \"" + variable.get_name() + "\" is not recognized");
 
                 const auto i_control = std::distance(u_names.cbegin(), it_variable);
 
@@ -992,7 +1316,7 @@ struct Optimal_laptime_configuration
                 }
                 else if ( control_type[i_control] == "constant" )
                 {
-                    throw std::runtime_error("[ERROR] To be implemented"); 
+                    throw fastest_lap_exception("[ERROR] To be implemented"); 
                 }
                 else if ( control_type[i_control] == "hypermesh" )
                 {
@@ -1006,7 +1330,7 @@ struct Optimal_laptime_configuration
                 }
                 else
                 {   
-                    throw std::runtime_error("[ERROR] Optimal control type \"" + control_type[i_control] + "\" not recognized");
+                    throw fastest_lap_exception("[ERROR] Optimal control type \"" + control_type[i_control] + "\" not recognized");
                 }
             } 
 
@@ -1035,7 +1359,7 @@ struct Optimal_laptime_configuration
     bool set_initial_condition        = false;                  // If an initial condition has to be set
     bool compute_sensitivity          = false;                  // To compute sensitivity w.r.t. parameters
     scalar sigma                      = 0.5;                    // Scheme used (0.5:Crank Nicolson, 1.0:Implicit Euler)
-    std::string save_variables_prefix = "run/";                 // Prefix used to save the variables in the table
+    std::string output_variables_prefix = "run/";                 // Prefix used to save the variables in the table
     std::vector<std::string> variables_to_save{};               // Variables chosen to be saved
     std::vector<std::tuple<std::string,scalar,scalar>> integral_constraints;
 
@@ -1059,7 +1383,7 @@ struct Optimal_laptime_configuration
         else if constexpr (std::is_same_v<vehicle_t,lot2016kart_all>)
             return false;
         else
-            throw std::runtime_error("[ERROR] get_default_control_types() not defined for this vehicle_t");
+            throw fastest_lap_exception("[ERROR] get_default_control_types() not defined for this vehicle_t");
     }
     
     static std::array<std::string,vehicle_t::vehicle_ad_curvilinear::NCONTROL> get_default_control_types() 
@@ -1069,7 +1393,7 @@ struct Optimal_laptime_configuration
         else if constexpr (std::is_same_v<vehicle_t,lot2016kart_all>)
             return {"full-mesh", "full-mesh"};
         else
-            throw std::runtime_error("[ERROR] get_default_control_types() not defined for this vehicle_t");
+            throw fastest_lap_exception("[ERROR] get_default_control_types() not defined for this vehicle_t");
     }
     
     static std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NCONTROL> get_default_dissipations()
@@ -1079,7 +1403,7 @@ struct Optimal_laptime_configuration
         else if constexpr (std::is_same_v<vehicle_t,lot2016kart_all>)
             return {1.0e-2, 200*200*1.0e-10};
         else
-            throw std::runtime_error("[ERROR] get_default_control_types() not defined for this vehicle_t");
+            throw fastest_lap_exception("[ERROR] get_default_control_types() not defined for this vehicle_t");
     }
 
 };
@@ -1102,7 +1426,7 @@ typename Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>::template C
         }
         else if ( conf.control_type[j] == "constant" )
         {
-            throw std::runtime_error("[ERROR] Not implemented yet");
+            throw fastest_lap_exception("[ERROR] Not implemented yet");
         }
         else if ( conf.control_type[j] == "hypermesh" )
         {
@@ -1218,11 +1542,11 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
     for (const auto& variable_name : conf.variables_to_save)
     {
         // Check if the variable_name exists in any of the tables
-        if ( table_scalar.count(conf.save_variables_prefix + variable_name) != 0 )
-            throw std::runtime_error(std::string("Variable \"") + conf.save_variables_prefix + variable_name + "\" already exists in the scalar table");
+        if ( table_scalar.count(conf.output_variables_prefix + variable_name) != 0 )
+            throw fastest_lap_exception(std::string("Variable \"") + conf.output_variables_prefix + variable_name + "\" already exists in the scalar table");
 
-        if ( table_vector.count(conf.save_variables_prefix + variable_name) != 0 )
-            throw std::runtime_error(std::string("Variable \"") + conf.save_variables_prefix + variable_name + "\" already exists in the vector table");
+        if ( table_vector.count(conf.output_variables_prefix + variable_name) != 0 )
+            throw fastest_lap_exception(std::string("Variable \"") + conf.output_variables_prefix + variable_name + "\" already exists in the vector table");
 
         bool is_vector = true;
         const auto& car_curv_sc_const = car_curv_sc;
@@ -1231,7 +1555,7 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
         // Scalar variables
         if ( variable_name == "laptime" )
         {
-            table_scalar.insert({conf.save_variables_prefix+variable_name, opt_laptime.laptime});
+            table_scalar.insert({conf.output_variables_prefix+variable_name, opt_laptime.laptime});
             is_vector = false;
 
             // Save the derivative w.r.t. the parameters
@@ -1239,7 +1563,7 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
             {
                 for (size_t i = 0; i < car_curv_sc_const.get_parameters().get_number_of_parameters(); ++i)
                 {
-                    table_scalar.insert({conf.save_variables_prefix + "derivatives/" + variable_name + "/" + parameter_aliases[i], opt_laptime.dlaptimedp[i]});
+                    table_scalar.insert({conf.output_variables_prefix + "derivatives/" + variable_name + "/" + parameter_aliases[i], opt_laptime.dlaptimedp[i]});
                 }
             }
         }
@@ -1259,13 +1583,13 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
                 std::ostringstream s_out;
                 s_out << "[ERROR] Requested integral constraint was not found." << std::endl;
                 s_out << "[ERROR] Available options are: " << vehicle_t::vehicle_ad_curvilinear::Integral_quantities::names;
-                throw std::runtime_error(s_out.str()); 
+                throw fastest_lap_exception(s_out.str()); 
             }
 
             // (6.2.3) Fill the integral constraint information
             const size_t index = std::distance(vehicle_t::vehicle_ad_curvilinear::Integral_quantities::names.cbegin(),it);
 
-            table_scalar.insert({conf.save_variables_prefix + variable_name, opt_laptime.integral_quantities[index].value});
+            table_scalar.insert({conf.output_variables_prefix + variable_name, opt_laptime.integral_quantities[index].value});
 
             is_vector = false;
         }
@@ -1310,8 +1634,17 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
                     data[i] = opt_laptime.q[i][vehicle_t::vehicle_scalar_curvilinear::Chassis_type::IV];
     
                 else if ( variable_name == "time" )
+                {
                     data[i] = opt_laptime.q[i][vehicle_t::vehicle_scalar_curvilinear::Road_type::ITIME];
-    
+
+                    if ( opts.check_optimality )
+                    {
+                        for (size_t p = 0; p < car_curv_sc_const.get_parameters().get_number_of_parameters(); ++p)
+                        {
+                            ddatadp[p][i] = opt_laptime.dqdp[p][i][vehicle_t::vehicle_scalar_curvilinear::Road_type::ITIME];
+                        }
+                    }
+                }
                 else if ( variable_name == "delta" )
                     data[i] = opt_laptime.control_variables[vehicle_t::vehicle_scalar_curvilinear::Chassis_type::Front_axle_type::ISTEERING].u[i];
     
@@ -1337,7 +1670,7 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
                 {
                     if constexpr (std::is_same<vehicle_t, lot2016kart_all>::value)
                     {
-                        throw std::runtime_error("[ERROR] brake-bias is not available for vehicles of type lot2016kart");
+                        throw fastest_lap_exception("[ERROR] brake-bias is not available for vehicles of type lot2016kart");
                     }
             
                     else if constexpr (std::is_same<vehicle_t, limebeer2014f1_all>::value)
@@ -1346,7 +1679,7 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
                     }
                     else
                     {
-                        throw std::runtime_error("[ERROR] Vehicle type is not defined");
+                        throw fastest_lap_exception("[ERROR] Vehicle type is not defined");
                     }
                 }
                 else if ( variable_name == "rear_axle.left_tire.x" )
@@ -1405,7 +1738,7 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
                     }
                     else 
                     {
-                        throw std::runtime_error("Fz_fl is only defined for limebeer2014f1 models");
+                        throw fastest_lap_exception("Fz_fl is only defined for limebeer2014f1 models");
                     }
                 }
     
@@ -1417,7 +1750,7 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
                     }
                     else 
                     {
-                        throw std::runtime_error("Fz_fr is only defined for limebeer2014f1 models");
+                        throw fastest_lap_exception("Fz_fr is only defined for limebeer2014f1 models");
                     }
                 }
     
@@ -1429,7 +1762,7 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
                     }
                     else 
                     {
-                        throw std::runtime_error("Fz_rl is only defined for limebeer2014f1 models");
+                        throw fastest_lap_exception("Fz_rl is only defined for limebeer2014f1 models");
                     }
                 }
     
@@ -1441,7 +1774,7 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
                     }
                     else 
                     {
-                        throw std::runtime_error("Fz_rr is only defined for limebeer2014f1 models");
+                        throw fastest_lap_exception("Fz_rr is only defined for limebeer2014f1 models");
                     }
                 }
 
@@ -1454,21 +1787,47 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
                 {       
                     data[i] = car_curv_sc.get_chassis().get_drag_coefficient();
                 }
+
+                else if ( variable_name == "ax" )
+                {
+                    sVector3d velocity = {car_curv_sc.get_chassis().get_u(), car_curv_sc.get_chassis().get_v(), 0.0};
+            
+                    sVector3d acceleration = {car_curv_sc.get_chassis().get_du() - velocity.y()*car_curv_sc.get_chassis().get_omega(), 
+                                              car_curv_sc.get_chassis().get_dv() + velocity.x()*car_curv_sc.get_chassis().get_omega(),
+                                              0.0
+                                             };
+            
+                    data[i] = dot(velocity,acceleration)/norm(velocity);
+                }
+            
+                else if ( variable_name == "ay" )
+                {
+                    sVector3d velocity = {car_curv_sc.get_chassis().get_u(), car_curv_sc.get_chassis().get_v(), 0.0};
+            
+                    sVector3d acceleration = {car_curv_sc.get_chassis().get_du() - velocity.y()*car_curv_sc.get_chassis().get_omega(), 
+                                              car_curv_sc.get_chassis().get_dv() + velocity.x()*car_curv_sc.get_chassis().get_omega(),
+                                              0.0
+                                             };
+            
+                    data[i] = cross(velocity,acceleration).z()/norm(velocity);
+                }
+            
+
                 else
                 {
-                    throw std::runtime_error("Variable \"" + variable_name + "\" is not defined");
+                    throw fastest_lap_exception("Variable \"" + variable_name + "\" is not defined");
                 }
     
             }
     
             // Insert in the vector table
-            table_vector.insert({conf.save_variables_prefix + variable_name, data});
+            table_vector.insert({conf.output_variables_prefix + variable_name, data});
 
             // Insert derivatives in the table
             if ( opts.check_optimality )
             {
                 for (size_t p = 0; p < car_curv_sc_const.get_parameters().get_number_of_parameters(); ++p)
-                    table_vector.insert({conf.save_variables_prefix + "derivatives/" + variable_name + "/" + parameter_aliases[p], ddatadp[p]});
+                    table_vector.insert({conf.output_variables_prefix + "derivatives/" + variable_name + "/" + parameter_aliases[p], ddatadp[p]});
             }
         }
     }
@@ -1481,36 +1840,44 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
 
 void optimal_laptime(const char* c_vehicle_name, const char* c_track_name, const int n_points, const double* s, const char* options) 
 {
+ try
+ {
     const std::string vehicle_name(c_vehicle_name);
     const std::string track_name(c_track_name);
-    if ( vehicles_lot2016kart.count(vehicle_name) != 0 )
+    if ( table_kart_6dof.count(vehicle_name) != 0 )
     {
-        compute_optimal_laptime(vehicles_lot2016kart.at(vehicle_name), table_track.at(track_name), 
+        compute_optimal_laptime(table_kart_6dof.at(vehicle_name), table_track.at(track_name), 
                                 n_points, s, options);
     }
-    else if ( vehicles_limebeer2014f1.count(vehicle_name) != 0 )
+    else if ( table_f1_3dof.count(vehicle_name) != 0 )
     {
-        compute_optimal_laptime(vehicles_limebeer2014f1.at(vehicle_name), table_track.at(track_name), 
+        compute_optimal_laptime(table_f1_3dof.at(vehicle_name), table_track.at(track_name), 
                                 n_points, s, options);
     }
+ }
+ CATCH()
 }
 
 
-void change_track(const char* c_vehicle_name, const char* c_track_name)
+void vehicle_change_track(const char* c_vehicle_name, const char* c_track_name)
 {
+ try
+ {
     const std::string vehicle_name(c_vehicle_name);
     const std::string track_name(c_track_name);
     
-    if ( vehicles_lot2016kart.count(vehicle_name) != 0 )
+    if ( table_kart_6dof.count(vehicle_name) != 0 )
     {
-        vehicles_lot2016kart.at(vehicle_name).get_curvilinear_ad_car().get_road().change_track(table_track.at(track_name));
-        vehicles_lot2016kart.at(vehicle_name).get_curvilinear_scalar_car().get_road().change_track(table_track.at(track_name));
+        table_kart_6dof.at(vehicle_name).get_curvilinear_ad_car().get_road().change_track(table_track.at(track_name));
+        table_kart_6dof.at(vehicle_name).get_curvilinear_scalar_car().get_road().change_track(table_track.at(track_name));
     }
-    else if ( vehicles_limebeer2014f1.count(vehicle_name) != 0 )
+    else if ( table_f1_3dof.count(vehicle_name) != 0 )
     {
-        vehicles_limebeer2014f1.at(vehicle_name).get_curvilinear_ad_car().get_road().change_track(table_track.at(track_name));
-        vehicles_limebeer2014f1.at(vehicle_name).get_curvilinear_scalar_car().get_road().change_track(table_track.at(track_name));
+        table_f1_3dof.at(vehicle_name).get_curvilinear_ad_car().get_road().change_track(table_track.at(track_name));
+        table_f1_3dof.at(vehicle_name).get_curvilinear_scalar_car().get_road().change_track(table_track.at(track_name));
     }
+ }
+ CATCH()
 }
 
 
@@ -1530,7 +1897,7 @@ struct Circuit_preprocessor_configuration
 //
 //      * Optional inputs:
 //          xml_file_name: name of the XML file to export the track
-//          save_variables/prefix: prefix used to store the output variables in the table         
+//          output_variables/prefix: prefix used to store the output variables in the table         
 //          insert_table_name: name used to insert the track itself into the table
     enum Mode { EQUALLY_SPACED, REFINED };
 
@@ -1542,43 +1909,43 @@ struct Circuit_preprocessor_configuration
         // Inputs ----------------------------------------------------------:-
 
         // Check that KML files are present
-        if ( !doc.has_element("options/kml_files") )       throw std::runtime_error("[ERROR] circuit_preprocessor_validate_options -> missing mandatory node options/kml_files");
-        if ( !doc.has_element("options/kml_files/left") )  throw std::runtime_error("[ERROR] circuit_preprocessor_validate_options -> missing mandatory node options/kml_files/left");
-        if ( !doc.has_element("options/kml_files/right") ) throw std::runtime_error("[ERROR] circuit_preprocessor_validate_options -> missing mandatory node options/kml_files/right");
+        if ( !doc.has_element("options/kml_files") )       throw fastest_lap_exception("[ERROR] circuit_preprocessor_validate_options -> missing mandatory node options/kml_files");
+        if ( !doc.has_element("options/kml_files/left") )  throw fastest_lap_exception("[ERROR] circuit_preprocessor_validate_options -> missing mandatory node options/kml_files/left");
+        if ( !doc.has_element("options/kml_files/right") ) throw fastest_lap_exception("[ERROR] circuit_preprocessor_validate_options -> missing mandatory node options/kml_files/right");
 
         kml_file_left = doc.get_element("options/kml_files/left").get_value();
         kml_file_right = doc.get_element("options/kml_files/right").get_value();
 
         // Check that the mode is present
-        if ( !doc.has_element("options/mode") ) throw std::runtime_error("[ERROR] circuit_preprocessor_validate_options -> missing mandatory node options/mode");
+        if ( !doc.has_element("options/mode") ) throw fastest_lap_exception("[ERROR] circuit_preprocessor_validate_options -> missing mandatory node options/mode");
 
         std::string mode_str = doc.get_element("options/mode").get_value();
 
         if      ( mode_str == "equally-spaced" ) mode = EQUALLY_SPACED;
         else if ( mode_str == "refined"        ) mode = REFINED;
-        else throw std::runtime_error("[ERROR] circuit_preprocessor_validate_options -> invalid value for \"mode\".\nAvailable options are: \"equally-spaced\" and \"refined\"");
+        else throw fastest_lap_exception("[ERROR] circuit_preprocessor_validate_options -> invalid value for \"mode\".\nAvailable options are: \"equally-spaced\" and \"refined\"");
 
         // Check that is_closed is present
-        if ( !doc.has_element("options/is_closed") ) throw std::runtime_error("[ERROR] circuit_preprocessor_validate_options -> missing mandatory node options/is_closed");
+        if ( !doc.has_element("options/is_closed") ) throw fastest_lap_exception("[ERROR] circuit_preprocessor_validate_options -> missing mandatory node options/is_closed");
         is_closed = doc.get_element("options/is_closed").get_value(bool());
 
         // Check that open tracks must be generated with equally spaced nodes
-        if ( !is_closed && (mode == REFINED) ) throw std::runtime_error("[ERROR] circuit_preprocessor_validate_options -> open tracks must be computed with mode=\"equally-spaced\"");
+        if ( !is_closed && (mode == REFINED) ) throw fastest_lap_exception("[ERROR] circuit_preprocessor_validate_options -> open tracks must be computed with mode=\"equally-spaced\"");
 
         switch (mode)
         {
          // Get number of equally spaced elements
          case (EQUALLY_SPACED):
-            if ( !doc.has_element("options/number_of_elements") ) throw std::runtime_error("[ERROR] circuit_preprocessor_validate_options -> missing node options/number_of_element, mandatory in equally-spaced mode");
+            if ( !doc.has_element("options/number_of_elements") ) throw fastest_lap_exception("[ERROR] circuit_preprocessor_validate_options -> missing node options/number_of_element, mandatory in equally-spaced mode");
             n_el = doc.get_element("options/number_of_elements").get_value(int());
             
             break;
 
          // Get arclength distribution if refined
          case (REFINED):
-            if ( !doc.has_element("options/mesh_refinement") ) throw std::runtime_error("[ERROR] circuit_preprocessor_validate_options -> missing node options/mesh_refinement, mandatory in refined mode");
-            if ( !doc.has_element("options/mesh_refinement/s") ) throw std::runtime_error("[ERROR] circuit_preprocessor_validate_options -> missing node options/mesh_refinement/s, mandatory in refined mode");
-            if ( !doc.has_element("options/mesh_refinement/ds") ) throw std::runtime_error("[ERROR] circuit_preprocessor_validate_options -> missing node options/mesh_refinement/ds, mandatory in refined mode");
+            if ( !doc.has_element("options/mesh_refinement") ) throw fastest_lap_exception("[ERROR] circuit_preprocessor_validate_options -> missing node options/mesh_refinement, mandatory in refined mode");
+            if ( !doc.has_element("options/mesh_refinement/s") ) throw fastest_lap_exception("[ERROR] circuit_preprocessor_validate_options -> missing node options/mesh_refinement/s, mandatory in refined mode");
+            if ( !doc.has_element("options/mesh_refinement/ds") ) throw fastest_lap_exception("[ERROR] circuit_preprocessor_validate_options -> missing node options/mesh_refinement/ds, mandatory in refined mode");
 
             s_distribution = doc.get_element("options/mesh_refinement/s").get_value(std::vector<scalar>()); 
             ds_distribution = doc.get_element("options/mesh_refinement/ds").get_value(std::vector<scalar>()); 
@@ -1586,7 +1953,7 @@ struct Circuit_preprocessor_configuration
             break;
 
          default:
-            throw std::runtime_error("[ERROR] circuit_preprocessor_validate_options -> mode was not recognized");
+            throw fastest_lap_exception("[ERROR] circuit_preprocessor_validate_options -> mode was not recognized");
         }
 
     
@@ -1613,11 +1980,11 @@ struct Circuit_preprocessor_configuration
             xml_file_name = doc.get_element("options/xml_file_name").get_value();
         }
 
-        if ( doc.has_element("options/save_variables") )
+        if ( doc.has_element("options/output_variables") )
         {
-            save_variables_to_table = true;
-            if ( !doc.has_element("options/save_variables/prefix") ) throw std::runtime_error("[ERROR] circuit_preprocessor_validate_options -> missing node \"options/save_variables/prefix\", mandatory when save_variables is given");
-            save_variables_prefix = doc.get_element("options/save_variables/prefix").get_value();
+            output_variables_to_table = true;
+            if ( !doc.has_element("options/output_variables/prefix") ) throw fastest_lap_exception("[ERROR] circuit_preprocessor_validate_options -> missing node \"options/output_variables/prefix\", mandatory when output_variables is given");
+            output_variables_prefix = doc.get_element("options/output_variables/prefix").get_value();
         } 
 
         if ( doc.has_element("options/insert_table_name") )
@@ -1650,10 +2017,10 @@ struct Circuit_preprocessor_configuration
     // Output options
     bool save_to_table           = false;
     bool save_as_xml             = false;
-    bool save_variables_to_table = false;
+    bool output_variables_to_table = false;
 
     std::string xml_file_name;
-    std::string save_variables_prefix;
+    std::string output_variables_prefix;
     std::string insert_table_name;
 };
 
@@ -1662,6 +2029,8 @@ void circuit_preprocessor(const char* options)
 {
 //        Interface to circuit preprocessor
 //        =================================
+ try
+ {
     Circuit_preprocessor_configuration conf(options);
 
     // Read KML files
@@ -1696,7 +2065,7 @@ void circuit_preprocessor(const char* options)
         }
         else
         {
-            throw std::runtime_error("[ERROR] Not implemented");
+            throw fastest_lap_exception("[ERROR] Not implemented");
         }
 
         break;
@@ -1707,7 +2076,7 @@ void circuit_preprocessor(const char* options)
         break;
 
      default:
-        throw std::runtime_error("[ERROR] circuit_preprocessor -> preprocessor mode not recognized");
+        throw fastest_lap_exception("[ERROR] circuit_preprocessor -> preprocessor mode not recognized");
     }
 
     // (3) Handle outputs
@@ -1716,7 +2085,7 @@ void circuit_preprocessor(const char* options)
     if ( conf.save_to_table )
     {
         if ( table_track.count(conf.insert_table_name) != 0 )
-            throw std::runtime_error(std::string("Track \"") + conf.insert_table_name + "\" already exists in the track table");
+            throw fastest_lap_exception(std::string("Track \"") + conf.insert_table_name + "\" already exists in the track table");
 
         table_track.insert({conf.insert_table_name, {circuit_preprocessor}});
     }
@@ -1728,130 +2097,132 @@ void circuit_preprocessor(const char* options)
     }
 
     // (3.3) Save variables to table
-    if ( conf.save_variables_to_table )
+    if ( conf.output_variables_to_table )
     {
         // (3.3.1) Arclength
-        if ( table_vector.count(conf.save_variables_prefix + "arclength") != 0 )
-            throw std::runtime_error(std::string("Variable \"") + conf.save_variables_prefix + "arclength" + "\" already exists in the vector table");
+        if ( table_vector.count(conf.output_variables_prefix + "arclength") != 0 )
+            throw fastest_lap_exception(std::string("Variable \"") + conf.output_variables_prefix + "arclength" + "\" already exists in the vector table");
 
-        table_vector.insert({conf.save_variables_prefix + "arclength", circuit_preprocessor.s});
+        table_vector.insert({conf.output_variables_prefix + "arclength", circuit_preprocessor.s});
 
         // (3.3.2) centerline/x
-        if ( table_vector.count(conf.save_variables_prefix + "centerline/x") != 0 )
-            throw std::runtime_error(std::string("Variable \"") + conf.save_variables_prefix + "centerline/x" + "\" already exists in the vector table");
+        if ( table_vector.count(conf.output_variables_prefix + "centerline/x") != 0 )
+            throw fastest_lap_exception(std::string("Variable \"") + conf.output_variables_prefix + "centerline/x" + "\" already exists in the vector table");
 
         std::vector<scalar> centerline_x(circuit_preprocessor.s.size());
         std::transform(circuit_preprocessor.r_centerline.cbegin(), circuit_preprocessor.r_centerline.cend(), centerline_x.begin(), 
             [](const auto& r) -> auto { return r.x(); });
 
-        table_vector.insert({conf.save_variables_prefix + "centerline/x", centerline_x});
+        table_vector.insert({conf.output_variables_prefix + "centerline/x", centerline_x});
         
         // (3.3.3) centerline/y
-        if ( table_vector.count(conf.save_variables_prefix + "centerline/y") != 0 )
-            throw std::runtime_error(std::string("Variable \"") + conf.save_variables_prefix + "centerline/y" + "\" already exists in the vector table");
+        if ( table_vector.count(conf.output_variables_prefix + "centerline/y") != 0 )
+            throw fastest_lap_exception(std::string("Variable \"") + conf.output_variables_prefix + "centerline/y" + "\" already exists in the vector table");
 
         std::vector<scalar> centerline_y(circuit_preprocessor.s.size());
         std::transform(circuit_preprocessor.r_centerline.cbegin(), circuit_preprocessor.r_centerline.cend(), centerline_y.begin(), 
             [](const auto& r) -> auto { return r.y(); });
 
-        table_vector.insert({conf.save_variables_prefix + "centerline/y", centerline_y});
+        table_vector.insert({conf.output_variables_prefix + "centerline/y", centerline_y});
 
         // (3.3.4) left/x
-        if ( table_vector.count(conf.save_variables_prefix + "left/x") != 0 )
-            throw std::runtime_error(std::string("Variable \"") + conf.save_variables_prefix + "left/x" + "\" already exists in the vector table");
+        if ( table_vector.count(conf.output_variables_prefix + "left/x") != 0 )
+            throw fastest_lap_exception(std::string("Variable \"") + conf.output_variables_prefix + "left/x" + "\" already exists in the vector table");
 
         std::vector<scalar> left_x(circuit_preprocessor.s.size());
         std::transform(circuit_preprocessor.r_left.cbegin(), circuit_preprocessor.r_left.cend(), left_x.begin(), 
             [](const auto& r) -> auto { return r.x(); });
 
-        table_vector.insert({conf.save_variables_prefix + "left/x", left_x});
+        table_vector.insert({conf.output_variables_prefix + "left/x", left_x});
         
         // (3.3.5) left/y
-        if ( table_vector.count(conf.save_variables_prefix + "left/y") != 0 )
-            throw std::runtime_error(std::string("Variable \"") + conf.save_variables_prefix + "left/y" + "\" already exists in the vector table");
+        if ( table_vector.count(conf.output_variables_prefix + "left/y") != 0 )
+            throw fastest_lap_exception(std::string("Variable \"") + conf.output_variables_prefix + "left/y" + "\" already exists in the vector table");
 
         std::vector<scalar> left_y(circuit_preprocessor.s.size());
         std::transform(circuit_preprocessor.r_left.cbegin(), circuit_preprocessor.r_left.cend(), left_y.begin(), 
             [](const auto& r) -> auto { return r.y(); });
 
-        table_vector.insert({conf.save_variables_prefix + "left/y", left_y});
+        table_vector.insert({conf.output_variables_prefix + "left/y", left_y});
 
         // (3.3.6) right/x
-        if ( table_vector.count(conf.save_variables_prefix + "right/x") != 0 )
-            throw std::runtime_error(std::string("Variable \"") + conf.save_variables_prefix + "right/x" + "\" already exists in the vector table");
+        if ( table_vector.count(conf.output_variables_prefix + "right/x") != 0 )
+            throw fastest_lap_exception(std::string("Variable \"") + conf.output_variables_prefix + "right/x" + "\" already exists in the vector table");
 
         std::vector<scalar> right_x(circuit_preprocessor.s.size());
         std::transform(circuit_preprocessor.r_right.cbegin(), circuit_preprocessor.r_right.cend(), right_x.begin(), 
             [](const auto& r) -> auto { return r.x(); });
 
-        table_vector.insert({conf.save_variables_prefix + "right/x", right_x});
+        table_vector.insert({conf.output_variables_prefix + "right/x", right_x});
         
         // (3.3.7) right/y
-        if ( table_vector.count(conf.save_variables_prefix + "right/y") != 0 )
-            throw std::runtime_error(std::string("Variable \"") + conf.save_variables_prefix + "right/y" + "\" already exists in the vector table");
+        if ( table_vector.count(conf.output_variables_prefix + "right/y") != 0 )
+            throw fastest_lap_exception(std::string("Variable \"") + conf.output_variables_prefix + "right/y" + "\" already exists in the vector table");
 
         std::vector<scalar> right_y(circuit_preprocessor.s.size());
         std::transform(circuit_preprocessor.r_right.cbegin(), circuit_preprocessor.r_right.cend(), right_y.begin(), 
             [](const auto& r) -> auto { return r.y(); });
 
-        table_vector.insert({conf.save_variables_prefix + "right/y", right_y});
+        table_vector.insert({conf.output_variables_prefix + "right/y", right_y});
 
         // (3.3.8) left_measured/x
-        if ( table_vector.count(conf.save_variables_prefix + "left_measured/x") != 0 )
-            throw std::runtime_error(std::string("Variable \"") + conf.save_variables_prefix + "left_measured/x" + "\" already exists in the vector table");
+        if ( table_vector.count(conf.output_variables_prefix + "left_measured/x") != 0 )
+            throw fastest_lap_exception(std::string("Variable \"") + conf.output_variables_prefix + "left_measured/x" + "\" already exists in the vector table");
 
         std::vector<scalar> left_measured_x(circuit_preprocessor.s.size());
         std::transform(circuit_preprocessor.r_left_measured.cbegin(), circuit_preprocessor.r_left_measured.cend(), left_measured_x.begin(), 
             [](const auto& r) -> auto { return r.x(); });
 
-        table_vector.insert({conf.save_variables_prefix + "left_measured/x", left_measured_x});
+        table_vector.insert({conf.output_variables_prefix + "left_measured/x", left_measured_x});
         
         // (3.3.9) left_measured/y
-        if ( table_vector.count(conf.save_variables_prefix + "left_measured/y") != 0 )
-            throw std::runtime_error(std::string("Variable \"") + conf.save_variables_prefix + "left_measured/y" + "\" already exists in the vector table");
+        if ( table_vector.count(conf.output_variables_prefix + "left_measured/y") != 0 )
+            throw fastest_lap_exception(std::string("Variable \"") + conf.output_variables_prefix + "left_measured/y" + "\" already exists in the vector table");
 
         std::vector<scalar> left_measured_y(circuit_preprocessor.s.size());
         std::transform(circuit_preprocessor.r_left_measured.cbegin(), circuit_preprocessor.r_left_measured.cend(), left_measured_y.begin(), 
             [](const auto& r) -> auto { return r.y(); });
 
-        table_vector.insert({conf.save_variables_prefix + "left_measured/y", left_measured_y});
+        table_vector.insert({conf.output_variables_prefix + "left_measured/y", left_measured_y});
 
         // (3.3.10) right_measured/x
-        if ( table_vector.count(conf.save_variables_prefix + "right_measured/x") != 0 )
-            throw std::runtime_error(std::string("Variable \"") + conf.save_variables_prefix + "right_measured/x" + "\" already exists in the vector table");
+        if ( table_vector.count(conf.output_variables_prefix + "right_measured/x") != 0 )
+            throw fastest_lap_exception(std::string("Variable \"") + conf.output_variables_prefix + "right_measured/x" + "\" already exists in the vector table");
 
         std::vector<scalar> right_measured_x(circuit_preprocessor.s.size());
         std::transform(circuit_preprocessor.r_right_measured.cbegin(), circuit_preprocessor.r_right_measured.cend(), right_measured_x.begin(), 
             [](const auto& r) -> auto { return r.x(); });
 
-        table_vector.insert({conf.save_variables_prefix + "right_measured/x", right_measured_x});
+        table_vector.insert({conf.output_variables_prefix + "right_measured/x", right_measured_x});
         
         // (3.3.11) right_measured/y
-        if ( table_vector.count(conf.save_variables_prefix + "right_measured/y") != 0 )
-            throw std::runtime_error(std::string("Variable \"") + conf.save_variables_prefix + "right_measured/y" + "\" already exists in the vector table");
+        if ( table_vector.count(conf.output_variables_prefix + "right_measured/y") != 0 )
+            throw fastest_lap_exception(std::string("Variable \"") + conf.output_variables_prefix + "right_measured/y" + "\" already exists in the vector table");
 
         std::vector<scalar> right_measured_y(circuit_preprocessor.s.size());
         std::transform(circuit_preprocessor.r_right_measured.cbegin(), circuit_preprocessor.r_right_measured.cend(), right_measured_y.begin(), 
             [](const auto& r) -> auto { return r.y(); });
 
-        table_vector.insert({conf.save_variables_prefix + "right_measured/y", right_measured_y});
+        table_vector.insert({conf.output_variables_prefix + "right_measured/y", right_measured_y});
 
         // (3.3.12) Curvature
-        if ( table_vector.count(conf.save_variables_prefix + "kappa") != 0 )
-            throw std::runtime_error(std::string("Variable \"") + conf.save_variables_prefix + "kappa" + "\" already exists in the vector table");
+        if ( table_vector.count(conf.output_variables_prefix + "kappa") != 0 )
+            throw fastest_lap_exception(std::string("Variable \"") + conf.output_variables_prefix + "kappa" + "\" already exists in the vector table");
 
-        table_vector.insert({conf.save_variables_prefix + "kappa", circuit_preprocessor.kappa});
+        table_vector.insert({conf.output_variables_prefix + "kappa", circuit_preprocessor.kappa});
 
         // (3.3.13) Distance to left
-        if ( table_vector.count(conf.save_variables_prefix + "nl") != 0 )
-            throw std::runtime_error(std::string("Variable \"") + conf.save_variables_prefix + "nl" + "\" already exists in the vector table");
+        if ( table_vector.count(conf.output_variables_prefix + "nl") != 0 )
+            throw fastest_lap_exception(std::string("Variable \"") + conf.output_variables_prefix + "nl" + "\" already exists in the vector table");
 
-        table_vector.insert({conf.save_variables_prefix + "nl", circuit_preprocessor.nl});
+        table_vector.insert({conf.output_variables_prefix + "nl", circuit_preprocessor.nl});
 
         // (3.3.13) Distance to right
-        if ( table_vector.count(conf.save_variables_prefix + "nr") != 0 )
-            throw std::runtime_error(std::string("Variable \"") + conf.save_variables_prefix + "nr" + "\" already exists in the vector table");
+        if ( table_vector.count(conf.output_variables_prefix + "nr") != 0 )
+            throw fastest_lap_exception(std::string("Variable \"") + conf.output_variables_prefix + "nr" + "\" already exists in the vector table");
 
-        table_vector.insert({conf.save_variables_prefix + "nr", circuit_preprocessor.nr});
+        table_vector.insert({conf.output_variables_prefix + "nr", circuit_preprocessor.nr});
     }
+ } 
+ CATCH()
 }

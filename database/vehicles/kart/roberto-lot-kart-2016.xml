@@ -2,7 +2,7 @@
   This model represents the dynamics of a go-kart
   Reference: https://eprints.soton.ac.uk/385883/
 -->
-<vehicle type="roberto-lot-kart-2016">
+<vehicle type="kart-6dof">
     <front-axle model="axle-car">
         <track units="m">1.055</track>
         <stiffness>
@@ -48,9 +48,9 @@
         <rear_axle>-0.4 0.0 0.111</rear_axle>
         <mass>165.0</mass>
         <inertia>
-            20.0  0.0  5.0
-             0.0 15.0  0.0
-             5.0  0.0 25.0
+            <Ixx> 20.0 </Ixx>  <Ixy> 0.0  </Ixy> <Ixz> 5.0  </Ixz>
+            <Iyx> 0.0  </Iyx>  <Iyy> 15.0 </Iyy> <Iyz> 0.0  </Iyz>
+            <Izx> 5.0  </Izx>  <Izy> 0.0  </Izy> <Izz> 25.0 </Izz>
         </inertia>
         <aerodynamics>
             <rho>1.2</rho>

@@ -45,7 +45,7 @@ template<typename Dynamic_model_t>
 inline void Optimal_laptime<Dynamic_model_t>::check_inputs(const Dynamic_model_t& car)
 {
     if ( s.size() <= 1 )
-        throw std::runtime_error("Provide at least two values of arclength");
+        throw fastest_lap_exception("Provide at least two values of arclength");
 
     // (1) Compute number of elements and points
     n_points = s.size();
@@ -57,18 +57,18 @@ inline void Optimal_laptime<Dynamic_model_t>::check_inputs(const Dynamic_model_t
     if (is_closed)
     {
         if (std::abs(s.front()) > 1.0e-12)
-            throw std::runtime_error("In closed circuits, s[0] should be 0.0");
+            throw fastest_lap_exception("In closed circuits, s[0] should be 0.0");
 
         if (s.back() > L - 1.0e-10)
-            throw std::runtime_error("In closed circuits, s[end] should be < track_length");
+            throw fastest_lap_exception("In closed circuits, s[end] should be < track_length");
     }
     else
     {
         if (s[0] < -1.0e-12)
-            throw std::runtime_error("s[0] must be >= 0");
+            throw fastest_lap_exception("s[0] must be >= 0");
 
         if (s.back() > L)
-            throw std::runtime_error("s[end] must be <= L");
+            throw fastest_lap_exception("s[end] must be <= L");
     }
 
     // If closed, replace the initial arclength by 0
@@ -81,11 +81,11 @@ inline void Optimal_laptime<Dynamic_model_t>::check_inputs(const Dynamic_model_t
 
     // (3.1) State
     if ( q.size() != n_points )
-        throw std::runtime_error("q must have size of n_points");
+        throw fastest_lap_exception("q must have size of n_points");
 
     // (3.2) Algebraic state
     if ( qa.size() != n_points )
-        throw std::runtime_error("qa must have size of n_points");
+        throw fastest_lap_exception("qa must have size of n_points");
     
     // (3.3) Controls: check size only for full-mesh controls
     for (const auto& control_variable : control_variables )
@@ -93,17 +93,17 @@ inline void Optimal_laptime<Dynamic_model_t>::check_inputs(const Dynamic_model_t
         if ( control_variable.optimal_control_type == FULL_MESH )
         {
             if ( control_variable.u.size() != n_points )
-                throw std::runtime_error("control_variables.u must have the size of n_points");            
+                throw fastest_lap_exception("control_variables.u must have the size of n_points");            
 
             if ( is_direct )
             {
                 if ( control_variable.dudt.size() != 0 )
-                    throw std::runtime_error("In direct simulations, control_variables.dudt must be empty");            
+                    throw fastest_lap_exception("In direct simulations, control_variables.dudt must be empty");            
             }
             else
             {   
                 if ( control_variable.dudt.size() != n_points )
-                    throw std::runtime_error("control_variables.dudt must have the size of n_points");            
+                    throw fastest_lap_exception("control_variables.dudt must have the size of n_points");            
             }
         }
     }
@@ -132,7 +132,7 @@ inline void Optimal_laptime<Dynamic_model_t>::check_inputs(const Dynamic_model_t
             std::ostringstream s_out;
             s_out << "[ERROR] Requested integral constraint was not found." << std::endl;
             s_out << "[ERROR] Available options are: " << Dynamic_model_t::Integral_quantities::names;
-            throw std::runtime_error(s_out.str()); 
+            throw fastest_lap_exception(s_out.str()); 
         }
 
         // (4.2) Fill the integral constraint information
@@ -154,14 +154,14 @@ inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(Xml_document& doc)
     else if ( root.get_attribute("type") == "open" )
         is_closed = false;
     else
-        throw std::runtime_error("Incorrect track type, should be \"open\" or \"closed\"");
+        throw fastest_lap_exception("Incorrect track type, should be \"open\" or \"closed\"");
 
     if ( root.get_attribute("is_direct") == "true" )
         is_direct = true;
     else if ( root.get_attribute("is_direct") == "false" )
         is_direct = false;
     else
-        throw std::runtime_error("Incorrect \"is_direct\" attribute, should be \"true\" or \"false\"");
+        throw fastest_lap_exception("Incorrect \"is_direct\" attribute, should be \"true\" or \"false\"");
 
     const auto [key_name, q_names, qa_names, u_names] = Dynamic_model_t::get_state_and_control_names();
 
@@ -209,7 +209,7 @@ inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(Xml_document& doc)
         else if ( optimal_control_type_str == "full-mesh" )
             control_variables[i].optimal_control_type = FULL_MESH;
         else
-            throw std::runtime_error("optimal_control_type attribute not recognize. Options are: 'dont optimize', 'constant', 'hypermesh', 'full-mesh'");
+            throw fastest_lap_exception("optimal_control_type attribute not recognize. Options are: 'dont optimize', 'constant', 'hypermesh', 'full-mesh'");
 
         // Get value
         control_variables[i].u = root.get_child("control_variables/" + u_names[i] + "/values").get_value(std::vector<scalar>());
@@ -552,14 +552,14 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
     {
         std::ostringstream s_out;
         s_out << "k(=" << k << ") != fg.get_n_variables()(=" << fg.get_n_variables() << ")" ;
-        throw std::runtime_error(s_out.str());
+        throw fastest_lap_exception(s_out.str());
     }
     
     if ( kc != fg.get_n_constraints() )
     {
         std::ostringstream s_out;
         s_out << "kc(=" << kc << ") != fg.get_n_constraints()(=" << fg.get_n_constraints() << ")" ;
-        throw std::runtime_error(s_out.str());
+        throw fastest_lap_exception(s_out.str());
     }
 
     // (7) Warm-start: simply check the dimensions
@@ -569,21 +569,21 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
         {
             std::ostringstream s_out;
             s_out << "size of zl should be " << fg.get_n_variables() << " but it is " << optimization_data.zl.size();
-            throw std::runtime_error(s_out.str());
+            throw fastest_lap_exception(s_out.str());
         }
 
         if ( optimization_data.zu.size() != fg.get_n_variables() )
         {
             std::ostringstream s_out;
             s_out << "size of zu should be " << fg.get_n_variables() << " but it is " << optimization_data.zu.size();
-            throw std::runtime_error(s_out.str());
+            throw fastest_lap_exception(s_out.str());
         }
 
         if ( optimization_data.lambda.size() != fg.get_n_constraints() )
         {
             std::ostringstream s_out;
             s_out << "size of lambda should be " << fg.get_n_constraints() << " but it is " << optimization_data.lambda.size();
-            throw std::runtime_error(s_out.str());
+            throw fastest_lap_exception(s_out.str());
         }
     } 
 
@@ -622,7 +622,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
 
     if ( !success && options.throw_if_fail )
     {
-        throw std::runtime_error("Optimization did not succeed");
+        throw fastest_lap_exception("Optimization did not succeed");
     }
 
     // (8.5) Check optimality (disabled by default)
@@ -642,7 +642,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
             s_out << "        Big components of the gradient vector are:" << std::endl;
             for (size_t i = 0; i < optimality_check.id_not_ok.size(); ++i)
                 s_out << "            " << optimality_check.id_not_ok[i] << ": " << optimality_check.nlp_error[optimality_check.id_not_ok[i]] << std::endl;
-            throw std::runtime_error(s_out.str());
+            throw fastest_lap_exception(s_out.str());
         }
 
         dxdp = sensitivity_analysis.dxdp;
@@ -1044,14 +1044,14 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
     {
         std::ostringstream s_out;
         s_out << "k(=" << k << ") != fg.get_n_variables()(=" << fg.get_n_variables() << ")" ;
-        throw std::runtime_error(s_out.str());
+        throw fastest_lap_exception(s_out.str());
     }
     
     if ( kc != fg.get_n_constraints() )
     {
         std::ostringstream s_out;
         s_out << "kc(=" << kc << ") != fg.get_n_constraints()(=" << fg.get_n_constraints() << ")" ;
-        throw std::runtime_error(s_out.str());
+        throw fastest_lap_exception(s_out.str());
     }
 
 
@@ -1062,21 +1062,21 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
         {
             std::ostringstream s_out;
             s_out << "size of zl should be " << fg.get_n_variables() << " but it is " << optimization_data.zl.size();
-            throw std::runtime_error(s_out.str());
+            throw fastest_lap_exception(s_out.str());
         }
 
         if ( optimization_data.zu.size() != fg.get_n_variables() )
         {
             std::ostringstream s_out;
             s_out << "size of zu should be " << fg.get_n_variables() << " but it is " << optimization_data.zu.size();
-            throw std::runtime_error(s_out.str());
+            throw fastest_lap_exception(s_out.str());
         }
 
         if ( optimization_data.lambda.size() != fg.get_n_constraints() )
         {
             std::ostringstream s_out;
             s_out << "size of lambda should be " << fg.get_n_constraints() << " but it is " << optimization_data.lambda.size();
-            throw std::runtime_error(s_out.str());
+            throw fastest_lap_exception(s_out.str());
         }
     } 
 
@@ -1114,7 +1114,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
 
     if ( !success && options.throw_if_fail )
     {
-        throw std::runtime_error("Optimization did not succeed");
+        throw fastest_lap_exception("Optimization did not succeed");
     }
 
     // (8.5) Check optimality (disabled by default)
@@ -1130,7 +1130,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
             s_out << "        Big components of the gradient vector are:" << std::endl;
             for (size_t i = 0; i < optimality_check.id_not_ok.size(); ++i)
                 s_out << "            " << optimality_check.id_not_ok[i] << ": " << optimality_check.nlp_error[optimality_check.id_not_ok[i]] << std::endl;
-            throw std::runtime_error(s_out.str());
+            throw fastest_lap_exception(s_out.str());
         }
 
         out(2) << "[INFO] Optimal laptime -> requested optimality check has passed" << std::endl;
@@ -1866,15 +1866,15 @@ void Optimal_laptime<Dynamic_model_t>::Control_variables<T>::check_inputs()
          case(DONT_OPTIMIZE):
             // Check that s_hypermesh is empty, and that u only contains one value 
             if ( control_variable.s_hypermesh.size() > 0 ) 
-                throw std::runtime_error("[ERROR] Control_variables::check_inputs() -> "
+                throw fastest_lap_exception("[ERROR] Control_variables::check_inputs() -> "
                     "In \"don't optimize\" mode, s_hypermesh should be empty");
 
             if ( control_variable.u.size() > 0 )
-                throw std::runtime_error("[ERROR] Control_variables::check_inputs() -> "
+                throw fastest_lap_exception("[ERROR] Control_variables::check_inputs() -> "
                     "In \"don't optimize\" mode, u should be empty. Its size is " + std::to_string(control_variable.u.size()) );
 
             if ( control_variable.dudt.size() != 0 )
-                throw std::runtime_error("[ERROR] Control_variables::check_inputs() -> "
+                throw fastest_lap_exception("[ERROR] Control_variables::check_inputs() -> "
                     "In \"don't optimize\" mode, dudt should be empty");
 
             control_variable.dissipation = 0.0;
@@ -1884,15 +1884,15 @@ void Optimal_laptime<Dynamic_model_t>::Control_variables<T>::check_inputs()
          case(CONSTANT):
             // Check that s_hypermesh is empty, and that u only contains one value 
             if ( control_variable.s_hypermesh.size() > 0 ) 
-                throw std::runtime_error("[ERROR] Control_variables::check_inputs() -> "
+                throw fastest_lap_exception("[ERROR] Control_variables::check_inputs() -> "
                     "In \"constant optimization\" mode, s_hypermesh should be empty");
 
             if ( control_variable.u.size() != 1 )
-                throw std::runtime_error("[ERROR] Control_variables::check_inputs() -> "
+                throw fastest_lap_exception("[ERROR] Control_variables::check_inputs() -> "
                     "In \"constant optimization\" mode, u should contain only one value");
 
             if ( control_variable.dudt.size() != 0 )
-                throw std::runtime_error("[ERROR] Control_variables::check_inputs() -> "
+                throw fastest_lap_exception("[ERROR] Control_variables::check_inputs() -> "
                     "In \"constant optimization\" mode, dudt should be empty");
 
             control_variable.dissipation = 0.0;
@@ -1901,11 +1901,11 @@ void Optimal_laptime<Dynamic_model_t>::Control_variables<T>::check_inputs()
          case(HYPERMESH):
             // Check that the size of s_hypermesh equals the size of u
             if ( control_variable.s_hypermesh.size() != control_variable.u.size() )
-                throw std::runtime_error("[ERROR] Control_variables::check_inputs() -> "
+                throw fastest_lap_exception("[ERROR] Control_variables::check_inputs() -> "
                     "In \"hypermesh optimization\" mode, size(s_hypermesh) should be equal to size(u)");
 
             if ( control_variable.dudt.size() != 0 )
-                throw std::runtime_error("[ERROR] Control_variables::check_inputs() -> "
+                throw fastest_lap_exception("[ERROR] Control_variables::check_inputs() -> "
                     "In \"hypermesh optimization\" mode, dudt should be empty");
 
             control_variable.dissipation = 0.0;
@@ -1914,19 +1914,19 @@ void Optimal_laptime<Dynamic_model_t>::Control_variables<T>::check_inputs()
          case(FULL_MESH): 
             // Check that s_hypermesh is empty, the size of u will be checked later 
             if ( control_variable.s_hypermesh.size() > 0 ) 
-                throw std::runtime_error("[ERROR] Control_variables::check_inputs() -> "
+                throw fastest_lap_exception("[ERROR] Control_variables::check_inputs() -> "
                     "In \"full-mesh optimize\" mode, s_hypermesh should be empty");
 
             if ( (control_variable.u.size() != control_variable.dudt.size()) && (control_variable.dudt.size() != 0) )
-                throw std::runtime_error("[ERROR] Control_variables::check_inputs() -> "
+                throw fastest_lap_exception("[ERROR] Control_variables::check_inputs() -> "
                     "In \"full-mesh optimize\" mode, dudt should either have the same size as u, or be empty");
 
             if ( control_variable.dissipation < 0.0 )
-                throw std::runtime_error("[ERROR] Control_variables::check_inputs() -> dissipation must be non-negative");
+                throw fastest_lap_exception("[ERROR] Control_variables::check_inputs() -> dissipation must be non-negative");
 
             break;
          default:
-            throw std::runtime_error("[ERROR] Control_variables::check_inputs() -> optimization mode not recognized");
+            throw fastest_lap_exception("[ERROR] Control_variables::check_inputs() -> optimization mode not recognized");
     
             break;
         }
@@ -1960,7 +1960,7 @@ void Optimal_laptime<Dynamic_model_t>::Control_variables<T>::compute_statistics(
             ++number_of_full_optimizations;
             break;
          default:
-            throw std::runtime_error("[ERROR] Control_variables::check_inputs() -> optimization mode not recognized");
+            throw fastest_lap_exception("[ERROR] Control_variables::check_inputs() -> optimization mode not recognized");
     
             break;
         }

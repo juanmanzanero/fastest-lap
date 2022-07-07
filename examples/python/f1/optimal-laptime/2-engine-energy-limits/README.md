@@ -13,15 +13,16 @@ from fastest_lap import KMH
 ```python
 # Load vehicle
 vehicle = "car"
-fastest_lap.load_vehicle(vehicle,"limebeer-2014-f1","../../../../../database/vehicles/f1/mercedes-2020-catalunya.xml");
-fastest_lap.set_scalar_parameter(vehicle,"vehicle/rear-axle/smooth_throttle_coeff", 1.0e-2);
+fastest_lap.create_vehicle_from_xml(vehicle,"../../../../../database/vehicles/f1/mercedes-2020-catalunya.xml");
+fastest_lap.vehicle_set_parameter(vehicle,"vehicle/rear-axle/smooth_throttle_coeff", 1.0e-2);
 ```
 
 
 ```python
 # Load track
 track="catalunya"
-s=fastest_lap.load_track("../../../../../database/tracks/catalunya/catalunya_discrete.xml",track);
+fastest_lap.create_track_from_xml(track,"../../../../../database/tracks/catalunya/catalunya_discrete.xml");
+s=fastest_lap.track_download_data(track,"arclength");
 ```
 
 # Lap without limits
@@ -30,7 +31,7 @@ s=fastest_lap.load_track("../../../../../database/tracks/catalunya/catalunya_dis
 ```python
 # Compute optimal laptime
 options  = "<options>"
-options += "    <save_variables>"
+options += "    <output_variables>"
 options += "        <prefix>run_without_limits/</prefix>"
 options += "        <variables>"
 options += "            <throttle/>"
@@ -38,7 +39,7 @@ options += "            <u/>"
 options += "            <s/>"
 options += "            <integral_quantities.engine-energy/>"
 options += "        </variables>"
-options += "    </save_variables>"
+options += "    </output_variables>"
 options += "    <print_level> 5 </print_level>"
 options += "</options>"
 
@@ -60,7 +61,7 @@ print(f'Engine energy used: {engine_energy:.3f}.')
 ```python
 # Compute optimal laptime
 options  = "<options>"
-options += "    <save_variables>"
+options += "    <output_variables>"
 options += "        <prefix>run/</prefix>"
 options += "        <variables>"
 options += "            <throttle/>"
@@ -68,7 +69,7 @@ options += "            <u/>"
 options += "            <s/>"
 options += "            <integral_quantities.engine-energy/>"
 options += "        </variables>"
-options += "    </save_variables>"
+options += "    </output_variables>"
 options += "    <integral_constraints>"
 options += "        <engine-energy>"
 options += "            <lower_bound> 0.0 </lower_bound>"
@@ -105,6 +106,6 @@ mplcyberpunk.add_glow_effects()
 
 
     
-![png](output_9_0.png)
+![png](Optimal_laptime_engine_energy_limits_files/Optimal_laptime_engine_energy_limits_9_0.png)
     
 

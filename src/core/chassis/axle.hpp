@@ -1,6 +1,8 @@
 #ifndef __AXLE_HPP__
 #define __AXLE_HPP__
 
+#include "src/core/foundation/fastest_lap_exception.h"
+
 template<typename Timeseries_t, typename Tires_tuple, size_t STATE0, size_t CONTROL0>
 inline Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>::Axle(const std::string& name, const Tires_tuple& tires)
 : _frame(),
@@ -117,7 +119,7 @@ bool Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>::set_parameter(const std::st
     if constexpr (NTIRES == 2)
     {
         if ( std::get<0>(_tires).get_path() != std::get<1>(_tires).get_path() )
-            throw std::runtime_error("Tires shall have the same path in the database");
+            throw fastest_lap_exception("Tires shall have the same path in the database");
     }
     
     // Check if the parameter belongs to the tires

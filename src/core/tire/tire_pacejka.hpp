@@ -3,6 +3,7 @@
 
 #include "lion/math/optimise.h"
 #include "lion/thirdparty/include/logger.hpp"
+#include "src/core/foundation/fastest_lap_exception.h"
 
 template<typename Timeseries_t, typename Pacejka_model, size_t STATE0, size_t CONTROL0>
 inline Tire_pacejka<Timeseries_t,Pacejka_model,STATE0,CONTROL0>::Tire_pacejka(const std::string& name, Xml_document& database, 
@@ -44,7 +45,7 @@ void Tire_pacejka<Timeseries_t,Pacejka_model,STATE0,CONTROL0>::set_parameter(con
         _model.initialise();
     }
     else
-        throw std::runtime_error(std::string("Parameter \"") + parameter + "\" was not found in Tire_pacejka");
+        throw fastest_lap_exception(std::string("Parameter \"") + parameter + "\" was not found in Tire_pacejka");
 }
 
 

@@ -1,4 +1,6 @@
 
+#include "src/core/foundation/fastest_lap_exception.h"
+
 inline Track_by_arcs::Track_by_arcs()
 : n_segments(0),
   total_length(0.0),
@@ -56,7 +58,7 @@ inline Track_by_arcs::Track_by_arcs(Xml_document& doc, const scalar scale, const
             total_length += R*theta;
         }
         else
-            throw std::runtime_error("Node not recognized");
+            throw fastest_lap_exception("Node not recognized");
     }
 
     // Add the last segment
@@ -128,7 +130,7 @@ inline std::tuple<sVector3d,sVector3d,sVector3d,sVector3d> Track_by_arcs::at(con
 {
     if ( n_segments < 1 )
     {
-        throw std::runtime_error("Track is empty, and it cannot be used.");
+        throw fastest_lap_exception("Track is empty, and it cannot be used.");
     }
 
     assert(s <= (total_length + 1.0e-10));

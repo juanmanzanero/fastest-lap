@@ -21,9 +21,9 @@ options += "    <mode>equally-spaced</mode>"
 options += "    <is_closed>true</is_closed>"
 options += "    <number_of_elements>1000</number_of_elements>"
 options += "    <xml_file_name>test.xml</xml_file_name>"
-options += "    <save_variables>"
+options += "    <output_variables>"
 options += "        <prefix>track/</prefix>"
-options += "    </save_variables>"
+options += "    </output_variables>"
 options += "</options>"
 
 fastest_lap.circuit_preprocessor(options)
@@ -103,72 +103,72 @@ plot_turn(2*475,2*495,"Turn 16");
 
 
     
-![png](output_4_0.png)
+![png](circuit_preprocessor_files/circuit_preprocessor_4_0.png)
     
 
 
 
     
-![png](output_4_1.png)
+![png](circuit_preprocessor_files/circuit_preprocessor_4_1.png)
     
 
 
 
     
-![png](output_4_2.png)
+![png](circuit_preprocessor_files/circuit_preprocessor_4_2.png)
     
 
 
 
     
-![png](output_4_3.png)
+![png](circuit_preprocessor_files/circuit_preprocessor_4_3.png)
     
 
 
 
     
-![png](output_4_4.png)
+![png](circuit_preprocessor_files/circuit_preprocessor_4_4.png)
     
 
 
 
     
-![png](output_4_5.png)
+![png](circuit_preprocessor_files/circuit_preprocessor_4_5.png)
     
 
 
 
     
-![png](output_4_6.png)
+![png](circuit_preprocessor_files/circuit_preprocessor_4_6.png)
     
 
 
 
     
-![png](output_4_7.png)
+![png](circuit_preprocessor_files/circuit_preprocessor_4_7.png)
     
 
 
 
     
-![png](output_4_8.png)
+![png](circuit_preprocessor_files/circuit_preprocessor_4_8.png)
     
 
 
 
     
-![png](output_4_9.png)
+![png](circuit_preprocessor_files/circuit_preprocessor_4_9.png)
     
 
 
 
     
-![png](output_4_10.png)
+![png](circuit_preprocessor_files/circuit_preprocessor_4_10.png)
     
 
 
 
     
-![png](output_4_11.png)
+![png](circuit_preprocessor_files/circuit_preprocessor_4_11.png)
     
 

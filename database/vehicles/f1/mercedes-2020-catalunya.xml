@@ -4,10 +4,14 @@
   The parameters were estimated after a minimization of the error w.r.t. 
     Lewis Hamilton's fastest lap in Spanish Grand Prix qualifying
 -->
-<vehicle type="limebeer-2014-f1">
+<vehicle type="f1-3dof">
     <chassis>
         <mass>746</mass>
-        <inertia>0, 0, 0, 0, 0, 0, 0, 0, 500</inertia>
+        <inertia>
+            <Ixx> 0.0 </Ixx>  <Ixy> 0.0 </Ixy> <Ixz> 5.0   </Ixz>
+            <Iyx> 0.0 </Iyx>  <Iyy> 0.0 </Iyy> <Iyz> 0.0   </Iyz>
+            <Izx> 0.0 </Izx>  <Izy> 0.0 </Izy> <Izz> 500.0 </Izz>
+        </inertia>
         <aerodynamics>
             <rho>1.2</rho>
             <cd>0.99517464341370898</cd>

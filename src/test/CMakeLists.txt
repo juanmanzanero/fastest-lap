@@ -14,6 +14,11 @@ macro(new_test)
     
     # Link libraries
     target_link_libraries(${BINARY} LINK_PRIVATE GTest::gtest lion::lion)
+
+    if (NOT MSYS)
+        target_link_libraries(${BINARY} LINK_PRIVATE fastestlapc)
+	target_compile_definitions(${BINARY} PRIVATE TEST_LIBFASTESTLAPC)
+    endif()
     
     # Copy required files
     add_custom_target(${BINARY}_link_data ALL
@@ -51,26 +56,28 @@ add_subdirectory(./vehicles)
 
 # Create a test if code coverage
 if (CODE_COVERAGE)
-	include(code-coverage)
+    include(code-coverage)
 
-	add_code_coverage_all_targets(EXCLUDE test/* googletest-src/*)
+    add_code_coverage_all_targets(EXCLUDE test/* googletest-src/*)
 
-	set(BINARY coverage_test)
+    set(BINARY coverage_test)
 
-	file(GLOB_RECURSE TEST_SOURCES LIST_DIRECTORIES false **/*.cpp main.cpp)
+    file(GLOB_RECURSE TEST_SOURCES LIST_DIRECTORIES false **/*.cpp main.cpp)
 
-	set(SOURCES ${TEST_SOURCES})
+    set(SOURCES ${TEST_SOURCES})
 
-	add_executable(${BINARY} ${TEST_SOURCES})
+    add_executable(${BINARY} ${TEST_SOURCES})
 
-    target_link_libraries(${BINARY} LINK_PRIVATE GTest::gtest lion::lion)
+    target_link_libraries(${BINARY} LINK_PRIVATE GTest::gtest lion::lion fastestlapc)
 
-	set_target_properties(${BINARY} PROPERTIES 
+    target_compile_definitions(${BINARY} PRIVATE TEST_LIBFASTESTLAPC)
+
+    set_target_properties(${BINARY} PROPERTIES 
         EXCLUDE_FROM_ALL 1 
         EXCLUDE_FROM_DEFAULT_BUILD 1
     )
 
-	target_code_coverage(${BINARY} AUTO ALL EXCLUDE test/* build/googletest-src/*) 
+    target_code_coverage(${BINARY} AUTO ALL EXCLUDE test/* build/googletest-src/*) 
 
     # Copy required files
     add_custom_target(${BINARY}_link_database ALL

@@ -15,7 +15,7 @@ inline Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::Ch
 {
     // Chassis frame must have zero rotations
     if ( base_type::get_chassis_frame().get_rotation_angles().size() != 0 )
-        throw std::runtime_error("Chassis frame must have cero rotations for Chassis_car_3dof");
+        throw fastest_lap_exception("Chassis frame must have cero rotations for Chassis_car_3dof");
 
     // Set chassis frame position and velocity (it does not matter before calling update())
     base_type::get_chassis_frame().set_origin({0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}); 
@@ -37,7 +37,7 @@ inline Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::Ch
 
     // Chassis frame must have zero rotations
     if ( base_type::get_chassis_frame().get_rotation_angles().size() != 0 )
-        throw std::runtime_error("Chassis frame must have cero rotations for Chassis_car_3dof");
+        throw fastest_lap_exception("Chassis frame must have cero rotations for Chassis_car_3dof");
 
     // Set chassis frame position and velocity (it does not matter before calling update())
     base_type::get_chassis_frame().set_origin({0.0, 0.0, 0.0}, {0.0, 0.0, 0.0}); 
@@ -198,7 +198,7 @@ scalar Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::ge
 
      if (parameter_name == "rear_axle_x") return _x_rear_axle[0];
 
-     throw std::runtime_error("parameter " + parameter_name + " does not exist in Chassis_Car");
+     throw fastest_lap_exception("parameter " + parameter_name + " does not exist in Chassis_Car");
 }
 
 

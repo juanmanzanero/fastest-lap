@@ -1,6 +1,8 @@
 #ifndef __CHASSIS_CAR_6DOF_HPP__
 #define __CHASSIS_CAR_6DOF_HPP__
 
+#include "src/core/foundation/fastest_lap_exception.h"
+
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
 inline Chassis_car_6dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::Chassis_car_6dof(const FrontAxle_t& front_axle, 
                                                          const RearAxle_t& rear_axle,
@@ -14,7 +16,7 @@ _phi(0.0), _dphi(0.0), _d2phi(0.0)
     read_parameters(database, path, get_parameters());
     // Chassis frame must have zero rotations
     if ( base_type::get_chassis_frame().get_rotation_angles().size() != 0 )
-        throw std::runtime_error("Chassis frame must have cero rotations for Chassis_car_6dof");
+        throw fastest_lap_exception("Chassis frame must have cero rotations for Chassis_car_6dof");
 
     // Set chassis frame position and velocity (it does not matter before calling update())
     base_type::get_chassis_frame().set_origin(get_com_position(), get_com_velocity()); 
@@ -186,7 +188,7 @@ scalar Chassis_car_6dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::ge
 
      if (parameter_name == "rear_axle_x") return _x_rear_axle[0];
 
-     throw std::runtime_error("parameter " + parameter_name + " does not exist in Chassis_Car");
+     throw fastest_lap_exception("parameter " + parameter_name + " does not exist in Chassis_Car");
 }
 
 

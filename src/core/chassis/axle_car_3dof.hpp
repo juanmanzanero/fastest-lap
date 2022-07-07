@@ -1,6 +1,8 @@
 #ifndef __AXLE_CAR_3DOF_HPP__
 #define __AXLE_CAR_3DOF_HPP__
 
+#include "src/core/foundation/fastest_lap_exception.h"
+
 template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t> typename Axle_mode, size_t STATE0, size_t CONTROL0>
 Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::Axle_car_3dof(const std::string& name,
                            const Tire_left_t& tire_l, const Tire_right_t& tire_r,
@@ -39,10 +41,10 @@ Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::
     {
         // Prepare the tires frames to have one rotation (the steering)
         if ( std::get<LEFT>(Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,STATE0,CONTROL0>::_tires).get_frame().get_rotation_angles().size() != 0 )
-            throw std::runtime_error("Left tire frame must have zero rotations");
+            throw fastest_lap_exception("Left tire frame must have zero rotations");
 
         if ( std::get<RIGHT>(Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,STATE0,CONTROL0>::_tires).get_frame().get_rotation_angles().size() != 0 )
-            throw std::runtime_error("Right tire frame must have zero rotations");
+            throw fastest_lap_exception("Right tire frame must have zero rotations");
 
         std::get<LEFT>(base_type::_tires).get_frame().add_rotation(0.0, 0.0, Z);
         std::get<RIGHT>(base_type::_tires).get_frame().add_rotation(0.0, 0.0, Z);
@@ -93,10 +95,10 @@ Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::
     {
         // Prepare the tires frames to have one rotation (the steering)
         if ( std::get<LEFT>(Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,STATE0,CONTROL0>::_tires).get_frame().get_rotation_angles().size() != 0 )
-            throw std::runtime_error("Left tire frame must have zero rotations");
+            throw fastest_lap_exception("Left tire frame must have zero rotations");
 
         if ( std::get<RIGHT>(Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,STATE0,CONTROL0>::_tires).get_frame().get_rotation_angles().size() != 0 )
-            throw std::runtime_error("Right tire frame must have zero rotations");
+            throw fastest_lap_exception("Right tire frame must have zero rotations");
 
         std::get<LEFT>(base_type::_tires).get_frame().add_rotation(0.0, 0.0, Z);
         std::get<RIGHT>(base_type::_tires).get_frame().add_rotation(0.0, 0.0, Z);
@@ -234,7 +236,7 @@ scalar Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONT
 {
     if (parameter_name == "track") return _track; 
 
-    throw std::runtime_error("Parameter " + parameter_name + " does not exist in Axle_car_3dof");
+    throw fastest_lap_exception("Parameter " + parameter_name + " does not exist in Axle_car_3dof");
 }
 
 
