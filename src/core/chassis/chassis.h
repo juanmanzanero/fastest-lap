@@ -189,6 +189,10 @@ class Chassis
     static void set_state_and_control_names(std::array<std::string,NSTATE>& q, 
                                      std::array<std::string,NCONTROL>& u);
 
+
+    bool is_ready() const { return _front_axle.is_ready() && _rear_axle.is_ready() && 
+        std::all_of(__used_parameters.begin(), __used_parameters.end(), [](const auto& v) -> auto { return v; }); }
+
     static std::string type() { return "chassis"; }
 
 

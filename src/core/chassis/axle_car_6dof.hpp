@@ -23,7 +23,7 @@ Axle_car_6dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::
 {
     base_type::_path = path;
 
-    read_parameters(database, path, get_parameters());
+    read_parameters(database, path, get_parameters(), __used_parameters);
     _y_tire = {-0.5*_track, 0.5*_track};
     // Construct the specific parameters of the axle
     if constexpr ( std::is_same<Axle_mode<0,0>, POWERED_WITHOUT_DIFFERENTIAL<0,0>>::value )

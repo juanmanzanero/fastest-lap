@@ -13,7 +13,7 @@ _z(0.0), _dz(0.0), _d2z(0.0),
 _mu(0.0), _dmu(0.0), _d2mu(0.0), 
 _phi(0.0), _dphi(0.0), _d2phi(0.0)
 {
-    read_parameters(database, path, get_parameters());
+    read_parameters(database, path, get_parameters(), __used_parameters);
     // Chassis frame must have zero rotations
     if ( base_type::get_chassis_frame().get_rotation_angles().size() != 0 )
         throw fastest_lap_exception("Chassis frame must have cero rotations for Chassis_car_6dof");

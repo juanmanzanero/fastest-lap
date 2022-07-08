@@ -79,7 +79,7 @@ Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::
 {
     base_type::_path = path;
 
-    read_parameters(database, path, get_parameters());
+    read_parameters(database, path, get_parameters(), __used_parameters);
     _y_tire = {-0.5*_track, 0.5*_track};
 
     // Construct the brakes
@@ -118,7 +118,7 @@ inline bool Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0
     if ( parameter.find(base_type::_path) == 0 )
     {
         // Find the parameter in the database
-        found = ::set_parameter(get_parameters(), parameter, base_type::_path, value); 
+        found = ::set_parameter(get_parameters(), __used_parameters, parameter, base_type::_path, value); 
 
         // If found, update the tires frames in case the parameter modified was their position
         if ( found )

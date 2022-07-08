@@ -122,6 +122,9 @@ class Dynamic_model_car : public Dynamic_model<Timeseries_t>
 
     State_and_control_upper_lower_and_default_values get_state_and_control_upper_lower_and_default_values() const;
 
+    //! Return a bool that states that the model is "ready"
+    bool is_ready() const;
+
     //! Return the chassis
     constexpr const Chassis_t& get_chassis() const { return _chassis; }
     constexpr       Chassis_t& get_chassis()       { return _chassis; }

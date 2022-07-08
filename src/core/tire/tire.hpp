@@ -21,7 +21,7 @@ inline Tire<Timeseries_t,STATE0,CONTROL0>::Tire(const std::string& name, Xml_doc
   _F(Vector3d<Timeseries_t>(0.0)),
   _T(Vector3d<Timeseries_t>(0.0))
 {
-    read_parameters(database, path, get_parameters());
+    read_parameters(database, path, get_parameters(), __used_parameters);
 }
 
 
@@ -31,7 +31,7 @@ void Tire<Timeseries_t,STATE0,CONTROL0>::set_parameter(const std::string& parame
 {
     if ( parameter.find(_path) == 0 )
     {
-        const auto found = ::set_parameter(get_parameters(), parameter, _path, value); 
+        const auto found = ::set_parameter(get_parameters(), __used_parameters, parameter, _path, value); 
 
         if ( !found )    
             throw fastest_lap_exception(std::string("Parameter \"") + parameter + "\" was not found in Tire");

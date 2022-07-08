@@ -6,6 +6,7 @@
 #include "lion/frame/frame.h"
 #include "lion/io/Xml_document.h"
 #include "lion/io/database_parameters.h"
+#include "lion/math/matrix_extensions.h"
 
 //! Basic class defining tires
 template<typename Timeseries_t, size_t STATE0, size_t CONTROL0>
@@ -126,6 +127,8 @@ class Tire
     //! Print the tire
     //! @param[inout] os: output stream
     std::ostream& print(std::ostream& os) const;
+
+    bool is_ready() const { return std::all_of(__used_parameters.begin(), __used_parameters.end(), [](const auto& v) -> auto { return v; }); }
 
     static std::string type() { return "tire"; }
 

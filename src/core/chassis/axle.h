@@ -3,6 +3,7 @@
 
 #include "lion/frame/frame.h"
 #include "lion/io/Xml_document.h"
+#include "lion/io/database_parameters.h"
 
 //!         A generic axle class
 //!         --------------------
@@ -93,11 +94,15 @@ class Axle
     static void set_state_and_control_names(std::array<std::string,NSTATE>& q, 
                                      std::array<std::string,NCONTROL>& u);
 
+    bool is_ready() const;
+
     static std::string type() { return "axle"; }
     
     void fill_xml(Xml_document& doc) const;
  private:
     Frame<Timeseries_t> _frame; //! Frame<Timeseries_t> on the axle center
+
+    DECLARE_PARAMS();
 
  protected:
     std::string _name;    //! Axle name (e.g. front, rear)

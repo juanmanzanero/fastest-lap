@@ -11,7 +11,7 @@ inline Engine<Timeseries_t>::Engine(Xml_document& database, const std::string& p
 {
     if ( _only_max_power )
     {
-        read_parameters(database, path, get_parameters());
+        read_parameters(database, path, get_parameters(), __used_parameters);
     }
     else
     {

@@ -103,6 +103,12 @@ TEST_F(limebeer2014f1_test, variable_names)
     auto [s_names, q_names, qa_names, u_names] = car_sc.get_state_and_control_names();
 }
 
+TEST_F(limebeer2014f1_test, is_ready)
+{
+    limebeer2014f1<double>::curvilinear_p car_sc(database);
+    EXPECT_TRUE(car_sc.is_ready());
+}
+
 
 TEST_F(limebeer2014f1_test, jacobian_autodiff)
 {
@@ -306,6 +312,14 @@ TEST_F(limebeer2014f1_test, set_parameter)
     car.set_parameter("vehicle/rear-axle/engine/maximum-power", 735.499);
 
     car.set_parameter("vehicle/chassis/mass", 660.0);
+    car.set_parameter("vehicle/chassis/inertia/Ixx", 0.0);
+    car.set_parameter("vehicle/chassis/inertia/Ixy", 0.0);
+    car.set_parameter("vehicle/chassis/inertia/Ixz", 0.0);
+    car.set_parameter("vehicle/chassis/inertia/Iyx", 0.0);
+    car.set_parameter("vehicle/chassis/inertia/Iyy", 0.0);
+    car.set_parameter("vehicle/chassis/inertia/Iyz", 0.0);
+    car.set_parameter("vehicle/chassis/inertia/Izx", 0.0);
+    car.set_parameter("vehicle/chassis/inertia/Izy", 0.0);
     car.set_parameter("vehicle/chassis/inertia/Izz", 450.0);
     car.set_parameter("vehicle/chassis/aerodynamics/rho", 1.2);
     car.set_parameter("vehicle/chassis/aerodynamics/area", 1.5);
@@ -326,6 +340,7 @@ TEST_F(limebeer2014f1_test, set_parameter)
     car.set_parameter("vehicle/chassis/brake_bias", 0.6);
     car.set_parameter("vehicle/chassis/roll_balance_coefficient", 0.5);
     car.set_parameter("vehicle/chassis/Fz_max_ref2", 1.0);
+    car.set_parameter("vehicle/chassis/maximum_throttle", 1.0);
     
     car.set_parameter("vehicle/front-tire/radius",0.330); 
     car.set_parameter("vehicle/front-tire/radial-stiffness",0.0);
@@ -407,6 +422,8 @@ TEST_F(limebeer2014f1_test, set_parameter)
         for (size_t j = 0; j < dqa.size(); ++j)
             EXPECT_NEAR(dqa[j], dqa_c[j], 2.0e-15);
     }
+
+    EXPECT_TRUE(car.is_ready());
 }
 
 #ifdef TEST_LIBFASTESTLAPC

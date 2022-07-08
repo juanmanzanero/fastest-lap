@@ -322,6 +322,16 @@ inline typename Optimal_laptime<Dynamic_model_t>::Export_solution
 template<typename Dynamic_model_t>
 inline void Optimal_laptime<Dynamic_model_t>::compute(const Dynamic_model_t& car)
 {
+    // (1) Check that the car is ready
+    if ( !car.is_ready() )
+    {
+        std::ostringstream s_out;
+        s_out << "[ERROR] The car model is not ready because not all the parameters have been set" << std::endl;
+        car.xml()->print(s_out);
+        throw fastest_lap_exception(s_out.str());
+    }
+
+    // (2) Compute
     if ( is_direct )
     {
         if ( is_closed )

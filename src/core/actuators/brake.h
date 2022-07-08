@@ -23,7 +23,7 @@ class Brake
     Brake(Xml_document& database, const std::string& path) :
         _path(path), _Tmax(0.0) 
     {
-        read_parameters(database, path, get_parameters());
+        read_parameters(database, path, get_parameters(), __used_parameters);
     }  
 
     // Set parameter    
@@ -31,7 +31,7 @@ class Brake
     void set_parameter(const std::string& parameter, const T value)
     {
         // Find the parameter in the database
-        const auto found = ::set_parameter(get_parameters(), parameter, _path, value); 
+        const auto found = ::set_parameter(get_parameters(), __used_parameters, parameter, _path, value); 
 
         // If not found, throw an exception
         if ( !found )

@@ -144,5 +144,19 @@ inline void Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>::fill_xml(Xml_documen
 }
 
 
+template<typename Timeseries_t, typename Tires_tuple, size_t STATE0, size_t CONTROL0>
+inline bool Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>::is_ready() const
+{
+    if constexpr (NTIRES == 1)
+        return std::get<0>(_tires).is_ready() &&
+            std::all_of(__used_parameters.begin(), __used_parameters.end(), [](const auto& v) -> auto { return v; });
+
+    else if constexpr (NTIRES == 2)
+    {
+        return std::get<0>(_tires).is_ready() && std::get<1>(_tires).is_ready() &&
+            std::all_of(__used_parameters.begin(), __used_parameters.end(), [](const auto& v) -> auto { return v; });
+    }
+}
+
 
 #endif

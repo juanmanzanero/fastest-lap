@@ -183,6 +183,10 @@ class Chassis_car_6dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
                                      std::array<std::string,NALGEBRAIC>& qa,
                                      std::array<std::string,NCONTROL>& u);
 
+
+    bool is_ready() const { return base_type::is_ready() && 
+        std::all_of(__used_parameters.begin(), __used_parameters.end(), [](const auto& v) -> auto { return v; }); }
+
     static std::string type() { return "chassis_car_6dof"; }
  private:
     //! Compute the left hand side of Newton's equations (linear momentum derivative)
@@ -215,12 +219,11 @@ class Chassis_car_6dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
     Timeseries_t _d2phi;  //! [out] Roll acceleration [rad/s2]
 
 
-    std::vector<Database_parameter_mutable> get_parameters() { return 
-    { 
+    DECLARE_PARAMS(
         { "com", _x_com },
         { "front_axle", _x_front_axle },
         { "rear_axle", _x_rear_axle },
-    };}
+    ); 
 };
 
 #include "chassis_car_6dof.hpp"

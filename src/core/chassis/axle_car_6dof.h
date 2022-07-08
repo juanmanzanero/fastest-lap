@@ -257,6 +257,8 @@ class Axle_car_6dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
 
     constexpr bool is_direct_torque() const { return _engine.direct_torque() == true; }
 
+    bool is_ready() const { return base_type::is_ready() && 
+        std::all_of(__used_parameters.begin(), __used_parameters.end(), [](const auto& v) -> auto { return v; }); }
 
  private:
     // Geometry
@@ -312,6 +314,7 @@ class Axle_car_6dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
         { "beta-steering/right", _beta[RIGHT] }
     };}
 
+    std::vector<bool> __used_parameters = std::vector<bool>(get_parameters().size(), false);
 
 };
 

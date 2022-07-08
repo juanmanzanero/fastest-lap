@@ -17,10 +17,10 @@ inline Tire_pacejka<Timeseries_t,Pacejka_model,STATE0,CONTROL0>::Tire_pacejka(co
  _Fmagic(0.0)
 {
     // Get tire parameters
-    read_parameters(database, path, get_parameters());
+    read_parameters(database, path, get_parameters(), __used_parameters);
 
     // Get tire model parameters
-    read_parameters(database, path, _model.get_parameters());
+    read_parameters(database, path, _model.get_parameters(), _model.__used_parameters);
 
     // Initialise tire model
     _model.initialise();
@@ -33,11 +33,11 @@ void Tire_pacejka<Timeseries_t,Pacejka_model,STATE0,CONTROL0>::set_parameter(con
     // Look for the parameter in the class
     if ( parameter.find(base_type::get_path()) == 0 )
     {
-        auto found = ::set_parameter(get_parameters(), parameter, base_type::get_path(), value);
+        auto found = ::set_parameter(get_parameters(), __used_parameters, parameter, base_type::get_path(), value);
 
         // Look for the parameter in the model
         if ( !found )
-            found = ::set_parameter(_model.get_parameters(), parameter, base_type::get_path(), value);
+            found = ::set_parameter(_model.get_parameters(), _model.__used_parameters, parameter, base_type::get_path(), value);
 
         if ( !found )
             base_type::set_parameter(parameter, value);

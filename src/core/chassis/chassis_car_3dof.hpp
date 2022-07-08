@@ -32,7 +32,7 @@ inline Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::Ch
                                                          const std::string& path)
 : base_type(front_axle, rear_axle, database, path) 
 {
-    read_parameters(database, path, get_parameters());
+    read_parameters(database, path, get_parameters(), __used_parameters);
     _brake_bias = _brake_bias_0;
 
     // Chassis frame must have zero rotations
@@ -70,7 +70,7 @@ inline void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0
     if ( parameter.find("vehicle/chassis/") == 0 )
     {
         // Find the parameter in the database
-        const auto found = ::set_parameter(get_parameters(), parameter, "vehicle/chassis/", value); 
+        const auto found = ::set_parameter(get_parameters(), __used_parameters, parameter, "vehicle/chassis/", value); 
 
         // If found, update the axles frames in case the parameter modified was their position
         if ( found )

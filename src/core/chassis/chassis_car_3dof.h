@@ -189,6 +189,9 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
                                      std::array<std::string,NALGEBRAIC>& qa,
                                      std::array<std::string,NCONTROL>& u);
 
+    bool is_ready() const { return base_type::is_ready() && 
+        std::all_of(__used_parameters.begin(), __used_parameters.end(), [](const auto& v) -> auto { return v; }); }
+
     static std::string type() { return "chassis_car_3dof"; }
 
 

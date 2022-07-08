@@ -215,4 +215,11 @@ typename Dynamic_model_car<Timeseries_t,Chassis_t,RoadModel_t,_NSTATE,_NCONTROL>
     };
 }
 
+
+template<typename Timeseries_t, typename Chassis_t, typename RoadModel_t, size_t _NSTATE, size_t _NCONTROL>
+bool Dynamic_model_car<Timeseries_t,Chassis_t,RoadModel_t,_NSTATE,_NCONTROL>::is_ready() const
+{
+    return _chassis.is_ready();
+}
+
 #endif

@@ -2,6 +2,7 @@
 #define __TIRE_PACEJKA_H__
 
 #include "tire.h"
+#include "lion/math/matrix_extensions.h"
 
 //! Implementation of the complete Pacejka tire model
 struct Pacejka_standard_model
@@ -269,6 +270,10 @@ class Tire_pacejka : public Tire<Timeseries_t, STATE0,CONTROL0>
     static std::string type() { return "tire_pacejka"; }
 
     const Pacejka_model& get_model() const { return _model; }
+
+    bool is_ready() const { return base_type::is_ready() && 
+            std::all_of(__used_parameters.begin(), __used_parameters.end(), [](const auto& v) -> auto { return v; }) &&
+            std::all_of(get_model().__used_parameters.begin(), get_model().__used_parameters.end(), [](const auto& v) -> auto { return v; }); }
 
  private:
     //! Performs an update of the tire: computes tire forces from kappa, lambda, and tire 

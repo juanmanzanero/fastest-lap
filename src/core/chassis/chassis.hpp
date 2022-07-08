@@ -28,7 +28,7 @@ inline Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::Chassis(
     Xml_document& database, const std::string& path)
 : Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::Chassis(front_axle, rear_axle, path)
 {
-    read_parameters(database, path, get_parameters());
+    read_parameters(database, path, get_parameters(), __used_parameters);
 }
 
 
@@ -94,7 +94,7 @@ void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_parameter
     if ( parameter.find("vehicle/chassis/") == 0 )
     {
         // Find the parameter in the database
-        const auto found = ::set_parameter(get_parameters(), parameter, "vehicle/chassis/", value); 
+        const auto found = ::set_parameter(get_parameters(), __used_parameters, parameter, "vehicle/chassis/", value); 
 
         // If not found, throw an exception
         if ( !found )
