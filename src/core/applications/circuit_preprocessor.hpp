@@ -402,12 +402,20 @@ inline void Circuit_preprocessor::compute(const std::vector<scalar>& s_center, c
 
     scalar prev_left_error  = left_boundary_max_error;
     scalar prev_right_error = right_boundary_max_error;
+    i_l = {0,0};
+    i_r = {0,0};
+
     for (size_t i = 1; i < n_points; ++i)
     {
         const scalar ds = s[i]-s[i-1];
         // Compute current error
-        scalar current_left_error = sqrt(std::get<1>(find_closest_point<scalar>(r_left_measured,r_left[i], closed, 0, 1.0e18))); 
-        scalar current_right_error = sqrt(std::get<1>(find_closest_point<scalar>(r_right_measured,r_right[i], closed, 0, 1.0e18))); 
+        scalar current_left_error_2; 
+        scalar current_right_error_2; 
+        std::tie(std::ignore,current_left_error_2,i_l) = find_closest_point<scalar>(r_left_measured, r_left[i], closed, min(i_l[0],i_l[1]), options.maximum_distance_find);
+        std::tie(std::ignore,current_right_error_2,i_r) = find_closest_point<scalar>(r_right_measured, r_right[i], closed, min(i_r[0],i_r[1]), options.maximum_distance_find);
+
+        const scalar current_left_error = sqrt(current_left_error_2);
+        const scalar current_right_error = sqrt(current_right_error_2);
 
         // Compute maximum error
         left_boundary_max_error = max(current_left_error, left_boundary_max_error);

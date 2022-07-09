@@ -1,10 +1,10 @@
 <circuit format="discrete" type="closed">
     <header>
         <track_length units="m">1253.2326712146032</track_length>
-        <L2_error_left>0.74269888920300242</L2_error_left>
-        <L2_error_right>1.2607644958962756</L2_error_right>
-        <max_error_left>7.8503780892913895</max_error_left>
-        <max_error_right>9.9903020763627257</max_error_right>
+        <L2_error_left>0.035442169866760111</L2_error_left>
+        <L2_error_right>0.032193243543438117</L2_error_right>
+        <max_error_left>0.14799981448114491</max_error_left>
+        <max_error_right>0.14122432806250215</max_error_right>
     </header>
     <optimization>
         <cost_curvature>10.000000</cost_curvature>

@@ -157,6 +157,12 @@ TEST(Circuit_preprocessor_test, museo_closed)
                     (circuit.s[i+1]-circuit.s[i])*0.5*(sin(circuit.theta[i])+sin(circuit.theta[i+1])), 1.0e-7);
     }
 
+    // Check the errors
+    EXPECT_NEAR(circuit.left_boundary_max_error, solution_saved.get_element("circuit/header/max_error_left").get_value(scalar()), 1.0e-7);
+    EXPECT_NEAR(circuit.right_boundary_max_error, solution_saved.get_element("circuit/header/max_error_right").get_value(scalar()), 1.0e-7);
+    EXPECT_NEAR(circuit.left_boundary_L2_error, solution_saved.get_element("circuit/header/L2_error_left").get_value(scalar()), 1.0e-7);
+    EXPECT_NEAR(circuit.right_boundary_L2_error, solution_saved.get_element("circuit/header/L2_error_right").get_value(scalar()), 1.0e-7);
+
 
     // Check that the reference coordinates are recovered
     std::vector<scalar> coord_left  = coord_left_kml.get_element("kml/Document/Placemark/LineString/coordinates").get_value(std::vector<scalar>());
@@ -227,6 +233,13 @@ TEST(Circuit_preprocessor_test, catalunya_chicane)
         EXPECT_NEAR(circuit.dnl[i]             , dnl[i]   , 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.dnr[i]             , dnr[i]   , 1.0e-8) << " with i = " << i;
     }
+
+
+    // Check the errors
+    EXPECT_NEAR(circuit.left_boundary_max_error, solution_saved.get_element("circuit/header/max_error_left").get_value(scalar()), 1.0e-7);
+    EXPECT_NEAR(circuit.right_boundary_max_error, solution_saved.get_element("circuit/header/max_error_right").get_value(scalar()), 1.0e-7);
+    EXPECT_NEAR(circuit.left_boundary_L2_error, solution_saved.get_element("circuit/header/L2_error_left").get_value(scalar()), 1.0e-7);
+    EXPECT_NEAR(circuit.right_boundary_L2_error, solution_saved.get_element("circuit/header/L2_error_right").get_value(scalar()), 1.0e-7);
 
     for (size_t i = 0; i < circuit.n_points-1; ++i)
     {
@@ -301,6 +314,11 @@ TEST(Circuit_preprocessor_test, melbourne_700)
     }
 
 
+    // Check the errors
+    EXPECT_NEAR(circuit.left_boundary_max_error, solution_saved.get_element("circuit/header/max_error_left").get_value(scalar()), 1.0e-7);
+    EXPECT_NEAR(circuit.right_boundary_max_error, solution_saved.get_element("circuit/header/max_error_right").get_value(scalar()), 1.0e-7);
+    EXPECT_NEAR(circuit.left_boundary_L2_error, solution_saved.get_element("circuit/header/L2_error_left").get_value(scalar()), 1.0e-7);
+    EXPECT_NEAR(circuit.right_boundary_L2_error, solution_saved.get_element("circuit/header/L2_error_right").get_value(scalar()), 1.0e-7);
 
     // Check that the reference coordinates are recovered
     std::vector<scalar> coord_left  = coord_left_kml.get_element("kml/Document/Placemark/LineString/coordinates").get_value(std::vector<scalar>());
@@ -388,7 +406,11 @@ TEST(Circuit_preprocessor_test, melbourne_adapted)
                     (circuit.s[i+1]-circuit.s[i])*0.5*(sin(circuit.theta[i])+sin(circuit.theta[i+1])), 1.0e-7);
     }
 
-
+    // Check the errors
+    EXPECT_NEAR(circuit.left_boundary_max_error, solution_saved.get_element("circuit/header/max_error_left").get_value(scalar()), 1.0e-7);
+    EXPECT_NEAR(circuit.right_boundary_max_error, solution_saved.get_element("circuit/header/max_error_right").get_value(scalar()), 1.0e-7);
+    EXPECT_NEAR(circuit.left_boundary_L2_error, solution_saved.get_element("circuit/header/L2_error_left").get_value(scalar()), 1.0e-7);
+    EXPECT_NEAR(circuit.right_boundary_L2_error, solution_saved.get_element("circuit/header/L2_error_right").get_value(scalar()), 1.0e-7);
 
     // Check that the reference coordinates are recovered
     std::vector<scalar> coord_left  = coord_left_kml.get_element("kml/Document/Placemark/LineString/coordinates").get_value(std::vector<scalar>());
@@ -472,6 +494,11 @@ TEST(Circuit_preprocessor_test, catalunya_500)
     }
 
 
+    // Check the errors
+    EXPECT_NEAR(circuit.left_boundary_max_error, solution_saved.get_element("circuit/header/max_error_left").get_value(scalar()), 1.0e-7);
+    EXPECT_NEAR(circuit.right_boundary_max_error, solution_saved.get_element("circuit/header/max_error_right").get_value(scalar()), 1.0e-7);
+    EXPECT_NEAR(circuit.left_boundary_L2_error, solution_saved.get_element("circuit/header/L2_error_left").get_value(scalar()), 1.0e-7);
+    EXPECT_NEAR(circuit.right_boundary_L2_error, solution_saved.get_element("circuit/header/L2_error_right").get_value(scalar()), 1.0e-7);
 
     // Check that the reference coordinates are recovered
     std::vector<scalar> coord_left  = coord_left_kml.get_element("kml/Document/Placemark/LineString/coordinates").get_value(std::vector<scalar>());
@@ -566,6 +593,11 @@ TEST(Circuit_preprocessor_test, catalunya_adapted_by_coords)
     }
 
 
+    // Check the errors
+    EXPECT_NEAR(circuit.left_boundary_max_error, solution_saved.get_element("circuit/header/max_error_left").get_value(scalar()), 1.0e-7);
+    EXPECT_NEAR(circuit.right_boundary_max_error, solution_saved.get_element("circuit/header/max_error_right").get_value(scalar()), 1.0e-7);
+    EXPECT_NEAR(circuit.left_boundary_L2_error, solution_saved.get_element("circuit/header/L2_error_left").get_value(scalar()), 1.0e-7);
+    EXPECT_NEAR(circuit.right_boundary_L2_error, solution_saved.get_element("circuit/header/L2_error_right").get_value(scalar()), 1.0e-7);
 
     // Check that the reference coordinates are recovered
     std::vector<scalar> coord_left  = coord_left_kml.get_element("kml/Document/Placemark/LineString/coordinates").get_value(std::vector<scalar>());
@@ -671,6 +703,12 @@ TEST(Circuit_preprocessor_test, catalunya_adapted_by_ds_distribution)
                     (circuit.s[i+1]-circuit.s[i])*0.5*(sin(circuit.theta[i])+sin(circuit.theta[i+1])), 1.0e-7);
     }
 
+    // Check the errors
+    EXPECT_NEAR(circuit.left_boundary_max_error, solution_saved.get_element("circuit/header/max_error_left").get_value(scalar()), 1.0e-7);
+    EXPECT_NEAR(circuit.right_boundary_max_error, solution_saved.get_element("circuit/header/max_error_right").get_value(scalar()), 1.0e-7);
+    EXPECT_NEAR(circuit.left_boundary_L2_error, solution_saved.get_element("circuit/header/L2_error_left").get_value(scalar()), 1.0e-7);
+    EXPECT_NEAR(circuit.right_boundary_L2_error, solution_saved.get_element("circuit/header/L2_error_right").get_value(scalar()), 1.0e-7);
+
     // Check that the reference coordinates are recovered
     std::vector<scalar> coord_left  = coord_left_kml.get_element("kml/Document/Placemark/LineString/coordinates").get_value(std::vector<scalar>());
     std::vector<scalar> coord_right = coord_right_kml.get_element("kml/Document/Placemark/LineString/coordinates").get_value(std::vector<scalar>());
@@ -768,6 +806,11 @@ TEST(Circuit_preprocessor_test, vendrell)
     }
 
 
+    // Check the errors
+    EXPECT_NEAR(circuit.left_boundary_max_error, solution_saved.get_element("circuit/header/max_error_left").get_value(scalar()), 1.0e-7);
+    EXPECT_NEAR(circuit.right_boundary_max_error, solution_saved.get_element("circuit/header/max_error_right").get_value(scalar()), 1.0e-7);
+    EXPECT_NEAR(circuit.left_boundary_L2_error, solution_saved.get_element("circuit/header/L2_error_left").get_value(scalar()), 1.0e-7);
+    EXPECT_NEAR(circuit.right_boundary_L2_error, solution_saved.get_element("circuit/header/L2_error_right").get_value(scalar()), 1.0e-7);
 
     // Check that the reference coordinates are recovered
     std::vector<scalar> coord_left  = coord_left_kml.get_element("kml/Document/Placemark/LineString/coordinates").get_value(std::vector<scalar>());
@@ -854,6 +897,11 @@ TEST(Circuit_preprocessor_test, imola_adapted)
                     (circuit.s[i+1]-circuit.s[i])*0.5*(sin(circuit.theta[i])+sin(circuit.theta[i+1])), 1.0e-7);
     }
 
+    // Check the errors
+    EXPECT_NEAR(circuit.left_boundary_max_error, solution_saved.get_element("circuit/header/max_error_left").get_value(scalar()), 1.0e-7);
+    EXPECT_NEAR(circuit.right_boundary_max_error, solution_saved.get_element("circuit/header/max_error_right").get_value(scalar()), 1.0e-7);
+    EXPECT_NEAR(circuit.left_boundary_L2_error, solution_saved.get_element("circuit/header/L2_error_left").get_value(scalar()), 1.0e-7);
+    EXPECT_NEAR(circuit.right_boundary_L2_error, solution_saved.get_element("circuit/header/L2_error_right").get_value(scalar()), 1.0e-7);
 
 
     // Check that the reference coordinates are recovered
@@ -958,6 +1006,12 @@ TEST(Circuit_preprocessor_test, catalunya_2022_adapted)
         EXPECT_NEAR(circuit.r_centerline[i+1].y()-circuit.r_centerline[i].y(), 
                     (circuit.s[i+1]-circuit.s[i])*0.5*(sin(circuit.theta[i])+sin(circuit.theta[i+1])), 1.0e-7);
     }
+
+    // Check the errors
+    EXPECT_NEAR(circuit.left_boundary_max_error, solution_saved.get_element("circuit/header/max_error_left").get_value(scalar()), 1.0e-7);
+    EXPECT_NEAR(circuit.right_boundary_max_error, solution_saved.get_element("circuit/header/max_error_right").get_value(scalar()), 1.0e-7);
+    EXPECT_NEAR(circuit.left_boundary_L2_error, solution_saved.get_element("circuit/header/L2_error_left").get_value(scalar()), 1.0e-7);
+    EXPECT_NEAR(circuit.right_boundary_L2_error, solution_saved.get_element("circuit/header/L2_error_right").get_value(scalar()), 1.0e-7);
 
     // Check that the reference coordinates are recovered
     std::vector<scalar> coord_left  = coord_left_kml.get_element("kml/Document/Placemark/LineString/coordinates").get_value(std::vector<scalar>());
