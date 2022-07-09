@@ -343,7 +343,7 @@ TEST_F(F1_sensitivity_analysis, Catalunya_discrete)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
-    Xml_document catalunya_xml("./database/tracks/catalunya/catalunya_discrete.xml",true);
+    Xml_document catalunya_xml("./database/tracks/catalunya/catalunya.xml",true);
     Circuit_preprocessor catalunya_pproc(catalunya_xml);
     Track_by_polynomial catalunya(catalunya_pproc);
     
@@ -406,7 +406,7 @@ TEST_F(F1_sensitivity_analysis, Catalunya_discrete_optimization_variables)
     // The variables are: [differential_stiffness(10^p), power/mass,cd,aero_eff,x_cog,h_cog,x_press,z_press, roll_balance, ...
     //      mu_y_front_1, mu_y_front_2, mu_y_rear_1, mu_y_rear_2, max_torque/(mass.g0)]
 
-    Xml_document catalunya_xml("./database/tracks/catalunya/catalunya_discrete.xml",true);
+    Xml_document catalunya_xml("./database/tracks/catalunya/catalunya.xml",true);
     Circuit_preprocessor catalunya_pproc(catalunya_xml);
     Track_by_polynomial catalunya(catalunya_pproc);
     

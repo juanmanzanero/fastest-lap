@@ -5,7 +5,7 @@
 
 TEST(Track_by_polynomial_test, evaluation_at_nodes)
 {
-    Xml_document catalunya = {"./database/tracks/catalunya/catalunya_discrete.xml", true};
+    Xml_document catalunya = {"./database/tracks/catalunya/catalunya.xml", true};
      
     const auto arclength = catalunya.get_element("circuit/data/arclength").get_value(std::vector<scalar>());
 
@@ -36,10 +36,10 @@ std::unordered_map<std::string,Track_by_polynomial>& get_table_track();
 TEST(Track_by_polynomial_test, create_track_c_api)
 {
     set_print_level(0);
-    create_track_from_xml("test_track", "./database/tracks/catalunya/catalunya_discrete.xml");
+    create_track_from_xml("test_track", "./database/tracks/catalunya/catalunya.xml");
     
     // Create the track herein
-    Xml_document catalunya = {"./database/tracks/catalunya/catalunya_discrete.xml", true};
+    Xml_document catalunya = {"./database/tracks/catalunya/catalunya.xml", true};
     const Circuit_preprocessor circuit(catalunya);
     Track_by_polynomial track(circuit);
 

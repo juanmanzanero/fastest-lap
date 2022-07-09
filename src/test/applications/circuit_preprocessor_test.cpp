@@ -94,8 +94,8 @@ TEST(Circuit_preprocessor_test, miami_2000)
 
 TEST(Circuit_preprocessor_test, museo_closed)
 {
-    Xml_document coord_left_kml("./database/tracks/fa_museo/Museo_short_left.kml", true);
-    Xml_document coord_right_kml("./database/tracks/fa_museo/Museo_short_right.kml", true);
+    Xml_document coord_left_kml("./data/Museo_short_left.kml", true);
+    Xml_document coord_right_kml("./data/Museo_short_right.kml", true);
 
     Circuit_preprocessor::Options options;
 
@@ -181,8 +181,8 @@ TEST(Circuit_preprocessor_test, museo_closed)
 
 TEST(Circuit_preprocessor_test, catalunya_chicane)
 {
-    Xml_document coord_left_kml("./database/tracks/catalunya/Catalunya_left.kml", true);
-    Xml_document coord_right_kml("./database/tracks/catalunya/Catalunya_right.kml", true);
+    Xml_document coord_left_kml("./database/tracks/catalunya/catalunya_left.kml", true);
+    Xml_document coord_right_kml("./database/tracks/catalunya/catalunya_right.kml", true);
 
     Circuit_preprocessor::Coordinates start = {2.261, 41.57455};
     Circuit_preprocessor::Coordinates finish = {2.26325, 41.57385};
@@ -255,7 +255,7 @@ TEST(Circuit_preprocessor_test, melbourne_700)
 
     circuit.xml();
 
-    Xml_document solution_saved("./database/tracks/melbourne/melbourne_700.xml", true);
+    Xml_document solution_saved("./database/tracks/melbourne/melbourne.xml", true);
 
     const std::vector<scalar> s     = solution_saved.get_element("circuit/data/arclength").get_value(std::vector<scalar>());
     const std::vector<scalar> x     = solution_saved.get_element("circuit/data/centerline/x").get_value(std::vector<scalar>());
@@ -419,14 +419,14 @@ TEST(Circuit_preprocessor_test, catalunya_500)
 
     if ( is_valgrind ) GTEST_SKIP();
 
-    Xml_document coord_left_kml("./database/tracks/catalunya/Catalunya_left.kml", true);
-    Xml_document coord_right_kml("./database/tracks/catalunya/Catalunya_right.kml", true);
+    Xml_document coord_left_kml("./database/tracks/catalunya/catalunya_left.kml", true);
+    Xml_document coord_right_kml("./database/tracks/catalunya/catalunya_right.kml", true);
     
     Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, {}, 500);
 
     circuit.xml();
 
-    Xml_document solution_saved("./database/tracks/catalunya/catalunya_discrete.xml", true);
+    Xml_document solution_saved("./database/tracks/catalunya/catalunya.xml", true);
 
     const std::vector<scalar> s     = solution_saved.get_element("circuit/data/arclength").get_value(std::vector<scalar>());
     const std::vector<scalar> x     = solution_saved.get_element("circuit/data/centerline/x").get_value(std::vector<scalar>());
@@ -502,8 +502,8 @@ TEST(Circuit_preprocessor_test, catalunya_adapted_by_coords)
 
     if ( is_valgrind ) GTEST_SKIP();
 
-    Xml_document coord_left_kml("./database/tracks/catalunya/Catalunya_left.kml", true);
-    Xml_document coord_right_kml("./database/tracks/catalunya/Catalunya_right.kml", true);
+    Xml_document coord_left_kml("./database/tracks/catalunya/catalunya_left.kml", true);
+    Xml_document coord_right_kml("./database/tracks/catalunya/catalunya_right.kml", true);
 
     std::vector<std::pair<Circuit_preprocessor::Coordinates,scalar>> ds_breakpoints = 
     { {{0.0,              0.0              }, 20.0},
@@ -596,8 +596,8 @@ TEST(Circuit_preprocessor_test, catalunya_adapted_by_ds_distribution)
 
     if ( is_valgrind ) GTEST_SKIP();
 
-    Xml_document coord_left_kml("./database/tracks/catalunya/Catalunya_left.kml", true);
-    Xml_document coord_right_kml("./database/tracks/catalunya/Catalunya_right.kml", true);
+    Xml_document coord_left_kml("./database/tracks/catalunya/catalunya_left.kml", true);
+    Xml_document coord_right_kml("./database/tracks/catalunya/catalunya_right.kml", true);
 
     std::vector<scalar> s_distr = {0.0};
 
@@ -809,7 +809,7 @@ TEST(Circuit_preprocessor_test, imola_adapted)
 
     circuit.xml();
 
-    Xml_document solution_saved("./database/tracks/imola/imola_adapted.xml", true);
+    Xml_document solution_saved("./database/tracks/imola/imola.xml", true);
 
     const std::vector<scalar> s     = solution_saved.get_element("circuit/data/arclength").get_value(std::vector<scalar>());
     const std::vector<scalar> x     = solution_saved.get_element("circuit/data/centerline/x").get_value(std::vector<scalar>());
@@ -914,7 +914,7 @@ TEST(Circuit_preprocessor_test, catalunya_2022_adapted)
 
     circuit.xml();
 
-    Xml_document solution_saved("./database/tracks/catalunya_2022/catalunya_2022_adapted.xml", true);
+    Xml_document solution_saved("./database/tracks/catalunya_2022/catalunya_2022.xml", true);
 
     const std::vector<scalar> s     = solution_saved.get_element("circuit/data/arclength").get_value(std::vector<scalar>());
     const std::vector<scalar> x     = solution_saved.get_element("circuit/data/centerline/x").get_value(std::vector<scalar>());

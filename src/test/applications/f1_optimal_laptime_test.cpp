@@ -124,7 +124,7 @@ TEST_F(F1_optimal_laptime_test, Catalunya_discrete)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
-    Xml_document catalunya_xml("./database/tracks/catalunya/catalunya_discrete.xml",true);
+    Xml_document catalunya_xml("./database/tracks/catalunya/catalunya.xml",true);
     Circuit_preprocessor catalunya_pproc(catalunya_xml);
     Track_by_polynomial catalunya(catalunya_pproc);
     
@@ -576,7 +576,7 @@ TEST_F(F1_optimal_laptime_test, Melbourne_direct)
 
     Xml_document database = {"./database/vehicles/f1/ferrari-2022-australia.xml", true};
 
-    Xml_document melbourne_xml("./database/tracks/melbourne/melbourne_700.xml",true);
+    Xml_document melbourne_xml("./database/tracks/melbourne/melbourne.xml",true);
     Circuit_preprocessor melbourne_pproc(melbourne_xml);
     Track_by_polynomial melbourne(melbourne_pproc);
     
@@ -691,7 +691,7 @@ TEST_F(F1_optimal_laptime_test, Melbourne_derivative)
 
     Xml_document database = {"./database/vehicles/f1/ferrari-2022-australia.xml", true};
 
-    Xml_document melbourne_xml("./database/tracks/melbourne/melbourne_700.xml",true);
+    Xml_document melbourne_xml("./database/tracks/melbourne/melbourne.xml",true);
     Circuit_preprocessor melbourne_pproc(melbourne_xml);
     Track_by_polynomial melbourne(melbourne_pproc);
     
@@ -745,7 +745,7 @@ TEST_F(F1_optimal_laptime_test, Melbourne_derivative_warm_start)
 
     Xml_document database = {"./database/vehicles/f1/ferrari-2022-australia.xml", true};
 
-    Xml_document melbourne_xml("./database/tracks/melbourne/melbourne_700.xml",true);
+    Xml_document melbourne_xml("./database/tracks/melbourne/melbourne.xml",true);
     Circuit_preprocessor melbourne_pproc(melbourne_xml);
     Track_by_polynomial melbourne(melbourne_pproc);
     
@@ -785,7 +785,7 @@ TEST_F(F1_optimal_laptime_test, imola_adapted_hypermesh)
 
     Xml_document database = {"./database/vehicles/f1/redbull-2022-imola-wet.xml", true};
 
-    Xml_document imola_xml("./database/tracks/imola/imola_adapted.xml",true);
+    Xml_document imola_xml("./database/tracks/imola/imola.xml",true);
     Circuit_preprocessor imola_pproc(imola_xml);
     Track_by_polynomial imola(imola_pproc);
     
@@ -829,7 +829,7 @@ TEST_F(F1_optimal_laptime_test, imola_adapted_hypermesh)
 
 TEST_F(F1_optimal_laptime_test, Catalunya_engine_energy_limited)
 {
-    Xml_document catalunya_xml("./database/tracks/catalunya/catalunya_discrete.xml",true);
+    Xml_document catalunya_xml("./database/tracks/catalunya/catalunya.xml",true);
     Circuit_preprocessor catalunya_pproc(catalunya_xml);
     Track_by_polynomial catalunya(catalunya_pproc);
     
@@ -888,7 +888,7 @@ TEST_F(F1_optimal_laptime_test, Catalunya_engine_energy_limited)
 
 TEST_F(F1_optimal_laptime_test, Catalunya_tire_energy_limited)
 {
-    Xml_document catalunya_xml("./database/tracks/catalunya/catalunya_discrete.xml",true);
+    Xml_document catalunya_xml("./database/tracks/catalunya/catalunya.xml",true);
     Circuit_preprocessor catalunya_pproc(catalunya_xml);
     Track_by_polynomial catalunya(catalunya_pproc);
     
@@ -919,7 +919,6 @@ TEST_F(F1_optimal_laptime_test, Catalunya_tire_energy_limited)
         = Optimal_laptime<decltype(car)>::create_dont_optimize(); 
 
     auto opts = Optimal_laptime<decltype(car)>::Options{};
-    opts.print_level = 5;
 
     // Run something on valgrind but not the big thing
     if ( is_valgrind ) 

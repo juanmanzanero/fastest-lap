@@ -291,7 +291,7 @@ TEST_F(limebeer2014f1_test, jacobian_autodiff_random)
 
 TEST_F(limebeer2014f1_test, set_parameter)
 {
-    Xml_document catalunya_xml("./database/tracks/catalunya/catalunya_discrete.xml",true);
+    Xml_document catalunya_xml("./database/tracks/catalunya/catalunya.xml",true);
     Track_by_polynomial catalunya(catalunya_xml);
     
 
@@ -434,10 +434,10 @@ TEST_F(limebeer2014f1_test, set_parameter_c_api)
 {
     set_print_level(0);
     create_vehicle_empty("vehicle_test", "f1-3dof");
-    create_track_from_xml("track_test", "./database/tracks/catalunya/catalunya_discrete.xml");
+    create_track_from_xml("track_test", "./database/tracks/catalunya/catalunya.xml");
     vehicle_change_track("vehicle_test", "track_test");
     
-    Xml_document catalunya_xml("./database/tracks/catalunya/catalunya_discrete.xml",true);
+    Xml_document catalunya_xml("./database/tracks/catalunya/catalunya.xml",true);
     Track_by_polynomial catalunya(catalunya_xml);
     limebeer2014f1<scalar>::curvilinear<Track_by_polynomial>::Road_t road(catalunya);
     limebeer2014f1<scalar>::curvilinear<Track_by_polynomial> car_correct(database, road);
@@ -572,7 +572,7 @@ TEST_F(limebeer2014f1_test, set_parameter_c_api)
 
 TEST_F(limebeer2014f1_test,propagation_crank_nicolson)
 {
-    Xml_document catalunya_xml("./database/tracks/catalunya/catalunya_discrete.xml",true);
+    Xml_document catalunya_xml("./database/tracks/catalunya/catalunya.xml",true);
     Track_by_polynomial catalunya(catalunya_xml);
 
     limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial>::Road_t road(catalunya);
@@ -678,7 +678,7 @@ TEST_F(limebeer2014f1_test,propagation_crank_nicolson)
 
 TEST_F(limebeer2014f1_test,propagation_crank_nicolson_corner_exit)
 {
-    Xml_document catalunya_xml("./database/tracks/catalunya/catalunya_discrete.xml",true);
+    Xml_document catalunya_xml("./database/tracks/catalunya/catalunya.xml",true);
     Track_by_polynomial catalunya(catalunya_xml);
 
     limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial>::Road_t road(catalunya);
