@@ -229,24 +229,24 @@ void Chassis_car_6dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_
     base_type::set_state_and_control_names(q,u);
 
     // z
-    q[IZ] = "z";
+    q[IZ] = "chassis.position.z";
 
     // phi
-    q[IPHI] = "phi";
+    q[IPHI] = "chassis.attitude.phi";
 
     // mu
-    q[IMU] = "mu";
+    q[IMU] = "chassis.attitude.mu";
 
     // 2nd order
 
     // dzdt
-    q[IDZ] = "dzdt";
+    q[IDZ] = "chassis.velocity.z";
 
     // dphidt
-    q[IDPHI] = "dphidt";
+    q[IDPHI] = "chassis.omega.x";
 
     // dmudt
-    q[IDMU] = "dmudt";
+    q[IDMU] = "chassis.omega.y";
 }
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>

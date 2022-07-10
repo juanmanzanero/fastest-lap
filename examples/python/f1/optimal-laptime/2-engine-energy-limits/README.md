@@ -21,7 +21,7 @@ fastest_lap.vehicle_set_parameter(vehicle,"vehicle/rear-axle/smooth_throttle_coe
 ```python
 # Load track
 track="catalunya"
-fastest_lap.create_track_from_xml(track,"../../../../../database/tracks/catalunya/catalunya_discrete.xml");
+fastest_lap.create_track_from_xml(track,"../../../../../database/tracks/catalunya/catalunya.xml");
 s=fastest_lap.track_download_data(track,"arclength");
 ```
 

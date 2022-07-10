@@ -333,9 +333,6 @@ inline void Optimal_laptime<Dynamic_model_t>::compute(const Dynamic_model_t& car
         throw fastest_lap_exception(s_out.str());
     }
 
-    // (2) Get state and control names
-    std::tie(key_name, q_names, qa_names, u_names) = car.get_state_and_control_names();
-
     // (2) Compute
     if ( is_direct )
     {
@@ -1255,8 +1252,11 @@ std::unique_ptr<Xml_document> Optimal_laptime<Dynamic_model_t>::xml() const
 
     root.add_child("laptime").set_value(std::to_string(laptime));
 
-    root.add_child("arclength").set_value(s_out.str());
+    const auto [key_name, q_names, qa_names, u_names] = Dynamic_model_t{}.get_state_and_control_names();
+
+    root.add_child(key_name).set_value(s_out.str());
     s_out.str(""); s_out.clear();
+
 
     // Save state
     for (size_t i = 0; i < Dynamic_model_t::NSTATE; ++i)

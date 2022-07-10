@@ -166,6 +166,17 @@ class Tire
     {
         return
         {
+            {_name + ".position.x", get_position().at(0)},
+            {_name + ".position.y", get_position().at(1)},
+            {_name + ".position.z", get_position().at(2)},
+            {_name + ".velocity.x", get_velocity().at(0)},
+            {_name + ".velocity.y", get_velocity().at(1)},
+            {_name + ".velocity.z", get_velocity().at(2)},
+            {_name + ".lambda", get_lambda()}, 
+            {_name + ".dissipation", get_dissipation()}, 
+            {_name + ".force.x", get_force().at(0)},
+            {_name + ".force.y", get_force().at(1)},
+            {_name + ".force.z", get_force().at(2)} 
         };
     }
 

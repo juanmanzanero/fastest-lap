@@ -221,16 +221,16 @@ void Axle_car_6dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTRO
     if constexpr (std::is_same<Axle_mode<0,0>,POWERED_WITHOUT_DIFFERENTIAL<0,0>>::value)
     {
         // omega
-        q[Axle_type::IOMEGA_AXLE] = "axle-omega";
+        q[Axle_type::IOMEGA_AXLE] = base_type::_name + ".omega";
 
         // axle torque
-        u[Axle_type::ITORQUE] = "torque";
+        u[Axle_type::ITORQUE] = base_type::_name + ".torque";
     }
 
     if constexpr (std::is_same<Axle_mode<0,0>,STEERING_FREE_ROLL<0,0>>::value)
     {
         // steering angle
-        u[Axle_type::ISTEERING] = "delta";
+        u[Axle_type::ISTEERING] = base_type::_name + ".steering-angle";
     }
 }
 

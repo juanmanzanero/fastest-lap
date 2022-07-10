@@ -338,19 +338,6 @@ TEST_F(F1_optimal_laptime_test, Catalunya_chicane)
     Xml_document opt_full_lap("data/f1_optimal_laptime_catalunya_adapted.xml", true);
     Optimal_laptime<limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p> opt_laptime_full_lap(opt_full_lap);
 
-    const auto [key_name, q_names, qa_names, u_names] = car.get_state_and_control_names();
-
-    EXPECT_EQ(key_name, opt_laptime_full_lap.key_name);
-
-    for (size_t i = 0; i < q_names.size(); ++i)
-        EXPECT_EQ(q_names[i], opt_laptime_full_lap.q_names[i]);
-
-    for (size_t i = 0; i < qa_names.size(); ++i)
-        EXPECT_EQ(qa_names[i], opt_laptime_full_lap.qa_names[i]);
-
-    for (size_t i = 0; i < u_names.size(); ++i)
-        EXPECT_EQ(u_names[i], opt_laptime_full_lap.u_names[i]);
-
     std::array<scalar,limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p::NSTATE>       q_start(opt_laptime_full_lap.q[i0]);
     std::array<scalar,limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p::NALGEBRAIC>   qa_start(opt_laptime_full_lap.qa[i0]);
     auto u_start(opt_laptime_full_lap.control_variables.control_array_at_s(car,i0,s.front()));
