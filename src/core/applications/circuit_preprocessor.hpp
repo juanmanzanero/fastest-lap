@@ -455,18 +455,18 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
 
     Xml_element root = doc_ptr->get_root_element();
 
-    root.add_attribute("format","discrete");
+    root.set_attribute("format","discrete");
 
     if (is_closed)
-        root.add_attribute("type","closed");
+        root.set_attribute("type","closed");
     else
-        root.add_attribute("type","open");
+        root.set_attribute("type","open");
     
     // Add a header with the errors 
     auto header = root.add_child("header");
 
     s_out << track_length;
-    header.add_child("track_length").set_value(s_out.str()).add_attribute("units","m");
+    header.add_child("track_length").set_value(s_out.str()).set_attribute("units","m");
     s_out.str(""); s_out.clear();
 
     s_out << left_boundary_L2_error;
@@ -501,31 +501,31 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
     gps_param.add_comment(" y = earth_radius.(latitude - origin_latitude) ");
 
     s_out << theta0*RAD;
-    gps_param.add_child("origin_longitude").set_value(s_out.str()).add_attribute("units","deg");
+    gps_param.add_child("origin_longitude").set_value(s_out.str()).set_attribute("units","deg");
     s_out.str(""); s_out.clear();
 
     s_out << phi0*RAD;
-    gps_param.add_child("origin_latitude").set_value(s_out.str()).add_attribute("units","deg");
+    gps_param.add_child("origin_latitude").set_value(s_out.str()).set_attribute("units","deg");
     s_out.str(""); s_out.clear();
 
     s_out << R_earth;
-    gps_param.add_child("earth_radius").set_value(s_out.str()).add_attribute("units","m");
+    gps_param.add_child("earth_radius").set_value(s_out.str()).set_attribute("units","m");
     s_out.str(""); s_out.clear();
 
     s_out << phi_ref*RAD;
-    gps_param.add_child("reference_latitude").set_value(s_out.str()).add_attribute("units","deg");
+    gps_param.add_child("reference_latitude").set_value(s_out.str()).set_attribute("units","deg");
     s_out.str(""); s_out.clear();
 
     // Add the data
     auto data = root.add_child("data");
-    data.add_attribute("number_of_points",std::to_string(n_points));
+    data.set_attribute("number_of_points",std::to_string(n_points));
 
     // Arc-length
     for (size_t i = 0; i < n_points-1; ++i)
         s_out << s[i] << ", " ;
     s_out << s.back();
 
-    data.add_child("arclength").set_value(s_out.str()).add_attribute("units","m");
+    data.add_child("arclength").set_value(s_out.str()).set_attribute("units","m");
     s_out.str(""); s_out.clear();
 
     // Centerline
@@ -535,14 +535,14 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
         s_out << r_centerline[i].x() << ", " ;
     s_out << r_centerline.back().x();
 
-    centerline.add_child("x").set_value(s_out.str()).add_attribute("units","m");
+    centerline.add_child("x").set_value(s_out.str()).set_attribute("units","m");
     s_out.str(""); s_out.clear();
 
     for (size_t i = 0; i < n_points-1; ++i)
         s_out << r_centerline[i].y() << ", " ;
     s_out << r_centerline.back().y();
 
-    centerline.add_child("y").set_value(s_out.str()).add_attribute("units","m");
+    centerline.add_child("y").set_value(s_out.str()).set_attribute("units","m");
     s_out.str(""); s_out.clear();
 
     // Left boundary
@@ -552,14 +552,14 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
         s_out << r_left[i].x() << ", " ;
     s_out << r_left.back().x();
 
-    left.add_child("x").set_value(s_out.str()).add_attribute("units","m");
+    left.add_child("x").set_value(s_out.str()).set_attribute("units","m");
     s_out.str(""); s_out.clear();
 
     for (size_t i = 0; i < n_points-1; ++i)
         s_out << r_left[i].y() << ", " ;
     s_out << r_left.back().y();
 
-    left.add_child("y").set_value(s_out.str()).add_attribute("units","m");
+    left.add_child("y").set_value(s_out.str()).set_attribute("units","m");
     s_out.str(""); s_out.clear();
     
     // Right boundary
@@ -569,14 +569,14 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
         s_out << r_right[i].x() << ", " ;
     s_out << r_right.back().x();
 
-    right.add_child("x").set_value(s_out.str()).add_attribute("units","m");
+    right.add_child("x").set_value(s_out.str()).set_attribute("units","m");
     s_out.str(""); s_out.clear();
 
     for (size_t i = 0; i < n_points-1; ++i)
         s_out << r_right[i].y() << ", " ;
     s_out << r_right.back().y();
 
-    right.add_child("y").set_value(s_out.str()).add_attribute("units","m");
+    right.add_child("y").set_value(s_out.str()).set_attribute("units","m");
     s_out.str(""); s_out.clear();
     
     // Left measured boundary
@@ -586,14 +586,14 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
         s_out << r_left_measured[i].x() << ", " ;
     s_out << r_left_measured.back().x();
 
-    left_measured.add_child("x").set_value(s_out.str()).add_attribute("units","m");
+    left_measured.add_child("x").set_value(s_out.str()).set_attribute("units","m");
     s_out.str(""); s_out.clear();
 
     for (size_t i = 0; i < r_left_measured.size()-1; ++i)
         s_out << r_left_measured[i].y() << ", " ;
     s_out << r_left_measured.back().y();
 
-    left_measured.add_child("y").set_value(s_out.str()).add_attribute("units","m");
+    left_measured.add_child("y").set_value(s_out.str()).set_attribute("units","m");
     s_out.str(""); s_out.clear();
     
     // Left measured boundary
@@ -603,14 +603,14 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
         s_out << r_right_measured[i].x() << ", " ;
     s_out << r_right_measured.back().x();
 
-    right_measured.add_child("x").set_value(s_out.str()).add_attribute("units","m");
+    right_measured.add_child("x").set_value(s_out.str()).set_attribute("units","m");
     s_out.str(""); s_out.clear();
 
     for (size_t i = 0; i < r_right_measured.size()-1; ++i)
         s_out << r_right_measured[i].y() << ", " ;
     s_out << r_right_measured.back().y();
 
-    right_measured.add_child("y").set_value(s_out.str()).add_attribute("units","m");
+    right_measured.add_child("y").set_value(s_out.str()).set_attribute("units","m");
     s_out.str(""); s_out.clear();
 
     // Theta
@@ -618,7 +618,7 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
         s_out << theta[i] << ", " ;
     s_out << theta.back();
 
-    data.add_child("theta").set_value(s_out.str()).add_attribute("units","rad");
+    data.add_child("theta").set_value(s_out.str()).set_attribute("units","rad");
     s_out.str(""); s_out.clear();
 
     // Kappa
@@ -626,7 +626,7 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
         s_out << kappa[i] << ", " ;
     s_out << kappa.back();
 
-    data.add_child("kappa").set_value(s_out.str()).add_attribute("units","rad");
+    data.add_child("kappa").set_value(s_out.str()).set_attribute("units","rad");
     s_out.str(""); s_out.clear();
 
     // nl
@@ -634,7 +634,7 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
         s_out << nl[i] << ", " ;
     s_out << nl.back();
 
-    data.add_child("nl").set_value(s_out.str()).add_attribute("units","rad");
+    data.add_child("nl").set_value(s_out.str()).set_attribute("units","rad");
     s_out.str(""); s_out.clear();
 
     // nr
@@ -642,7 +642,7 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
         s_out << nr[i] << ", " ;
     s_out << nr.back();
 
-    data.add_child("nr").set_value(s_out.str()).add_attribute("units","rad");
+    data.add_child("nr").set_value(s_out.str()).set_attribute("units","rad");
     s_out.str(""); s_out.clear();
 
 
@@ -651,7 +651,7 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
         s_out << dkappa[i] << ", " ;
     s_out << dkappa.back();
 
-    data.add_child("dkappa").set_value(s_out.str()).add_attribute("units","rad");
+    data.add_child("dkappa").set_value(s_out.str()).set_attribute("units","rad");
     s_out.str(""); s_out.clear();
 
     // dnl
@@ -659,7 +659,7 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
         s_out << dnl[i] << ", " ;
     s_out << dnl.back();
 
-    data.add_child("dnl").set_value(s_out.str()).add_attribute("units","rad");
+    data.add_child("dnl").set_value(s_out.str()).set_attribute("units","rad");
     s_out.str(""); s_out.clear();
 
     // dnr
@@ -667,7 +667,7 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
         s_out << dnr[i] << ", " ;
     s_out << dnr.back();
 
-    data.add_child("dnr").set_value(s_out.str()).add_attribute("units","rad");
+    data.add_child("dnr").set_value(s_out.str()).set_attribute("units","rad");
     s_out.str(""); s_out.clear();
 
     return doc_ptr;
