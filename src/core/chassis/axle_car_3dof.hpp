@@ -257,35 +257,27 @@ void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTRO
 
 template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t> typename Axle_mode, size_t STATE0, size_t CONTROL0>
 template<size_t NSTATE, size_t NCONTROL>
-void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::set_state_and_control_names(std::array<std::string,NSTATE>& q, std::array<std::string,NCONTROL>& u)
+void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::set_state_and_control_names(std::array<std::string,NSTATE>& q, std::array<std::string,NCONTROL>& u) const
 {
     base_type::set_state_and_control_names(q,u);
 
-    if constexpr (std::is_same<Axle_mode<0,0>,POWERED<0,0>>::value)
+    // kappa left
+    q[Axle_type::IKAPPA_LEFT] = base_type::_name + ".left-tire.kappa";
+
+    // kappa right
+    q[Axle_type::IKAPPA_RIGHT] = base_type::_name + ".right-tire.kappa";
+
+    if constexpr (std::is_same<Axle_mode<0,0>,STEERING<0,0>>::value)
     {
-        // kappa left
-        q[Axle_type::IKAPPA_LEFT] = "powered-kappa-left";
-
-        // kappa right
-        q[Axle_type::IKAPPA_RIGHT] = "powered-kappa-right";
-    }
-    else if constexpr (std::is_same<Axle_mode<0,0>,STEERING<0,0>>::value)
-    {
-        // kappa left
-        q[Axle_type::IKAPPA_LEFT] = "steering-kappa-left";
-
-        // kappa right
-        q[Axle_type::IKAPPA_RIGHT] = "steering-kappa-right";
-
         // steering angle
-        u[Axle_type::ISTEERING] = "delta";
+        u[Axle_type::ISTEERING] = base_type::_name + ".steering-angle";
     }
 }
 
 
 template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t> typename Axle_mode, size_t STATE0, size_t CONTROL0>
 template<size_t NSTATE, size_t NCONTROL>
-void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::set_state_and_controls(const std::array<Timeseries_t,NSTATE>& q, const std::array<Timeseries_t,NCONTROL>& u)
+void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::set_state_and_controls(const std::array<Timeseries_t,NSTATE>& q, const std::array<Timeseries_t,NCONTROL>& u) 
 {
     base_type::set_state_and_controls(q,u);
 

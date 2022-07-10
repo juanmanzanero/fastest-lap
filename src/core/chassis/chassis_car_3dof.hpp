@@ -3,15 +3,15 @@
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
 inline Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::Chassis_car_3dof()
-: base_type(FrontAxle_t("front axle",
-            typename FrontAxle_t::Tire_left_type("front left tire", "vehicle/front-tire/"),
-            typename FrontAxle_t::Tire_right_type("front right tire", "vehicle/front-tire/"),
+: base_type(FrontAxle_t("front-axle",
+            typename FrontAxle_t::Tire_left_type("front-axle.left-tire", "vehicle/front-tire/"),
+            typename FrontAxle_t::Tire_right_type("front-axle.right-tire", "vehicle/front-tire/"),
             "vehicle/front-axle/"),
-            RearAxle_t("rear axle", 
-            typename RearAxle_t::Tire_left_type("rear left tire", "vehicle/rear-tire/"),
-            typename RearAxle_t::Tire_right_type("rear right tire", "vehicle/rear-tire/"),
+            RearAxle_t("rear-axle", 
+            typename RearAxle_t::Tire_left_type("rear-axle.left-tire", "vehicle/rear-tire/"),
+            typename RearAxle_t::Tire_right_type("rear-axle.right-tire", "vehicle/rear-tire/"),
             "vehicle/rear-axle/"),
-            "vehicle/chassis/")
+            "vehicle/chassis/") 
 {
     // Chassis frame must have zero rotations
     if ( base_type::get_chassis_frame().get_rotation_angles().size() != 0 )
@@ -51,15 +51,15 @@ inline Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::Ch
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
 inline Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::Chassis_car_3dof(Xml_document& database)
 : Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>(
-           FrontAxle_t("front axle",
-                       typename FrontAxle_t::Tire_left_type("front left tire", database, "vehicle/front-tire/"),
-                       typename FrontAxle_t::Tire_right_type("front right tire", database, "vehicle/front-tire/"),
+           FrontAxle_t("front-axle",
+                       typename FrontAxle_t::Tire_left_type("front-axle.left-tire", database, "vehicle/front-tire/"),
+                       typename FrontAxle_t::Tire_right_type("front-axle.right-tire", database, "vehicle/front-tire/"),
                        database, "vehicle/front-axle/"),
-           RearAxle_t("rear axle", 
-                      typename RearAxle_t::Tire_left_type("rear left tire", database, "vehicle/rear-tire/"),
-                      typename RearAxle_t::Tire_right_type("rear right tire", database, "vehicle/rear-tire/"),
+           RearAxle_t("rear-axle", 
+                      typename RearAxle_t::Tire_left_type("rear-axle.left-tire", database, "vehicle/rear-tire/"),
+                      typename RearAxle_t::Tire_right_type("rear-axle.right-tire", database, "vehicle/rear-tire/"),
                       database, "vehicle/rear-axle/"),
-           database, "vehicle/chassis/")
+           database, "vehicle/chassis/") 
 {}
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
@@ -187,6 +187,7 @@ inline void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0
     _Mx_eq           = -base_type::_T[X];   // -1 just to be consistent with Limebeer et al.
     _My_eq           = base_type::_T[Y];
     _roll_balance_eq = (_Fz_fr-_Fz_fl)*(1.0-_roll_balance_coeff) + (_Fz_rl - _Fz_rr)*_roll_balance_coeff;
+
 }
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
@@ -226,7 +227,7 @@ void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::get_
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
 template<size_t NSTATE, size_t NCONTROL>
-void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_state_and_control_names(std::array<std::string,NSTATE>& q, std::array<std::string,NALGEBRAIC>& qa, std::array<std::string,NCONTROL>& u) 
+void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_state_and_control_names(std::array<std::string,NSTATE>& q, std::array<std::string,NALGEBRAIC>& qa, std::array<std::string,NCONTROL>& u) const
 {
     base_type::set_state_and_control_names(q,u);
 
@@ -234,21 +235,21 @@ void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_
     // (empty)
 
     // Algebraic states ---
-    qa[IFZFL] = "Fz_fl";
+    qa[IFZFL] = base_type::get_name() + ".Fz_fl";
 
-    qa[IFZFR] = "Fz_fr";
+    qa[IFZFR] = base_type::get_name() + ".Fz_fr";
 
-    qa[IFZRL] = "Fz_rl";
+    qa[IFZRL] = base_type::get_name() + ".Fz_rl";
 
-    qa[IFZRR] = "Fz_rr";
+    qa[IFZRR] = base_type::get_name() + ".Fz_rr";
 
     // Controls ---
 
     // throttle
-    u[ITHROTTLE] = "throttle";
+    u[ITHROTTLE] = base_type::get_name() + ".throttle";
 
     // brake bias
-    u[IBRAKE_BIAS] = "brake-bias";
+    u[IBRAKE_BIAS] = base_type::get_name() + ".brake-bias";
 }
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>

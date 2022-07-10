@@ -163,7 +163,9 @@ inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(Xml_document& doc)
     else
         throw fastest_lap_exception("Incorrect \"is_direct\" attribute, should be \"true\" or \"false\"");
 
-    const auto [key_name, q_names, qa_names, u_names] = Dynamic_model_t::get_state_and_control_names();
+    auto children = doc.get_root_element().get_children();
+
+    const auto [key_name, q_names, qa_names, u_names] = Dynamic_model_t{}.get_state_and_control_names();
 
     // Get the data
     n_points = std::stoi(root.get_attribute("n_points"));
@@ -171,7 +173,7 @@ inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(Xml_document& doc)
 
     laptime = root.get_child("laptime").get_value(scalar());
 
-    s = root.get_child("arclength").get_value(std::vector<scalar>());
+    s = root.get_child(key_name).get_value(std::vector<scalar>());
 
     // Get state
     q = std::vector<std::array<scalar,Dynamic_model_t::NSTATE>>(n_points);
@@ -330,6 +332,9 @@ inline void Optimal_laptime<Dynamic_model_t>::compute(const Dynamic_model_t& car
         car.xml()->print(s_out);
         throw fastest_lap_exception(s_out.str());
     }
+
+    // (2) Get state and control names
+    std::tie(key_name, q_names, qa_names, u_names) = car.get_state_and_control_names();
 
     // (2) Compute
     if ( is_direct )
@@ -1221,7 +1226,6 @@ std::unique_ptr<Xml_document> Optimal_laptime<Dynamic_model_t>::xml() const
 {
     std::unique_ptr<Xml_document> doc_ptr(std::make_unique<Xml_document>());
 
-    const auto [key_name, q_names, qa_names, u_names] = Dynamic_model_t::get_state_and_control_names();
 
     std::ostringstream s_out;
     s_out.precision(17);

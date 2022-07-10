@@ -26,11 +26,12 @@ inline Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>::Axle(const std::string& n
 template<typename Timeseries_t, typename Tires_tuple, size_t STATE0, size_t CONTROL0>
 inline Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>::Axle(const Axle& other)
 : _frame(other._frame),
+  __used_parameters(other.__used_parameters),
   _name(other._name),
   _path(other._path),
   _tires(other._tires),
   _F(other._F),
-  _T(other._T)
+  _T(other._T) 
 {
     static_assert(NTIRES <= 2);
 
@@ -59,6 +60,8 @@ inline Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>& Axle<Timeseries_t,Tires_t
     if constexpr (NTIRES == 2)
         std::get<1>(_tires).get_frame().set_parent(_frame);
 
+    __used_parameters = other.__used_parameters;
+
     return *this;
 }
 
@@ -75,12 +78,12 @@ void Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>::get_state_derivative(std::a
 
 template<typename Timeseries_t, typename Tires_tuple, size_t STATE0, size_t CONTROL0>
 template<size_t NSTATE, size_t NCONTROL>
-void Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>::set_state_and_control_names(std::array<std::string,NSTATE>& q, std::array<std::string,NCONTROL>& u) 
+void Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>::set_state_and_control_names(std::array<std::string,NSTATE>& q, std::array<std::string,NCONTROL>& u) const
 {
-    std::tuple_element<0,Tires_tuple>::type::set_state_and_control_names(q,u); 
+    std::get<0>(_tires).set_state_and_control_names(q,u);
     
     if constexpr (NTIRES == 2)
-        std::tuple_element<1,Tires_tuple>::type::set_state_and_control_names(q,u); 
+        std::get<1>(_tires).set_state_and_control_names(q,u);
 }
 
 

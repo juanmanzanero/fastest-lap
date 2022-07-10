@@ -264,8 +264,8 @@ class Tire_pacejka : public Tire<Timeseries_t, STATE0,CONTROL0>
     //! @param[out] q: the vehicle state names
     //! @param[out] u: the vehicle control names
     template<size_t NSTATE, size_t NCONTROL>
-    static void set_state_and_control_names(std::array<std::string,NSTATE>& q, 
-                                     std::array<std::string,NCONTROL>& u) {};
+    void set_state_and_control_names(std::array<std::string,NSTATE>& q, 
+                                     std::array<std::string,NCONTROL>& u) const {};
 
     static std::string type() { return "tire_pacejka"; }
 
@@ -274,6 +274,16 @@ class Tire_pacejka : public Tire<Timeseries_t, STATE0,CONTROL0>
     bool is_ready() const { return base_type::is_ready() && 
             std::all_of(__used_parameters.begin(), __used_parameters.end(), [](const auto& v) -> auto { return v; }) &&
             std::all_of(get_model().__used_parameters.begin(), get_model().__used_parameters.end(), [](const auto& v) -> auto { return v; }); }
+
+    std::unordered_map<std::string,Timeseries_t> get_outputs_map() const
+    {
+        auto map = get_outputs_map_self();
+        const auto base_type_map = base_type::get_outputs_map();
+
+        map.insert(base_type_map.cbegin(), base_type_map.cend());
+
+        return map;
+    }
 
  private:
     //! Performs an update of the tire: computes tire forces from kappa, lambda, and tire 
@@ -298,6 +308,13 @@ class Tire_pacejka : public Tire<Timeseries_t, STATE0,CONTROL0>
         { "radial-damping", _ct },
         { "Fz-max-ref2", _Fz_max_ref2 }
     ); 
+
+    std::unordered_map<std::string,Timeseries_t> get_outputs_map_self() const
+    {
+        return
+        {
+        };
+    }
 
 };
 

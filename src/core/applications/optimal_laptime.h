@@ -365,6 +365,12 @@ class Optimal_laptime
 
     scalar laptime;
 
+
+    std::string                                         key_name;
+    std::array<std::string,Dynamic_model_t::NSTATE>     q_names;   //! All state vectors
+    std::array<std::string,Dynamic_model_t::NALGEBRAIC> qa_names;  //! All algebraic variables vectors
+    std::array<std::string,Dynamic_model_t::NCONTROL>  u_names;   //! All control variables pre and post optimization
+
  private:
     
     void check_inputs(const Dynamic_model_t& car);

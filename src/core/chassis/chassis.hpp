@@ -45,6 +45,7 @@ inline Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::Chassis(con
   _A(other._A),
   _front_axle(other._front_axle),
   _rear_axle(other._rear_axle),
+  __used_parameters(other.__used_parameters),
   _F(other._F),
   _T(other._T)
 {
@@ -82,6 +83,8 @@ inline Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>& Chassis<Tim
     // Set the front and rear axles new frames parents
     _front_axle.get_frame().set_parent(_chassis_frame); 
     _rear_axle.get_frame().set_parent(_chassis_frame); 
+
+    __used_parameters = other.__used_parameters;
 
     return *this;
 }
@@ -131,6 +134,34 @@ void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_state(Tim
     _u = u;
     _v = v;
     _omega = omega;
+}
+
+
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
+inline Timeseries_t Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::get_longitudinal_acceleration() const
+{
+    Vector3d<Timeseries_t> velocity = {get_u(), get_v(), 0.0};
+
+    Vector3d<Timeseries_t> acceleration = {get_du() - velocity.y()*get_omega(), 
+                              get_dv() + velocity.x()*get_omega(),
+                              0.0
+                             };
+
+    return dot(velocity,acceleration)/norm(velocity);
+}
+
+
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
+inline Timeseries_t Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::get_lateral_acceleration() const
+{
+    Vector3d<Timeseries_t> velocity = {get_u(), get_v(), 0.0};
+
+    Vector3d<Timeseries_t> acceleration = {get_du() - velocity.y()*get_omega(), 
+                              get_dv() + velocity.x()*get_omega(),
+                              0.0
+                             };
+
+    return cross(velocity,acceleration).z()/norm(velocity);
 }
 
 
@@ -221,19 +252,19 @@ void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_state_and
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
 template<size_t NSTATE, size_t NCONTROL>
-void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_state_and_control_names(std::array<std::string,NSTATE>& q, std::array<std::string,NCONTROL>& u) 
+void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_state_and_control_names(std::array<std::string,NSTATE>& q, std::array<std::string,NCONTROL>& u) const 
 {
-    FrontAxle_t::set_state_and_control_names(q,u);
-    RearAxle_t::set_state_and_control_names(q,u);
+    _front_axle.set_state_and_control_names(q,u);
+    _rear_axle.set_state_and_control_names(q,u);
 
     // u
-    q[IU] = "u";
+    q[IU] = get_name() + ".velocity.x";
 
     // v
-    q[IV] = "v";
+    q[IV] = get_name() + ".velocity.y";
 
     // oemga
-    q[IOMEGA] = "omega";    
+    q[IOMEGA] = get_name() + ".omega.z"; 
 }
 
 

@@ -1,6 +1,7 @@
 #ifndef __AXLE_H__
 #define __AXLE_H__
 
+#include <unordered_map>
 #include "lion/frame/frame.h"
 #include "lion/io/Xml_document.h"
 #include "lion/io/database_parameters.h"
@@ -91,18 +92,43 @@ class Axle
     //! @param[out] q: the vehicle state names
     //! @param[out] u: the vehicle control names
     template<size_t NSTATE, size_t NCONTROL>
-    static void set_state_and_control_names(std::array<std::string,NSTATE>& q, 
-                                     std::array<std::string,NCONTROL>& u);
+    void set_state_and_control_names(std::array<std::string,NSTATE>& q, 
+                                     std::array<std::string,NCONTROL>& u) const;
 
     bool is_ready() const;
 
     static std::string type() { return "axle"; }
     
     void fill_xml(Xml_document& doc) const;
+
+    std::unordered_map<std::string,Timeseries_t> get_outputs_map() const
+    {
+        auto map = get_outputs_map_self();
+
+        auto tire_0_map = std::get<0>(_tires).get_outputs_map();
+        map.insert(tire_0_map.cbegin(), tire_0_map.cend());
+
+        if constexpr (NTIRES == 2)
+        {
+            auto tire_1_map = std::get<1>(_tires).get_outputs_map();
+            map.insert(tire_1_map.cbegin(), tire_1_map.cend());
+        }
+
+        return map;
+    }
+
  private:
+
     Frame<Timeseries_t> _frame; //! Frame<Timeseries_t> on the axle center
 
     DECLARE_PARAMS();
+
+    std::unordered_map<std::string,Timeseries_t> get_outputs_map_self() const
+    {
+        return
+        {
+        };
+    }
 
  protected:
     std::string _name;    //! Axle name (e.g. front, rear)

@@ -94,13 +94,59 @@ TEST_F(limebeer2014f1_test, indexes)
     EXPECT_EQ(Road_t::IIDPSI               , 9);
 }
 
-TEST_F(limebeer2014f1_test, variable_names)
+TEST_F(limebeer2014f1_test, vehicle_from_xml_variable_names)
 {
     limebeer2014f1<double>::curvilinear_p car_sc(database);
+    auto [s_name, q_names, qa_names, u_names] = car_sc.get_state_and_control_names();
 
-    car_sc.xml()->save("autosave_f1.xml");
+    EXPECT_EQ(s_name, "road.arclength");
+    EXPECT_EQ(q_names[Front_axle_t::IKAPPA_LEFT]                                , "front-axle.left-tire.kappa");
+    EXPECT_EQ(q_names[Front_axle_t::IKAPPA_RIGHT]                               , "front-axle.right-tire.kappa");
+    EXPECT_EQ(q_names[Rear_axle_t::IKAPPA_LEFT]                                 , "rear-axle.left-tire.kappa");
+    EXPECT_EQ(q_names[Rear_axle_t::IKAPPA_RIGHT]                                , "rear-axle.right-tire.kappa");
+    EXPECT_EQ(q_names[Chassis_t::IU]                                            , "chassis.velocity.x");
+    EXPECT_EQ(q_names[Chassis_t::IV]                                            , "chassis.velocity.y");
+    EXPECT_EQ(q_names[Chassis_t::IOMEGA]                                        , "chassis.omega.z");
+    EXPECT_EQ(q_names[limebeer2014f1<double>::curvilinear_p::Road_type::ITIME]  , "time");
+    EXPECT_EQ(q_names[limebeer2014f1<double>::curvilinear_p::Road_type::IN]     , "road.lateral-displacement");
+    EXPECT_EQ(q_names[limebeer2014f1<double>::curvilinear_p::Road_type::IALPHA] , "road.track-heading-angle");
 
-    auto [s_names, q_names, qa_names, u_names] = car_sc.get_state_and_control_names();
+    EXPECT_EQ(qa_names[Chassis_t::IFZFL], "chassis.Fz_fl");
+    EXPECT_EQ(qa_names[Chassis_t::IFZFR], "chassis.Fz_fr");
+    EXPECT_EQ(qa_names[Chassis_t::IFZRL], "chassis.Fz_rl");
+    EXPECT_EQ(qa_names[Chassis_t::IFZRR], "chassis.Fz_rr");
+
+    EXPECT_EQ(u_names[Chassis_t::ITHROTTLE], "chassis.throttle");
+    EXPECT_EQ(u_names[Chassis_t::IBRAKE_BIAS], "chassis.brake-bias");
+    EXPECT_EQ(u_names[Front_axle_t::ISTEERING], "front-axle.steering-angle");
+}
+
+TEST_F(limebeer2014f1_test, vehicle_empty_variable_names)
+{
+    auto car = limebeer2014f1<double>::curvilinear_p{};
+
+    auto [s_name, q_names, qa_names, u_names] = car.get_state_and_control_names();
+
+    EXPECT_EQ(s_name, "road.arclength");
+    EXPECT_EQ(q_names[Front_axle_t::IKAPPA_LEFT]                                , "front-axle.left-tire.kappa");
+    EXPECT_EQ(q_names[Front_axle_t::IKAPPA_RIGHT]                               , "front-axle.right-tire.kappa");
+    EXPECT_EQ(q_names[Rear_axle_t::IKAPPA_LEFT]                                 , "rear-axle.left-tire.kappa");
+    EXPECT_EQ(q_names[Rear_axle_t::IKAPPA_RIGHT]                                , "rear-axle.right-tire.kappa");
+    EXPECT_EQ(q_names[Chassis_t::IU]                                            , "chassis.velocity.x");
+    EXPECT_EQ(q_names[Chassis_t::IV]                                            , "chassis.velocity.y");
+    EXPECT_EQ(q_names[Chassis_t::IOMEGA]                                        , "chassis.omega.z");
+    EXPECT_EQ(q_names[limebeer2014f1<double>::curvilinear_p::Road_type::ITIME]  , "time");
+    EXPECT_EQ(q_names[limebeer2014f1<double>::curvilinear_p::Road_type::IN]     , "road.lateral-displacement");
+    EXPECT_EQ(q_names[limebeer2014f1<double>::curvilinear_p::Road_type::IALPHA] , "road.track-heading-angle");
+
+    EXPECT_EQ(qa_names[Chassis_t::IFZFL], "chassis.Fz_fl");
+    EXPECT_EQ(qa_names[Chassis_t::IFZFR], "chassis.Fz_fr");
+    EXPECT_EQ(qa_names[Chassis_t::IFZRL], "chassis.Fz_rl");
+    EXPECT_EQ(qa_names[Chassis_t::IFZRR], "chassis.Fz_rr");
+
+    EXPECT_EQ(u_names[Chassis_t::ITHROTTLE], "chassis.throttle");
+    EXPECT_EQ(u_names[Chassis_t::IBRAKE_BIAS], "chassis.brake-bias");
+    EXPECT_EQ(u_names[Front_axle_t::ISTEERING], "front-axle.steering-angle");
 }
 
 TEST_F(limebeer2014f1_test, is_ready)
@@ -108,6 +154,97 @@ TEST_F(limebeer2014f1_test, is_ready)
     limebeer2014f1<double>::curvilinear_p car_sc(database);
     EXPECT_TRUE(car_sc.is_ready());
 }
+
+
+TEST_F(limebeer2014f1_test, is_not_ready)
+{
+    Xml_document catalunya_xml("./database/tracks/catalunya/catalunya.xml",true);
+    Track_by_polynomial catalunya(catalunya_xml);
+    limebeer2014f1<scalar>::curvilinear<Track_by_polynomial>::Road_t road(catalunya);
+    limebeer2014f1<scalar>::curvilinear<Track_by_polynomial> car(road);
+
+    car.set_parameter("vehicle/front-axle/track", 1.46);
+    car.set_parameter("vehicle/front-axle/inertia", 1.0);
+//  car.set_parameter("vehicle/front-axle/smooth_throttle_coeff", 1.0e-5);  Let's take this one out, arbitrarily
+    car.set_parameter("vehicle/front-axle/brakes/max_torque", 5000.0);
+
+    car.set_parameter("vehicle/rear-axle/track", 1.46);
+    car.set_parameter("vehicle/rear-axle/inertia", 1.55);
+    car.set_parameter("vehicle/rear-axle/smooth_throttle_coeff", 1.0e-5);
+    car.set_parameter("vehicle/rear-axle/differential_stiffness", 10.47);
+    car.set_parameter("vehicle/rear-axle/brakes/max_torque", 5000.0);
+    car.set_parameter("vehicle/rear-axle/engine/maximum-power", 735.499);
+
+    car.set_parameter("vehicle/chassis/mass", 660.0);
+    car.set_parameter("vehicle/chassis/inertia/Ixx", 0.0);
+    car.set_parameter("vehicle/chassis/inertia/Ixy", 0.0);
+    car.set_parameter("vehicle/chassis/inertia/Ixz", 0.0);
+    car.set_parameter("vehicle/chassis/inertia/Iyx", 0.0);
+    car.set_parameter("vehicle/chassis/inertia/Iyy", 0.0);
+    car.set_parameter("vehicle/chassis/inertia/Iyz", 0.0);
+    car.set_parameter("vehicle/chassis/inertia/Izx", 0.0);
+    car.set_parameter("vehicle/chassis/inertia/Izy", 0.0);
+    car.set_parameter("vehicle/chassis/inertia/Izz", 450.0);
+    car.set_parameter("vehicle/chassis/aerodynamics/rho", 1.2);
+    car.set_parameter("vehicle/chassis/aerodynamics/area", 1.5);
+    car.set_parameter("vehicle/chassis/aerodynamics/cd", 0.9);
+    car.set_parameter("vehicle/chassis/aerodynamics/cl", 3.0);
+    car.set_parameter("vehicle/chassis/com/x", 0.0 );
+    car.set_parameter("vehicle/chassis/com/y", 0.0 );
+    car.set_parameter("vehicle/chassis/com/z", -0.3 );
+    car.set_parameter("vehicle/chassis/front_axle/x",1.8);
+    car.set_parameter("vehicle/chassis/front_axle/y",0.0);
+    car.set_parameter("vehicle/chassis/front_axle/z",-0.33);
+    car.set_parameter("vehicle/chassis/rear_axle/x", -1.6);
+    car.set_parameter("vehicle/chassis/rear_axle/y",  0.0);
+    car.set_parameter("vehicle/chassis/rear_axle/z", -0.33);
+    car.set_parameter("vehicle/chassis/pressure_center/x", -0.1);
+    car.set_parameter("vehicle/chassis/pressure_center/y",  0.0);
+    car.set_parameter("vehicle/chassis/pressure_center/z", -0.3);
+    car.set_parameter("vehicle/chassis/brake_bias", 0.6);
+    car.set_parameter("vehicle/chassis/roll_balance_coefficient", 0.5);
+    car.set_parameter("vehicle/chassis/Fz_max_ref2", 1.0);
+    car.set_parameter("vehicle/chassis/maximum_throttle", 1.0);
+    
+    car.set_parameter("vehicle/front-tire/radius",0.330); 
+    car.set_parameter("vehicle/front-tire/radial-stiffness",0.0);
+    car.set_parameter("vehicle/front-tire/radial-damping",0.0);
+    car.set_parameter("vehicle/front-tire/Fz-max-ref2", 1.0 );
+    car.set_parameter("vehicle/front-tire/reference-load-1", 2000.0 ); 
+    car.set_parameter("vehicle/front-tire/reference-load-2", 6000.0 ); 
+    car.set_parameter("vehicle/front-tire/mu-x-max-1", 1.75 );
+    car.set_parameter("vehicle/front-tire/mu-x-max-2", 1.40 );
+    car.set_parameter("vehicle/front-tire/kappa-max-1", 0.11 );
+    car.set_parameter("vehicle/front-tire/kappa-max-2", 0.10 );
+    car.set_parameter("vehicle/front-tire/mu-y-max-1", 1.80 );
+    car.set_parameter("vehicle/front-tire/mu-y-max-2", 1.45 );
+    car.set_parameter("vehicle/front-tire/lambda-max-1", 9.0 );
+    car.set_parameter("vehicle/front-tire/lambda-max-2", 8.0 );
+    car.set_parameter("vehicle/front-tire/Qx", 1.9 );
+    car.set_parameter("vehicle/front-tire/Qy", 1.9 );
+
+    car.set_parameter("vehicle/rear-tire/radius",0.330); 
+    car.set_parameter("vehicle/rear-tire/radial-stiffness",0.0);
+    car.set_parameter("vehicle/rear-tire/radial-damping",0.0);
+    car.set_parameter("vehicle/rear-tire/Fz-max-ref2", 1.0 );
+    car.set_parameter("vehicle/rear-tire/reference-load-1", 2000.0 ); 
+    car.set_parameter("vehicle/rear-tire/reference-load-2", 6000.0 ); 
+    car.set_parameter("vehicle/rear-tire/mu-x-max-1", 1.75 );
+    car.set_parameter("vehicle/rear-tire/mu-x-max-2", 1.40 );
+    car.set_parameter("vehicle/rear-tire/kappa-max-1", 0.11 );
+    car.set_parameter("vehicle/rear-tire/kappa-max-2", 0.10 );
+    car.set_parameter("vehicle/rear-tire/mu-y-max-1", 1.80 );
+    car.set_parameter("vehicle/rear-tire/mu-y-max-2", 1.45 );
+    car.set_parameter("vehicle/rear-tire/lambda-max-1", 9.0);
+    car.set_parameter("vehicle/rear-tire/lambda-max-2", 8.0);
+    car.set_parameter("vehicle/rear-tire/Qx", 1.9 );
+    car.set_parameter("vehicle/rear-tire/Qy", 1.9 );
+
+    EXPECT_FALSE(car.is_ready());
+}
+
+
+
 
 
 TEST_F(limebeer2014f1_test, jacobian_autodiff)
@@ -288,6 +425,8 @@ TEST_F(limebeer2014f1_test, jacobian_autodiff_random)
             EXPECT_NEAR(numerical_jacobian_dqa[i][j], solution.jac_dqa[j][i], 2.0e-6*std::max(fabs(solution.jac_dqa[j][i]),1.0)) << "with i = " << i << " and j = " << j ;
         }
 }
+
+
 
 TEST_F(limebeer2014f1_test, set_parameter)
 {
@@ -776,4 +915,14 @@ TEST_F(limebeer2014f1_test,propagation_crank_nicolson_corner_exit)
 
     for (size_t i = 0; i < 4; ++i)
         EXPECT_NEAR(qa[i],qa_next[i],1.0e-10) << ", with i = " << i;
+}
+
+
+TEST_F(limebeer2014f1_test, get_outputs_map)
+{
+    limebeer2014f1<double>::curvilinear_p car(database);
+
+    for(auto kv : car.get_outputs_map()) {
+        std::cout << kv.first << std::endl;
+    }
 }

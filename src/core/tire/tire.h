@@ -1,6 +1,7 @@
 #ifndef __TIRE_H__
 #define __TIRE_H__
 
+#include <unordered_map>
 #include "lion/foundation/types.h"
 #include "lion/math/vector3d.h"
 #include "lion/frame/frame.h"
@@ -132,6 +133,11 @@ class Tire
 
     static std::string type() { return "tire"; }
 
+    std::unordered_map<std::string,Timeseries_t> get_outputs_map() const
+    {
+        return get_outputs_map_self();
+    }
+
  private:
    
     //! Compute the longitudinal slip
@@ -155,6 +161,15 @@ class Tire
     DECLARE_PARAMS(
         { "radius", _R0 }
     ); 
+
+    std::unordered_map<std::string,Timeseries_t> get_outputs_map_self() const
+    {
+        return
+        {
+        };
+    }
+
+
 
  protected:
 

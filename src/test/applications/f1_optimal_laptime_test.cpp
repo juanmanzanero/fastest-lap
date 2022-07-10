@@ -19,104 +19,135 @@ class F1_optimal_laptime_test : public ::testing::Test
 template<typename Dynamic_model_t>
 static void check_optimal_laptime(const Optimal_laptime<Dynamic_model_t>& opt_laptime, Xml_document& opt_saved, const size_t n)
 {
+    // Cover also the constructor from Xml_document
+    Optimal_laptime<Dynamic_model_t> opt_laptime_saved(opt_saved);
     // kappa front left
-    auto kappa_fl_saved = opt_saved.get_element("optimal_laptime/steering-kappa-left").get_value(std::vector<scalar>());
+    auto kappa_fl_saved = opt_saved.get_element("optimal_laptime/front-axle.left-tire.kappa").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
+    {
         EXPECT_NEAR(opt_laptime.q[i][limebeer2014f1<scalar>::Front_axle_t::IKAPPA_LEFT], kappa_fl_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.q[i][limebeer2014f1<scalar>::Front_axle_t::IKAPPA_LEFT], opt_laptime_saved.q[i][limebeer2014f1<scalar>::Front_axle_t::IKAPPA_LEFT], 1.0e-6);
+    }
     
     // kappa front right
-    auto kappa_fr_saved = opt_saved.get_element("optimal_laptime/steering-kappa-right").get_value(std::vector<scalar>());
+    auto kappa_fr_saved = opt_saved.get_element("optimal_laptime/front-axle.right-tire.kappa").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
+    {
         EXPECT_NEAR(opt_laptime.q[i][limebeer2014f1<scalar>::Front_axle_t::IKAPPA_RIGHT], kappa_fr_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.q[i][limebeer2014f1<scalar>::Front_axle_t::IKAPPA_RIGHT], opt_laptime_saved.q[i][limebeer2014f1<scalar>::Front_axle_t::IKAPPA_RIGHT], 1.0e-6);
+    }
     
     // kappa rear left
-    auto kappa_rl_saved = opt_saved.get_element("optimal_laptime/powered-kappa-left").get_value(std::vector<scalar>());
+    auto kappa_rl_saved = opt_saved.get_element("optimal_laptime/rear-axle.left-tire.kappa").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
+    {
         EXPECT_NEAR(opt_laptime.q[i][limebeer2014f1<scalar>::Rear_axle_t::IKAPPA_LEFT], kappa_rl_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.q[i][limebeer2014f1<scalar>::Rear_axle_t::IKAPPA_LEFT], opt_laptime_saved.q[i][limebeer2014f1<scalar>::Rear_axle_t::IKAPPA_LEFT], 1.0e-6);
+    }
     
     // kappa rear right
-    auto kappa_rr_saved = opt_saved.get_element("optimal_laptime/powered-kappa-right").get_value(std::vector<scalar>());
+    auto kappa_rr_saved = opt_saved.get_element("optimal_laptime/rear-axle.right-tire.kappa").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
+    {
         EXPECT_NEAR(opt_laptime.q[i][limebeer2014f1<scalar>::Rear_axle_t::IKAPPA_RIGHT], kappa_rr_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.q[i][limebeer2014f1<scalar>::Rear_axle_t::IKAPPA_RIGHT], opt_laptime_saved.q[i][limebeer2014f1<scalar>::Rear_axle_t::IKAPPA_RIGHT], 1.0e-6);
+    }
 
     // u
-    auto u_saved = opt_saved.get_element("optimal_laptime/u").get_value(std::vector<scalar>());
+    auto u_saved = opt_saved.get_element("optimal_laptime/chassis.velocity.x").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
+    {
         EXPECT_NEAR(opt_laptime.q[i][limebeer2014f1<scalar>::Chassis_t::IU], u_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.q[i][limebeer2014f1<scalar>::Chassis_t::IU], opt_laptime_saved.q[i][limebeer2014f1<scalar>::Chassis_t::IU], 1.0e-6);
+    }
 
     // v
-    auto v_saved = opt_saved.get_element("optimal_laptime/v").get_value(std::vector<scalar>());
+    auto v_saved = opt_saved.get_element("optimal_laptime/chassis.velocity.y").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
+    {
         EXPECT_NEAR(opt_laptime.q[i][limebeer2014f1<scalar>::Chassis_t::IV], v_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.q[i][limebeer2014f1<scalar>::Chassis_t::IV], opt_laptime_saved.q[i][limebeer2014f1<scalar>::Chassis_t::IV], 1.0e-6);
+    }
 
     // omega
-    auto omega_saved = opt_saved.get_element("optimal_laptime/omega").get_value(std::vector<scalar>());
+    auto omega_saved = opt_saved.get_element("optimal_laptime/chassis.omega.z").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
+    {
         EXPECT_NEAR(opt_laptime.q[i][limebeer2014f1<scalar>::Chassis_t::IOMEGA], omega_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.q[i][limebeer2014f1<scalar>::Chassis_t::IOMEGA], opt_laptime_saved.q[i][limebeer2014f1<scalar>::Chassis_t::IOMEGA], 1.0e-6);
+    }
 
     // time
     auto time_saved = opt_saved.get_element("optimal_laptime/time").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
+    {
         EXPECT_NEAR(opt_laptime.q[i][limebeer2014f1<scalar>::curvilinear_p::Road_t::ITIME], time_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.q[i][limebeer2014f1<scalar>::curvilinear_p::Road_t::ITIME], opt_laptime_saved.q[i][limebeer2014f1<scalar>::curvilinear_p::Road_t::ITIME], 1.0e-6);
+    }
 
     // n
-    auto n_saved = opt_saved.get_element("optimal_laptime/n").get_value(std::vector<scalar>());
+    auto n_saved = opt_saved.get_element("optimal_laptime/road.lateral-displacement").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
+    {
         EXPECT_NEAR(opt_laptime.q[i][limebeer2014f1<scalar>::curvilinear_p::Road_t::IN], n_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.q[i][limebeer2014f1<scalar>::curvilinear_p::Road_t::IN], opt_laptime_saved.q[i][limebeer2014f1<scalar>::curvilinear_p::Road_t::IN], 1.0e-6);
+    }
 
     // alpha
-    auto alpha_saved = opt_saved.get_element("optimal_laptime/alpha").get_value(std::vector<scalar>());
+    auto alpha_saved = opt_saved.get_element("optimal_laptime/road.track-heading-angle").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
+    {
         EXPECT_NEAR(opt_laptime.q[i][limebeer2014f1<scalar>::curvilinear_p::Road_t::IALPHA], alpha_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.q[i][limebeer2014f1<scalar>::curvilinear_p::Road_t::IALPHA], opt_laptime_saved.q[i][limebeer2014f1<scalar>::curvilinear_p::Road_t::IALPHA], 1.0e-6);
+    }
 
     // delta
-    if ( opt_saved.has_element("optimal_laptime/delta") )
+    auto delta_saved = opt_saved.get_element("optimal_laptime/control_variables/front-axle.steering-angle/values").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
     {
-        auto delta_saved = opt_saved.get_element("optimal_laptime/delta").get_value(std::vector<scalar>());
-        for (size_t i = 0; i < n; ++i)
-            EXPECT_NEAR(opt_laptime.control_variables[limebeer2014f1<scalar>::Front_axle_t::ISTEERING].u[i], delta_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.control_variables[limebeer2014f1<scalar>::Front_axle_t::ISTEERING].u[i], delta_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.control_variables[limebeer2014f1<scalar>::Front_axle_t::ISTEERING].u[i], opt_laptime_saved.control_variables[limebeer2014f1<scalar>::Front_axle_t::ISTEERING].u[i], 1.0e-6);
     }
-    else
-    {
-        auto delta_saved = opt_saved.get_element("optimal_laptime/control_variables/delta/values").get_value(std::vector<scalar>());
-        for (size_t i = 0; i < n; ++i)
-            EXPECT_NEAR(opt_laptime.control_variables[limebeer2014f1<scalar>::Front_axle_t::ISTEERING].u[i], delta_saved[i], 1.0e-6);
-    }
-
 
     // throttle
-    if ( opt_saved.has_element("optimal_laptime/throttle") )
+    auto throttle_saved = opt_saved.get_element("optimal_laptime/control_variables/chassis.throttle/values").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
     {
-        auto throttle_saved = opt_saved.get_element("optimal_laptime/throttle").get_value(std::vector<scalar>());
-        for (size_t i = 0; i < n; ++i)
-            EXPECT_NEAR(opt_laptime.control_variables[limebeer2014f1<scalar>::Chassis_t::ITHROTTLE].u[i], throttle_saved[i], 1.0e-6);
-    }
-    else
-    {
-        auto throttle_saved = opt_saved.get_element("optimal_laptime/control_variables/throttle/values").get_value(std::vector<scalar>());
-        for (size_t i = 0; i < n; ++i)
-            EXPECT_NEAR(opt_laptime.control_variables[limebeer2014f1<scalar>::Chassis_t::ITHROTTLE].u[i], throttle_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.control_variables[limebeer2014f1<scalar>::Chassis_t::ITHROTTLE].u[i], throttle_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.control_variables[limebeer2014f1<scalar>::Chassis_t::ITHROTTLE].u[i], opt_laptime_saved.control_variables[limebeer2014f1<scalar>::Chassis_t::ITHROTTLE].u[i], 1.0e-6);
     }
 
     // Fz_fl
-    auto Fz_fl_saved = opt_saved.get_element("optimal_laptime/Fz_fl").get_value(std::vector<scalar>());
+    auto Fz_fl_saved = opt_saved.get_element("optimal_laptime/chassis.Fz_fl").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
+    {
         EXPECT_NEAR(opt_laptime.qa[i][limebeer2014f1<scalar>::Chassis_t::IFZFL], Fz_fl_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.qa[i][limebeer2014f1<scalar>::Chassis_t::IFZFL], opt_laptime_saved.qa[i][limebeer2014f1<scalar>::Chassis_t::IFZFL], 1.0e-6);
+    }
 
     // Fz_fr
-    auto Fz_fr_saved = opt_saved.get_element("optimal_laptime/Fz_fr").get_value(std::vector<scalar>());
+    auto Fz_fr_saved = opt_saved.get_element("optimal_laptime/chassis.Fz_fr").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
+    {
         EXPECT_NEAR(opt_laptime.qa[i][limebeer2014f1<scalar>::Chassis_t::IFZFR], Fz_fr_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.qa[i][limebeer2014f1<scalar>::Chassis_t::IFZFR], opt_laptime_saved.qa[i][limebeer2014f1<scalar>::Chassis_t::IFZFR], 1.0e-6);
+    }
 
     // Fz_rl
-    auto Fz_rl_saved = opt_saved.get_element("optimal_laptime/Fz_rl").get_value(std::vector<scalar>());
+    auto Fz_rl_saved = opt_saved.get_element("optimal_laptime/chassis.Fz_rl").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
+    {
         EXPECT_NEAR(opt_laptime.qa[i][limebeer2014f1<scalar>::Chassis_t::IFZRL], Fz_rl_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.qa[i][limebeer2014f1<scalar>::Chassis_t::IFZRL], opt_laptime_saved.qa[i][limebeer2014f1<scalar>::Chassis_t::IFZRL], 1.0e-6);
+    }
 
     // Fz_rr
-    auto Fz_rr_saved = opt_saved.get_element("optimal_laptime/Fz_rr").get_value(std::vector<scalar>());
+    auto Fz_rr_saved = opt_saved.get_element("optimal_laptime/chassis.Fz_rr").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
+    {
         EXPECT_NEAR(opt_laptime.qa[i][limebeer2014f1<scalar>::Chassis_t::IFZRR], Fz_rr_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.qa[i][limebeer2014f1<scalar>::Chassis_t::IFZRR], opt_laptime_saved.qa[i][limebeer2014f1<scalar>::Chassis_t::IFZRR], 1.0e-6);
+    }
 }
 
 
@@ -306,6 +337,19 @@ TEST_F(F1_optimal_laptime_test, Catalunya_chicane)
     // Set starting condition
     Xml_document opt_full_lap("data/f1_optimal_laptime_catalunya_adapted.xml", true);
     Optimal_laptime<limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p> opt_laptime_full_lap(opt_full_lap);
+
+    const auto [key_name, q_names, qa_names, u_names] = car.get_state_and_control_names();
+
+    EXPECT_EQ(key_name, opt_laptime_full_lap.key_name);
+
+    for (size_t i = 0; i < q_names.size(); ++i)
+        EXPECT_EQ(q_names[i], opt_laptime_full_lap.q_names[i]);
+
+    for (size_t i = 0; i < qa_names.size(); ++i)
+        EXPECT_EQ(qa_names[i], opt_laptime_full_lap.qa_names[i]);
+
+    for (size_t i = 0; i < u_names.size(); ++i)
+        EXPECT_EQ(u_names[i], opt_laptime_full_lap.u_names[i]);
 
     std::array<scalar,limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p::NSTATE>       q_start(opt_laptime_full_lap.q[i0]);
     std::array<scalar,limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p::NALGEBRAIC>   qa_start(opt_laptime_full_lap.qa[i0]);

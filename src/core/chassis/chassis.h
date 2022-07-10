@@ -4,6 +4,7 @@
 #include "lion/math/matrix3x3.h"
 #include "lion/frame/frame.h"
 #include <map>
+#include <unordered_map>
 #include "lion/io/database_parameters.h"
 #include "lion/io/Xml_document.h"
 
@@ -85,14 +86,20 @@ class Chassis
     //! Get the longitudinal velocity [m/s]
     const Timeseries_t& get_u() const { return _u; }
 
-    //! Get the longitudinal acceleration [m/s2]
+    //! Get the longitudinal acceleration in chassis frame [m/s2]
     const Timeseries_t& get_du() const { return _du; }
 
     //! Get the lateral velocity [m/s]
     const Timeseries_t& get_v() const { return _v; }
 
-    //! Get the lateral acceleration [m/s2]
+    //! Get the lateral acceleration in chassis frame [m/s2]
     const Timeseries_t& get_dv() const { return _dv; }
+
+    //! Get the longitudinal acceleration [m/s2]
+    Timeseries_t get_longitudinal_acceleration() const;
+
+    //! Get the lateral acceleration [m/s2]
+    Timeseries_t get_lateral_acceleration() const;
 
     //! Get the yaw speed [rad/s]
     const Timeseries_t& get_omega() const { return _omega; }
@@ -186,8 +193,8 @@ class Chassis
     //! @param[out] q: the vehicle state names
     //! @param[out] u: the vehicle control names
     template<size_t NSTATE, size_t NCONTROL>
-    static void set_state_and_control_names(std::array<std::string,NSTATE>& q, 
-                                     std::array<std::string,NCONTROL>& u);
+    void set_state_and_control_names(std::array<std::string,NSTATE>& q, 
+                                     std::array<std::string,NCONTROL>& u) const;
 
 
     bool is_ready() const { return _front_axle.is_ready() && _rear_axle.is_ready() && 
@@ -195,6 +202,20 @@ class Chassis
 
     static std::string type() { return "chassis"; }
 
+    static std::string get_name() { return "chassis"; }
+
+
+    std::unordered_map<std::string,Timeseries_t> get_outputs_map() const
+    {
+        auto map = get_outputs_map_self();
+        const auto front_axle_map = _front_axle.get_outputs_map();
+        const auto rear_axle_map = _rear_axle.get_outputs_map();
+
+        map.insert(front_axle_map.cbegin(), front_axle_map.cend());
+        map.insert(rear_axle_map.cbegin(), rear_axle_map.cend());
+
+        return map;
+    }
 
  private:
 
@@ -238,7 +259,27 @@ class Chassis
         { "aerodynamics/area", _A }
     ); 
 
+
+    std::unordered_map<std::string,Timeseries_t> get_outputs_map_self() const
+    {
+        return
+        {
+            {get_name() + ".acceleration.x", get_longitudinal_acceleration()},
+            {get_name() + ".acceleration.y", get_lateral_acceleration()},
+            {get_name() + ".force.x", _F.x()},
+            {get_name() + ".force.y", _F.y()},
+            {get_name() + ".force.z", _F.z()},
+            {get_name() + ".torque.x", _T.x()},
+            {get_name() + ".torque.y", _T.y()},
+            {get_name() + ".torque.z", _T.z()},
+            {get_name() + ".acceleration.yaw", _dOmega},
+            {get_name() + ".position.x", _road_frame.get_origin().x()},
+            {get_name() + ".position.y", _road_frame.get_origin().y()} 
+        };
+    }
+
  protected:
+
 
     // Longitudinal dynamics
     Timeseries_t _du;    //! [out] Longitudinal acceleration [m/s2]

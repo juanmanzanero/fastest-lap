@@ -91,16 +91,16 @@ template<typename Timeseries_t,typename Track_t,size_t STATE0, size_t CONTROL0>
 template<size_t NSTATE, size_t NCONTROL>
 void Road_curvilinear<Timeseries_t,Track_t,STATE0,CONTROL0>::set_state_and_control_names(std::string& key_name, std::array<std::string,NSTATE>& q, std::array<std::string,NCONTROL>& u) 
 {
-    key_name = "arclength";
+    key_name = "road.arclength";
 
     // time
     q[ITIME]  = "time";
 
     // n
-    q[IN]     = "n";
+    q[IN]     = "road.lateral-displacement";
 
     // alpha
-    q[IALPHA] = "alpha";
+    q[IALPHA] = "road.track-heading-angle";
 }
 
 

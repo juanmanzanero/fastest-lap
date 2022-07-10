@@ -1292,7 +1292,7 @@ struct Optimal_laptime_configuration
         // Prepare control variables
         if ( doc.has_element("options/control_variables") )
         {
-            auto [key_name, q_names, qa_names, u_names] = vehicle_t::vehicle_ad_curvilinear::get_state_and_control_names();
+            auto [key_name, q_names, qa_names, u_names] = typename vehicle_t::vehicle_scalar_curvilinear{}.get_state_and_control_names();
             (void) key_name;
             (void) q_names;
             (void) qa_names;
@@ -1790,28 +1790,13 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
 
                 else if ( variable_name == "ax" )
                 {
-                    sVector3d velocity = {car_curv_sc.get_chassis().get_u(), car_curv_sc.get_chassis().get_v(), 0.0};
-            
-                    sVector3d acceleration = {car_curv_sc.get_chassis().get_du() - velocity.y()*car_curv_sc.get_chassis().get_omega(), 
-                                              car_curv_sc.get_chassis().get_dv() + velocity.x()*car_curv_sc.get_chassis().get_omega(),
-                                              0.0
-                                             };
-            
-                    data[i] = dot(velocity,acceleration)/norm(velocity);
+                    data[i] = car_curv_sc.get_chassis().get_longitudinal_acceleration();
                 }
             
                 else if ( variable_name == "ay" )
                 {
-                    sVector3d velocity = {car_curv_sc.get_chassis().get_u(), car_curv_sc.get_chassis().get_v(), 0.0};
-            
-                    sVector3d acceleration = {car_curv_sc.get_chassis().get_du() - velocity.y()*car_curv_sc.get_chassis().get_omega(), 
-                                              car_curv_sc.get_chassis().get_dv() + velocity.x()*car_curv_sc.get_chassis().get_omega(),
-                                              0.0
-                                             };
-            
-                    data[i] = cross(velocity,acceleration).z()/norm(velocity);
+                    data[i] = car_curv_sc.get_chassis().get_lateral_acceleration();
                 }
-            
 
                 else
                 {

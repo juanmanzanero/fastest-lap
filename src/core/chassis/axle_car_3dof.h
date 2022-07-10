@@ -83,8 +83,8 @@ struct STEERING
 //!  @param CONTROL0: index of the first control variable defined here
 template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t> typename Axle_mode, size_t STATE0, size_t CONTROL0>
 class Axle_car_3dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,STATE0,CONTROL0>, 
-                 public Axle_mode<Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,STATE0,CONTROL0>::STATE_END, 
-                                  Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,STATE0,CONTROL0>::CONTROL_END>
+                      public Axle_mode<Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,STATE0,CONTROL0>::STATE_END, 
+                                  Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,STATE0,CONTROL0>::CONTROL_END> 
 {
  public:
 
@@ -208,8 +208,8 @@ class Axle_car_3dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
     //! @param[out] q: the vehicle state names
     //! @param[out] u: the vehicle control names
     template<size_t NSTATE, size_t NCONTROL>
-    static void set_state_and_control_names(std::array<std::string,NSTATE>& q, 
-                                     std::array<std::string,NCONTROL>& u);
+    void set_state_and_control_names(std::array<std::string,NSTATE>& q, 
+                                     std::array<std::string,NCONTROL>& u) const;
 
     bool is_ready() const { return base_type::is_ready() && 
         std::all_of(__used_parameters.begin(), __used_parameters.end(), [](const auto& v) -> auto { return v; }); }
@@ -217,6 +217,16 @@ class Axle_car_3dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
     static std::string type() { return "axle_car_3dof"; }
 
     void fill_xml(Xml_document& doc) const;
+
+    std::unordered_map<std::string,Timeseries_t> get_outputs_map() const
+    {
+        auto map = get_outputs_map_self();
+        const auto base_type_map = base_type::get_outputs_map();
+
+        map.insert(base_type_map.cbegin(), base_type_map.cend());
+
+        return map;
+    }
 
  private:
     // Geometry
@@ -293,6 +303,13 @@ class Axle_car_3dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
     };}
 
     std::vector<bool> __used_parameters = std::vector<bool>(get_parameters().size(), false);
+
+    std::unordered_map<std::string,Timeseries_t> get_outputs_map_self() const
+    {
+        return
+        {
+        };
+    }
 
 };
 

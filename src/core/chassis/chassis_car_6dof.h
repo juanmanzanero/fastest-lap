@@ -179,15 +179,27 @@ class Chassis_car_6dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
     //! @param[out] q: the vehicle state names
     //! @param[out] u: the vehicle control names
     template<size_t NSTATE, size_t NCONTROL>
-    static void set_state_and_control_names(std::array<std::string,NSTATE>& q, 
+    void set_state_and_control_names(std::array<std::string,NSTATE>& q, 
                                      std::array<std::string,NALGEBRAIC>& qa,
-                                     std::array<std::string,NCONTROL>& u);
+                                     std::array<std::string,NCONTROL>& u) const;
 
 
     bool is_ready() const { return base_type::is_ready() && 
         std::all_of(__used_parameters.begin(), __used_parameters.end(), [](const auto& v) -> auto { return v; }); }
 
     static std::string type() { return "chassis_car_6dof"; }
+
+    std::unordered_map<std::string,Timeseries_t> get_outputs_map() const
+    {
+        auto map = get_outputs_map_self();
+        const auto base_type_map = base_type::get_outputs_map();
+
+        map.insert(base_type_map.cbegin(), base_type_map.cend());
+
+        return map;
+    }
+
+
  private:
     //! Compute the left hand side of Newton's equations (linear momentum derivative)
     Vector3d<Timeseries_t> Newton_lhs() const;
@@ -224,6 +236,15 @@ class Chassis_car_6dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
         { "front_axle", _x_front_axle },
         { "rear_axle", _x_rear_axle },
     ); 
+
+    std::unordered_map<std::string,Timeseries_t> get_outputs_map_self() const
+    {
+        return
+        {
+        };
+    }
+
+
 };
 
 #include "chassis_car_6dof.hpp"

@@ -103,8 +103,8 @@ class Dynamic_model_car : public Dynamic_model<Timeseries_t>
                         const std::array<scalar,_NCONTROL>& u,
                         scalar t);
 
-    static std::tuple<std::string,std::array<std::string,_NSTATE>,std::array<std::string,Chassis_t::NALGEBRAIC>,std::array<std::string,_NCONTROL>> 
-        get_state_and_control_names();
+    std::tuple<std::string,std::array<std::string,_NSTATE>,std::array<std::string,Chassis_t::NALGEBRAIC>,std::array<std::string,_NCONTROL>> 
+        get_state_and_control_names() const;
 
     //! Get state and control upper and lower values
     struct State_and_control_upper_lower_and_default_values
@@ -143,6 +143,8 @@ class Dynamic_model_car : public Dynamic_model<Timeseries_t>
 
         return doc_ptr;
     }
+
+    std::unordered_map<std::string,Timeseries_t> get_outputs_map() const { return _chassis.get_outputs_map(); }
 
  private:
     Chassis_t _chassis;    //! The chassis
