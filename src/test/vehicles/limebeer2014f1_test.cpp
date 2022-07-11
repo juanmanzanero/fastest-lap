@@ -929,3 +929,10 @@ TEST_F(limebeer2014f1_test, get_outputs_map)
         std::cout << kv.first << std::endl;
     }
 }
+
+TEST_F(limebeer2014f1_test, parameters_all_used_test)
+{
+    EXPECT_NO_THROW(limebeer2014f1<double>::curvilinear_p car_sc(database));
+    database.add_element("vehicle/test_element");
+    EXPECT_THROW(limebeer2014f1<double>::curvilinear_p car_sc(database), fastest_lap_exception);
+}
