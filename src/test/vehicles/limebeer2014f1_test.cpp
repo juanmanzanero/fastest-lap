@@ -246,9 +246,6 @@ TEST_F(limebeer2014f1_test, is_not_ready)
 }
 
 
-
-
-
 TEST_F(limebeer2014f1_test, jacobian_autodiff)
 {
     limebeer2014f1<CppAD::AD<double>>::cartesian car_ad(database);
@@ -526,23 +523,23 @@ TEST_F(limebeer2014f1_test, set_parameter)
     // Check the results with a saved simulation
     Xml_document opt_saved("data/f1_optimal_laptime_catalunya_discrete.xml", true);
 
-    auto arclength_saved = opt_saved.get_element("optimal_laptime/arclength").get_value(std::vector<scalar>());
-    auto kappa_fl_saved = opt_saved.get_element("optimal_laptime/steering-kappa-left").get_value(std::vector<scalar>());
-    auto kappa_fr_saved = opt_saved.get_element("optimal_laptime/steering-kappa-right").get_value(std::vector<scalar>());
-    auto kappa_rl_saved = opt_saved.get_element("optimal_laptime/powered-kappa-left").get_value(std::vector<scalar>());
-    auto kappa_rr_saved = opt_saved.get_element("optimal_laptime/powered-kappa-right").get_value(std::vector<scalar>());
-    auto u_saved        = opt_saved.get_element("optimal_laptime/u").get_value(std::vector<scalar>());
-    auto v_saved        = opt_saved.get_element("optimal_laptime/v").get_value(std::vector<scalar>());
-    auto omega_saved    = opt_saved.get_element("optimal_laptime/omega").get_value(std::vector<scalar>());
+    auto arclength_saved = opt_saved.get_element("optimal_laptime/road.arclength").get_value(std::vector<scalar>());
+    auto kappa_fl_saved = opt_saved.get_element("optimal_laptime/front-axle.left-tire.kappa").get_value(std::vector<scalar>());
+    auto kappa_fr_saved = opt_saved.get_element("optimal_laptime/front-axle.right-tire.kappa").get_value(std::vector<scalar>());
+    auto kappa_rl_saved = opt_saved.get_element("optimal_laptime/rear-axle.left-tire.kappa").get_value(std::vector<scalar>());
+    auto kappa_rr_saved = opt_saved.get_element("optimal_laptime/rear-axle.right-tire.kappa").get_value(std::vector<scalar>());
+    auto u_saved        = opt_saved.get_element("optimal_laptime/chassis.velocity.x").get_value(std::vector<scalar>());
+    auto v_saved        = opt_saved.get_element("optimal_laptime/chassis.velocity.y").get_value(std::vector<scalar>());
+    auto omega_saved    = opt_saved.get_element("optimal_laptime/chassis.omega.z").get_value(std::vector<scalar>());
     auto time_saved     = opt_saved.get_element("optimal_laptime/time").get_value(std::vector<scalar>());
-    auto n_saved        = opt_saved.get_element("optimal_laptime/n").get_value(std::vector<scalar>());
-    auto alpha_saved    = opt_saved.get_element("optimal_laptime/alpha").get_value(std::vector<scalar>());
-    auto delta_saved    = opt_saved.get_element("optimal_laptime/delta").get_value(std::vector<scalar>());
-    auto throttle_saved = opt_saved.get_element("optimal_laptime/throttle").get_value(std::vector<scalar>());
-    auto Fz_fl_saved    = opt_saved.get_element("optimal_laptime/Fz_fl").get_value(std::vector<scalar>());
-    auto Fz_fr_saved    = opt_saved.get_element("optimal_laptime/Fz_fr").get_value(std::vector<scalar>());
-    auto Fz_rl_saved    = opt_saved.get_element("optimal_laptime/Fz_rl").get_value(std::vector<scalar>());
-    auto Fz_rr_saved    = opt_saved.get_element("optimal_laptime/Fz_rr").get_value(std::vector<scalar>());
+    auto n_saved        = opt_saved.get_element("optimal_laptime/road.lateral-displacement").get_value(std::vector<scalar>());
+    auto alpha_saved    = opt_saved.get_element("optimal_laptime/road.track-heading-angle").get_value(std::vector<scalar>());
+    auto delta_saved    = opt_saved.get_element("optimal_laptime/control_variables/front-axle.steering-angle/values").get_value(std::vector<scalar>());
+    auto throttle_saved = opt_saved.get_element("optimal_laptime/control_variables/chassis.throttle/values").get_value(std::vector<scalar>());
+    auto Fz_fl_saved    = opt_saved.get_element("optimal_laptime/chassis.Fz_fl").get_value(std::vector<scalar>());
+    auto Fz_fr_saved    = opt_saved.get_element("optimal_laptime/chassis.Fz_fr").get_value(std::vector<scalar>());
+    auto Fz_rl_saved    = opt_saved.get_element("optimal_laptime/chassis.Fz_rl").get_value(std::vector<scalar>());
+    auto Fz_rr_saved    = opt_saved.get_element("optimal_laptime/chassis.Fz_rr").get_value(std::vector<scalar>());
 
     for (size_t i = 0; i < n; ++i)
     {
@@ -664,23 +661,23 @@ TEST_F(limebeer2014f1_test, set_parameter_c_api)
     // Check the results with a saved simulation
     Xml_document opt_saved("data/f1_optimal_laptime_catalunya_discrete.xml", true);
 
-    auto arclength_saved = opt_saved.get_element("optimal_laptime/arclength").get_value(std::vector<scalar>());
-    auto kappa_fl_saved = opt_saved.get_element("optimal_laptime/steering-kappa-left").get_value(std::vector<scalar>());
-    auto kappa_fr_saved = opt_saved.get_element("optimal_laptime/steering-kappa-right").get_value(std::vector<scalar>());
-    auto kappa_rl_saved = opt_saved.get_element("optimal_laptime/powered-kappa-left").get_value(std::vector<scalar>());
-    auto kappa_rr_saved = opt_saved.get_element("optimal_laptime/powered-kappa-right").get_value(std::vector<scalar>());
-    auto u_saved        = opt_saved.get_element("optimal_laptime/u").get_value(std::vector<scalar>());
-    auto v_saved        = opt_saved.get_element("optimal_laptime/v").get_value(std::vector<scalar>());
-    auto omega_saved    = opt_saved.get_element("optimal_laptime/omega").get_value(std::vector<scalar>());
+    auto arclength_saved = opt_saved.get_element("optimal_laptime/road.arclength").get_value(std::vector<scalar>());
+    auto kappa_fl_saved = opt_saved.get_element("optimal_laptime/front-axle.left-tire.kappa").get_value(std::vector<scalar>());
+    auto kappa_fr_saved = opt_saved.get_element("optimal_laptime/front-axle.right-tire.kappa").get_value(std::vector<scalar>());
+    auto kappa_rl_saved = opt_saved.get_element("optimal_laptime/rear-axle.left-tire.kappa").get_value(std::vector<scalar>());
+    auto kappa_rr_saved = opt_saved.get_element("optimal_laptime/rear-axle.right-tire.kappa").get_value(std::vector<scalar>());
+    auto u_saved        = opt_saved.get_element("optimal_laptime/chassis.velocity.x").get_value(std::vector<scalar>());
+    auto v_saved        = opt_saved.get_element("optimal_laptime/chassis.velocity.y").get_value(std::vector<scalar>());
+    auto omega_saved    = opt_saved.get_element("optimal_laptime/chassis.omega.z").get_value(std::vector<scalar>());
     auto time_saved     = opt_saved.get_element("optimal_laptime/time").get_value(std::vector<scalar>());
-    auto n_saved        = opt_saved.get_element("optimal_laptime/n").get_value(std::vector<scalar>());
-    auto alpha_saved    = opt_saved.get_element("optimal_laptime/alpha").get_value(std::vector<scalar>());
-    auto delta_saved    = opt_saved.get_element("optimal_laptime/delta").get_value(std::vector<scalar>());
-    auto throttle_saved = opt_saved.get_element("optimal_laptime/throttle").get_value(std::vector<scalar>());
-    auto Fz_fl_saved    = opt_saved.get_element("optimal_laptime/Fz_fl").get_value(std::vector<scalar>());
-    auto Fz_fr_saved    = opt_saved.get_element("optimal_laptime/Fz_fr").get_value(std::vector<scalar>());
-    auto Fz_rl_saved    = opt_saved.get_element("optimal_laptime/Fz_rl").get_value(std::vector<scalar>());
-    auto Fz_rr_saved    = opt_saved.get_element("optimal_laptime/Fz_rr").get_value(std::vector<scalar>());
+    auto n_saved        = opt_saved.get_element("optimal_laptime/road.lateral-displacement").get_value(std::vector<scalar>());
+    auto alpha_saved    = opt_saved.get_element("optimal_laptime/road.track-heading-angle").get_value(std::vector<scalar>());
+    auto delta_saved    = opt_saved.get_element("optimal_laptime/control_variables/front-axle.steering-angle/values").get_value(std::vector<scalar>());
+    auto throttle_saved = opt_saved.get_element("optimal_laptime/control_variables/chassis.throttle/values").get_value(std::vector<scalar>());
+    auto Fz_fl_saved    = opt_saved.get_element("optimal_laptime/chassis.Fz_fl").get_value(std::vector<scalar>());
+    auto Fz_fr_saved    = opt_saved.get_element("optimal_laptime/chassis.Fz_fr").get_value(std::vector<scalar>());
+    auto Fz_rl_saved    = opt_saved.get_element("optimal_laptime/chassis.Fz_rl").get_value(std::vector<scalar>());
+    auto Fz_rr_saved    = opt_saved.get_element("optimal_laptime/chassis.Fz_rr").get_value(std::vector<scalar>());
 
     for (size_t i = 0; i < n; ++i)
     {
@@ -726,23 +723,23 @@ TEST_F(limebeer2014f1_test,propagation_crank_nicolson)
     // Get the results from a saved simulation
     Xml_document opt_saved("data/f1_optimal_laptime_catalunya_discrete.xml", true);
 
-    auto arclength_saved = opt_saved.get_element("optimal_laptime/arclength").get_value(std::vector<scalar>());
-    auto kappa_fl_saved = opt_saved.get_element("optimal_laptime/steering-kappa-left").get_value(std::vector<scalar>());
-    auto kappa_fr_saved = opt_saved.get_element("optimal_laptime/steering-kappa-right").get_value(std::vector<scalar>());
-    auto kappa_rl_saved = opt_saved.get_element("optimal_laptime/powered-kappa-left").get_value(std::vector<scalar>());
-    auto kappa_rr_saved = opt_saved.get_element("optimal_laptime/powered-kappa-right").get_value(std::vector<scalar>());
-    auto u_saved        = opt_saved.get_element("optimal_laptime/u").get_value(std::vector<scalar>());
-    auto v_saved        = opt_saved.get_element("optimal_laptime/v").get_value(std::vector<scalar>());
-    auto omega_saved    = opt_saved.get_element("optimal_laptime/omega").get_value(std::vector<scalar>());
+    auto arclength_saved = opt_saved.get_element("optimal_laptime/road.arclength").get_value(std::vector<scalar>());
+    auto kappa_fl_saved = opt_saved.get_element("optimal_laptime/front-axle.left-tire.kappa").get_value(std::vector<scalar>());
+    auto kappa_fr_saved = opt_saved.get_element("optimal_laptime/front-axle.right-tire.kappa").get_value(std::vector<scalar>());
+    auto kappa_rl_saved = opt_saved.get_element("optimal_laptime/rear-axle.left-tire.kappa").get_value(std::vector<scalar>());
+    auto kappa_rr_saved = opt_saved.get_element("optimal_laptime/rear-axle.right-tire.kappa").get_value(std::vector<scalar>());
+    auto u_saved        = opt_saved.get_element("optimal_laptime/chassis.velocity.x").get_value(std::vector<scalar>());
+    auto v_saved        = opt_saved.get_element("optimal_laptime/chassis.velocity.y").get_value(std::vector<scalar>());
+    auto omega_saved    = opt_saved.get_element("optimal_laptime/chassis.omega.z").get_value(std::vector<scalar>());
     auto time_saved     = opt_saved.get_element("optimal_laptime/time").get_value(std::vector<scalar>());
-    auto n_saved        = opt_saved.get_element("optimal_laptime/n").get_value(std::vector<scalar>());
-    auto alpha_saved    = opt_saved.get_element("optimal_laptime/alpha").get_value(std::vector<scalar>());
-    auto delta_saved    = opt_saved.get_element("optimal_laptime/delta").get_value(std::vector<scalar>());
-    auto throttle_saved = opt_saved.get_element("optimal_laptime/throttle").get_value(std::vector<scalar>());
-    auto Fz_fl_saved    = opt_saved.get_element("optimal_laptime/Fz_fl").get_value(std::vector<scalar>());
-    auto Fz_fr_saved    = opt_saved.get_element("optimal_laptime/Fz_fr").get_value(std::vector<scalar>());
-    auto Fz_rl_saved    = opt_saved.get_element("optimal_laptime/Fz_rl").get_value(std::vector<scalar>());
-    auto Fz_rr_saved    = opt_saved.get_element("optimal_laptime/Fz_rr").get_value(std::vector<scalar>());
+    auto n_saved        = opt_saved.get_element("optimal_laptime/road.lateral-displacement").get_value(std::vector<scalar>());
+    auto alpha_saved    = opt_saved.get_element("optimal_laptime/road.track-heading-angle").get_value(std::vector<scalar>());
+    auto delta_saved    = opt_saved.get_element("optimal_laptime/control_variables/front-axle.steering-angle/values").get_value(std::vector<scalar>());
+    auto throttle_saved = opt_saved.get_element("optimal_laptime/control_variables/chassis.throttle/values").get_value(std::vector<scalar>());
+    auto Fz_fl_saved    = opt_saved.get_element("optimal_laptime/chassis.Fz_fl").get_value(std::vector<scalar>());
+    auto Fz_fr_saved    = opt_saved.get_element("optimal_laptime/chassis.Fz_fr").get_value(std::vector<scalar>());
+    auto Fz_rl_saved    = opt_saved.get_element("optimal_laptime/chassis.Fz_rl").get_value(std::vector<scalar>());
+    auto Fz_rr_saved    = opt_saved.get_element("optimal_laptime/chassis.Fz_rr").get_value(std::vector<scalar>());
 
     // Take a Crank-Nicolson step on i = 112
     const size_t i_start = 112;
@@ -832,23 +829,23 @@ TEST_F(limebeer2014f1_test,propagation_crank_nicolson_corner_exit)
     // Get the results from a saved simulation
     Xml_document opt_saved("data/f1_optimal_laptime_catalunya_discrete.xml", true);
 
-    auto arclength_saved = opt_saved.get_element("optimal_laptime/arclength").get_value(std::vector<scalar>());
-    auto kappa_fl_saved = opt_saved.get_element("optimal_laptime/steering-kappa-left").get_value(std::vector<scalar>());
-    auto kappa_fr_saved = opt_saved.get_element("optimal_laptime/steering-kappa-right").get_value(std::vector<scalar>());
-    auto kappa_rl_saved = opt_saved.get_element("optimal_laptime/powered-kappa-left").get_value(std::vector<scalar>());
-    auto kappa_rr_saved = opt_saved.get_element("optimal_laptime/powered-kappa-right").get_value(std::vector<scalar>());
-    auto u_saved        = opt_saved.get_element("optimal_laptime/u").get_value(std::vector<scalar>());
-    auto v_saved        = opt_saved.get_element("optimal_laptime/v").get_value(std::vector<scalar>());
-    auto omega_saved    = opt_saved.get_element("optimal_laptime/omega").get_value(std::vector<scalar>());
+    auto arclength_saved = opt_saved.get_element("optimal_laptime/road.arclength").get_value(std::vector<scalar>());
+    auto kappa_fl_saved = opt_saved.get_element("optimal_laptime/front-axle.left-tire.kappa").get_value(std::vector<scalar>());
+    auto kappa_fr_saved = opt_saved.get_element("optimal_laptime/front-axle.right-tire.kappa").get_value(std::vector<scalar>());
+    auto kappa_rl_saved = opt_saved.get_element("optimal_laptime/rear-axle.left-tire.kappa").get_value(std::vector<scalar>());
+    auto kappa_rr_saved = opt_saved.get_element("optimal_laptime/rear-axle.right-tire.kappa").get_value(std::vector<scalar>());
+    auto u_saved        = opt_saved.get_element("optimal_laptime/chassis.velocity.x").get_value(std::vector<scalar>());
+    auto v_saved        = opt_saved.get_element("optimal_laptime/chassis.velocity.y").get_value(std::vector<scalar>());
+    auto omega_saved    = opt_saved.get_element("optimal_laptime/chassis.omega.z").get_value(std::vector<scalar>());
     auto time_saved     = opt_saved.get_element("optimal_laptime/time").get_value(std::vector<scalar>());
-    auto n_saved        = opt_saved.get_element("optimal_laptime/n").get_value(std::vector<scalar>());
-    auto alpha_saved    = opt_saved.get_element("optimal_laptime/alpha").get_value(std::vector<scalar>());
-    auto delta_saved    = opt_saved.get_element("optimal_laptime/delta").get_value(std::vector<scalar>());
-    auto throttle_saved = opt_saved.get_element("optimal_laptime/throttle").get_value(std::vector<scalar>());
-    auto Fz_fl_saved    = opt_saved.get_element("optimal_laptime/Fz_fl").get_value(std::vector<scalar>());
-    auto Fz_fr_saved    = opt_saved.get_element("optimal_laptime/Fz_fr").get_value(std::vector<scalar>());
-    auto Fz_rl_saved    = opt_saved.get_element("optimal_laptime/Fz_rl").get_value(std::vector<scalar>());
-    auto Fz_rr_saved    = opt_saved.get_element("optimal_laptime/Fz_rr").get_value(std::vector<scalar>());
+    auto n_saved        = opt_saved.get_element("optimal_laptime/road.lateral-displacement").get_value(std::vector<scalar>());
+    auto alpha_saved    = opt_saved.get_element("optimal_laptime/road.track-heading-angle").get_value(std::vector<scalar>());
+    auto delta_saved    = opt_saved.get_element("optimal_laptime/control_variables/front-axle.steering-angle/values").get_value(std::vector<scalar>());
+    auto throttle_saved = opt_saved.get_element("optimal_laptime/control_variables/chassis.throttle/values").get_value(std::vector<scalar>());
+    auto Fz_fl_saved    = opt_saved.get_element("optimal_laptime/chassis.Fz_fl").get_value(std::vector<scalar>());
+    auto Fz_fr_saved    = opt_saved.get_element("optimal_laptime/chassis.Fz_fr").get_value(std::vector<scalar>());
+    auto Fz_rl_saved    = opt_saved.get_element("optimal_laptime/chassis.Fz_rl").get_value(std::vector<scalar>());
+    auto Fz_rr_saved    = opt_saved.get_element("optimal_laptime/chassis.Fz_rr").get_value(std::vector<scalar>());
 
     // Take a Crank-Nicolson step on i = 325
     const size_t i_start = 101;
