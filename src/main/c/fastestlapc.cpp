@@ -873,6 +873,63 @@ void download_vector(double* data, const int n, const char* name_c)
 }
 
 
+int vehicle_get_number_of_output_variables(const char* c_vehicle_name)
+{
+ try
+ {
+    const std::string vehicle_name = c_vehicle_name;
+
+    if ( table_f1_3dof.count(vehicle_name) != 0 )
+    {
+        return table_f1_3dof.at(vehicle_name).curvilinear_scalar.get_outputs_map().size();
+    }
+    else if ( table_kart_6dof.count(vehicle_name) != 0 )
+    {
+        return table_kart_6dof.at(vehicle_name).curvilinear_scalar.get_outputs_map().size();
+    }
+    else
+    {
+        throw fastest_lap_exception("[ERROR] vehicle_get_number_of_output_variables -> No vehicle with name \"" + vehicle_name + "\" was found");
+    }
+ }
+ CATCH()
+}
+
+
+void vehicle_get_output_variable_names(char* output_names[], const int n_outputs, const int n_char, const char* c_vehicle_name)
+{
+ try
+ {
+    const std::string vehicle_name = c_vehicle_name;
+    std::unordered_map<std::string,scalar> map;
+    if ( table_f1_3dof.count(vehicle_name) != 0 )
+    {
+        map = table_f1_3dof.at(vehicle_name).curvilinear_scalar.get_outputs_map();
+    }
+    else if ( table_kart_6dof.count(vehicle_name) != 0 )
+    {
+        map = table_kart_6dof.at(vehicle_name).curvilinear_scalar.get_outputs_map();
+    }
+    else
+    {
+        throw fastest_lap_exception("[ERROR] vehicle_get_output_variable_names -> No vehicle with name \"" + vehicle_name + "\" was found");
+    }
+
+    if ( n_outputs != map.size() )
+    {
+        throw fastest_lap_exception("[ERROR] vehicle_get_output_variable_names -> number of outputs provided differs to the map size");
+    }
+    
+    size_t i = 0;
+    for (const auto& [key, val] : map)
+    {
+        strcpy(output_names[i++],key.c_str());
+    }
+ }
+ CATCH()
+}
+
+
 void create_vector(const char* name_c, const int n, double* data)
 {
  try

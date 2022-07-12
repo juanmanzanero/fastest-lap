@@ -8,9 +8,22 @@
 class Engine_curve : public ::testing::Test
 {
  protected:
+    Engine_curve()
+    {
+        database.create_root_element("vehicle");
 
-    Xml_document database = { "data/kart-sample.xml", true };
-    Engine<scalar> _engine = {database,"vehicle/rear-axle/engine/",false};
+        database.add_element("vehicle/rear-axle/engine/rpm-data").set_value("10049.296 10225.352 10478.873 10774.648 10943.662 11169.014 11535.211 11929.577 "
+                "12197.183 12464.789 12690.141 12971.831 13183.099 13366.197 13507.042 13647.887 "
+                "13746.479 13816.901 13859.155 13901.408 14007.042");
+        database.add_element("vehicle/rear-axle/engine/power-data").set_value("14.828 17.724 22.138 26.552 29.31  32.897 35.931 "
+                "38.414 40.207 42.138 44.483 46.276 44.897 42 "
+                "39.655 36.207 33.31  30.276 27.103 24.207 20.345");
+        database.add_element("vehicle/rear-axle/engine/gear-ratio").set_value("8.15");
+        _engine = Engine<scalar>(database, "vehicle/rear-axle/engine/",false);
+    }
+
+    Xml_document database ;
+    Engine<scalar> _engine;
 };
 
 

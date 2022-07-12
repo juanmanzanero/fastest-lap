@@ -927,6 +927,52 @@ TEST_F(limebeer2014f1_test, get_outputs_map)
     }
 }
 
+
+#ifdef TEST_LIBFASTESTLAPC
+
+TEST_F(limebeer2014f1_test, get_vehicle_number_of_outputs_c_api)
+{
+    if (is_valgrind) GTEST_SKIP();
+    create_vehicle_from_xml("test", "./database/vehicles/f1/limebeer-2014-f1.xml");
+    limebeer2014f1<double>::curvilinear_p car_cpp(database);
+
+    EXPECT_EQ(car_cpp.get_outputs_map().size(), vehicle_get_number_of_output_variables("test"));
+    
+    delete_variable("test");
+}
+
+TEST_F(limebeer2014f1_test, get_vehicle_output_variable_names_c_api)
+{
+    if (is_valgrind) GTEST_SKIP();
+    create_vehicle_from_xml("test", "./database/vehicles/f1/limebeer-2014-f1.xml");
+    limebeer2014f1<double>::curvilinear_p car_cpp(database);
+
+    const size_t n_outputs = car_cpp.get_outputs_map().size();
+    EXPECT_EQ(car_cpp.get_outputs_map().size(), vehicle_get_number_of_output_variables("test"));
+
+    constexpr const size_t str_length = 60;
+    
+    char** output_names = new char*[n_outputs];
+
+    for (size_t i = 0; i < n_outputs; ++i)
+        output_names[i] = new char[str_length];
+
+    vehicle_get_output_variable_names(output_names, n_outputs, 60, "test");
+
+    size_t i = 0;
+    for (const auto& [key,val] : car_cpp.get_outputs_map())
+        EXPECT_EQ(std::string(output_names[i++]), key);
+
+    for (size_t i = 0; i < n_outputs; ++i)
+        delete[] output_names[i];
+
+    delete[] output_names;
+    
+    delete_variable("test");
+}
+
+#endif
+
 TEST_F(limebeer2014f1_test, parameters_all_used_test)
 {
     EXPECT_NO_THROW(limebeer2014f1<double>::curvilinear_p car_sc(database));
