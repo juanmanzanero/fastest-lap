@@ -27,7 +27,18 @@
             <max_torque units="N.m">200.0</max_torque>
         </brakes>
         <engine>
-            <maximum-power units="kW"> 6.61949 </maximum-power>
+            <maximum-power units="kW"> 20.1 </maximum-power>
+            <gear-ratio>8.15</gear-ratio>
+            <power-data>
+                14.828 17.724 22.138 26.552 29.31  32.897 35.931
+                38.414 40.207 42.138 44.483 46.276 44.897 42    
+                39.655 36.207 33.31  30.276 27.103 24.207 20.345 
+            </power-data>
+            <rpm-data>
+                10049.296 10225.352 10478.873 10774.648 10943.662 11169.014 11535.211 11929.577 
+                12197.183 12464.789 12690.141 12971.831 13183.099 13366.197 13507.042 13647.887 
+                13746.479 13816.901 13859.155 13901.408 14007.042 
+            </rpm-data>
         </engine>
     </rear-axle>
 
@@ -35,7 +46,7 @@
         <com>0.0 0.0 -0.25</com>
         <front_axle>0.645 0.0 0.111</front_axle>
         <rear_axle>-0.4 0.0 0.111</rear_axle>
-        <mass>300.0</mass>
+        <mass>165.0</mass>
         <inertia>
             <Ixx> 20.0 </Ixx>  <Ixy> 0.0  </Ixy> <Ixz> 5.0  </Ixz>
             <Iyx> 0.0  </Iyx>  <Iyy> 15.0 </Iyy> <Iyz> 0.0  </Iyz>
@@ -73,7 +84,7 @@
         <lateral>
             <pure>
                 <pCy1>2.3</pCy1>
-                <pDy1>1.25</pDy1>
+                <pDy1>1.5</pDy1>
                 <pEy1>0.9</pEy1>
                 <pKy1>37.6</pKy1> <!-- I have changed its sign -->
                 <pKy2>1.6</pKy2>
@@ -110,7 +121,7 @@
         <lateral>
             <pure>
                 <pCy1>2.13</pCy1>
-                <pDy1>1.30</pDy1>
+                <pDy1>1.5</pDy1>
                 <pEy1>0.8</pEy1>
                 <pKy1>34.1</pKy1> <!-- I have changed its sign -->
                 <pKy2>1.6</pKy2>
