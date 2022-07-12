@@ -915,7 +915,7 @@ void vehicle_get_output_variable_names(char* output_names[], const int n_outputs
         throw fastest_lap_exception("[ERROR] vehicle_get_output_variable_names -> No vehicle with name \"" + vehicle_name + "\" was found");
     }
 
-    if ( n_outputs != map.size() )
+    if ( static_cast<size_t>(n_outputs) != map.size() )
     {
         throw fastest_lap_exception("[ERROR] vehicle_get_output_variable_names -> number of outputs provided differs to the map size");
     }

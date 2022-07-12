@@ -124,6 +124,26 @@ def download_vector(name):
 
 	return data;
 
+def vehicle_get_output_variable_names(vehicle_name):
+        c_vehicle_name = c.c_char_p((vehicle_name).encode('utf-8'))
+        n_outputs = c_lib.vehicle_get_number_of_output_variables(c_vehicle_name);
+        string_size = 99;
+        
+        output_names = [None]*n_outputs;
+        
+        for i in range(n_outputs):
+                output_names[i] = (" "*string_size).encode('utf-8');
+        
+        c_output_names = (c.c_char_p*n_outputs)();
+        c_output_names[:] = output_names;
+
+        c_lib.vehicle_get_output_variable_names(c_output_names, n_outputs, string_size, c_vehicle_name)
+
+        for i in range(n_outputs):
+                output_names[i] = c_output_names[i].decode();
+
+        return output_names;
+
 def vehicle_get_property(vehicle_name, q, qa, u, s, property_name):
 	c_vehicle_name = c.c_char_p((vehicle_name).encode('utf-8'))	
 	c_property_name = c.c_char_p((property_name).encode('utf-8'))	
