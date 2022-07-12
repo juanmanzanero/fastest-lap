@@ -16,12 +16,17 @@ inline Engine<Timeseries_t>::Engine(Xml_document& database, const std::string& p
     else
     {
         _gear_ratio = database.get_element(path+"gear-ratio").get_value(double());
-    
+        database.get_element(path+"gear-ratio").set_attribute("__unused__","false");
+
         std::vector<scalar> speed = database.get_element(path+"rpm-data").get_value(std::vector<double>())*RPM;
+        database.get_element(path+"rpm-data").set_attribute("__unused__","false");
+
         std::vector<scalar> p = database.get_element(path+"power-data").get_value(std::vector<double>())*CV;
+        database.get_element(path+"power-data").set_attribute("__unused__","false");
+
         _p = sPolynomial(speed,p,speed.size()-1,true);
     } 
-    
+
     _direct_torque = false;
 }
 

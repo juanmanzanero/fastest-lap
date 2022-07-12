@@ -52,7 +52,16 @@ class Dynamic_model_car : public Dynamic_model<Timeseries_t>
     //! @param[in] rear_right_tire_type: type of the rear right tire 
     //! @param[in] road: the road
     Dynamic_model_car(Xml_document& database, const RoadModel_t& road = RoadModel_t()) 
-        : _chassis(database), _road(road) {};
+        : _chassis(database), _road(road)
+    {
+        if( !database_parameters_all_used(database.get_root_element()) )
+        {
+            std::ostringstream s_out;
+            s_out << "[ERROR] Dynamic_model_car -> not all parameters were used" << std::endl;
+            database.print(s_out);
+            throw fastest_lap_exception(s_out.str());
+        }
+    }
 
     //! Modifyer to set a parameter
     template<typename T>
