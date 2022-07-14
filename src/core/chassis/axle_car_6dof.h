@@ -108,6 +108,12 @@ class Axle_car_6dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
     //! Default constructor
     Axle_car_6dof() = default;
 
+    Axle_car_6dof(const std::string& name, 
+             const Tire_left_t& tire_l,
+             const Tire_right_t& tire_r,
+             const std::string& path=""
+            );
+
     //! Constructor
     //! @param[in] name: name given to the axle for identification (e.g. front, rear)
     //! @param[in] tire_l: left tire
@@ -326,11 +332,20 @@ class Axle_car_6dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
 
     std::vector<bool> __used_parameters = std::vector<bool>(get_parameters().size(), false);
 
-    std::unordered_map<std::string,Timeseries_t> get_outputs_map_self() const
+    template<typename T = Axle_mode<0,0>>
+    std::enable_if_t<std::is_same<T,POWERED_WITHOUT_DIFFERENTIAL<0,0>>::value,std::unordered_map<std::string,Timeseries_t>> 
+    get_outputs_map_self() const
     {
         return
         {
         };
+    }
+
+    template<typename T = Axle_mode<0,0>>
+    std::enable_if_t<std::is_same<T,STEERING_FREE_ROLL<0,0>>::value,std::unordered_map<std::string,Timeseries_t>> 
+    get_outputs_map_self() const
+    {
+        return {};
     }
 };
 

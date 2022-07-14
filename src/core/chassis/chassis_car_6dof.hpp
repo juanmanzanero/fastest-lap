@@ -4,6 +4,31 @@
 #include "src/core/foundation/fastest_lap_exception.h"
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
+inline Chassis_car_6dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::Chassis_car_6dof()
+: base_type(FrontAxle_t("front-axle",
+            typename FrontAxle_t::Tire_left_type("front-axle.left-tire", "vehicle/front-tire/"),
+            typename FrontAxle_t::Tire_right_type("front-axle.right-tire", "vehicle/front-tire/"),
+            "vehicle/front-axle/"),
+            RearAxle_t("rear-axle", 
+            typename RearAxle_t::Tire_left_type("rear-axle.left-tire", "vehicle/rear-tire/"),
+            typename RearAxle_t::Tire_right_type("rear-axle.right-tire", "vehicle/rear-tire/"),
+            "vehicle/rear-axle/"),
+            "vehicle/chassis/") 
+{
+    // Chassis frame must have zero rotations
+    if ( base_type::get_chassis_frame().get_rotation_angles().size() != 0 )
+        throw fastest_lap_exception("Chassis frame must have cero rotations for Chassis_car_6dof");
+
+    // Set chassis frame position and velocity (it does not matter before calling update())
+    base_type::get_chassis_frame().set_origin(get_com_position(), get_com_velocity()); 
+
+    // Set axles frame position and velocity
+    base_type::get_front_axle().get_frame().set_origin(get_front_axle_position(), get_front_axle_velocity());
+    base_type::get_rear_axle().get_frame().set_origin(get_rear_axle_position(), get_rear_axle_velocity());
+}
+
+
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
 inline Chassis_car_6dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::Chassis_car_6dof(const FrontAxle_t& front_axle, 
                                                          const RearAxle_t& rear_axle,
                                                          Xml_document& database,
@@ -30,18 +55,16 @@ _phi(0.0), _dphi(0.0), _d2phi(0.0)
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
 inline Chassis_car_6dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::Chassis_car_6dof(Xml_document& database)
 : Chassis_car_6dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>(
-           FrontAxle_t("front axle",
-                       typename FrontAxle_t::Tire_left_type("front left tire", database, "vehicle/front-tire/"),
-                       typename FrontAxle_t::Tire_right_type("front right tire", database, "vehicle/front-tire/"),
+           FrontAxle_t("front-axle",
+                       typename FrontAxle_t::Tire_left_type("front-axle.left-tire", database, "vehicle/front-tire/"),
+                       typename FrontAxle_t::Tire_right_type("front-axle.right-tire", database, "vehicle/front-tire/"),
                        database, "vehicle/front-axle/"),
-           RearAxle_t("rear axle", 
-                      typename RearAxle_t::Tire_left_type("rear left tire", database, "vehicle/rear-tire/"),
-                      typename RearAxle_t::Tire_right_type("rear right tire", database, "vehicle/rear-tire/"),
+           RearAxle_t("rear-axle", 
+                      typename RearAxle_t::Tire_left_type("rear-axle.left-tire", database, "vehicle/rear-tire/"),
+                      typename RearAxle_t::Tire_right_type("rear-axle.right-tire", database, "vehicle/rear-tire/"),
                       database, "vehicle/rear-axle/"),
-           database, "vehicle/chassis/")
+           database, "vehicle/chassis/") 
 {}
-
-
 
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>

@@ -156,8 +156,6 @@ class Tire
     Frame<Timeseries_t>  _frame;  //! [in] A frame with origin in the tire road contact point 
     scalar _R0;     //! [c] Tire nominal radius [m]
 
-    scalar _um = 0.2;   //! [c] Marginal velocity, the denominator of kappa and lambda for low velocities
-
     DECLARE_PARAMS(
         { "radius", _R0 }
     ); 
@@ -176,7 +174,8 @@ class Tire
             {_name + ".dissipation", get_dissipation()}, 
             {_name + ".force.x", get_force().at(0)},
             {_name + ".force.y", get_force().at(1)},
-            {_name + ".force.z", get_force().at(2)} 
+            {_name + ".force.z", get_force().at(2)}, 
+            {_name + ".omega", _omega} 
         };
     }
 
@@ -185,20 +184,20 @@ class Tire
  protected:
 
     // Inputs
-    Timeseries_t _omega;  //! [in] Tire angular velocity [rad/s]
+    Timeseries_t _omega = 0.0;  //! [in] Tire angular velocity [rad/s]
 
     // Outputs
-    Timeseries_t _w;      //! [out] Tire vertical deformation: w = R0 + zC [m]
-    Timeseries_t _dw;     //! [out] Tire vertical deformation derivative   [m/s]
-    Vector3d<Timeseries_t>  _v;      //! [out] Absolute velocity of the contact point in body frame [m/s].
+    Timeseries_t _w = 0.0;      //! [out] Tire vertical deformation: w = R0 + zC [m]
+    Timeseries_t _dw = 0.0;     //! [out] Tire vertical deformation derivative   [m/s]
+    Vector3d<Timeseries_t> _v = {0.0, 0.0, 0.0};  //! [out] Absolute velocity of the contact point in body frame [m/s].
 
-    Timeseries_t _kappa;  //! [out] Longitudinal slip  ((omega.R0)/v[0] - 1)
-    Timeseries_t _lambda; //! [out] Sideslip angle = -atan(v[1]/v[0])
+    Timeseries_t _kappa = 0.0;  //! [out] Longitudinal slip  ((omega.R0)/v[0] - 1)
+    Timeseries_t _lambda = 0.0; //! [out] Sideslip angle = -atan(v[1]/v[0])
 
-    Timeseries_t _dkappadomega; //! [out] Derivative of the longitudinal slip w.r.t. omega
+    Timeseries_t _dkappadomega = 0.0; //! [out] Derivative of the longitudinal slip w.r.t. omega
 
-    Vector3d<Timeseries_t> _F;       //! [out] Tire forces [N]
-    Vector3d<Timeseries_t> _T;       //! [out] Tire torques at wheel centre [N.m]
+    Vector3d<Timeseries_t> _F = {0.0, 0.0, 0.0};  //! [out] Tire forces [N]
+    Vector3d<Timeseries_t> _T = {0.0, 0.0, 0.0};  //! [out] Tire torques at wheel centre [N.m]
 };
 
 template<typename Timeseries_t, size_t STATE0, size_t CONTROL0>

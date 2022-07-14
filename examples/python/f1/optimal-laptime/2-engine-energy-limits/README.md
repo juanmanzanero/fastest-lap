@@ -34,9 +34,9 @@ options  = "<options>"
 options += "    <output_variables>"
 options += "        <prefix>run_without_limits/</prefix>"
 options += "        <variables>"
-options += "            <throttle/>"
-options += "            <u/>"
-options += "            <s/>"
+options += "            <chassis.throttle/>"
+options += "            <chassis.velocity.x/>"
+options += "            <road.arclength/>"
 options += "            <integral_quantities.engine-energy/>"
 options += "        </variables>"
 options += "    </output_variables>"
@@ -45,9 +45,9 @@ options += "</options>"
 
 fastest_lap.optimal_laptime(vehicle,track,s,options);
 
-u_wo             = fastest_lap.download_vector("run_without_limits/u");
-throttle_wo      = fastest_lap.download_vector("run_without_limits/throttle");
-s_wo             = fastest_lap.download_vector("run_without_limits/s");
+u_wo             = fastest_lap.download_vector("run_without_limits/chassis.velocity.x");
+throttle_wo      = fastest_lap.download_vector("run_without_limits/chassis.throttle");
+s_wo             = fastest_lap.download_vector("run_without_limits/road.arclength");
 engine_energy    = fastest_lap.download_scalar("run_without_limits/integral_quantities.engine-energy");
 print(f'Engine energy used: {engine_energy:.3f}.')
 ```
@@ -64,9 +64,9 @@ options  = "<options>"
 options += "    <output_variables>"
 options += "        <prefix>run/</prefix>"
 options += "        <variables>"
-options += "            <throttle/>"
-options += "            <u/>"
-options += "            <s/>"
+options += "            <chassis.throttle/>"
+options += "            <chassis.velocity.x/>"
+options += "            <road.arclength/>"
 options += "            <integral_quantities.engine-energy/>"
 options += "        </variables>"
 options += "    </output_variables>"
@@ -81,9 +81,9 @@ options += "</options>"
 
 fastest_lap.optimal_laptime(vehicle,track,s,options);
 
-throttle = fastest_lap.download_vector("run/throttle");
-u        = fastest_lap.download_vector("run/u");
-s        = fastest_lap.download_vector("run/s");
+throttle = fastest_lap.download_vector("run/chassis.throttle");
+u        = fastest_lap.download_vector("run/chassis.velocity.x");
+s        = fastest_lap.download_vector("run/road.arclength");
 engine_energy = fastest_lap.download_scalar("run/integral_quantities.engine-energy");
 ```
 

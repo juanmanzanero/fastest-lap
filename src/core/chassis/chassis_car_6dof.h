@@ -71,7 +71,7 @@ class Chassis_car_6dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
     constexpr static size_t NALGEBRAIC = 0;  //! Number of algebraic equations
 
     //! Default constructor
-    Chassis_car_6dof() = default;
+    Chassis_car_6dof();
 
     //! Constructor from axles and extra parameters
     //! @param[in] front_axle: Front axle
@@ -216,20 +216,19 @@ class Chassis_car_6dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
     sVector3d _x_rear_axle;  //! [c] Center of the rear axle [m]
 
     // Vertical dynamics
-    Timeseries_t _z;      //! [in] Vertical displacement of CoG [m]
-    Timeseries_t _dz;     //! [in] Vertical velocity of CoG [m/s]
-    Timeseries_t _d2z;    //! [out] Vertical acceleration of CoG [m/s2]
+    Timeseries_t _z = 0.0;      //! [in] Vertical displacement of CoG [m]
+    Timeseries_t _dz = 0.0;     //! [in] Vertical velocity of CoG [m/s]
+    Timeseries_t _d2z = 0.0;    //! [out] Vertical acceleration of CoG [m/s2]
 
     // Small angle attitude: pitch
-    Timeseries_t _mu;     //! [in] Pitch angle [rad]
-    Timeseries_t _dmu;    //! [in] Pitch omega [rad/s]
-    Timeseries_t _d2mu;   //! [out] Pitch acceleration [rad/s2]
+    Timeseries_t _mu = 0.0;     //! [in] Pitch angle [rad]
+    Timeseries_t _dmu = 0.0;    //! [in] Pitch omega [rad/s]
+    Timeseries_t _d2mu = 0.0;   //! [out] Pitch acceleration [rad/s2]
 
     // Small angle attitude: roll
-    Timeseries_t _phi;    //! [in] Roll angle [rad]
-    Timeseries_t _dphi;   //! [in] Roll omega [rad/s]
-    Timeseries_t _d2phi;  //! [out] Roll acceleration [rad/s2]
-
+    Timeseries_t _phi = 0.0;    //! [in] Roll angle [rad]
+    Timeseries_t _dphi = 0.0;   //! [in] Roll omega [rad/s]
+    Timeseries_t _d2phi = 0.0;  //! [out] Roll acceleration [rad/s2]
 
     DECLARE_PARAMS(
         { "com", _x_com },
@@ -243,8 +242,6 @@ class Chassis_car_6dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
         {
         };
     }
-
-
 };
 
 #include "chassis_car_6dof.hpp"

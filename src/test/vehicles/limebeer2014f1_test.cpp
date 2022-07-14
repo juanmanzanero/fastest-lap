@@ -7,8 +7,6 @@
 #include <unordered_map>
 #include "src/main/c/fastestlapc.h"
 
-extern bool is_valgrind;
-
 // Define convenient aliases
 using Front_left_tire_type  = limebeer2014f1<scalar>::Front_left_tire_type;
 using Front_right_tire_type = limebeer2014f1<scalar>::Front_left_tire_type;
@@ -919,7 +917,6 @@ TEST_F(limebeer2014f1_test,propagation_crank_nicolson_corner_exit)
 
 TEST_F(limebeer2014f1_test, get_outputs_map)
 {
-    if (is_valgrind) GTEST_SKIP();
     limebeer2014f1<double>::curvilinear_p car(database);
 
     for(auto kv : car.get_outputs_map()) {
@@ -932,7 +929,6 @@ TEST_F(limebeer2014f1_test, get_outputs_map)
 
 TEST_F(limebeer2014f1_test, get_vehicle_number_of_outputs_c_api)
 {
-    if (is_valgrind) GTEST_SKIP();
     create_vehicle_from_xml("test", "./database/vehicles/f1/limebeer-2014-f1.xml");
     limebeer2014f1<double>::curvilinear_p car_cpp(database);
 
@@ -943,7 +939,6 @@ TEST_F(limebeer2014f1_test, get_vehicle_number_of_outputs_c_api)
 
 TEST_F(limebeer2014f1_test, get_vehicle_output_variable_names_c_api)
 {
-    if (is_valgrind) GTEST_SKIP();
     create_vehicle_from_xml("test", "./database/vehicles/f1/limebeer-2014-f1.xml");
     limebeer2014f1<double>::curvilinear_p car_cpp(database);
 

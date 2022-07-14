@@ -220,9 +220,9 @@ class Chassis
  private:
 
     // Road frame velocities
-    Timeseries_t _u;         //! [in] Longitudinal velocity (in road frame) [m/s]
-    Timeseries_t _v;         //! [in] Lateral velocity (in road frame) [m/s]
-    Timeseries_t _omega;     //! [in] Yaw speed [rad/s]
+    Timeseries_t _u = 0.0;         //! [in] Longitudinal velocity (in road frame) [m/s]
+    Timeseries_t _v = 0.0;         //! [in] Lateral velocity (in road frame) [m/s]
+    Timeseries_t _omega = 0.0;     //! [in] Yaw speed [rad/s]
 
     Frame<Timeseries_t> _inertial_frame; //! The inertial frame
     Frame<Timeseries_t> _road_frame;     //! Frame<Timeseries_t> with center on the road projection of the CoG, 
@@ -274,7 +274,8 @@ class Chassis
             {get_name() + ".torque.z", _T.z()},
             {get_name() + ".acceleration.yaw", _dOmega},
             {get_name() + ".position.x", _road_frame.get_origin().x()},
-            {get_name() + ".position.y", _road_frame.get_origin().y()} 
+            {get_name() + ".position.y", _road_frame.get_origin().y()},
+            {get_name() + ".attitude.yaw", _road_frame.get_rotation_angles().front()},
         };
     }
 
@@ -282,13 +283,13 @@ class Chassis
 
 
     // Longitudinal dynamics
-    Timeseries_t _du;    //! [out] Longitudinal acceleration [m/s2]
+    Timeseries_t _du = 0.0;    //! [out] Longitudinal acceleration [m/s2]
     
     // Lateral dynamics
-    Timeseries_t _dv;    //! [out] Lateral acceleration [m/s2]
+    Timeseries_t _dv = 0.0;    //! [out] Lateral acceleration [m/s2]
 
     // Attitude: yaw
-    Timeseries_t _dOmega; //! [out] Yaw acceleration [rad/s2]
+    Timeseries_t _dOmega = 0.0; //! [out] Yaw acceleration [rad/s2]
 
     Vector3d<Timeseries_t> _F; //! [out] Total forces at road frame
     Vector3d<Timeseries_t> _T; //! [out] Total torque at road frame

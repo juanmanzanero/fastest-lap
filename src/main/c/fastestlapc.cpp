@@ -1291,6 +1291,8 @@ struct Optimal_laptime_configuration
     {
         if ( strlen(options) == 0 ) return;
 
+        auto [key_name, q_names, qa_names, u_names] = typename vehicle_t::vehicle_scalar_curvilinear{}.get_state_and_control_names();
+
         std::string s_options(options);
         Xml_document doc;
         doc.parse(s_options);
@@ -1316,11 +1318,30 @@ struct Optimal_laptime_configuration
         {
             output_variables_prefix = doc.get_element("options/output_variables/prefix").get_value();
 
-            auto variables_node = doc.get_element("options/output_variables/variables");
+            if ( doc.has_element("options/output_variables/variables") ) {
+                auto variables_node = doc.get_element("options/output_variables/variables");
+    
+                variables_to_save = {};
+                for (auto& variable : variables_node.get_children())
+                    variables_to_save.push_back(variable.get_name());
+            }
+            else {
+                // Add all variables to output
+                variables_to_save = {key_name};
+                variables_to_save.insert(variables_to_save.end(), q_names.cbegin(), q_names.cend());
+                variables_to_save.insert(variables_to_save.end(), qa_names.cbegin(), qa_names.cend());
+                variables_to_save.insert(variables_to_save.end(), u_names.cbegin(), u_names.cend());
 
-            variables_to_save = {};
-            for (auto& variable : variables_node.get_children())
-                variables_to_save.push_back(variable.get_name());
+                for (const auto& [key, value] : typename vehicle_t::vehicle_scalar_curvilinear{}.get_outputs_map() ) {
+                    variables_to_save.push_back(key);
+                }
+
+                variables_to_save.push_back("laptime");
+
+                for (const auto& integral_quantity_name : vehicle_t::vehicle_ad_curvilinear::Integral_quantities::names ) {
+                    variables_to_save.push_back("integral_quantities." + integral_quantity_name);
+                }
+            }
         }
 
         if ( doc.has_element("options/steady_state_speed") ) steady_state_speed = doc.get_element("options/initial_speed").get_value(scalar());
@@ -1349,11 +1370,6 @@ struct Optimal_laptime_configuration
         // Prepare control variables
         if ( doc.has_element("options/control_variables") )
         {
-            auto [key_name, q_names, qa_names, u_names] = typename vehicle_t::vehicle_scalar_curvilinear{}.get_state_and_control_names();
-            (void) key_name;
-            (void) q_names;
-            (void) qa_names;
-
             for (auto variable : doc.get_element("options/control_variables").get_children() )
             {
                 // Find position in the control variables array
@@ -1596,280 +1612,143 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
         opt_laptime.xml()->save(conf.xml_file_name);
 
     // (6.2) Save outputs
+    const auto& car_curv_sc_const = car_curv_sc;
+    const auto parameter_aliases = car_curv_sc_const.get_parameters().get_all_parameters_aliases(); 
+
+    // (6.2.1) Distribute variables to save in laptime, integral quantities, and vector variables
+    bool b_save_laptime = false; 
+    std::vector<std::string> v_integral_quantities_to_save;
+    std::vector<std::string> v_variables_to_save;
+
     for (const auto& variable_name : conf.variables_to_save)
     {
-        // Check if the variable_name exists in any of the tables
-        if ( table_scalar.count(conf.output_variables_prefix + variable_name) != 0 )
-            throw fastest_lap_exception(std::string("Variable \"") + conf.output_variables_prefix + variable_name + "\" already exists in the scalar table");
+        // (6.2.1.1) Check that the variable to be saved does not already exist in the tables
+        check_variable_exists_in_tables(conf.output_variables_prefix + variable_name);
+        if ( opts.check_optimality ) {
+            for (size_t i = 0; i < car_curv_sc_const.get_parameters().get_number_of_parameters(); ++i) {
+                check_variable_exists_in_tables(conf.output_variables_prefix + "derivatives/" + variable_name + "/" + parameter_aliases[i]);
+            }
+        }
 
-        if ( table_vector.count(conf.output_variables_prefix + variable_name) != 0 )
-            throw fastest_lap_exception(std::string("Variable \"") + conf.output_variables_prefix + variable_name + "\" already exists in the vector table");
-
-        bool is_vector = true;
-        const auto& car_curv_sc_const = car_curv_sc;
-        const auto parameter_aliases = car_curv_sc_const.get_parameters().get_all_parameters_aliases(); 
-
-        // Scalar variables
+        // (6.2.1.2) Distribute between the three scenarios
         if ( variable_name == "laptime" )
-        {
-            table_scalar.insert({conf.output_variables_prefix+variable_name, opt_laptime.laptime});
-            is_vector = false;
-
-            // Save the derivative w.r.t. the parameters
-            if ( opts.check_optimality )
-            {
-                for (size_t i = 0; i < car_curv_sc_const.get_parameters().get_number_of_parameters(); ++i)
-                {
-                    table_scalar.insert({conf.output_variables_prefix + "derivatives/" + variable_name + "/" + parameter_aliases[i], opt_laptime.dlaptimedp[i]});
-                }
-            }
-        }
+            b_save_laptime = true;
         else if ( variable_name.find("integral_quantities.") == 0 )
+            v_integral_quantities_to_save.push_back(variable_name);
+        else
+            v_variables_to_save.push_back(variable_name);
+    }
+
+    // (6.2.2) Save laptime
+    if ( b_save_laptime ) {
+        table_scalar.insert({conf.output_variables_prefix+"laptime", opt_laptime.laptime});
+
+        // Save the derivative w.r.t. the parameters
+        if ( opts.check_optimality )
         {
-            // (6.2.1) Get the variable
-            std::string integral_quantity_name = variable_name;
-            integral_quantity_name.erase(0, std::string("integral_quantities.").length());
-    
-            // (6.2.2) Look for the variable in the list
-            const auto it = std::find(vehicle_t::vehicle_ad_curvilinear::Integral_quantities::names.cbegin(), 
-                                      vehicle_t::vehicle_ad_curvilinear::Integral_quantities::names.cend(),
-                                      integral_quantity_name);
-
-            if (it == vehicle_t::vehicle_ad_curvilinear::Integral_quantities::names.cend())
+            for (size_t i = 0; i < car_curv_sc_const.get_parameters().get_number_of_parameters(); ++i)
             {
-                std::ostringstream s_out;
-                s_out << "[ERROR] Requested integral constraint was not found." << std::endl;
-                s_out << "[ERROR] Available options are: " << vehicle_t::vehicle_ad_curvilinear::Integral_quantities::names;
-                throw fastest_lap_exception(s_out.str()); 
+                table_scalar.insert({conf.output_variables_prefix + "derivatives/" + "laptime" + "/" + parameter_aliases[i], opt_laptime.dlaptimedp[i]});
             }
+        }
+    }
 
-            // (6.2.3) Fill the integral constraint information
-            const size_t index = std::distance(vehicle_t::vehicle_ad_curvilinear::Integral_quantities::names.cbegin(),it);
+    // (6.2.3) Save integral quantities
+    for (const auto& variable_name : v_integral_quantities_to_save) {
+        // (6.2.3.1) Get the variable
+        std::string integral_quantity_name = variable_name;
+        integral_quantity_name.erase(0, std::string("integral_quantities.").length());
 
-            table_scalar.insert({conf.output_variables_prefix + variable_name, opt_laptime.integral_quantities[index].value});
+        // (6.2.3.2) Look for the variable in the list
+        const auto it = std::find(vehicle_t::vehicle_ad_curvilinear::Integral_quantities::names.cbegin(), 
+                                  vehicle_t::vehicle_ad_curvilinear::Integral_quantities::names.cend(),
+                                  integral_quantity_name);
 
-            is_vector = false;
+        if (it == vehicle_t::vehicle_ad_curvilinear::Integral_quantities::names.cend())
+        {
+            std::ostringstream s_out;
+            s_out << "[ERROR] Requested integral constraint was not found." << std::endl;
+            s_out << "[ERROR] Available options are: " << vehicle_t::vehicle_ad_curvilinear::Integral_quantities::names;
+            throw fastest_lap_exception(s_out.str()); 
         }
 
-        // Vector variables
-        if ( is_vector ) 
-        {
-            std::vector<scalar> data(n_points,0.0);
+        // (6.2.3.3) Fill the integral constraint information
+        const size_t index = std::distance(vehicle_t::vehicle_ad_curvilinear::Integral_quantities::names.cbegin(),it);
+
+        table_scalar.insert({conf.output_variables_prefix + variable_name, opt_laptime.integral_quantities[index].value});
+    }
+
+    // (6.2.4) Save vector variables
+    std::vector<std::vector<scalar>> data(v_variables_to_save.size(),std::vector<scalar>(n_points,0.0));
+    auto [key_name, q_names, qa_names, u_names] = typename vehicle_t::vehicle_scalar_curvilinear{}.get_state_and_control_names();
+    for (int i = 0; i < n_points; ++i) {
+
+        // (6.2.4.1) Update car
+        const auto u_i = opt_laptime.control_variables.control_array_at_s(car_curv,i,s[i]);
+        car_curv_sc(opt_laptime.q[i], opt_laptime.qa[i], u_i, s[i]);
+        const auto outputs_map = car_curv_sc.get_outputs_map();
+
+        for (size_t i_var = 0; i_var < v_variables_to_save.size(); ++i_var) {
+            const auto& variable_name = v_variables_to_save[i_var];
+
+            // (6.2.4.2) See if the variable is the key
+            if ( variable_name == key_name ) {
+                data[i_var][i] = s[i];
+                continue;
+            }            
+
+            // (6.2.4.3) Find the variable in the state vector
+            const auto q_idx = std::find(q_names.cbegin(), q_names.cend(), variable_name);
+            if ( q_idx != q_names.cend() ) {
+                data[i_var][i] = opt_laptime.q[i][std::distance(q_names.cbegin(), q_idx)];
+                continue;
+            }
+
+            // (6.2.4.4) Find the variable in the algebraic state vector
+            const auto qa_idx = std::find(qa_names.cbegin(), qa_names.cend(), variable_name);
+            if ( qa_idx != qa_names.cend() ) {
+                data[i_var][i] = opt_laptime.qa[i][std::distance(qa_names.cbegin(), qa_idx)];
+                continue;
+            }
+
+            // (6.2.4.5) Find the variable in the controls vector
+            const auto u_idx = std::find(u_names.cbegin(), u_names.cend(), variable_name);
+            if ( u_idx != u_names.cend() ) {
+                data[i_var][i] = u_i[std::distance(u_names.cbegin(), u_idx)];
+                continue;
+            }
+
+            // (6.2.4.6) Find the variable in the output variable map
+            data[i_var][i] = outputs_map.at(variable_name);
+        }
+    }
+
+    // (6.2.4.7) Insert them in the table
+    for (size_t i_var = 0; i_var < v_variables_to_save.size(); ++i_var) {
+        const auto& variable_name = v_variables_to_save[i_var];
+        table_vector.insert({conf.output_variables_prefix + variable_name, data[i_var]});
+    }
+
+    // (6.2.5) Save vector variables sensitivity 
+    if ( opts.check_optimality ) {
+        for (const auto& variable_name : v_variables_to_save) {
             std::vector<std::vector<scalar>> ddatadp(car_curv_sc_const.get_parameters().get_number_of_parameters(), std::vector<scalar>(n_points,0.0)); 
-            for (int i = 0; i < n_points; ++i)
-            {
-                car_curv_sc(opt_laptime.q[i], opt_laptime.qa[i], opt_laptime.control_variables.control_array_at_s(car_curv,i,s[i]), s[i]);
     
-                if ( variable_name == "x" ) 
-                    data[i] = car_curv_sc.get_road().get_x();
-        
-                else if ( variable_name == "y" )
-                    data[i] = car_curv_sc.get_road().get_y();
-    
-                else if ( variable_name == "s" )
-                    data[i] = s[i];
-
-                else if ( variable_name == "n" )
-                    data[i] = opt_laptime.q[i][vehicle_t::vehicle_scalar_curvilinear::Road_type::IN];
-    
-                else if ( variable_name == "alpha" )
-                    data[i] = opt_laptime.q[i][vehicle_t::vehicle_scalar_curvilinear::Road_type::IALPHA];
-    
-                else if ( variable_name == "u" )
-                {
-                    data[i] = opt_laptime.q[i][vehicle_t::vehicle_scalar_curvilinear::Chassis_type::IU];
-    
-                    if ( opts.check_optimality )
-                    {
-                        for (size_t p = 0; p < car_curv_sc_const.get_parameters().get_number_of_parameters(); ++p)
-                        {
-                            ddatadp[p][i] = opt_laptime.dqdp[p][i][vehicle_t::vehicle_scalar_curvilinear::Chassis_type::IU];
-                        }
+            for (int i = 0; i < n_points; ++i) {
+                if ( variable_name == "chassis.velocity.x" ) {
+                    for (size_t p = 0; p < car_curv_sc_const.get_parameters().get_number_of_parameters(); ++p) {
+                        ddatadp[p][i] = opt_laptime.dqdp[p][i][vehicle_t::vehicle_scalar_curvilinear::Chassis_type::IU];
                     }
                 }
-                else if ( variable_name == "v" )
-                    data[i] = opt_laptime.q[i][vehicle_t::vehicle_scalar_curvilinear::Chassis_type::IV];
-    
-                else if ( variable_name == "time" )
-                {
-                    data[i] = opt_laptime.q[i][vehicle_t::vehicle_scalar_curvilinear::Road_type::ITIME];
-
-                    if ( opts.check_optimality )
-                    {
-                        for (size_t p = 0; p < car_curv_sc_const.get_parameters().get_number_of_parameters(); ++p)
-                        {
-                            ddatadp[p][i] = opt_laptime.dqdp[p][i][vehicle_t::vehicle_scalar_curvilinear::Road_type::ITIME];
-                        }
+                else if ( variable_name == "time" ) {
+                    for (size_t p = 0; p < car_curv_sc_const.get_parameters().get_number_of_parameters(); ++p) {
+                        ddatadp[p][i] = opt_laptime.dqdp[p][i][vehicle_t::vehicle_scalar_curvilinear::Road_type::ITIME];
                     }
                 }
-                else if ( variable_name == "delta" )
-                    data[i] = opt_laptime.control_variables[vehicle_t::vehicle_scalar_curvilinear::Chassis_type::Front_axle_type::ISTEERING].u[i];
-    
-                else if ( variable_name == "psi" )
-                    data[i] = car_curv_sc.get_road().get_psi();
-    
-                else if ( variable_name == "omega" )
-                    data[i] = opt_laptime.q[i][vehicle_t::vehicle_scalar_curvilinear::Chassis_type::IOMEGA];
-    
-                else if ( variable_name == "throttle" )
-                {
-                    if constexpr (std::is_same<vehicle_t, lot2016kart_all>::value)
-                    {
-                        data[i] = opt_laptime.control_variables[vehicle_t::vehicle_scalar_curvilinear::Chassis_type::Rear_axle_type::ITORQUE].u[i];
-                    }
-    
-                    else if constexpr (std::is_same<vehicle_t, limebeer2014f1_all>::value)
-                    {
-                        data[i] = opt_laptime.control_variables[vehicle_t::vehicle_scalar_curvilinear::Chassis_type::ITHROTTLE].u[i];
-                    }
-                }
-                else if ( variable_name == "brake-bias" )
-                {
-                    if constexpr (std::is_same<vehicle_t, lot2016kart_all>::value)
-                    {
-                        throw fastest_lap_exception("[ERROR] brake-bias is not available for vehicles of type lot2016kart");
-                    }
-            
-                    else if constexpr (std::is_same<vehicle_t, limebeer2014f1_all>::value)
-                    {
-                        data[i] = car_curv_sc.get_chassis().get_brake_bias();
-                    }
-                    else
-                    {
-                        throw fastest_lap_exception("[ERROR] Vehicle type is not defined");
-                    }
-                }
-                else if ( variable_name == "rear_axle.left_tire.x" )
-                    data[i] = car_curv_sc.get_chassis().get_rear_axle().template get_tire<0>().get_position().at(0);
-    
-                else if ( variable_name == "rear_axle.left_tire.y" )
-                    data[i] = car_curv_sc.get_chassis().get_rear_axle().template get_tire<0>().get_position().at(1);
-    
-                else if ( variable_name == "rear_axle.right_tire.x" )
-                    data[i] = car_curv_sc.get_chassis().get_rear_axle().template get_tire<1>().get_position().at(0);
-    
-                else if ( variable_name == "rear_axle.right_tire.y" )
-                    data[i] = car_curv_sc.get_chassis().get_rear_axle().template get_tire<1>().get_position().at(1);
-    
-                else if ( variable_name == "front_axle.left_tire.x" )
-                    data[i] = car_curv_sc.get_chassis().get_front_axle().template get_tire<0>().get_position().at(0);
-    
-                else if ( variable_name == "front_axle.left_tire.y" )
-                    data[i] = car_curv_sc.get_chassis().get_front_axle().template get_tire<0>().get_position().at(1);
-    
-                else if ( variable_name == "front_axle.right_tire.x" )
-                    data[i] = car_curv_sc.get_chassis().get_front_axle().template get_tire<1>().get_position().at(0);
-    
-                else if ( variable_name == "front_axle.right_tire.y" )
-                    data[i] = car_curv_sc.get_chassis().get_front_axle().template get_tire<1>().get_position().at(1);
-
-                else if ( variable_name == "front_axle.left_tire.kappa" )
-                    data[i] = car_curv_sc.get_chassis().get_front_axle().template get_tire<0>().get_kappa();
-    
-                else if ( variable_name == "front_axle.right_tire.kappa" )
-                    data[i] = car_curv_sc.get_chassis().get_front_axle().template get_tire<1>().get_kappa();
-    
-                else if ( variable_name == "rear_axle.left_tire.kappa" )
-                    data[i] = car_curv_sc.get_chassis().get_rear_axle().template get_tire<0>().get_kappa();
-    
-                else if ( variable_name == "rear_axle.right_tire.kappa" )
-                    data[i] = car_curv_sc.get_chassis().get_rear_axle().template get_tire<1>().get_kappa();
-
-                else if ( variable_name == "front_axle.left_tire.dissipation" )
-                    data[i] = car_curv_sc.get_chassis().get_front_axle().template get_tire<0>().get_dissipation();
-            
-                else if ( variable_name == "front_axle.right_tire.dissipation" )
-                    data[i] = car_curv_sc.get_chassis().get_front_axle().template get_tire<1>().get_dissipation();
-            
-                else if ( variable_name == "rear_axle.left_tire.dissipation" )
-                    data[i] = car_curv_sc.get_chassis().get_rear_axle().template get_tire<0>().get_dissipation();
-            
-                else if ( variable_name == "rear_axle.right_tire.dissipation" )
-                    data[i] = car_curv_sc.get_chassis().get_rear_axle().template get_tire<1>().get_dissipation();
-    
-                else if ( variable_name == "Fz_fl" )
-                {
-                    if constexpr (std::is_same<vehicle_t, limebeer2014f1_all>::value)
-                    {
-                        data[i] = opt_laptime.qa[i][vehicle_t::vehicle_scalar_curvilinear::Chassis_type::IFZFL];
-                    }
-                    else 
-                    {
-                        throw fastest_lap_exception("Fz_fl is only defined for limebeer2014f1 models");
-                    }
-                }
-    
-                else if ( variable_name == "Fz_fr" )
-                {
-                    if constexpr (std::is_same<vehicle_t, limebeer2014f1_all>::value)
-                    {
-                        data[i] = opt_laptime.qa[i][vehicle_t::vehicle_scalar_curvilinear::Chassis_type::IFZFR];
-                    }
-                    else 
-                    {
-                        throw fastest_lap_exception("Fz_fr is only defined for limebeer2014f1 models");
-                    }
-                }
-    
-                else if ( variable_name == "Fz_rl" )
-                {
-                    if constexpr (std::is_same<vehicle_t, limebeer2014f1_all>::value)
-                    {
-                        data[i] = opt_laptime.qa[i][vehicle_t::vehicle_scalar_curvilinear::Chassis_type::IFZRL];
-                    }
-                    else 
-                    {
-                        throw fastest_lap_exception("Fz_rl is only defined for limebeer2014f1 models");
-                    }
-                }
-    
-                else if ( variable_name == "Fz_rr" )
-                {
-                    if constexpr (std::is_same<vehicle_t, limebeer2014f1_all>::value)
-                    {
-                        data[i] = opt_laptime.qa[i][vehicle_t::vehicle_scalar_curvilinear::Chassis_type::IFZRR];
-                    }
-                    else 
-                    {
-                        throw fastest_lap_exception("Fz_rr is only defined for limebeer2014f1 models");
-                    }
-                }
-
-                else if ( variable_name == "chassis.understeer_oversteer_indicator" )
-                {
-                    data[i] = car_curv_sc.get_chassis().get_understeer_oversteer_indicator();
-                }
-
-                else if ( variable_name == "chassis.aerodynamics.cd" )
-                {       
-                    data[i] = car_curv_sc.get_chassis().get_drag_coefficient();
-                }
-
-                else if ( variable_name == "ax" )
-                {
-                    data[i] = car_curv_sc.get_chassis().get_longitudinal_acceleration();
-                }
-            
-                else if ( variable_name == "ay" )
-                {
-                    data[i] = car_curv_sc.get_chassis().get_lateral_acceleration();
-                }
-
-                else
-                {
-                    throw fastest_lap_exception("Variable \"" + variable_name + "\" is not defined");
-                }
-    
             }
     
-            // Insert in the vector table
-            table_vector.insert({conf.output_variables_prefix + variable_name, data});
-
-            // Insert derivatives in the table
-            if ( opts.check_optimality )
-            {
-                for (size_t p = 0; p < car_curv_sc_const.get_parameters().get_number_of_parameters(); ++p)
-                    table_vector.insert({conf.output_variables_prefix + "derivatives/" + variable_name + "/" + parameter_aliases[p], ddatadp[p]});
+            for (size_t p = 0; p < car_curv_sc_const.get_parameters().get_number_of_parameters(); ++p) {
+                table_vector.insert({conf.output_variables_prefix + "derivatives/" + variable_name + "/" + parameter_aliases[p], ddatadp[p]});
             }
         }
     }

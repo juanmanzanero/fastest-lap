@@ -226,25 +226,25 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
     Timeseries_t _brake_bias_0; //! [in] Initial value for the brake bias (to be read from database)
 
     // Control variables
-    Timeseries_t _throttle;     //! [in] throttle: 1-full throttle, -1-hard brake
-    Timeseries_t _brake_bias;   //! [in] Brake bias: 1-only front, 0-only rear
+    Timeseries_t _throttle = 0.0;     //! [in] throttle: 1-full throttle, -1-hard brake
+    Timeseries_t _brake_bias = 0.0;   //! [in] Brake bias: 1-only front, 0-only rear
 
     // Algebraic variables
-    Timeseries_t _Fz_fl;    //! [in] Vertical load for FL tire
-    Timeseries_t _Fz_fr;    //! [in] Vertical load for FR tire
-    Timeseries_t _Fz_rl;    //! [in] Vertical load for RL tire
-    Timeseries_t _Fz_rr;    //! [in] Vertical load for RR tire
+    Timeseries_t _Fz_fl = 0.0;    //! [in] Vertical load for FL tire
+    Timeseries_t _Fz_fr = 0.0;    //! [in] Vertical load for FR tire
+    Timeseries_t _Fz_rl = 0.0;    //! [in] Vertical load for RL tire
+    Timeseries_t _Fz_rr = 0.0;    //! [in] Vertical load for RR tire
 
-    Timeseries_t _neg_Fz_fl;    //! negative vertical load for FL tire
-    Timeseries_t _neg_Fz_fr;    //! negative vertical load for FR tire
-    Timeseries_t _neg_Fz_rl;    //! negative vertical load for RL tire
-    Timeseries_t _neg_Fz_rr;    //! negative vertical load for RR tire
+    Timeseries_t _neg_Fz_fl = 0.0;    //! negative vertical load for FL tire
+    Timeseries_t _neg_Fz_fr = 0.0;    //! negative vertical load for FR tire
+    Timeseries_t _neg_Fz_rl = 0.0;    //! negative vertical load for RL tire
+    Timeseries_t _neg_Fz_rr = 0.0;    //! negative vertical load for RR tire
 
     // Algebraic constraints
-    Timeseries_t _Fz_eq;            //! [out] vertical equilibrium equation
-    Timeseries_t _Mx_eq;            //! [out] roll equilibrium equation
-    Timeseries_t _My_eq;            //! [out] pitch equilibrium equation
-    Timeseries_t _roll_balance_eq;  //! [out] roll balance equation
+    Timeseries_t _Fz_eq = 0.0;            //! [out] vertical equilibrium equation
+    Timeseries_t _Mx_eq = 0.0;            //! [out] roll equilibrium equation
+    Timeseries_t _My_eq = 0.0;            //! [out] pitch equilibrium equation
+    Timeseries_t _roll_balance_eq = 0.0;  //! [out] roll balance equation
 
     DECLARE_PARAMS(
         { "com/x", _x_com.x() },

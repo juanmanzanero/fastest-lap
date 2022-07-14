@@ -33,33 +33,37 @@ options  = "<options>"
 options += "    <output_variables>"
 options += "        <prefix>run/</prefix>"
 options += "        <variables>"
-options += "            <x/>"
-options += "            <y/>"
-options += "            <delta/>"
-options += "            <throttle/>"
-options += "            <u/>"
-options += "            <s/>"
+options += "            <chassis.position.x/>"
+options += "            <chassis.position.y/>"
+options += "            <front-axle.steering-angle/>"
+options += "            <rear-axle.throttle/>"
+options += "            <chassis.velocity.x/>"
+options += "            <road.arclength/>"
 options += "            <time/>"
-options += "            <psi/>"
-options += "            <omega/>"
-options += "            <v/>"
+options += "            <chassis.attitude.yaw/>"
+options += "            <chassis.omega.z/>"
+options += "            <chassis.velocity.y/>"
 options += "        </variables>"
 options += "    </output_variables>"
 options += "    <print_level> 5 </print_level>"
 options += "</options>"
 
 fastest_lap.optimal_laptime(vehicle,track,s,options);
-x        = fastest_lap.download_vector("run/x");
-y        = fastest_lap.download_vector("run/y");
-delta    = fastest_lap.download_vector("run/delta");
-throttle = fastest_lap.download_vector("run/throttle");
-u        = fastest_lap.download_vector("run/u");
-s        = fastest_lap.download_vector("run/s");
+
+x        = fastest_lap.download_vector("run/chassis.position.x");
+y        = fastest_lap.download_vector("run/chassis.position.y");
+delta    = fastest_lap.download_vector("run/front-axle.steering-angle");
+throttle = fastest_lap.download_vector("run/rear-axle.throttle");
+u        = fastest_lap.download_vector("run/chassis.velocity.x");
+s        = fastest_lap.download_vector("run/road.arclength");
 time     = fastest_lap.download_vector("run/time");
-psi      = fastest_lap.download_vector("run/psi");
-omega    = fastest_lap.download_vector("run/omega");
-v        = fastest_lap.download_vector("run/v");
+psi      = fastest_lap.download_vector("run/chassis.attitude.yaw");
+omega    = fastest_lap.download_vector("run/chassis.omega.z");
+v        = fastest_lap.download_vector("run/chassis.velocity.y");
 ```
+
+    Calculation finished
+
 
 ## GPS
 
@@ -102,8 +106,3 @@ plt.plot(throttle,color="orange");
 ![png](Optimal_laptime_files/Optimal_laptime_10_0.png)
     
 
-
-
-```python
-
-```

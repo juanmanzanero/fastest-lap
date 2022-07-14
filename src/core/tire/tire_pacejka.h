@@ -295,13 +295,13 @@ class Tire_pacejka : public Tire<Timeseries_t, STATE0,CONTROL0>
 
     Pacejka_model _model;
 
-    scalar _kt; //! [c] Radial stiffness of the carcass
-    scalar _ct; //! [c] Radial damping of the carcass
-    scalar _Fz_max_ref2;    //! [c] Reference normal force for the smooth max function
+    scalar _kt = 0.0; //! [c] Radial stiffness of the carcass
+    scalar _ct = 0.0; //! [c] Radial damping of the carcass
+    scalar _Fz_max_ref2 = 0.0;    //! [c] Reference normal force for the smooth max function
 
     // Forces as given by the magic formula
-    Timeseries_t _Smagic;     //! [out] Longitudinal force given by the magic formula
-    Timeseries_t _Fmagic;     //! [out] Lateral force given by the magic formula
+    Timeseries_t _Smagic = 0.0;     //! [out] Longitudinal force given by the magic formula
+    Timeseries_t _Fmagic = 0.0;     //! [out] Lateral force given by the magic formula
 
     DECLARE_PARAMS(
         { "radial-stiffness", _kt },
