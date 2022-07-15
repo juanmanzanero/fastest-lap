@@ -91,18 +91,9 @@ def move_variable(old_name, new_name):
 
 # Destructors ---------------------------------------------------------------------------------------------------------
 
-def delete_variables():
-	c_lib.delete_variables();
-	return;
-
 def delete_variable(name):
-	name = c.c_char_p((prefix).encode('utf-8'))
+	name = c.c_char_p((name).encode('utf-8'))
 	c_lib.delete_variable(name);
-
-def delete_variables_by_prefix(prefix):
-	prefix = c.c_char_p((prefix).encode('utf-8'))
-	c_lib.delete_variables_by_prefix(prefix);
-	return;
 
 # Getters --------------------------------------------------------------
 

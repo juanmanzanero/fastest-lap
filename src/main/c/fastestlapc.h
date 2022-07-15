@@ -57,11 +57,7 @@ extern fastestlapc_API void move_variable(const char* old_name, const char* new_
 
 // Destructors ---------------------------------------------------------------------------------------------------------
 
-extern fastestlapc_API void delete_variables();
-
-extern fastestlapc_API void delete_variable(const char* prefix_c);
-
-extern fastestlapc_API void delete_variables_by_prefix(const char* prefix_c);
+extern fastestlapc_API void delete_variable(const char* variable_name);
 
 // Getters -------------------------------------------------------------------------------------------------------------
 

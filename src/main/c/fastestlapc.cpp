@@ -1069,94 +1069,72 @@ void create_scalar(const char* name_c, double value)
 }
 
 
-void delete_variables()
-{
- try
- {
-    table_kart_6dof.clear();
-    table_f1_3dof.clear();
-    table_track.clear();
-    table_scalar.clear();
-    table_vector.clear();
- }
- CATCH()
-}
-
-
 void delete_variable(const char* c_variable_name)
 {
  try
  {
-    const std::string variable_name(c_variable_name);
+    std::string variable_name(c_variable_name);
+    variable_name = std::regex_replace(variable_name, std::regex("\\*"), ".*");
+    std::regex re(variable_name);
+    std::cmatch m;
 
-    // Check that only one variable has been defined with this name across all the tables
-    const size_t n_ocurrences = table_kart_6dof.count(variable_name) + table_f1_3dof.count(variable_name)
-                                + table_track.count(variable_name) + table_vector.count(variable_name) + table_scalar.count(variable_name);
-
-    if ( n_ocurrences > 1 )
+    // (1) Kart-6dof
+    for (auto it = table_kart_6dof.cbegin(); it != table_kart_6dof.cend() ; )
     {
-        throw fastest_lap_exception("[ERROR] delete_variable -> variable \"" + variable_name + "\" has been multiply defined");
-    }
-
-    if ( table_kart_6dof.count(variable_name) != 0)
-    {
-        table_kart_6dof.erase(variable_name);
-    }
-    else if ( table_f1_3dof.count(variable_name) != 0 )
-    {
-        table_f1_3dof.erase(variable_name);
-    }
-    else if ( table_track.count(variable_name) != 0)
-    {
-        table_track.erase(variable_name);
-    }
-    else if ( table_vector.count(variable_name) != 0 )
-    {
-        table_vector.erase(variable_name);
-    }
-    else if ( table_scalar.count(variable_name) != 0 )
-    {
-        table_scalar.erase(variable_name);
-    }
-    else
-    {
-        throw fastest_lap_exception("[ERROR] delete_variable -> variable \"" + variable_name + "\" has not been defined");
-    }
- }
- CATCH()
-}
-
-
-template<typename Table_t>
-void delete_variable_by_prefix_generic(Table_t& table, const std::string& prefix)
-{
-    for (auto it = table.cbegin(); it != table.cend(); )
-    {
-        if ( it->first.find(prefix) == 0 ) 
-        {
-            it = table.erase(it); 
-        }
-        else
-        {
+        if (std::regex_match(it->first.c_str(),m,re)) {
+            it = table_kart_6dof.erase(it++);    
+        } else {
             ++it;
         }
     }
-}
 
-void delete_variables_by_prefix(const char* prefix_c)
-{
- try 
- {
-    std::string prefix(prefix_c);
+
+    // (2) F1-3dof
+    for (auto it = table_f1_3dof.cbegin(); it != table_f1_3dof.cend() ; )
+    {
+        if (std::regex_match(it->first.c_str(),m,re)) {
+            it = table_f1_3dof.erase(it++);    
+        } else {
+            ++it;
+        }
+    }
+
     
-    delete_variable_by_prefix_generic(table_scalar, prefix);
-    delete_variable_by_prefix_generic(table_vector, prefix);
-    delete_variable_by_prefix_generic(table_kart_6dof, prefix);
-    delete_variable_by_prefix_generic(table_f1_3dof, prefix);
-    delete_variable_by_prefix_generic(table_track, prefix);
+    // (3) Track
+    for (auto it = table_track.cbegin(); it != table_track.cend() ; )
+    {
+        if (std::regex_match(it->first.c_str(),m,re)) {
+            it = table_track.erase(it++);    
+        } else {
+            ++it;
+        }
+    }
+
+
+    // (4) Scalar
+    for (auto it = table_scalar.cbegin(); it != table_scalar.cend() ; )
+    {
+        if (std::regex_match(it->first.c_str(),m,re)) {
+            it = table_scalar.erase(it++);    
+        } else {
+            ++it;
+        }
+    }
+
+
+    // (5) Vector
+    for (auto it = table_vector.cbegin(); it != table_vector.cend() ; )
+    {
+        if (std::regex_match(it->first.c_str(),m,re)) {
+            it = table_vector.erase(it++);    
+        } else {
+            ++it;
+        }
+    }
  }
  CATCH()
 }
+
 
 void vehicle_set_parameter(const char* c_vehicle_name, const char* parameter, const double value)
 {

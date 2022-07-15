@@ -49,7 +49,7 @@ psi      = run["chassis.attitude.yaw"];
 omega    = run["chassis.omega.z"];
 v        = run["chassis.velocity.y"];
 
-fastest_lap.delete_variables_by_prefix("run/")
+fastest_lap.delete_variable("run/*")
 ```
 
 ## GPS
@@ -312,8 +312,3 @@ plt.gca().set_aspect('equal')
 ![png](Optimal_laptime_files/Optimal_laptime_16_4.png)
     
 
-
-
-```python
-
-```
