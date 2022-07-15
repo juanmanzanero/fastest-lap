@@ -951,7 +951,7 @@ void vehicle_type_get_names_generic(char* c_key_name, char* c_state_names[], cha
 {
     const auto [key_name, q_names, qa_names, u_names] = vehicle_t{}.get_state_and_control_names();
 
-    if ( key_name.size() > static_cast<size_>(n_char) - 1)
+    if ( key_name.size() > static_cast<size_t>(n_char) - 1)
         throw fastest_lap_exception("[ERROR] vehicle_type_get_names_generic -> value provided for n_char was not sufficient. At least n_char = " + std::to_string(key_name.size()) + " is needed.");
     strcpy(c_key_name, key_name.c_str());
 
