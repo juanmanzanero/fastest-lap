@@ -923,7 +923,7 @@ TEST_F(limebeer2014f1_test, get_vehicle_number_of_outputs_c_api)
 
     int n_state, n_algebraic, n_control, n_outputs;
     vehicle_type_get_sizes(&n_state, &n_algebraic, &n_control, &n_outputs, "f1-3dof");
-    EXPECT_EQ(car_cpp.get_outputs_map().size(), n_outputs);
+    EXPECT_EQ(car_cpp.get_outputs_map().size(), static_cast<size_t>(n_outputs));
     
     delete_variable("test");
 }
@@ -936,26 +936,26 @@ TEST_F(limebeer2014f1_test, get_vehicle_output_variable_names_c_api)
     const size_t n_outputs = car_cpp.get_outputs_map().size();
     int n_state, n_algebraic, n_control, n_outputs_c;
     vehicle_type_get_sizes(&n_state, &n_algebraic, &n_control, &n_outputs_c, "f1-3dof");
-    EXPECT_EQ(car_cpp.get_outputs_map().size(), n_outputs_c);
+    EXPECT_EQ(car_cpp.get_outputs_map().size(), static_cast<size_t>(n_outputs_c));
 
     constexpr const size_t str_max_len = 60;
 
     char* key_name = new char[str_max_len];
 
     char** state_names = new char*[n_state];
-    for (size_t i = 0; i < n_state; ++i)
+    for (size_t i = 0; i < static_cast<size_t>(n_state); ++i)
         state_names[i] = new char[str_max_len];
 
     char** algebraic_names = new char*[n_algebraic];
-    for (size_t i = 0; i < n_algebraic; ++i)
+    for (size_t i = 0; i < static_cast<size_t>(n_algebraic); ++i)
         algebraic_names[i] = new char[str_max_len];
 
     char** control_names = new char*[n_control];
-    for (size_t i = 0; i < n_control; ++i)
+    for (size_t i = 0; i < static_cast<size_t>(n_control); ++i)
         control_names[i] = new char[str_max_len];
     
     char** output_names = new char*[n_outputs];
-    for (size_t i = 0; i < n_outputs; ++i)
+    for (size_t i = 0; i < static_cast<size_t>(n_outputs); ++i)
         output_names[i] = new char[str_max_len];
 
     vehicle_type_get_names(key_name, state_names, algebraic_names, control_names, output_names, str_max_len, "f1-3dof");
@@ -964,16 +964,16 @@ TEST_F(limebeer2014f1_test, get_vehicle_output_variable_names_c_api)
     for (const auto& [key,val] : car_cpp.get_outputs_map())
         EXPECT_EQ(std::string(output_names[i++]), key);
 
-    for (size_t i = 0; i < n_state; ++i)
+    for (size_t i = 0; i < static_cast<size_t>(n_state); ++i)
         delete[] state_names[i];
 
-    for (size_t i = 0; i < n_algebraic; ++i)
+    for (size_t i = 0; i < static_cast<size_t>(n_algebraic); ++i)
         delete[] algebraic_names[i];
 
-    for (size_t i = 0; i < n_control; ++i)
+    for (size_t i = 0; i < static_cast<size_t>(n_control); ++i)
         delete[] control_names[i];
 
-    for (size_t i = 0; i < n_outputs; ++i)
+    for (size_t i = 0; i < static_cast<size_t>(n_outputs); ++i)
         delete[] output_names[i];
 
     delete[] key_name;
