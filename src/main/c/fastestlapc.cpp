@@ -43,6 +43,18 @@ fastestlapc_API std::unordered_map<std::string,scalar>& get_table_scalar() { ret
 fastestlapc_API std::unordered_map<std::string,std::vector<scalar>>& get_table_vector() { return table_vector; }
 #endif
 
+std::string ltrim(const std::string &s) {
+    return std::regex_replace(s, std::regex("^\\s+"), std::string(""));
+}
+ 
+std::string rtrim(const std::string &s) {
+    return std::regex_replace(s, std::regex("\\s+$"), std::string(""));
+}
+ 
+std::string trim(const std::string &s) {
+    return ltrim(rtrim(s));
+}
+
 // Persistent warm start 
 template<typename vehicle_t>
 Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>& get_warm_start()
@@ -623,7 +635,7 @@ double vehicle_get_property_generic(Vehicle_t& vehicle, const double* c_q, const
 }
 
 
-double vehicle_get_property(const char* c_vehicle_name, const double* q, const double* qa, const double* u, const double s, const char* property_name)
+double vehicle_get_output(const char* c_vehicle_name, const double* q, const double* qa, const double* u, const double s, const char* property_name)
 {
  try
  {
@@ -824,6 +836,38 @@ int download_vector_size(const char* name_c)
 }
 
 
+void variable_type(char* c_variable_type, const int str_len_max, const char* c_variable_name)
+{
+ try
+ {
+    std::string name = c_variable_name;
+    std::string type;
+
+    if ( table_f1_3dof.count(name) != 0 )
+        type = "f1-3dof";
+
+    else if ( table_kart_6dof.count(name) != 0 )
+        type = "kart-6dof";
+
+    else if ( table_track.count(name) != 0 )
+        type = "track";
+
+    else if ( table_scalar.count(name) != 0 )
+        type = "scalar";
+    
+    else if ( table_vector.count(name) != 0 )
+        type = "vector";
+
+    else
+        throw fastest_lap_exception("[ERROR] variable_type -> variable \"" + name + "\" was not found");
+
+    strcpy(c_variable_type, type.c_str());
+    
+    return;
+ }
+ CATCH()
+}
+
 double download_scalar(const char* name_c)
 {
  try
@@ -873,23 +917,88 @@ void download_vector(double* data, const int n, const char* name_c)
 }
 
 
-int vehicle_get_number_of_output_variables(const char* c_vehicle_name)
+void vehicle_type_get_sizes(int* n_state, int* n_algebraic, int* n_control, int* n_outputs, const char* c_vehicle_type_name)
 {
  try
  {
-    const std::string vehicle_name = c_vehicle_name;
+    const std::string vehicle_type_name = c_vehicle_type_name;
 
-    if ( table_f1_3dof.count(vehicle_name) != 0 )
+    if ( vehicle_type_name == "f1-3dof" )
     {
-        return table_f1_3dof.at(vehicle_name).curvilinear_scalar.get_outputs_map().size();
+        *n_state     = limebeer2014f1_all::vehicle_ad_curvilinear::NSTATE;
+        *n_algebraic = limebeer2014f1_all::vehicle_ad_curvilinear::NALGEBRAIC;
+        *n_control   = limebeer2014f1_all::vehicle_ad_curvilinear::NCONTROL;
+        *n_outputs   = limebeer2014f1_all::vehicle_ad_curvilinear{}.get_outputs_map().size();
     }
-    else if ( table_kart_6dof.count(vehicle_name) != 0 )
+    else if ( vehicle_type_name == "kart-6dof" )
     {
-        return table_kart_6dof.at(vehicle_name).curvilinear_scalar.get_outputs_map().size();
+        *n_state     = lot2016kart_all::vehicle_ad_curvilinear::NSTATE;
+        *n_algebraic = lot2016kart_all::vehicle_ad_curvilinear::NALGEBRAIC;
+        *n_control   = lot2016kart_all::vehicle_ad_curvilinear::NCONTROL;
+        *n_outputs   = lot2016kart_all::vehicle_ad_curvilinear{}.get_outputs_map().size();
     }
     else
     {
-        throw fastest_lap_exception("[ERROR] vehicle_get_number_of_output_variables -> No vehicle with name \"" + vehicle_name + "\" was found");
+        throw fastest_lap_exception("[ERROR] vehicle_type_get_size_for_name -> No vehicle type with name \"" + vehicle_type_name + "\" exists. Types are \"f1-3dof\" and \"kart-6dof\"");
+    }
+ }
+ CATCH()
+}
+
+
+template<typename vehicle_t>
+void vehicle_type_get_names_generic(char* c_key_name, char* c_state_names[], char* c_algebraic_state_names[], char* c_control_names[], char* c_output_names[], const int n_char)
+{
+    const auto [key_name, q_names, qa_names, u_names] = vehicle_t{}.get_state_and_control_names();
+
+    if ( key_name.size() > n_char - 1)
+        throw fastest_lap_exception("[ERROR] vehicle_type_get_names_generic -> value provided for n_char was not sufficient. At least n_char = " + std::to_string(key_name.size()) + " is needed.");
+    strcpy(c_key_name, key_name.c_str());
+
+    for (size_t i = 0; i < q_names.size(); ++i) {
+        if ( q_names[i].size() > n_char - 1)
+            throw fastest_lap_exception("[ERROR] vehicle_type_get_names_generic -> value provided for n_char was not sufficient. At least n_char = " + std::to_string(q_names[i].size()) + " is needed.");
+        strcpy(c_state_names[i], q_names[i].c_str());
+    }
+
+    for (size_t i = 0; i < qa_names.size(); ++i) {
+        if ( qa_names[i].size() > n_char - 1)
+            throw fastest_lap_exception("[ERROR] vehicle_type_get_names_generic -> value provided for n_char was not sufficient. At least n_char = " + std::to_string(qa_names[i].size()) + " is needed.");
+        strcpy(c_algebraic_state_names[i], qa_names[i].c_str());
+    }
+
+    for (size_t i = 0; i < u_names.size(); ++i) {
+        if ( u_names[i].size() > n_char - 1)
+            throw fastest_lap_exception("[ERROR] vehicle_type_get_names_generic -> value provided for n_char was not sufficient. At least n_char = " + std::to_string(u_names[i].size()) + " is needed.");
+        strcpy(c_control_names[i], u_names[i].c_str());
+    }
+
+    const auto output_names_map = vehicle_t{}.get_outputs_map();
+
+    size_t i = 0;
+    for (const auto& [key,val] : output_names_map) {
+        if ( key.size() > n_char - 1)
+            throw fastest_lap_exception("[ERROR] vehicle_type_get_names_generic -> value provided for n_char was not sufficient. At least n_char = " + std::to_string(key.size()) + " is needed.");
+        strcpy(c_output_names[i++], key.c_str());
+    }
+}
+
+
+void vehicle_type_get_names(char* c_key_name, char* c_state_names[], char* c_algebraic_state_names[], char* c_control_names[], char* c_output_names[], const int n_char, const char* c_vehicle_type_name)
+{
+ try 
+ {
+    const std::string vehicle_type_name = c_vehicle_type_name;
+
+    if ( vehicle_type_name == "f1-3dof" ) {
+        vehicle_type_get_names_generic<limebeer2014f1_all::vehicle_ad_curvilinear>(c_key_name, c_state_names, c_algebraic_state_names, c_control_names, c_output_names, n_char);
+
+    } else if ( vehicle_type_name == "kart-6dof" ) {
+        vehicle_type_get_names_generic<lot2016kart_all::vehicle_ad_curvilinear>(c_key_name, c_state_names, c_algebraic_state_names, c_control_names, c_output_names, n_char);
+ 
+    } else {
+        throw fastest_lap_exception("[ERROR] vehicle_type_get_size_for_name -> No vehicle type with name \"" + vehicle_type_name + "\" exists. Types are \"f1-3dof\" and \"kart-6dof\"");
+
     }
  }
  CATCH()
@@ -1316,7 +1425,7 @@ struct Optimal_laptime_configuration
         // Output variables
         if ( doc.has_element("options/output_variables") )
         {
-            output_variables_prefix = doc.get_element("options/output_variables/prefix").get_value();
+            output_variables_prefix = trim(doc.get_element("options/output_variables/prefix").get_value());
 
             if ( doc.has_element("options/output_variables/variables") ) {
                 auto variables_node = doc.get_element("options/output_variables/variables");

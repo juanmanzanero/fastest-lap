@@ -81,9 +81,9 @@ options += "</options>"
 
 fastest_lap.optimal_laptime(vehicle,track,s,options);
 
-throttle = fastest_lap.download_vector("run/chassis.throttle");
-u        = fastest_lap.download_vector("run/chassis.velocity.x");
-s        = fastest_lap.download_vector("run/road.arclength");
+throttle      = fastest_lap.download_vector("run/chassis.throttle");
+u             = fastest_lap.download_vector("run/chassis.velocity.x");
+s             = fastest_lap.download_vector("run/road.arclength");
 engine_energy = fastest_lap.download_scalar("run/integral_quantities.engine-energy");
 ```
 

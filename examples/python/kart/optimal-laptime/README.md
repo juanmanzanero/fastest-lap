@@ -62,9 +62,6 @@ omega    = fastest_lap.download_vector("run/chassis.omega.z");
 v        = fastest_lap.download_vector("run/chassis.velocity.y");
 ```
 
-    Calculation finished
-
-
 ## GPS
 
 

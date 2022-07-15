@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import ctypes as c
 import numpy as np
 import pathlib
+import xml.etree.ElementTree as xml
 
 KMH=1.0/3.6;
 
@@ -10,6 +11,7 @@ libname="${libdir_python}/$<TARGET_FILE_NAME:fastestlapc>"
 c_lib = c.CDLL(libname)
 c_lib.download_scalar.restype       = c.c_double;
 c_lib.track_download_length.restype = c.c_double;
+c_lib.vehicle_type_get_sizes.argtypes = [c.POINTER(c.c_int), c.POINTER(c.c_int), c.POINTER(c.c_int), c.POINTER(c.c_int), c.c_char_p];
 
 # Print -----------------------------------------------------------------------------
 
@@ -104,6 +106,29 @@ def delete_variables_by_prefix(prefix):
 
 # Getters --------------------------------------------------------------
 
+def variable_type(name):
+	c_variable = c.c_char_p((name).encode('utf-8'))
+	str_len_max = 99;
+	c_variable_type = c.c_char_p(((" ")*str_len_max).encode('utf-8'));
+
+	c_lib.variable_type(c_variable_type, str_len_max, c_variable);
+
+	return c_variable_type.value.decode()
+
+def download_variables(prefix,variable_list):
+	varmap = dict()
+	for var in variable_list:
+		if ( variable_type(prefix+var) == 'scalar' ):
+			varmap[var] = download_scalar(prefix+var)
+
+		elif ( variable_type(prefix+var) == 'vector' ):
+			varmap[var] = download_vector(prefix+var)
+	
+		else:
+			raise Exception
+
+	return varmap
+
 def download_scalar(name):
 	c_variable = c.c_char_p((name).encode('utf-8'))	
 	return c_lib.download_scalar(c_variable)
@@ -124,27 +149,71 @@ def download_vector(name):
 
 	return data;
 
-def vehicle_get_output_variable_names(vehicle_name):
-        c_vehicle_name = c.c_char_p((vehicle_name).encode('utf-8'))
-        n_outputs = c_lib.vehicle_get_number_of_output_variables(c_vehicle_name);
-        string_size = 99;
-        
-        output_names = [None]*n_outputs;
-        
-        for i in range(n_outputs):
-                output_names[i] = (" "*string_size).encode('utf-8');
-        
-        c_output_names = (c.c_char_p*n_outputs)();
-        c_output_names[:] = output_names;
+def vehicle_type_get_sizes(vehicle_type_name):
+	c_vehicle_type_name = c.c_char_p((vehicle_type_name).encode('utf-8'));
+	
+	c_n_state     = (c.c_int*1)();
+	c_n_algebraic = (c.c_int*1)();
+	c_n_control   = (c.c_int*1)();
+	c_n_outputs   = (c.c_int*1)();
 
-        c_lib.vehicle_get_output_variable_names(c_output_names, n_outputs, string_size, c_vehicle_name)
+	c_lib.vehicle_type_get_sizes(c_n_state, c_n_algebraic, c_n_control, c_n_outputs, c_vehicle_type_name);
 
-        for i in range(n_outputs):
-                output_names[i] = c_output_names[i].decode();
+	return c_n_state[0], c_n_algebraic[0], c_n_control[0], c_n_outputs[0]
+	
 
-        return output_names;
+def vehicle_type_get_names(vehicle_type_name):
+	c_vehicle_type_name = c.c_char_p((vehicle_type_name).encode('utf-8'))
+	n_state,n_algebraic,n_control,n_outputs = vehicle_type_get_sizes(vehicle_type_name);
+	string_size = 99;
+	
+	c_key_name = c.c_char_p( (" "*string_size).encode('utf-8') );
 
-def vehicle_get_property(vehicle_name, q, qa, u, s, property_name):
+	state_names = [None]*n_state;
+	for i in range(n_state):
+		state_names[i] = (" "*string_size).encode('utf-8');
+	
+	algebraic_names = [None]*n_algebraic;
+	for i in range(n_algebraic):
+		algebraic_names[i] = (" "*string_size).encode('utf-8');
+
+	control_names = [None]*n_control;
+	for i in range(n_control):
+		control_names[i] = (" "*string_size).encode('utf-8');
+	
+	output_names = [None]*n_outputs;
+	for i in range(n_outputs):
+		output_names[i] = (" "*string_size).encode('utf-8');
+	
+	c_state_names = (c.c_char_p*n_state)();
+	c_state_names[:] = state_names;
+
+	c_algebraic_names = (c.c_char_p*n_algebraic)();
+	c_algebraic_names[:] = algebraic_names;
+
+	c_control_names = (c.c_char_p*n_control)();
+	c_control_names[:] = control_names;
+
+	c_output_names = (c.c_char_p*n_outputs)();
+	c_output_names[:] = output_names;
+
+	c_lib.vehicle_type_get_names(c_key_name, c_state_names, c_algebraic_names, c_control_names, c_output_names, c.c_int(string_size), c_vehicle_type_name)
+
+	for i in range(n_state):
+		state_names[i] = c_state_names[i].decode();
+
+	for i in range(n_algebraic):
+		algebraic_names[i] = c_algebraic_names[i].decode();
+
+	for i in range(n_control):
+		control_names[i] = c_control_names[i].decode();
+
+	for i in range(n_outputs):
+		output_names[i] = c_output_names[i].decode();
+
+	return c_key_name.value.decode(), state_names, algebraic_names, control_names, output_names;
+
+def vehicle_get_output(vehicle_name, q, qa, u, s, property_name):
 	c_vehicle_name = c.c_char_p((vehicle_name).encode('utf-8'))	
 	c_property_name = c.c_char_p((property_name).encode('utf-8'))	
 	
@@ -160,7 +229,7 @@ def vehicle_get_property(vehicle_name, q, qa, u, s, property_name):
 	for i in range(len(u)):
 		c_u[i] = u[i];
 
-	c_lib.vehicle_get_property(c_vehicle_name, c_q, c_qa, c_u, c.c_double(s), c_property_name);
+	c_lib.vehicle_get_output(c_vehicle_name, c_q, c_qa, c_u, c.c_double(s), c_property_name);
 	return;
 
 def vehicle_save_as_xml(vehicle_name, xml_file_name):
@@ -234,15 +303,15 @@ def gg_diagram(vehicle,speed,n_points):
 	ax_min = [None] * n_points;
 
 	for i in range(n_points):
-        	ay[i] = ay_c[i]/9.81;
-        	ay_minus[i] = -ay[i];        
-        	ax_max[i] = ax_max_c[i]/9.81;
-        	ax_min[i] = ax_min_c[i]/9.81;
+		ay[i] = ay_c[i]/9.81;
+		ay_minus[i] = -ay[i];        
+		ax_max[i] = ax_max_c[i]/9.81;
+		ax_min[i] = ax_min_c[i]/9.81;
 
 	return ay,ay_minus,ax_max,ax_min;
 
 def optimal_laptime(vehicle, track, s, options):
-	vehicle = c.c_char_p((vehicle).encode('utf-8'))
+	c_vehicle = c.c_char_p((vehicle).encode('utf-8'))
 	track   = c.c_char_p((track).encode('utf-8'))
 
 	# Get channels ready to be written by C++
@@ -253,9 +322,33 @@ def optimal_laptime(vehicle, track, s, options):
 
 	c_options = c.c_char_p((options).encode('utf-8'));
 
-	c_lib.optimal_laptime(vehicle, track, c.c_int(len(s)), c_s, c_options);
+	c_lib.optimal_laptime(c_vehicle, track, c.c_int(len(s)), c_s, c_options);
 
-	return;
+	# Parse the options to get the variable names
+	root = xml.fromstring(options)
+
+	variable_list = []
+
+	if ( root.find('output_variables') != None ):
+		# Find prefix
+		prefix_element = root.find('output_variables').find('prefix');
+		if ( prefix_element != None ):
+			prefix = prefix_element.text;
+		else:
+			prefix = '';
+
+		# Find variables
+		variables_element = root.find('output_variables').find('variables');
+
+		if ( variables_element != None ):
+			for var in variables_element.find('*'):
+				variables_list.append(var.tag);	
+
+		else:
+			key_name, state_names, algebraic_names, control_names, outputs_names = vehicle_type_get_names(variable_type(vehicle))
+			variable_list = [key_name] + state_names + algebraic_names + control_names + outputs_names;
+
+	return prefix.strip(),variable_list;
 
 def track_coordinates(track):
 	x_center =  np.array(track_download_data(track,"centerline.x"));

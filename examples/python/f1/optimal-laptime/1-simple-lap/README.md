@@ -32,34 +32,24 @@ s=fastest_lap.track_download_data(track,"arclength");
 options  = "<options>"
 options += "    <output_variables>"
 options += "        <prefix>run/</prefix>"
-options += "        <variables>"
-options += "            <chassis.position.x/>"
-options += "            <chassis.position.y/>"
-options += "            <front-axle.steering-angle/>"
-options += "            <chassis.throttle/>"
-options += "            <chassis.velocity.x/>"
-options += "            <road.arclength/>"
-options += "            <time/>"
-options += "            <chassis.attitude.yaw/>"
-options += "            <chassis.omega.z/>"
-options += "            <chassis.velocity.y/>"
-options += "        </variables>"
 options += "    </output_variables>"
 options += "    <print_level> 5 </print_level>"
 options += "</options>"
 
-fastest_lap.optimal_laptime(vehicle,track,s,options);
+run = fastest_lap.download_variables(*fastest_lap.optimal_laptime(vehicle,track,s,options));
 
-x        = fastest_lap.download_vector("run/chassis.position.x");
-y        = fastest_lap.download_vector("run/chassis.position.y");
-delta    = fastest_lap.download_vector("run/front-axle.steering-angle");
-throttle = fastest_lap.download_vector("run/chassis.throttle");
-u        = fastest_lap.download_vector("run/chassis.velocity.x");
-s        = fastest_lap.download_vector("run/road.arclength");
-time     = fastest_lap.download_vector("run/time");
-psi      = fastest_lap.download_vector("run/chassis.attitude.yaw");
-omega    = fastest_lap.download_vector("run/chassis.omega.z");
-v        = fastest_lap.download_vector("run/chassis.velocity.y");
+x        = run["chassis.position.x"];
+y        = run["chassis.position.y"];
+delta    = run["front-axle.steering-angle"];
+throttle = run["chassis.throttle"];
+u        = run["chassis.velocity.x"];
+s        = run["road.arclength"];
+time     = run["time"];
+psi      = run["chassis.attitude.yaw"];
+omega    = run["chassis.omega.z"];
+v        = run["chassis.velocity.y"];
+
+fastest_lap.delete_variables_by_prefix("run/")
 ```
 
 ## GPS

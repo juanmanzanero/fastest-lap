@@ -65,17 +65,19 @@ extern fastestlapc_API void delete_variables_by_prefix(const char* prefix_c);
 
 // Getters -------------------------------------------------------------------------------------------------------------
 
+extern fastestlapc_API void variable_type(char* variable_type, const int str_len_max, const char* variable_name);
+
 extern fastestlapc_API double download_scalar(const char* name_c);
 
 extern fastestlapc_API int download_vector_size(const char* name_c);
 
 extern fastestlapc_API void download_vector(double* data, const int n, const char* name_c);
 
-extern fastestlapc_API int vehicle_get_number_of_output_variables(const char* vehicle_name);
+extern fastestlapc_API void vehicle_type_get_sizes(int* n_state, int* n_algebraic, int* n_control, int* n_outputs, const char* c_vehicle_type_name);
 
-extern fastestlapc_API void vehicle_get_output_variable_names(char* output_names[], const int n_outputs, const int n_char, const char* vehicle_name);
+extern fastestlapc_API void vehicle_type_get_names(char* key_name, char* state_names[], char* algebraic_state_names[], char* control_names[], char* output_names[], const int n_char, const char* vehicle_type_name);
 
-extern fastestlapc_API double vehicle_get_property(const char* vehicle_name, const double* q, const double* qa, const double* u, const double s, const char* property_name);
+extern fastestlapc_API double vehicle_get_output(const char* vehicle_name, const double* q, const double* qa, const double* u, const double s, const char* property_name);
 
 extern fastestlapc_API void vehicle_save_as_xml(const char* vehicle_name, const char* file_name);
 
