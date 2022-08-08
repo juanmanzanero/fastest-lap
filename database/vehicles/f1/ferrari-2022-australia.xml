@@ -94,6 +94,9 @@
         <engine>
             <maximum-power>668.8400387253314</maximum-power>
         </engine>
+        <boost>
+            <maximum-power units="kW"> 120.000 </maximum-power>
+        </boost>
         <track>1.52</track>
         <inertia>1.55</inertia>
         <smooth_throttle_coeff>1.0000000000000001e-05</smooth_throttle_coeff>

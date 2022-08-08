@@ -51,7 +51,7 @@ class lot2016kart
         static constexpr const size_t N_OL_EXTRA_CONSTRAINTS = 6;    //! The number of tire constraints: kappa_rl, kappa_rr, lambda_fl, lambda_fr, lambda_rl, lambda_rr
     
         // Factor to scale the acceleration on the fitness function
-        static constexpr const scalar acceleration_scaling = 1.0;
+        static constexpr const scalar acceleration_units = 1.0;
 
         // The content of x is: x = [w_axle, z, phi, mu, psi, delta]
         static std::vector<scalar> steady_state_initial_guess()

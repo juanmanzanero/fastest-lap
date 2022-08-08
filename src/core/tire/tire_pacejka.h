@@ -131,6 +131,12 @@ struct Pacejka_simple_model
     //! Compute the combined lateral force
     Timeseries_t force_combined_lateral_magic(Timeseries_t kappa, Timeseries_t lambda, Timeseries_t Fz) const;
 
+    //! Compute the maximum kappa
+    Timeseries_t maximum_kappa(Timeseries_t Fz) const { return (Fz - _Fz1)*(_kappa_max2 - _kappa_max1)/(_Fz2 - _Fz1) + _kappa_max1; }
+
+    //! Compute the maximum lambda
+    Timeseries_t maximum_lambda(Timeseries_t Fz) const { return (Fz - _Fz1)*(_lambda_max2 - _lambda_max1)/(_Fz2 - _Fz1) + _lambda_max1; }
+
     // Constants
     scalar _Fz1 = 0.0;            //! [c] Reference load 1
     scalar _Fz2 = 0.0;            //! [c] Reference load 2

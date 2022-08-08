@@ -42,9 +42,10 @@ static_assert(limebeer2014f1<scalar>::cartesian::NSTATE == 10);
 
 // Check expected indexes for control variables
 static_assert(Front_axle_t::ISTEERING == 0);
-static_assert(Chassis_t::ITHROTTLE    == 1);
-static_assert(Chassis_t::IBRAKE_BIAS  == 2);
-static_assert(limebeer2014f1<scalar>::cartesian::NCONTROL == 3);
+static_assert(Rear_axle_t::IBOOST     == 1);
+static_assert(Chassis_t::ITHROTTLE    == 2);
+static_assert(Chassis_t::IBRAKE_BIAS  == 3);
+static_assert(limebeer2014f1<scalar>::cartesian::NCONTROL == 4);
 
 // Check expected indexes for state derivative variables
 static_assert(Front_axle_t::IIDKAPPA_LEFT  == 0);
@@ -78,9 +79,10 @@ TEST_F(limebeer2014f1_test, indexes)
     EXPECT_EQ(limebeer2014f1<scalar>::cartesian::NSTATE, 10);
 
     EXPECT_EQ(Front_axle_t::ISTEERING, 0);
-    EXPECT_EQ(Chassis_t::ITHROTTLE, 1);
-    EXPECT_EQ(Chassis_t::IBRAKE_BIAS, 2);
-    EXPECT_EQ(limebeer2014f1<scalar>::cartesian::NCONTROL, 3);
+    EXPECT_EQ(Rear_axle_t::IBOOST , 1);
+    EXPECT_EQ(Chassis_t::ITHROTTLE, 2);
+    EXPECT_EQ(Chassis_t::IBRAKE_BIAS, 3);
+    EXPECT_EQ(limebeer2014f1<scalar>::cartesian::NCONTROL, 4);
 
     EXPECT_EQ(Front_axle_t::IIDKAPPA_LEFT  , 0);
     EXPECT_EQ(Front_axle_t::IIDKAPPA_RIGHT , 1);
@@ -119,6 +121,7 @@ TEST_F(limebeer2014f1_test, vehicle_from_xml_variable_names)
     EXPECT_EQ(u_names[Chassis_t::ITHROTTLE], "chassis.throttle");
     EXPECT_EQ(u_names[Chassis_t::IBRAKE_BIAS], "chassis.brake-bias");
     EXPECT_EQ(u_names[Front_axle_t::ISTEERING], "front-axle.steering-angle");
+    EXPECT_EQ(u_names[Rear_axle_t::IBOOST], "rear-axle.boost");
 }
 
 TEST_F(limebeer2014f1_test, vehicle_empty_variable_names)
@@ -259,8 +262,8 @@ TEST_F(limebeer2014f1_test, jacobian_autodiff)
     auto solution = car_ad.equations(q0,qa0,u0,0.0);
 
     // Compute the numerical Jacobian
-    std::array<std::array<double,10>,10+4+2> numerical_jacobian;
-    std::array<std::array<double,4>,10+4+2> numerical_jacobian_dqa;
+    std::array<std::array<double,10>,10+4+4> numerical_jacobian;
+    std::array<std::array<double,4>,10+4+4> numerical_jacobian_dqa;
 
     // derivatives w.r.t q
     for (size_t i = 0; i < 10; ++i)
@@ -301,7 +304,7 @@ TEST_F(limebeer2014f1_test, jacobian_autodiff)
     }
 
     // derivatives w.r.t u
-    for (size_t i = 0; i < 2; ++i)
+    for (size_t i = 0; i < 4; ++i)
     {
         // Freeze u0 and add a perturbation on q0 
         const double eps = std::max(1.0,fabs(u0[i]))*1.0e-8;
@@ -320,13 +323,13 @@ TEST_F(limebeer2014f1_test, jacobian_autodiff)
     }
 
 
-    for (size_t i = 0; i < 10+4+2; ++i)
+    for (size_t i = 0; i < 10+4+4; ++i)
         for (size_t j = 0; j < 10; ++j)
         {
             EXPECT_NEAR(numerical_jacobian[i][j], solution.jac_dqdt[j][i], 2.0e-6*std::max(fabs(solution.jac_dqdt[j][i]),1.0)) << "with i = " << i << " and j = " << j ;
         }
 
-    for (size_t i = 0; i < 10+4+2; ++i)
+    for (size_t i = 0; i < 10+4+4; ++i)
         for (size_t j = 0; j < 4; ++j)
         {
             EXPECT_NEAR(numerical_jacobian_dqa[i][j], solution.jac_dqa[j][i], 2.0e-6*std::max(fabs(solution.jac_dqa[j][i]),1.0)) << "with i = " << i << " and j = " << j ;
@@ -349,8 +352,8 @@ TEST_F(limebeer2014f1_test, jacobian_autodiff_random)
     auto solution = car_ad.equations(q0,qa0,u0,0.0);
 
     // Compute the numerical Jacobian
-    std::array<std::array<double,10>,10+4+2> numerical_jacobian;
-    std::array<std::array<double,4>,10+4+2> numerical_jacobian_dqa;
+    std::array<std::array<double,10>,10+4+4> numerical_jacobian;
+    std::array<std::array<double,4>,10+4+4> numerical_jacobian_dqa;
 
     // derivatives w.r.t q
     for (size_t i = 0; i < 10; ++i)
@@ -391,7 +394,7 @@ TEST_F(limebeer2014f1_test, jacobian_autodiff_random)
     }
 
     // derivatives w.r.t u
-    for (size_t i = 0; i < 2; ++i)
+    for (size_t i = 0; i < 4; ++i)
     {
         // Freeze u0 and add a perturbation on q0 
         const double eps = std::max(1.0,fabs(u0[i]))*1.0e-8;
@@ -410,13 +413,13 @@ TEST_F(limebeer2014f1_test, jacobian_autodiff_random)
     }
 
 
-    for (size_t i = 0; i < 10+4+2; ++i)
+    for (size_t i = 0; i < 10+4+4; ++i)
         for (size_t j = 0; j < 10; ++j)
         {
             EXPECT_NEAR(numerical_jacobian[i][j], solution.jac_dqdt[j][i], 2.0e-6*std::max(fabs(solution.jac_dqdt[j][i]),1.0)) << "with i = " << i << " and j = " << j ;
         }
 
-    for (size_t i = 0; i < 10+4+2; ++i)
+    for (size_t i = 0; i < 10+4+4; ++i)
         for (size_t j = 0; j < 4; ++j)
         {
             EXPECT_NEAR(numerical_jacobian_dqa[i][j], solution.jac_dqa[j][i], 2.0e-6*std::max(fabs(solution.jac_dqa[j][i]),1.0)) << "with i = " << i << " and j = " << j ;
@@ -446,6 +449,7 @@ TEST_F(limebeer2014f1_test, set_parameter)
     car.set_parameter("vehicle/rear-axle/differential_stiffness", 10.47);
     car.set_parameter("vehicle/rear-axle/brakes/max_torque", 5000.0);
     car.set_parameter("vehicle/rear-axle/engine/maximum-power", 735.499);
+    car.set_parameter("vehicle/rear-axle/boost/maximum-power", 120.000);
 
     car.set_parameter("vehicle/chassis/mass", 660.0);
     car.set_parameter("vehicle/chassis/inertia/Ixx", 0.0);
@@ -589,6 +593,7 @@ TEST_F(limebeer2014f1_test, set_parameter_c_api)
     vehicle_set_parameter("vehicle_test", "vehicle/rear-axle/differential_stiffness", 10.47);
     vehicle_set_parameter("vehicle_test", "vehicle/rear-axle/brakes/max_torque", 5000.0);
     vehicle_set_parameter("vehicle_test", "vehicle/rear-axle/engine/maximum-power", 735.499);
+    vehicle_set_parameter("vehicle_test", "vehicle/rear-axle/boost/maximum-power", 120.000);
 
     vehicle_set_parameter("vehicle_test", "vehicle/chassis/mass", 660.0);
     vehicle_set_parameter("vehicle_test", "vehicle/chassis/inertia/Izz", 450.0);
@@ -801,7 +806,7 @@ TEST_F(limebeer2014f1_test,propagation_crank_nicolson)
 
 
 
-    Crank_nicolson<limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p,10,4,3>::take_step(car, u, u_next, q, qa, s, s_next-s, {});
+    Crank_nicolson<limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p,10,4,4>::take_step(car, u, u_next, q, qa, s, s_next-s, {});
 
 
     for (size_t i = 0; i < 10; ++i)
@@ -905,7 +910,7 @@ TEST_F(limebeer2014f1_test,propagation_crank_nicolson_corner_exit)
     for (size_t i = 0; i < 4; ++i)
         EXPECT_NEAR(dqa_fin[i], 0.0, 1.0e-8);
 
-    Crank_nicolson<limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p,10,4,3>::take_step(car, u, u_next, q, qa, s, s_next-s, {});
+    Crank_nicolson<limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p,10,4,4>::take_step(car, u, u_next, q, qa, s, s_next-s, {});
 
     for (size_t i = 0; i < 10; ++i)
         EXPECT_NEAR(q[i],q_next[i],1.0e-10) << ", with i = " << i;

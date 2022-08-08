@@ -33,6 +33,7 @@ class Chassis_car_3dof_test : public ::testing::Test
         q_in[Road_t::IPSI]               = psi;
 
         u_in[Front_axle_t::ISTEERING] = delta;
+        u_in[Rear_axle_t::IBOOST]     = 0.0;
         u_in[Chassis_t::ITHROTTLE]    = throttle;
         u_in[Chassis_t::IBRAKE_BIAS]  = 0.6;
 

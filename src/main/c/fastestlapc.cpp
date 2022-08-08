@@ -1467,7 +1467,7 @@ struct Optimal_laptime_configuration
                 const auto i_control = std::distance(u_names.cbegin(), it_variable);
 
                 // Get type
-                control_type[i_control]  = variable.get_attribute("type");
+                control_type[i_control]  = variable.get_attribute("optimal_control_type");
 
                 // Switch the different cases
                 if ( control_type[i_control] == "dont optimize" )
@@ -1549,7 +1549,7 @@ struct Optimal_laptime_configuration
     static std::array<std::string,vehicle_t::vehicle_ad_curvilinear::NCONTROL> get_default_control_types() 
     {
         if constexpr (std::is_same_v<vehicle_t,limebeer2014f1_all>)
-            return {"full-mesh", "full-mesh", "dont optimize"};
+            return {"full-mesh", "dont optimize", "full-mesh", "dont optimize"};
         else if constexpr (std::is_same_v<vehicle_t,lot2016kart_all>)
             return {"full-mesh", "full-mesh"};
         else
@@ -1559,7 +1559,7 @@ struct Optimal_laptime_configuration
     static std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NCONTROL> get_default_dissipations()
     {
         if constexpr (std::is_same_v<vehicle_t,limebeer2014f1_all>)
-            return {5.0, 8.0e-4, 0.0};
+            return {5.0, 8.0e-4, 8.0e-4, 0.0};
         else if constexpr (std::is_same_v<vehicle_t,lot2016kart_all>)
             return {1.0e-2, 200*200*1.0e-10};
         else

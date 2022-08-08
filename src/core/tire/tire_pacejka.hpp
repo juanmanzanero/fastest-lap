@@ -196,8 +196,8 @@ template<typename Timeseries_t>
 Timeseries_t Pacejka_simple_model<Timeseries_t>::force_combined_longitudinal_magic(Timeseries_t kappa, Timeseries_t lambda, Timeseries_t Fz) const
 {
     const Timeseries_t mu_x_max  = smooth_pos((Fz - _Fz1)*(_mu_x_max2  - _mu_x_max1 )/(_Fz2 - _Fz1) + _mu_x_max1-_mu_min,1.0e-5)+_mu_min;
-    const Timeseries_t kappa_max = (Fz - _Fz1)*(_kappa_max2 - _kappa_max1)/(_Fz2 - _Fz1) + _kappa_max1;
-    const Timeseries_t lambda_max = (Fz - _Fz1)*(_lambda_max2 - _lambda_max1)/(_Fz2 - _Fz1) + _lambda_max1;
+    const Timeseries_t kappa_max = maximum_kappa(Fz);
+    const Timeseries_t lambda_max = maximum_lambda(Fz);;
 
     const Timeseries_t kappa_n = kappa/kappa_max;
     const Timeseries_t lambda_n = lambda/lambda_max;
@@ -213,8 +213,8 @@ template<typename Timeseries_t>
 Timeseries_t Pacejka_simple_model<Timeseries_t>::force_combined_lateral_magic(Timeseries_t kappa, Timeseries_t lambda, Timeseries_t Fz) const
 {
     const Timeseries_t mu_y_max  = smooth_pos((Fz - _Fz1)*(_mu_y_max2  - _mu_y_max1 )/(_Fz2 - _Fz1) + _mu_y_max1-_mu_min,1.0e-5)+_mu_min;
-    const Timeseries_t kappa_max = (Fz - _Fz1)*(_kappa_max2 - _kappa_max1)/(_Fz2 - _Fz1) + _kappa_max1;
-    const Timeseries_t lambda_max = (Fz - _Fz1)*(_lambda_max2 - _lambda_max1)/(_Fz2 - _Fz1) + _lambda_max1;
+    const Timeseries_t kappa_max = maximum_kappa(Fz);
+    const Timeseries_t lambda_max = maximum_lambda(Fz);;
 
     const Timeseries_t kappa_n = kappa/kappa_max;
     const Timeseries_t lambda_n = lambda/lambda_max;

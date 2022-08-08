@@ -1289,19 +1289,19 @@ std::unique_ptr<Xml_document> Optimal_laptime<Dynamic_model_t>::xml() const
         auto node_variable = node_control_variables.add_child(u_names[i]);
         if ( control_variables[i].optimal_control_type == DONT_OPTIMIZE )
         {
-            node_variable.set_attribute("type","dont optimize");
+            node_variable.set_attribute("optimal_control_type","dont optimize");
             node_variable.add_child("values");
         }
         else if ( control_variables[i].optimal_control_type == CONSTANT )
         {   
-            node_variable.set_attribute("type","constant");
+            node_variable.set_attribute("optimal_control_type","constant");
             s_out << control_variables[i].u.front();
             node_variable.add_child("values").set_value(s_out.str());
             s_out.str(""); s_out.clear();
         }
         else if ( control_variables[i].optimal_control_type == HYPERMESH )
         {
-            node_variable.set_attribute("type","hypermesh");
+            node_variable.set_attribute("optimal_control_type","hypermesh");
             for (size_t j = 0; j < control_variables[i].u.size()-1; ++j)
                 s_out << control_variables[i].u[j] << ", " ;
 
@@ -1320,7 +1320,7 @@ std::unique_ptr<Xml_document> Optimal_laptime<Dynamic_model_t>::xml() const
         }
         else if ( control_variables[i].optimal_control_type == FULL_MESH )
         {
-            node_variable.set_attribute("type", "full-mesh");
+            node_variable.set_attribute("optimal_control_type", "full-mesh");
             for (size_t j = 0; j < control_variables[i].u.size()-1; ++j)
                 s_out << control_variables[i].u[j] << ", " ;
 

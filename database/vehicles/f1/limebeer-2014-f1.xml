@@ -28,6 +28,9 @@
         <engine>
             <maximum-power units="kW"> 735.499 </maximum-power>
         </engine>
+        <boost>
+            <maximum-power units="kW"> 120.000 </maximum-power>
+        </boost>
     </rear-axle>
 
     <chassis>

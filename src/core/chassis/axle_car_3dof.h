@@ -40,10 +40,10 @@ struct POWERED
         STATE_END    
     } ;
 
-    //! Control variables: none
+    //! Control variables: boost
     enum Controls 
     { 
-        CONTROL_END = CONTROL0 
+        IBOOST = CONTROL0, CONTROL_END
     } ;
     
     constexpr static size_t IIDKAPPA_LEFT  = IKAPPA_LEFT;    //! Left tire longitudinal slip time derivative [1/s]
@@ -178,6 +178,10 @@ class Axle_car_3dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
     //! Get the engine
     const Engine<Timeseries_t>& get_engine() const { return _engine; }
 
+    const Engine<Timeseries_t>& get_engine_boost() const { return _engine_boost; }
+
+    const Timeseries_t& get_boost() const { return _boost; }
+
     //! Get a certain tire mechanical or geometrical parameter by name
     //! @param[in] parameter_name: name of the parameter
     scalar get_parameter(const std::string& parameter_name) const;
@@ -254,12 +258,14 @@ class Axle_car_3dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
 
     // Control variables
     Timeseries_t _throttle;             //! [in] Throttle/brake value in [-1/1]
+    Timeseries_t _boost;                //! [in] Boost value in [-1/1]
 
     // Actuators
     Brake<Timeseries_t>  _brakes;       //! [c] Brakes model
 
     // Extra members for POWERED
     Engine<Timeseries_t> _engine;       //! [c] Engine model
+    Engine<Timeseries_t> _engine_boost; //! [c] Engine model for the boost
 
     // Extra members for STEERING
     Timeseries_t _delta;                //! [in] Steering angle [rad]

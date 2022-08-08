@@ -31,7 +31,7 @@ class Axle_car_3dof_test : public testing::Test
         rear_axle.get_frame().set_parent(axle_frame);
 
         std::array<scalar,4> q = {kappa_fl, kappa_fr, kappa_rl, kappa_rr};
-        std::array<scalar,1> u = {delta};
+        std::array<scalar,2> u = {delta, 0.0};
 
         front_axle.set_state_and_controls(q,u);
         rear_axle.set_state_and_controls(q,u);

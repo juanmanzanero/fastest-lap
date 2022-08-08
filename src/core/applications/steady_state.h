@@ -134,7 +134,7 @@ class Steady_state
     {
      public:
         using argument_type = std::array<Timeseries_t,2+Dynamic_model_t::N_SS_VARS>;
-        Timeseries_t operator()(const argument_type& x) { return -x.back()/Dynamic_model_t::acceleration_scaling; };
+        Timeseries_t operator()(const argument_type& x) { return -x.back(); };
     };
 
     class Max_lat_acc_constraints
@@ -194,14 +194,14 @@ class Steady_state
     {
      public:
         using argument_type = std::array<Timeseries_t,1+Dynamic_model_t::N_SS_VARS>;
-        Timeseries_t operator()(const argument_type& x) { return -x.back()/Dynamic_model_t::acceleration_scaling; };
+        Timeseries_t operator()(const argument_type& x) { return -x.back(); };
     };
 
     class Min_lon_acc_fitness
     {
      public:
         using argument_type = std::array<Timeseries_t,1+Dynamic_model_t::N_SS_VARS>;
-        Timeseries_t operator()(const argument_type& x) { return x.back()/Dynamic_model_t::acceleration_scaling; };
+        Timeseries_t operator()(const argument_type& x) { return x.back(); };
     };
 
     class Max_lon_acc_constraints

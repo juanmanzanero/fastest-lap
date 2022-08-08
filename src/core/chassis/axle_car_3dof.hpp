@@ -20,8 +20,10 @@ Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::
   _torque_left(0.0),
   _torque_right(0.0),
   _throttle(0.0),
+  _boost(0.0),
   _brakes(),
   _engine(),
+  _engine_boost(),
   _delta(0.0)
 {
     base_type::_path = path;
@@ -36,6 +38,7 @@ Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::
     {
         // Construct engine and brakes
         _engine = Engine<Timeseries_t>(path + "engine/", true);
+        _engine_boost = Engine<Timeseries_t>(path + "boost/", true);
     }
     else if constexpr ( std::is_same<Axle_mode<0,0>, STEERING<0,0>>::value )
     {
@@ -73,8 +76,10 @@ Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::
   _torque_left(0.0),
   _torque_right(0.0),
   _throttle(0.0),
+  _boost(0.0),
   _brakes(),
   _engine(),
+  _engine_boost(),
   _delta(0.0)
 {
     base_type::_path = path;
@@ -90,6 +95,7 @@ Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::
     {
         // Construct engine and brakes
         _engine = Engine<Timeseries_t>(database, path + "engine/", true);
+        _engine_boost = Engine<Timeseries_t>(database, path + "boost/", true);
     }
     else if constexpr ( std::is_same<Axle_mode<0,0>, STEERING<0,0>>::value )
     {
@@ -138,12 +144,21 @@ inline bool Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0
 
         // If not found, look for the engine
         if constexpr ( std::is_same<Axle_mode<0,0>, POWERED<0,0>>::value )
+        {
             if ( !found )
                 if ( parameter.find(base_type::_path + "engine/") == 0 )
                 {
                     _engine.set_parameter(parameter, value);
                     found = true;
                 }
+
+            if ( !found )
+                if ( parameter.find(base_type::_path + "boost/") == 0 )
+                {
+                    _engine_boost.set_parameter(parameter, value);
+                    found = true;
+                }
+        }
 
         // If not found, look for the parameter in the parent class
         if ( !found )
@@ -172,6 +187,7 @@ inline void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0
     if constexpr ( std::is_same<Axle_mode<0,0>, POWERED<0,0>>::value )
     {
         _engine.fill_xml(doc);
+        _engine_boost.fill_xml(doc);
     }
 
     // Write the parameters of this class
@@ -206,11 +222,11 @@ void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTRO
     {
         // Compute throttle percentage 
         const Timeseries_t throttle_percentage  =  smooth_pos( throttle,_throttle_smooth_pos);
-
         const Timeseries_t engine_torque = _engine(throttle_percentage, 0.5*(omega_left + omega_right));
+        const Timeseries_t boost_torque  = _engine_boost(throttle_percentage*_boost, 0.5*(omega_left + omega_right));
         const Timeseries_t differential_torque = _differential_stiffness*(omega_left - omega_right);
-        _torque_left  += 0.5*engine_torque - differential_torque;
-        _torque_right += 0.5*engine_torque + differential_torque;
+        _torque_left  += 0.5*(engine_torque + boost_torque) - differential_torque;
+        _torque_right += 0.5*(engine_torque + boost_torque) + differential_torque;
     }
 
     // Compute the time derivative of the two kappas
@@ -272,6 +288,12 @@ void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTRO
         // steering angle
         u[Axle_type::ISTEERING] = base_type::_name + ".steering-angle";
     }
+
+    if constexpr (std::is_same<Axle_mode<0,0>,POWERED<0,0>>::value) 
+    {
+        // boost
+        u[Axle_type::IBOOST] = base_type::_name + ".boost";
+    }
 }
 
 
@@ -295,6 +317,12 @@ void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTRO
         // rotate the tires' frames
         std::get<LEFT>(base_type::_tires).get_frame().set_rotation_angle(0,_delta);
         std::get<RIGHT>(base_type::_tires).get_frame().set_rotation_angle(0,_delta);
+    }
+
+
+    if constexpr (std::is_same<Axle_mode<0,0>,POWERED<0,0>>::value) 
+    {
+        _boost = u[Axle_type::IBOOST];
     }
 }
 
@@ -324,6 +352,13 @@ void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTRO
         u_def[Axle_type::ISTEERING] = 0.0;
         u_lb[Axle_type::ISTEERING] = -20.0*DEG;
         u_ub[Axle_type::ISTEERING] =  20.0*DEG;
+    }
+
+    if constexpr (std::is_same<Axle_mode<0,0>,POWERED<0,0>>::value) 
+    {
+        u_def[Axle_type::IBOOST] = 0.0;
+        u_lb[Axle_type::IBOOST] = 0.0;
+        u_ub[Axle_type::IBOOST] = 1.0;
     }
 }
 

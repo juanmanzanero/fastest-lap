@@ -21,6 +21,7 @@ static void check_optimal_laptime(const Optimal_laptime<Dynamic_model_t>& opt_la
 {
     // Cover also the constructor from Xml_document
     Optimal_laptime<Dynamic_model_t> opt_laptime_saved(opt_saved);
+
     // kappa front left
     auto kappa_fl_saved = opt_saved.get_element("optimal_laptime/front-axle.left-tire.kappa").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
@@ -493,7 +494,7 @@ TEST_F(F1_optimal_laptime_test, maximum_acceleration)
     auto control_variables = Optimal_laptime<decltype(car)>::Control_variables<>{};
 
     control_variables[decltype(car)::Chassis_type::front_axle_type::ISTEERING] 
-        = Optimal_laptime<decltype(car)>::create_full_mesh(std::vector<scalar>(n+1,ss.u[decltype(car)::Chassis_type::front_axle_type::ISTEERING]), 0.0e0);
+        = Optimal_laptime<decltype(car)>::create_full_mesh(std::vector<scalar>(n+1, 0.0), 0.0e0);
 
     control_variables[decltype(car)::Chassis_type::ITHROTTLE] 
         = Optimal_laptime<decltype(car)>::create_full_mesh(std::vector<scalar>(n+1,ss.u[decltype(car)::Chassis_type::ITHROTTLE]), 4.0e-7);
@@ -514,7 +515,7 @@ TEST_F(F1_optimal_laptime_test, maximum_acceleration)
 
     // Check that steering is zero
     for (size_t i = 0; i < n; ++i)
-        EXPECT_NEAR(Value(opt_laptime.control_variables[decltype(car)::Chassis_type::front_axle_type::ISTEERING].u.at(i)), 0.0, 1.0e-14);
+        EXPECT_NEAR(Value(opt_laptime.control_variables[decltype(car)::Chassis_type::front_axle_type::ISTEERING].u.at(i)), 0.0, 1.0e-13);
 
     // Check the results with a saved simulation
     Xml_document opt_saved("data/f1_maximum_acceleration.xml", true);
@@ -869,9 +870,10 @@ TEST_F(F1_optimal_laptime_test, Catalunya_engine_energy_limited)
 
     // Engine energy limits require a higher value of the smooth throttle coefficient
     car.set_parameter("vehicle/rear-axle/smooth_throttle_coeff", 1.0e-2);
+    car.set_parameter("vehicle/rear-axle/boost/maximum-power", 0.0);
 
     // Start from the steady-state values at 50km/h-0g    
-    const scalar v = 50.0*KMH;
+    const scalar v = 100.0*KMH;
     auto ss = Steady_state(car_cartesian).solve(v,0.0,0.0); 
 
     const auto& s = catalunya_pproc.s;
@@ -894,6 +896,7 @@ TEST_F(F1_optimal_laptime_test, Catalunya_engine_energy_limited)
         = Optimal_laptime<decltype(car)>::create_dont_optimize(); 
 
     auto opts = Optimal_laptime<decltype(car)>::Options{};
+    opts.print_level = 0;
 
     // Run something on valgrind but not the big thing
     if ( is_valgrind ) 
@@ -971,4 +974,76 @@ TEST_F(F1_optimal_laptime_test, Catalunya_tire_energy_limited)
 
     for (size_t i = 1; i < 5; ++i)
         EXPECT_TRUE(opt_laptime.integral_quantities[i].value < 0.8 + 1.0e-6);
+}
+
+
+TEST_F(F1_optimal_laptime_test, Catalunya_boost)
+{
+    Xml_document catalunya_xml("./database/tracks/catalunya/catalunya.xml",true);
+    Circuit_preprocessor catalunya_pproc(catalunya_xml);
+    Track_by_polynomial catalunya(catalunya_pproc);
+    
+    limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial>::Road_t road(catalunya);
+    limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial> car(database, road);
+
+    // Engine energy limits require a higher value of the smooth throttle coefficient
+    car.set_parameter("vehicle/rear-axle/smooth_throttle_coeff", 1.0e-2);
+
+    // Start from the steady-state values at 50km/h-0g    
+    const scalar v = 50.0*KMH;
+    auto ss = Steady_state(car_cartesian).solve(v,0.0,0.0); 
+
+    const auto& s = catalunya_pproc.s;
+
+    const size_t n = s.size();
+
+    // Construct control variables
+    auto control_variables = Optimal_laptime<decltype(car)>::template Control_variables<>{};
+
+    // steering wheel: optimize in the full mesh
+    control_variables[decltype(car)::Chassis_type::front_axle_type::ISTEERING]
+        = Optimal_laptime<decltype(car)>::create_full_mesh(std::vector<scalar>(n,ss.u[decltype(car)::Chassis_type::front_axle_type::ISTEERING]), 50.0e0); 
+
+    // throttle: optimize in the full mesh
+    control_variables[decltype(car)::Chassis_type::ITHROTTLE]
+        = Optimal_laptime<decltype(car)>::create_full_mesh(std::vector<scalar>(n,ss.u[decltype(car)::Chassis_type::ITHROTTLE]), 20.0*8.0e-4); 
+
+    // boost: optimize in the full mesh
+    control_variables[decltype(car)::Chassis_type::rear_axle_type::IBOOST]
+        = Optimal_laptime<decltype(car)>::create_full_mesh(std::vector<scalar>(n,0.0), 0.0); 
+
+    // brake bias: don't optimize
+    control_variables[decltype(car)::Chassis_type::IBRAKE_BIAS]
+        = Optimal_laptime<decltype(car)>::create_dont_optimize(); 
+
+    auto opts = Optimal_laptime<decltype(car)>::Options{};
+
+    // Run something on valgrind but not the big thing
+    if ( is_valgrind ) 
+    {
+        opts.maximum_iterations = 1;
+        opts.throw_if_fail = false;
+    }
+
+    opts.integral_quantities = { {"boost-time", 0.0, 10.0} };
+    opts.print_level = 0;
+    Optimal_laptime opt_laptime(s, true, true, car, {n,ss.q}, {n,ss.qa}, control_variables, opts);
+    opt_laptime.xml();
+
+    if ( is_valgrind )
+        return;
+
+    // Check the results with a saved simulation
+    Xml_document opt_saved("data/f1_optimal_laptime_catalunya_boost.xml", true);
+
+    check_optimal_laptime(opt_laptime, opt_saved, n);
+
+    // boost
+    auto boost_saved = opt_saved.get_element("optimal_laptime/control_variables/rear-axle.boost/values").get_value(std::vector<scalar>());
+    for (size_t i = 0; i < n; ++i)
+    {
+        EXPECT_NEAR(opt_laptime.control_variables[limebeer2014f1<scalar>::Chassis_t::rear_axle_type::IBOOST].u[i], boost_saved[i], 1.0e-6);
+    }
+
+    EXPECT_NEAR(opt_laptime.integral_quantities.back().value, 10.0, 1.0e-3);
 }

@@ -18,11 +18,36 @@ class Steady_state_test_f1 : public ::testing::Test
     Xml_document references = {"./data/f1_steady_state_test.xml", true};
 };
 
+static std::string vec2str(const std::vector<double>& vec)
+{
+    std::ostringstream s_out; s_out << std::setprecision(17);
+
+    if ( vec.size() == 0 ) return {};
+
+    for (auto it = vec.cbegin() ; it != vec.cend() - 1; ++it)
+        s_out << *it << ", " ;
+
+    s_out << vec.back();
+
+    return s_out.str();
+}
+
+
+struct Steady_state_new_reference
+{
+    Steady_state_new_reference(bool save_) : save(save_) { doc.create_root_element("f1_steady_state_test"); }
+    ~Steady_state_new_reference() { if (save) doc.save("steady_state_f1_new_reference.xml"); }
+    Xml_document doc;
+    bool save;
+};
+
+static bool save_xml = false;
+static Steady_state_new_reference new_reference(save_xml);
 
 TEST_F(Steady_state_test_f1, max_lateral_accel_several_speeds)
 {
     const size_t n = 100;
-    std::array<double,n> vel, acc, ax;
+    std::vector<double> vel(n), acc(n), ax(n);
     double ay_prev = 0.0;
     for (size_t i = 0; i < n; ++i)
     {
@@ -54,6 +79,10 @@ TEST_F(Steady_state_test_f1, max_lateral_accel_several_speeds)
         EXPECT_NEAR(acc[i], ay_reference[i], 2.0e-4) << ", with i = " << i;
         EXPECT_NEAR(ax[i],  ax_reference[i], 2.0e-4) << ", with i = " << i;
     }
+
+    new_reference.doc.add_element("f1_steady_state_test/max_lateral_acceleration/velocity").set_value(vec2str(vel));
+    new_reference.doc.add_element("f1_steady_state_test/max_lateral_acceleration/acceleration-y").set_value(vec2str(acc));
+    new_reference.doc.add_element("f1_steady_state_test/max_lateral_acceleration/acceleration-x").set_value(vec2str(ax));
 }
 
 
@@ -82,6 +111,16 @@ TEST_F(Steady_state_test_f1, gg_diagram_100)
         EXPECT_NEAR(sol_min[i].ax, min_ax_reference[i], 2.0e-4);
         EXPECT_NEAR(sol_min[i].ay, ay_reference[i], 2.0e-4);
     }
+
+    std::vector<double> ax_max(sol_max.size()), ax_min(sol_min.size()), ay(sol_min.size());
+
+    std::transform(sol_max.cbegin(), sol_max.cend(), ax_max.begin(), [](const auto& sol_max_i) -> auto { return sol_max_i.ax; });
+    std::transform(sol_min.cbegin(), sol_min.cend(), ax_min.begin(), [](const auto& sol_min_i) -> auto { return sol_min_i.ax; });
+    std::transform(sol_min.cbegin(), sol_min.cend(), ay.begin(), [](const auto& sol_min_i) -> auto { return sol_min_i.ay; });
+
+    new_reference.doc.add_element("f1_steady_state_test/gg_diagram_100/maximum_x_acceleration").set_value(vec2str(ax_max));
+    new_reference.doc.add_element("f1_steady_state_test/gg_diagram_100/minimum_x_acceleration").set_value(vec2str(ax_min));
+    new_reference.doc.add_element("f1_steady_state_test/gg_diagram_100/y_acceleration").set_value(vec2str(ay));
 }
 
 
@@ -111,6 +150,16 @@ TEST_F(Steady_state_test_f1, gg_diagram_150)
         EXPECT_NEAR(sol_min[i].ax, min_ax_reference[i], 2.0e-4);
         EXPECT_NEAR(sol_min[i].ay, ay_reference[i], 2.0e-4);
     }
+
+    std::vector<double> ax_max(sol_max.size()), ax_min(sol_min.size()), ay(sol_min.size());
+
+    std::transform(sol_max.cbegin(), sol_max.cend(), ax_max.begin(), [](const auto& sol_max_i) -> auto { return sol_max_i.ax; });
+    std::transform(sol_min.cbegin(), sol_min.cend(), ax_min.begin(), [](const auto& sol_min_i) -> auto { return sol_min_i.ax; });
+    std::transform(sol_min.cbegin(), sol_min.cend(), ay.begin(), [](const auto& sol_min_i) -> auto { return sol_min_i.ay; });
+
+    new_reference.doc.add_element("f1_steady_state_test/gg_diagram_150/maximum_x_acceleration").set_value(vec2str(ax_max));
+    new_reference.doc.add_element("f1_steady_state_test/gg_diagram_150/minimum_x_acceleration").set_value(vec2str(ax_min));
+    new_reference.doc.add_element("f1_steady_state_test/gg_diagram_150/y_acceleration").set_value(vec2str(ay));
 }
 
 
@@ -139,6 +188,16 @@ TEST_F(Steady_state_test_f1, gg_diagram_200)
         EXPECT_NEAR(sol_min[i].ax, min_ax_reference[i], 2.0e-4);
         EXPECT_NEAR(sol_min[i].ay, ay_reference[i], 2.0e-4);
     }
+
+    std::vector<double> ax_max(sol_max.size()), ax_min(sol_min.size()), ay(sol_min.size());
+
+    std::transform(sol_max.cbegin(), sol_max.cend(), ax_max.begin(), [](const auto& sol_max_i) -> auto { return sol_max_i.ax; });
+    std::transform(sol_min.cbegin(), sol_min.cend(), ax_min.begin(), [](const auto& sol_min_i) -> auto { return sol_min_i.ax; });
+    std::transform(sol_min.cbegin(), sol_min.cend(), ay.begin(), [](const auto& sol_min_i) -> auto { return sol_min_i.ay; });
+
+    new_reference.doc.add_element("f1_steady_state_test/gg_diagram_200/maximum_x_acceleration").set_value(vec2str(ax_max));
+    new_reference.doc.add_element("f1_steady_state_test/gg_diagram_200/minimum_x_acceleration").set_value(vec2str(ax_min));
+    new_reference.doc.add_element("f1_steady_state_test/gg_diagram_200/y_acceleration").set_value(vec2str(ay));
 }
 
 
@@ -167,6 +226,16 @@ TEST_F(Steady_state_test_f1, gg_diagram_250)
         EXPECT_NEAR(sol_min[i].ax, min_ax_reference[i], 2.0e-4);
         EXPECT_NEAR(sol_min[i].ay, ay_reference[i], 2.0e-4);
     }
+
+    std::vector<double> ax_max(sol_max.size()), ax_min(sol_min.size()), ay(sol_min.size());
+
+    std::transform(sol_max.cbegin(), sol_max.cend(), ax_max.begin(), [](const auto& sol_max_i) -> auto { return sol_max_i.ax; });
+    std::transform(sol_min.cbegin(), sol_min.cend(), ax_min.begin(), [](const auto& sol_min_i) -> auto { return sol_min_i.ax; });
+    std::transform(sol_min.cbegin(), sol_min.cend(), ay.begin(), [](const auto& sol_min_i) -> auto { return sol_min_i.ay; });
+
+    new_reference.doc.add_element("f1_steady_state_test/gg_diagram_250/maximum_x_acceleration").set_value(vec2str(ax_max));
+    new_reference.doc.add_element("f1_steady_state_test/gg_diagram_250/minimum_x_acceleration").set_value(vec2str(ax_min));
+    new_reference.doc.add_element("f1_steady_state_test/gg_diagram_250/y_acceleration").set_value(vec2str(ay));
 }
 
 
@@ -195,6 +264,16 @@ TEST_F(Steady_state_test_f1, gg_diagram_300)
         EXPECT_NEAR(sol_min[i].ax, min_ax_reference[i], 2.0e-4);
         EXPECT_NEAR(sol_min[i].ay, ay_reference[i], 2.0e-4);
     }
+
+    std::vector<double> ax_max(sol_max.size()), ax_min(sol_min.size()), ay(sol_min.size());
+
+    std::transform(sol_max.cbegin(), sol_max.cend(), ax_max.begin(), [](const auto& sol_max_i) -> auto { return sol_max_i.ax; });
+    std::transform(sol_min.cbegin(), sol_min.cend(), ax_min.begin(), [](const auto& sol_min_i) -> auto { return sol_min_i.ax; });
+    std::transform(sol_min.cbegin(), sol_min.cend(), ay.begin(), [](const auto& sol_min_i) -> auto { return sol_min_i.ay; });
+
+    new_reference.doc.add_element("f1_steady_state_test/gg_diagram_300/maximum_x_acceleration").set_value(vec2str(ax_max));
+    new_reference.doc.add_element("f1_steady_state_test/gg_diagram_300/minimum_x_acceleration").set_value(vec2str(ax_min));
+    new_reference.doc.add_element("f1_steady_state_test/gg_diagram_300/y_acceleration").set_value(vec2str(ay));
 }
 
 TEST_F(Steady_state_test_f1, _0g_0g_300kmh)
@@ -241,6 +320,13 @@ TEST_F(Steady_state_test_f1, max_longitudinal_acceleration)
     EXPECT_NEAR(car_sc.get_chassis().get_front_axle().template get_tire<1>().get_kappa(), kappa_min_fr_ref, 2.0e-4);
     EXPECT_NEAR(car_sc.get_chassis().get_rear_axle().template get_tire<0>().get_kappa(), kappa_min_rl_ref, 2.0e-4);
     EXPECT_NEAR(car_sc.get_chassis().get_rear_axle().template get_tire<1>().get_kappa(), kappa_min_rr_ref, 2.0e-4);
+
+    new_reference.doc.add_element("f1_steady_state_test/maximum_longiudinal_acceleration/maximum_x_acceleration").set_value(vec2str({solution_max.ax}));
+    new_reference.doc.add_element("f1_steady_state_test/maximum_longiudinal_acceleration/minimum_x_acceleration").set_value(vec2str({solution_min.ax}));
+    new_reference.doc.add_element("f1_steady_state_test/maximum_longiudinal_acceleration/kappa_fl").set_value(vec2str({car_sc.get_chassis().get_front_axle().template get_tire<0>().get_kappa()}));
+    new_reference.doc.add_element("f1_steady_state_test/maximum_longiudinal_acceleration/kappa_fr").set_value(vec2str({car_sc.get_chassis().get_front_axle().template get_tire<1>().get_kappa()}));
+    new_reference.doc.add_element("f1_steady_state_test/maximum_longiudinal_acceleration/kappa_rl").set_value(vec2str({car_sc.get_chassis().get_rear_axle().template get_tire<0>().get_kappa()}));
+    new_reference.doc.add_element("f1_steady_state_test/maximum_longiudinal_acceleration/kappa_rr").set_value(vec2str({car_sc.get_chassis().get_rear_axle().template get_tire<1>().get_kappa()}));
 }
 
 
@@ -259,8 +345,8 @@ TEST_F(Steady_state_test_f1, max_longitudinal_acceleration_several_speeds)
         Steady_state ss(car);
         auto [solution_max, solution_min] = ss.solve_max_lon_acc(v,ay);
     
-        EXPECT_TRUE(solution_max.solved);
-        EXPECT_TRUE(solution_min.solved);
+        EXPECT_TRUE(solution_max.solved) << "with i = " << i;
+        EXPECT_TRUE(solution_min.solved) << "with i = " << i;
         ax_min[i] = solution_min.ax;
         ax_max[i] = solution_max.ax;
 
@@ -290,18 +376,10 @@ TEST_F(Steady_state_test_f1, max_longitudinal_acceleration_several_speeds)
     }
 
     auto ax_max_ref = references.get_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds/maximum_x_acceleration").get_value(std::vector<scalar>());
-    auto kappa_max_acc_fl_ref = references.get_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds/kappa_max_acc_fl").get_value(std::vector<scalar>());
-    auto kappa_max_acc_fr_ref = references.get_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds/kappa_max_acc_fr").get_value(std::vector<scalar>());
-    auto kappa_max_acc_rl_ref = references.get_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds/kappa_max_acc_rl").get_value(std::vector<scalar>());
-    auto kappa_max_acc_rr_ref = references.get_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds/kappa_max_acc_rr").get_value(std::vector<scalar>());
     auto psi_max_acc_ref = references.get_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds/psi_max_acc").get_value(std::vector<scalar>());
     auto delta_max_acc_ref = references.get_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds/delta_max_acc").get_value(std::vector<scalar>());
 
     auto ax_min_ref = references.get_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds/minimum_x_acceleration").get_value(std::vector<scalar>());
-    auto kappa_min_acc_fl_ref = references.get_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds/kappa_min_acc_fl").get_value(std::vector<scalar>());
-    auto kappa_min_acc_fr_ref = references.get_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds/kappa_min_acc_fr").get_value(std::vector<scalar>());
-    auto kappa_min_acc_rl_ref = references.get_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds/kappa_min_acc_rl").get_value(std::vector<scalar>());
-    auto kappa_min_acc_rr_ref = references.get_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds/kappa_min_acc_rr").get_value(std::vector<scalar>());
     auto psi_min_acc_ref = references.get_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds/psi_min_acc").get_value(std::vector<scalar>());
     auto delta_min_acc_ref = references.get_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds/delta_min_acc").get_value(std::vector<scalar>());
 
@@ -316,6 +394,14 @@ TEST_F(Steady_state_test_f1, max_longitudinal_acceleration_several_speeds)
         EXPECT_NEAR(psi_min_acc[i]      , psi_min_acc_ref[i]      , 2.0e-4) << ", with i = " << i;
         EXPECT_NEAR(delta_min_acc[i]    , delta_min_acc_ref[i]    , 2.0e-4) << ", with i = " << i;
     }
+
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds/maximum_x_acceleration").set_value(vec2str(ax_max));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds/psi_max_acc").set_value(vec2str(psi_max_acc));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds/delta_max_acc").set_value(vec2str(delta_max_acc));
+
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds/minimum_x_acceleration").set_value(vec2str(ax_min));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds/psi_min_acc").set_value(vec2str(psi_min_acc));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds/delta_min_acc").set_value(vec2str(delta_min_acc));
 }
 
 
@@ -336,8 +422,8 @@ TEST_F(Steady_state_test_f1, max_longitudinal_acceleration_several_speeds_25perc
         double ay = solution.ay*0.25;
         auto [solution_max, solution_min] = ss.solve_max_lon_acc(v,ay);
     
-        EXPECT_TRUE(solution_max.solved);
-        EXPECT_TRUE(solution_min.solved);
+        EXPECT_TRUE(solution_max.solved) << "with i = " << i;
+        EXPECT_TRUE(solution_min.solved) << "with i = " << i;
         ax_min[i] = solution_min.ax;
         ax_max[i] = solution_max.ax;
 
@@ -402,6 +488,23 @@ TEST_F(Steady_state_test_f1, max_longitudinal_acceleration_several_speeds_25perc
         EXPECT_NEAR(psi_min_acc[i]      , psi_min_acc_ref[i]      , 2.0e-4) << ", with i = " << i;
         EXPECT_NEAR(delta_min_acc[i]    , delta_min_acc_ref[i]    , 2.0e-4) << ", with i = " << i;
     }
+
+
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_25percent_lat/maximum_x_acceleration").set_value(vec2str(ax_max));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_25percent_lat/psi_max_acc").set_value(vec2str(psi_max_acc));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_25percent_lat/delta_max_acc").set_value(vec2str(delta_max_acc));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_25percent_lat/kappa_max_acc_fl").set_value(vec2str(kappa_max_acc_fl));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_25percent_lat/kappa_max_acc_fr").set_value(vec2str(kappa_max_acc_fr));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_25percent_lat/kappa_max_acc_rl").set_value(vec2str(kappa_max_acc_rl));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_25percent_lat/kappa_max_acc_rr").set_value(vec2str(kappa_max_acc_rr));
+
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_25percent_lat/minimum_x_acceleration").set_value(vec2str(ax_min));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_25percent_lat/psi_min_acc").set_value(vec2str(psi_min_acc));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_25percent_lat/delta_min_acc").set_value(vec2str(delta_min_acc));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_25percent_lat/kappa_min_acc_fl").set_value(vec2str(kappa_min_acc_fl));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_25percent_lat/kappa_min_acc_fr").set_value(vec2str(kappa_min_acc_fr));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_25percent_lat/kappa_min_acc_rl").set_value(vec2str(kappa_min_acc_rl));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_25percent_lat/kappa_min_acc_rr").set_value(vec2str(kappa_min_acc_rr));
 }
 
 
@@ -422,8 +525,8 @@ TEST_F(Steady_state_test_f1, max_longitudinal_acceleration_several_speeds_50perc
         double ay = solution.ay*0.50;
         auto [solution_max, solution_min] = ss.solve_max_lon_acc(v,ay);
     
-        EXPECT_TRUE(solution_max.solved);
-        EXPECT_TRUE(solution_min.solved);
+        EXPECT_TRUE(solution_max.solved) << "with i = " << i;
+        EXPECT_TRUE(solution_min.solved) << "with i = " << i;
         ax_min[i] = solution_min.ax;
         ax_max[i] = solution_max.ax;
 
@@ -487,6 +590,23 @@ TEST_F(Steady_state_test_f1, max_longitudinal_acceleration_several_speeds_50perc
         EXPECT_NEAR(psi_min_acc[i]      , psi_min_acc_ref[i]      , 2.0e-4) << ", with i = " << i;
         EXPECT_NEAR(delta_min_acc[i]    , delta_min_acc_ref[i]    , 2.0e-4) << ", with i = " << i;
     }
+
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_50percent_lat/maximum_x_acceleration").set_value(vec2str(ax_max));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_50percent_lat/psi_max_acc").set_value(vec2str(psi_max_acc));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_50percent_lat/delta_max_acc").set_value(vec2str(delta_max_acc));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_50percent_lat/kappa_max_acc_fl").set_value(vec2str(kappa_max_acc_fl));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_50percent_lat/kappa_max_acc_fr").set_value(vec2str(kappa_max_acc_fr));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_50percent_lat/kappa_max_acc_rl").set_value(vec2str(kappa_max_acc_rl));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_50percent_lat/kappa_max_acc_rr").set_value(vec2str(kappa_max_acc_rr));
+
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_50percent_lat/minimum_x_acceleration").set_value(vec2str(ax_min));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_50percent_lat/psi_min_acc").set_value(vec2str(psi_min_acc));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_50percent_lat/delta_min_acc").set_value(vec2str(delta_min_acc));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_50percent_lat/kappa_min_acc_fl").set_value(vec2str(kappa_min_acc_fl));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_50percent_lat/kappa_min_acc_fr").set_value(vec2str(kappa_min_acc_fr));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_50percent_lat/kappa_min_acc_rl").set_value(vec2str(kappa_min_acc_rl));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_50percent_lat/kappa_min_acc_rr").set_value(vec2str(kappa_min_acc_rr));
+
 }
 
 
@@ -507,8 +627,8 @@ TEST_F(Steady_state_test_f1, max_longitudinal_acceleration_several_speeds_75perc
         double ay = solution.ay*0.75;
         auto [solution_max, solution_min] = ss.solve_max_lon_acc(v,ay);
     
-        EXPECT_TRUE(solution_max.solved);
-        EXPECT_TRUE(solution_min.solved);
+        EXPECT_TRUE(solution_max.solved) << "with i = " << i;
+        EXPECT_TRUE(solution_min.solved) << "with i = " << i;
         ax_min[i] = solution_min.ax;
         ax_max[i] = solution_max.ax;
 
@@ -573,6 +693,22 @@ TEST_F(Steady_state_test_f1, max_longitudinal_acceleration_several_speeds_75perc
         EXPECT_NEAR(psi_min_acc[i]      , psi_min_acc_ref[i]      , 2.0e-4) << ", with i = " << i;
         EXPECT_NEAR(delta_min_acc[i]    , delta_min_acc_ref[i]    , 2.0e-4) << ", with i = " << i;
     }
+
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_75percent_lat/maximum_x_acceleration").set_value(vec2str(ax_max));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_75percent_lat/psi_max_acc").set_value(vec2str(psi_max_acc));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_75percent_lat/delta_max_acc").set_value(vec2str(delta_max_acc));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_75percent_lat/kappa_max_acc_fl").set_value(vec2str(kappa_max_acc_fl));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_75percent_lat/kappa_max_acc_fr").set_value(vec2str(kappa_max_acc_fr));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_75percent_lat/kappa_max_acc_rl").set_value(vec2str(kappa_max_acc_rl));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_75percent_lat/kappa_max_acc_rr").set_value(vec2str(kappa_max_acc_rr));
+
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_75percent_lat/minimum_x_acceleration").set_value(vec2str(ax_min));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_75percent_lat/psi_min_acc").set_value(vec2str(psi_min_acc));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_75percent_lat/delta_min_acc").set_value(vec2str(delta_min_acc));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_75percent_lat/kappa_min_acc_fl").set_value(vec2str(kappa_min_acc_fl));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_75percent_lat/kappa_min_acc_fr").set_value(vec2str(kappa_min_acc_fr));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_75percent_lat/kappa_min_acc_rl").set_value(vec2str(kappa_min_acc_rl));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_75percent_lat/kappa_min_acc_rr").set_value(vec2str(kappa_min_acc_rr));
 }
 
 
@@ -593,8 +729,8 @@ TEST_F(Steady_state_test_f1, max_longitudinal_acceleration_several_speeds_95perc
         double ay = solution.ay*0.95;
         auto [solution_max, solution_min] = ss.solve_max_lon_acc(v,ay);
     
-        EXPECT_TRUE(solution_max.solved);
-        EXPECT_TRUE(solution_min.solved);
+        EXPECT_TRUE(solution_max.solved) << "with i = " << i;
+        EXPECT_TRUE(solution_min.solved) << "with i = " << i;
         ax_min[i] = solution_min.ax;
         ax_max[i] = solution_max.ax;
 
@@ -659,6 +795,22 @@ TEST_F(Steady_state_test_f1, max_longitudinal_acceleration_several_speeds_95perc
         EXPECT_NEAR(psi_min_acc[i]      , psi_min_acc_ref[i]      , 2.0e-4) << ", with i = " << i;
         EXPECT_NEAR(delta_min_acc[i]    , delta_min_acc_ref[i]    , 2.0e-4) << ", with i = " << i;
     }
+
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_95percent_lat/maximum_x_acceleration").set_value(vec2str(ax_max));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_95percent_lat/psi_max_acc").set_value(vec2str(psi_max_acc));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_95percent_lat/delta_max_acc").set_value(vec2str(delta_max_acc));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_95percent_lat/kappa_max_acc_fl").set_value(vec2str(kappa_max_acc_fl));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_95percent_lat/kappa_max_acc_fr").set_value(vec2str(kappa_max_acc_fr));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_95percent_lat/kappa_max_acc_rl").set_value(vec2str(kappa_max_acc_rl));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_95percent_lat/kappa_max_acc_rr").set_value(vec2str(kappa_max_acc_rr));
+
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_95percent_lat/minimum_x_acceleration").set_value(vec2str(ax_min));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_95percent_lat/psi_min_acc").set_value(vec2str(psi_min_acc));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_95percent_lat/delta_min_acc").set_value(vec2str(delta_min_acc));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_95percent_lat/kappa_min_acc_fl").set_value(vec2str(kappa_min_acc_fl));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_95percent_lat/kappa_min_acc_fr").set_value(vec2str(kappa_min_acc_fr));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_95percent_lat/kappa_min_acc_rl").set_value(vec2str(kappa_min_acc_rl));
+    new_reference.doc.add_element("f1_steady_state_test/max_longitudinal_acceleration_several_speeds_95percent_lat/kappa_min_acc_rr").set_value(vec2str(kappa_min_acc_rr));
 }
 
 
@@ -673,3 +825,5 @@ TEST_F(Steady_state_test_f1, max_lateral_accel_300kmh)
     
     EXPECT_TRUE(solution.solved);
 }
+
+
