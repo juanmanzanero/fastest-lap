@@ -22,6 +22,11 @@ static void check_optimal_laptime(const Optimal_laptime<Dynamic_model_t>& opt_la
     // Cover also the constructor from Xml_document
     Optimal_laptime<Dynamic_model_t> opt_laptime_saved(opt_saved);
 
+    EXPECT_TRUE(opt_laptime.iter_count < opt_saved.get_element("optimal_laptime/optimization_data/number_of_iterations").get_value(int()) + 5) << "New iter: " << opt_laptime.iter_count << ", saved iters: " << opt_saved.get_element("optimal_laptime/optimization_data/number_of_iterations").get_value(int());
+
+    EXPECT_NEAR(opt_laptime.laptime, opt_laptime_saved.laptime, 1.0e-6);
+    EXPECT_NEAR(opt_laptime.laptime, opt_saved.get_element("optimal_laptime/laptime").get_value(scalar()), 1.0e-6);
+
     // kappa front left
     auto kappa_fl_saved = opt_saved.get_element("optimal_laptime/front-axle.left-tire.kappa").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
