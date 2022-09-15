@@ -1,5 +1,5 @@
-#ifndef __OPTIMAL_LAPTIME_H__
-#define __OPTIMAL_LAPTIME_H__
+#ifndef OPTIMAL_LAPTIME_H
+#define OPTIMAL_LAPTIME_H
 
 #include "lion/thirdparty/include/cppad/cppad.hpp"
 #include "lion/foundation/types.h"
@@ -53,62 +53,22 @@ class Optimal_laptime
     {
         Optimal_control_type optimal_control_type; //! Type of the optimization
         std::vector<scalar> s_hypermesh;           //! Provide here the hypermesh. Only non-empty for hypermesh optimization
-        std::vector<T>  u;                         //! Control value(s)
-        std::vector<T>  dudt;                      //! Control values time derivative: only non-empty for full_mesh optimization
+        std::vector<T>  controls;                  //! Control value(s)
+        std::vector<T>  dcontrols_dt;              //! Control values time derivative: only non-empty for full_mesh optimization
         scalar          dissipation;               //! The dissipation associated to this control variable
 
         //! Transform the set of control variables to cppad
         template<typename U = T>
         std::enable_if_t<std::is_same_v<U,scalar>,Control_variable<CppAD::AD<scalar>>> to_CppAD() const;
 
-        static size_t get_hypermesh_position_for_s(const std::vector<scalar>& s_hypermesh, scalar s)
-        {
-            // (1) Get an iterator to the first point in the hypermesh grid that *it > s
-            auto it = std::upper_bound(s_hypermesh.begin(), s_hypermesh.end(), s);
+        static size_t get_hypermesh_position_for_s(const std::vector<scalar>& s_hypermesh, scalar s);
 
-            // (2) Error if the point found is the first node of the hypermesh
-            if ( it == s_hypermesh.cbegin() )
-                throw fastest_lap_exception("[ERROR] Optimal_laptime::Control_variable::get_hypermesh_value_for_s -> input s(" 
-                    + std::to_string(s) + ") is smaller than the first hypermesh checkpoint (" + std::to_string(s_hypermesh.front()) + ")");
+        const T& get_hypermesh_control_value_for_s(const scalar s) const;
 
-            // (3) Compute position
-            const size_t i_position = std::distance(s_hypermesh.begin(), it) - 1;
-
-            return i_position;
-        }
-
-
-        const T& get_hypermesh_control_value_for_s(const scalar s) const
-        {
-            // (1) Error if control variable is not of type hypermesh
-            if (optimal_control_type != HYPERMESH )
-                throw fastest_lap_exception("[ERROR] Optimal_laptime::Control_variable::get_hypermesh_value_for_s can only be called for HYPERMESH parameters");
-
-            // (2) Return
-            return u[get_hypermesh_position_for_s(s_hypermesh,s)]; 
-        }
-
-
-        std::pair<const T&,const T&> get_hypermesh_control_value_and_derivative_for_s(const scalar s) const
-        {
-            // (1) Error if control variable is not of type hypermesh
-            if (optimal_control_type != HYPERMESH )
-                throw fastest_lap_exception("[ERROR] Optimal_laptime::Control_variable::get_hypermesh_value_for_s can only be called for HYPERMESH parameters");
-
-            // (2) Return
-            const size_t i_position = get_hypermesh_position_for_s(s_hypermesh,s);
-            return {u[i_position], dudt[i_position]}; 
-        }
+        std::pair<const T&,const T&> get_hypermesh_control_value_and_derivative_for_s(const scalar s) const;
 
         //! Set to zero the values for optimizable control variables
-        Control_variable& clear()
-        {
-            std::fill(u.begin(), u.end(), 0.0);
-            std::fill(dudt.begin(), dudt.end(), 0.0);
-    
-            return *this;
-        }
-
+        Control_variable& clear();
     };
 
 
@@ -124,90 +84,19 @@ class Optimal_laptime
         std::enable_if_t<std::is_same_v<U,scalar>,Control_variables<CppAD::AD<scalar>>> to_CppAD() const;
 
         //! Clear
-        Control_variables& clear()
-        {
-            std::transform(base_type::begin(), base_type::end(), base_type::begin(), [](auto& input) -> auto { return input.clear(); });
-            return *this;
-        }
+        Control_variables& clear();
 
-        std::array<T,Dynamic_model_t::NCONTROL> control_array_at_s(const Dynamic_model_t& car, const size_t i_fullmesh, const scalar s) const
-        {
-            std::array<scalar,Dynamic_model_t::NCONTROL> u_scalar = car.get_state_and_control_upper_lower_and_default_values().u_def;
-            std::array<T,Dynamic_model_t::NCONTROL> u;
-
-            std::copy(u_scalar.cbegin(), u_scalar.cend(), u.begin());
-        
-            for (size_t j = 0; j < Dynamic_model_t::Dynamic_model_t::NCONTROL; ++j)
-            {
-                switch((*this)[j].optimal_control_type)
-                {
-                 case (DONT_OPTIMIZE):
-                    // Keep the default value
-                    break;
-
-                 case (CONSTANT):
-                    u[j] = (*this)[j].u.front();
-                    break;
-        
-                 case (HYPERMESH):
-                    u[j] = (*this)[j].get_hypermesh_control_value_for_s(s);
-                    break;
-
-                 case (FULL_MESH):
-                    u[j] = (*this)[j].u[i_fullmesh];
-                    break;
-                }
-            }
-            
-            return u;
-        }
+        std::array<T,Dynamic_model_t::NCONTROL> control_array_at_s(const Dynamic_model_t& car, const size_t i_fullmesh, const scalar s) const;
 
         std::pair<std::array<T,Dynamic_model_t::NCONTROL>,std::array<T,Dynamic_model_t::NCONTROL>>
-            control_array_and_derivative_at_s(const Dynamic_model_t& car, const size_t i_fullmesh, const scalar s) const
-        {
-            std::array<T,Dynamic_model_t::NCONTROL> u = car.get_state_and_control_upper_lower_and_default_values().u_def;
-            std::array<T,Dynamic_model_t::NCONTROL> dudt{0.0};
+            control_array_and_derivative_at_s(const Dynamic_model_t& car, const size_t i_fullmesh, const scalar s) const;
 
-            for (size_t j = 0; j < Dynamic_model_t::Dynamic_model_t::NCONTROL; ++j)
-            {
-                switch((*this)[j].optimal_control_type)
-                {
-                 case (DONT_OPTIMIZE):
-                    dudt[j] = 0.0;
-                    break;
-
-                 case (CONSTANT):
-                    u[j] = (*this)[j].u.front();
-                    dudt[j] = 0.0;
-                    break;
-
-                 case (HYPERMESH):
-                    u[j] = (*this)[j].get_hypermesh_control_value_for_s(s);
-                    dudt[j] = 0.0;
-                    break;
-
-                 case (FULL_MESH):
-                    u[j] = (*this)[j].u[i_fullmesh];
-                    dudt[j] = (*this)[j].dudt[i_fullmesh];
-                    break;
-                }
-            }
-
-            return {u,dudt};
-        }
-
+        Control_variables& check();
 
         //! Data members -------------------------------------:-
         size_t number_of_constant_optimizations;            //! Number of control variables with constant optimization
         size_t number_of_hypermesh_optimization_points;     //! Total number of points used in hypermesh optimizations
         size_t number_of_full_optimizations;                //! Total number of full optimizations
-
-        Control_variables& check()
-        {
-            check_inputs();
-            compute_statistics();
-            return *this;
-        }
 
      private:
     
@@ -233,19 +122,19 @@ class Optimal_laptime
 
     //! A """""factory""""" for control variables
     static Control_variable<> create_dont_optimize() 
-    { return Control_variable<>{ .optimal_control_type{DONT_OPTIMIZE}, .s_hypermesh{}, .u{}, .dudt{}, .dissipation{} }; }
+    { return Control_variable<>{ .optimal_control_type{DONT_OPTIMIZE}, .s_hypermesh{}, .controls{}, .dcontrols_dt{}, .dissipation{} }; }
 
-    static Control_variable<> create_constant(const scalar u)
-    { return Control_variable<>{ .optimal_control_type{CONSTANT}, .s_hypermesh{}, .u{u}, .dudt{}, .dissipation{} }; }
+    static Control_variable<> create_constant(const scalar controls)
+    { return Control_variable<>{ .optimal_control_type{CONSTANT}, .s_hypermesh{}, .controls{controls}, .dcontrols_dt{}, .dissipation{} }; }
 
-    static Control_variable<> create_hypermesh(const std::vector<scalar>& s_hypermesh, const std::vector<scalar>& u)
-    { return Control_variable<>{ .optimal_control_type{HYPERMESH}, .s_hypermesh{s_hypermesh}, .u{u}, .dudt{}, .dissipation{} }; }
+    static Control_variable<> create_hypermesh(const std::vector<scalar>& s_hypermesh, const std::vector<scalar>& controls)
+    { return Control_variable<>{ .optimal_control_type{HYPERMESH}, .s_hypermesh{s_hypermesh}, .controls{controls}, .dcontrols_dt{}, .dissipation{} }; }
 
-    static Control_variable<> create_full_mesh(const std::vector<scalar>& u, const scalar dissipation)
-    { return Control_variable<>{ .optimal_control_type{FULL_MESH}, .s_hypermesh{}, .u{u}, .dudt{}, .dissipation{dissipation} }; }
+    static Control_variable<> create_full_mesh(const std::vector<scalar>& controls, const scalar dissipation)
+    { return Control_variable<>{ .optimal_control_type{FULL_MESH}, .s_hypermesh{}, .controls{controls}, .dcontrols_dt{}, .dissipation{dissipation} }; }
 
-    static Control_variable<> create_full_mesh(const std::vector<scalar>& u, const std::vector<scalar>& dudt, const scalar dissipation)
-    { return Control_variable<>{ .optimal_control_type{FULL_MESH}, .s_hypermesh{}, .u{u}, .dudt{dudt}, .dissipation{dissipation} }; }
+    static Control_variable<> create_full_mesh(const std::vector<scalar>& controls, const std::vector<scalar>& dcontrols_dt, const scalar dissipation)
+    { return Control_variable<>{ .optimal_control_type{FULL_MESH}, .s_hypermesh{}, .controls{controls}, .dcontrols_dt{dcontrols_dt}, .dissipation{dissipation} }; }
 
     //! Default constructor
     Optimal_laptime() = default;
@@ -263,9 +152,9 @@ class Optimal_laptime
                     const bool is_closed,
                     const bool is_direct,
                     const Dynamic_model_t& car, 
-                    const std::vector<std::array<scalar,Dynamic_model_t::NSTATE>>& q0, 
-                    const std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>>& qa0,
-                    Control_variables<> control_variables_0, 
+                    const std::vector<std::array<scalar,Dynamic_model_t::NSTATE>>& input_states_start, 
+                    const std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>>& algebraic_states_start,
+                    Control_variables<> controls_start, 
                     const Options opts);
 
     //! Warm-start constructor
@@ -273,9 +162,9 @@ class Optimal_laptime
                     const bool is_closed,
                     const bool is_direct,
                     const Dynamic_model_t& car, 
-                    const std::vector<std::array<scalar,Dynamic_model_t::NSTATE>>& q0, 
-                    const std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>>& qa0,
-                    Control_variables<> control_variables_0, 
+                    const std::vector<std::array<scalar,Dynamic_model_t::NSTATE>>& input_states_start, 
+                    const std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>>& algebraic_states_start,
+                    Control_variables<> controls_start, 
                     const std::vector<scalar>& zl,
                     const std::vector<scalar>& zu,
                     const std::vector<scalar>& lambda,
@@ -332,21 +221,21 @@ class Optimal_laptime
     bool warm_start;
     size_t n_elements;
     size_t n_points;
-    std::vector<scalar> s;                                           //! Arclengths
-    std::vector<std::array<scalar,Dynamic_model_t::NSTATE>> q;       //! All state vectors
-    std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>> qa;  //! All algebraic variables vectors
-    Control_variables<> control_variables;            //! All control variables pre and post optimization
-    std::vector<scalar> x_coord;
-    std::vector<scalar> y_coord;
-    std::vector<scalar> psi;
+    std::vector<scalar> s;                                                         //! Arclengths
+    std::vector<std::array<scalar,Dynamic_model_t::NSTATE>> input_states;          //! All state vectors
+    std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>> algebraic_states;  //! All algebraic variables vectors
+    Control_variables<> controls;                                                  //! All control variables pre and post optimization
+    std::vector<scalar> x_coord;                                                   //! x-coordinate of the trajectory
+    std::vector<scalar> y_coord;                                                   //! y-coordinate of the trajectory
+    std::vector<scalar> psi;                                                       //! heading angle
 
     size_t iter_count;  //! Number of iterations spent in IPOPT
 
-    std::vector<std::vector<std::array<scalar,Dynamic_model_t::NSTATE>>>     dqdp;
-    std::vector<std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>>> dqadp;
-    std::vector<Control_variables<>>                                         dcontrol_variablesdp;
-    std::vector<std::vector<scalar>>                                         dxdp;
-    std::vector<scalar>                                                      dlaptimedp;
+    std::vector<std::vector<std::array<scalar,Dynamic_model_t::NSTATE>>>     dinput_states_dp;
+    std::vector<std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>>> dalgebraic_states_dp;
+    std::vector<Control_variables<>>                                         dcontrols_dp;
+    std::vector<std::vector<scalar>>                                         dx_dp;
+    std::vector<scalar>                                                      dlaptime_dp;
 
     struct 
     {
@@ -365,16 +254,15 @@ class Optimal_laptime
 
     scalar laptime;
 
-
  private:
     
     void check_inputs(const Dynamic_model_t& car);
 
     struct Export_solution
     {
-        std::vector<std::array<scalar,Dynamic_model_t::NSTATE>> q;
-        std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>> qa;
-        Control_variables<> control_variables;
+        std::vector<std::array<scalar,Dynamic_model_t::NSTATE>> input_states;
+        std::vector<std::array<scalar,Dynamic_model_t::NALGEBRAIC>> algebraic_states;
+        Control_variables<> controls;
         Integral_quantities integral_quantities;
     };
 
@@ -395,16 +283,18 @@ class Optimal_laptime
            const size_t n_constraints,
            const Dynamic_model_t& car, 
            const std::vector<scalar>& s,
-           const std::array<scalar,Dynamic_model_t::NSTATE>& q0, 
-           const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& qa0, 
-           const std::array<scalar,Dynamic_model_t::NCONTROL>& u0, 
-           const Control_variables<>& control_variables_0,
+           const std::array<scalar,Dynamic_model_t::NSTATE>& input_states_open_initial_point, 
+           const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& algebraic_states_open_initial_point, 
+           const std::array<scalar,Dynamic_model_t::NCONTROL>& controls_open_initial_point, 
+           const Control_variables<>& controls,
            const Integral_quantities& integral_quantities,
            const scalar sigma 
-          ) : _n_elements(n_elements), _n_points(n_points), _car(car), _s(s), _q0(q0), 
-              _qa0(qa0), _u0(u0), _integral_quantities(integral_quantities), _sigma(sigma), _n_variables(n_variables),
-              _n_constraints(n_constraints), _q(n_points,{0.0}), _qa(n_points), _control_variables(control_variables_0.to_CppAD().clear()), 
-              _dqdt(n_points,{0.0}), _dqa(n_points), _integral_quantities_integrands(n_points), 
+          ) : _n_elements(n_elements), _n_points(n_points), _car(car), _s(s), _input_states_open_initial_point(input_states_open_initial_point), 
+              _algebraic_states_open_initial_point(algebraic_states_open_initial_point), _controls_open_initial_point(controls_open_initial_point), 
+              _integral_quantities(integral_quantities), _sigma(sigma), _n_variables(n_variables),
+              _n_constraints(n_constraints), _input_states(n_points,{0.0}), _algebraic_states(n_points), 
+              _controls(controls.to_CppAD().clear()), 
+              _states(n_points,{0.0}), _dstates_dt(n_points,{0.0}), _algebraic_equations(n_points), _integral_quantities_integrands(n_points), 
               _integral_quantities_values() {}
 
      public:
@@ -412,17 +302,11 @@ class Optimal_laptime
 
         const size_t& get_n_constraints() const { return _n_constraints; }
 
-        const std::vector<std::array<Timeseries_t,Dynamic_model_t::NSTATE>>& get_states() const { return _q; }
+        const std::vector<std::array<Timeseries_t,Dynamic_model_t::NSTATE>>& get_input_states() const { return _input_states; }
 
-        const std::vector<std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC>>& get_algebraic_states() const { return _qa; }
+        const std::vector<std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC>>& get_algebraic_states() const { return _algebraic_states; }
 
-        const Control_variables<Timeseries_t>& get_controls() const { return _control_variables; }
-
-        const std::array<Timeseries_t,Dynamic_model_t::NSTATE>& get_state(const size_t i) const { return _q[i]; }
-
-        const std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC>& get_algebraic_state(const size_t i) const { return _qa[i]; }
-
-        const Control_variable<Timeseries_t>& get_control(const size_t i) const { return _control_variables[i]; }
+        const Control_variables<Timeseries_t>& get_controls() const { return _controls; }
 
         const std::array<Timeseries_t,Integral_quantities::N>& get_integral_quantities_values() const { return _integral_quantities_values; }
 
@@ -433,22 +317,23 @@ class Optimal_laptime
         size_t _n_points;                   //! [c] Number of discretization points
         Dynamic_model_t _car;               //! Vehicle
 
-        std::vector<scalar> _s;                                                 //! [c] Vector of arclengths
-        std::array<scalar,Dynamic_model_t::NSTATE> _q0;        //! [c] State vector for the initial node
-        std::array<scalar,Dynamic_model_t::NALGEBRAIC> _qa0;   //! [c] Algebraic state vector for the initial node
-        std::array<scalar,Dynamic_model_t::NCONTROL> _u0;      //! [c] Control vector for the initial node
+        std::vector<scalar> _s;                                                              //! [c] Vector of arclengths
+        std::array<scalar,Dynamic_model_t::NSTATE> _input_states_open_initial_point;         //! [c] State vector for the initial node
+        std::array<scalar,Dynamic_model_t::NALGEBRAIC> _algebraic_states_open_initial_point; //! [c] Algebraic state vector for the initial node
+        std::array<scalar,Dynamic_model_t::NCONTROL> _controls_open_initial_point;           //! [c] Control vector for the initial node
         Integral_quantities _integral_quantities;
         
         scalar _sigma;
 
-        size_t _n_variables;                                                    //! [c] Number of total variables (NSTATE+NCONTROL-1).(n-1)
-        size_t _n_constraints;                                                  //! [c] Number of total constraints (NSTATE-1).(n-1)
-        std::vector<std::array<Timeseries_t,Dynamic_model_t::NSTATE>> _q;       //! All state vectors
-        std::vector<std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC>> _qa;  //! All algebraic state vectors
-        Control_variables<Timeseries_t> _control_variables;
+        size_t _n_variables;                                                                 //! [c] Number of total variables (NSTATE+NCONTROL-1).(n-1)
+        size_t _n_constraints;                                                               //! [c] Number of total constraints (NSTATE-1).(n-1)
+        std::vector<std::array<Timeseries_t,Dynamic_model_t::NSTATE>> _input_states;         //! All input state vectors
+        std::vector<std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC>> _algebraic_states; //! All algebraic state vectors
+        Control_variables<Timeseries_t> _controls;            
 
-        std::vector<std::array<Timeseries_t,Dynamic_model_t::NSTATE>> _dqdt;    //! All state derivative vectors
-        std::vector<std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC>> _dqa; //! All algebraic state derivative vectors
+        std::vector<std::array<Timeseries_t,Dynamic_model_t::NSTATE>> _states;                  //! All state vectors
+        std::vector<std::array<Timeseries_t,Dynamic_model_t::NSTATE>> _dstates_dt;              //! All state derivative vectors
+        std::vector<std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC>> _algebraic_equations; //! All algebraic equations vectors
 
         std::vector<std::array<Timeseries_t,Integral_quantities::N>> _integral_quantities_integrands;
         std::array<Timeseries_t,Integral_quantities::N>              _integral_quantities_values;
@@ -467,20 +352,21 @@ class Optimal_laptime
                   const size_t n_points,
                   const Dynamic_model_t& car, 
                   const std::vector<scalar>& s,
-                  const std::array<scalar,Dynamic_model_t::NSTATE>& q0, 
-                  const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& qa0, 
-                  const std::array<scalar,Dynamic_model_t::NCONTROL>& u0,
-                  const Control_variables<>& control_variables_0,
+                  const std::array<scalar,Dynamic_model_t::NSTATE>& input_states_open_initial_point, 
+                  const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& algebraic_states_open_initial_point, 
+                  const std::array<scalar,Dynamic_model_t::NCONTROL>& controls_open_initial_point,
+                  const Control_variables<>& controls,
                   const Integral_quantities& integral_quantities,
                   const scalar sigma
           ) : FG(n_elements, 
                  n_points,
-                 n_elements*n_variables_per_point<true>(control_variables_0) 
-                    + control_variables_0.number_of_constant_optimizations 
-                    + control_variables_0.number_of_hypermesh_optimization_points,
-                 n_elements*n_constraints_per_element<true>(control_variables_0)  
+                 n_elements*n_variables_per_point<true>(controls) 
+                    + controls.number_of_constant_optimizations 
+                    + controls.number_of_hypermesh_optimization_points,
+                 n_elements*n_constraints_per_element<true>(controls)  
                     + integral_quantities.get_n_restricted(),
-                 car, s, q0, qa0, u0, control_variables_0, integral_quantities, sigma) {}
+                 car, s, input_states_open_initial_point, algebraic_states_open_initial_point, controls_open_initial_point, 
+                 controls, integral_quantities, sigma) {}
 
         void operator()(ADvector& fg, const ADvector& x, const ADvector& p) 
         { 
@@ -514,21 +400,22 @@ class Optimal_laptime
                       const size_t n_points,
                       const Dynamic_model_t& car, 
                       const std::vector<scalar>& s,
-                      const std::array<scalar,Dynamic_model_t::NSTATE>& q0, 
-                      const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& qa0, 
-                      const std::array<scalar,Dynamic_model_t::NCONTROL>& u0,
-                      const std::array<scalar,Dynamic_model_t::NCONTROL>& dudt0,
-                      const Control_variables<>& control_variables_0,
+                      const std::array<scalar,Dynamic_model_t::NSTATE>& input_states_open_initial_point, 
+                      const std::array<scalar,Dynamic_model_t::NALGEBRAIC>& algebraic_states_open_initial_point, 
+                      const std::array<scalar,Dynamic_model_t::NCONTROL>& controls_open_initial_point,
+                      const std::array<scalar,Dynamic_model_t::NCONTROL>& dcontrols_dt_open_initial_point,
+                      const Control_variables<>& controls,
                       const Integral_quantities& integral_quantities,
                       const scalar sigma
           ) : FG(n_elements, 
                  n_points,
-                 n_elements*n_variables_per_point<false>(control_variables_0) 
-                    + control_variables_0.number_of_constant_optimizations 
-                    + control_variables_0.number_of_hypermesh_optimization_points,
-                 n_elements*n_constraints_per_element<false>(control_variables_0) 
+                 n_elements*n_variables_per_point<false>(controls) 
+                    + controls.number_of_constant_optimizations 
+                    + controls.number_of_hypermesh_optimization_points,
+                 n_elements*n_constraints_per_element<false>(controls) 
                     + integral_quantities.get_n_restricted(),
-                 car, s, q0, qa0, u0, control_variables_0, integral_quantities, sigma), _dudt0(dudt0) {}
+                 car, s, input_states_open_initial_point,algebraic_states_open_initial_point, controls_open_initial_point, 
+                 controls, integral_quantities, sigma), _dcontrols_dt_open_initial_point(dcontrols_dt_open_initial_point) {}
 
         void operator()(ADvector& fg, const ADvector& x, const ADvector& p) 
         { 
@@ -549,7 +436,7 @@ class Optimal_laptime
         void compute(ADvector& fg, const ADvector& x);
 
      private:
-        const std::array<scalar,Dynamic_model_t::NCONTROL> _dudt0;
+        const std::array<scalar,Dynamic_model_t::NCONTROL> _dcontrols_dt_open_initial_point;
     };
 
 };

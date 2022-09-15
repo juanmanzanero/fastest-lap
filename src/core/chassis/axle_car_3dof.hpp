@@ -1,22 +1,22 @@
-#ifndef __AXLE_CAR_3DOF_HPP__
-#define __AXLE_CAR_3DOF_HPP__
+#ifndef AXLE_CAR_3DOF_HPP
+#define AXLE_CAR_3DOF_HPP
 
 #include "src/core/foundation/fastest_lap_exception.h"
 
 template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t> typename Axle_mode, size_t STATE0, size_t CONTROL0>
-Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::Axle_car_3dof(const std::string& name,
-                           const Tire_left_t& tire_l, const Tire_right_t& tire_r,
-                           const std::string& path)
-: Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,STATE0,CONTROL0>(name, {tire_l, tire_r}),
+Axle_car_3dof<Timeseries_t, Tire_left_t, Tire_right_t, Axle_mode, STATE0, CONTROL0>::Axle_car_3dof(const std::string& name,
+    const Tire_left_t& tire_l, const Tire_right_t& tire_r,
+    const std::string& path)
+: Axle<Timeseries_t, std::tuple<Tire_left_t, Tire_right_t>, STATE0, CONTROL0>(name, { tire_l, tire_r }),
   _track(0.0),
-  _y_tire({0.0,0.0}),
+  _y_tire({ 0.0,0.0 }),
   _I(0.0),
   _differential_stiffness(0.0),
   _throttle_smooth_pos(0.0),
-  _kappa_left(0.0),
-  _kappa_right(0.0),
-  _dkappa_left(0.0),
-  _dkappa_right(0.0),
+  _kappa_dimensionless_left(0.0),
+  _kappa_dimensionless_right(0.0),
+  _domega_dt_left(0.0),
+  _domega_dt_right(0.0),
   _torque_left(0.0),
   _torque_right(0.0),
   _throttle(0.0),
@@ -59,20 +59,20 @@ Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::
 
 
 template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t> typename Axle_mode, size_t STATE0, size_t CONTROL0>
-Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::Axle_car_3dof(const std::string& name,
-                           const Tire_left_t& tire_l, const Tire_right_t& tire_r,
-                           Xml_document& database,
-                           const std::string& path)
-: Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,STATE0,CONTROL0>(name, {tire_l, tire_r}),
+Axle_car_3dof<Timeseries_t, Tire_left_t, Tire_right_t, Axle_mode, STATE0, CONTROL0>::Axle_car_3dof(const std::string& name,
+    const Tire_left_t& tire_l, const Tire_right_t& tire_r,
+    Xml_document& database,
+    const std::string& path)
+: Axle<Timeseries_t, std::tuple<Tire_left_t, Tire_right_t>, STATE0, CONTROL0>(name, { tire_l, tire_r }),
   _track(0.0),
-  _y_tire({0.0,0.0}),
+  _y_tire({ 0.0,0.0 }),
   _I(0.0),
   _differential_stiffness(0.0),
   _throttle_smooth_pos(0.0),
-  _kappa_left(0.0),
-  _kappa_right(0.0),
-  _dkappa_left(0.0),
-  _dkappa_right(0.0),
+  _kappa_dimensionless_left(0.0),
+  _kappa_dimensionless_right(0.0),
+  _domega_dt_left(0.0),
+  _domega_dt_right(0.0),
   _torque_left(0.0),
   _torque_right(0.0),
   _throttle(0.0),
@@ -195,6 +195,26 @@ inline void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0
 }
 
 
+template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t> typename Axle_mode, size_t STATE0, size_t CONTROL0>
+template<size_t NSTATE, size_t NCONTROL>
+void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::transform_states_to_input_states
+    (const std::array<Timeseries_t,NSTATE>& states, const std::array<Timeseries_t,NCONTROL>& controls, std::array<Timeseries_t,NSTATE>& input_states)
+{
+    // Rotate the tires frame
+    if constexpr (std::is_same<Axle_mode<0,0>,STEERING<0,0>>::value)
+    {
+        // steering angle
+        const auto& delta = controls[control_names::STEERING];
+
+        // rotate the tires' frames
+        std::get<LEFT>(base_type::_tires).get_frame().set_rotation_angle(0,delta);
+        std::get<RIGHT>(base_type::_tires).get_frame().set_rotation_angle(0,delta);
+    }
+
+    // Placeholder to compute kappa from omega when ready
+
+}
+
 
 template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t> typename Axle_mode, size_t STATE0, size_t CONTROL0>
 void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::update
@@ -205,8 +225,8 @@ void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTRO
     Tire_right_t& tire_r = std::get<RIGHT>(base_type::_tires);
 
     // Update the tires
-    tire_l.update(-Fz_left, _kappa_left);
-    tire_r.update(-Fz_right, _kappa_right);
+    tire_l.update(-Fz_left, _kappa_dimensionless_left);
+    tire_r.update(-Fz_right, _kappa_dimensionless_right);
 
     const Timeseries_t& omega_left = tire_l.get_omega();
     const Timeseries_t& omega_right = tire_r.get_omega();
@@ -222,16 +242,24 @@ void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTRO
     {
         // Compute throttle percentage 
         const Timeseries_t throttle_percentage  =  smooth_pos( throttle,_throttle_smooth_pos);
+
+        // Compute engine torque as engine_power/mean(omega_l,omega_r)
+        // Computed this way, the power balance of the axle is:
+        // T_left.omega_left + T_right.omega_right = net_power = engine_power - differential_dissipation <= engine_power
+        // with differential_dissipation = differential_stiffness.(omega_left - omega_right)^2
+        //
+        // Ref: https://eprints.soton.ac.uk/417133/1/GP2manuscriptPURE_002_.pdf
         const Timeseries_t engine_torque = _engine(throttle_percentage, 0.5*(omega_left + omega_right));
-        const Timeseries_t boost_torque  = _engine_boost(throttle_percentage*_boost, 0.5*(omega_left + omega_right));
         const Timeseries_t differential_torque = _differential_stiffness*(omega_left - omega_right);
+
+        const Timeseries_t boost_torque  = _engine_boost(throttle_percentage*_boost, 0.5*(omega_left + omega_right));
         _torque_left  += 0.5*(engine_torque + boost_torque) - differential_torque;
         _torque_right += 0.5*(engine_torque + boost_torque) + differential_torque;
     }
 
     // Compute the time derivative of the two kappas
-    _dkappa_left  = tire_l.get_dkappadomega()*(_torque_left  + tire_l.get_longitudinal_torque_at_wheel_center()) / _I;
-    _dkappa_right = tire_r.get_dkappadomega()*(_torque_right + tire_r.get_longitudinal_torque_at_wheel_center()) / _I;
+    _domega_dt_left = (_torque_left  + tire_l.get_longitudinal_torque_at_wheel_center()) / _I;
+    _domega_dt_right = (_torque_right + tire_r.get_longitudinal_torque_at_wheel_center()) / _I;
 
     // Get the total force and torque by the tires
     const Vector3d<Timeseries_t> F_left = tire_l.get_force_in_parent(); 
@@ -259,60 +287,64 @@ scalar Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONT
 // ------- Handle state vector
 template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t> typename Axle_mode, size_t STATE0, size_t CONTROL0>
 template<size_t N>
-void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::get_state_derivative(std::array<Timeseries_t,N>& dqdt) const
+void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::get_state_and_state_derivative(std::array<Timeseries_t,N>& state, std::array<Timeseries_t,N>& dstate_dt) const
 {
-    base_type::get_state_derivative(dqdt);
+    base_type::get_state_and_state_derivative(state, dstate_dt);
 
     // Left tire's kappa
-    dqdt[Axle_type::IIDKAPPA_LEFT] = _dkappa_left;
+    state    [state_names::OMEGA_LEFT] = std::get<0>(base_type::_tires).get_omega();
+    dstate_dt[state_names::OMEGA_LEFT] = _domega_dt_left;
 
-    // Right tire's kappa
-    dqdt[Axle_type::IIDKAPPA_RIGHT] = _dkappa_right;
+    // Right tire's omega
+    state    [state_names::OMEGA_RIGHT] = std::get<1>(base_type::_tires).get_omega();
+    dstate_dt[state_names::OMEGA_RIGHT] = _domega_dt_right;
 }
 
 
 template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t> typename Axle_mode, size_t STATE0, size_t CONTROL0>
 template<size_t NSTATE, size_t NCONTROL>
-void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::set_state_and_control_names(std::array<std::string,NSTATE>& q, std::array<std::string,NCONTROL>& u) const
+void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::set_state_and_control_names
+     (std::array<std::string,NSTATE>& input_states, std::array<std::string,NCONTROL>& controls) const
 {
-    base_type::set_state_and_control_names(q,u);
+    base_type::set_state_and_control_names(input_states, controls);
 
     // kappa left
-    q[Axle_type::IKAPPA_LEFT] = base_type::_name + ".left-tire.kappa";
+    input_states[input_state_names::KAPPA_LEFT] = base_type::_name + ".left-tire.kappa";
 
     // kappa right
-    q[Axle_type::IKAPPA_RIGHT] = base_type::_name + ".right-tire.kappa";
+    input_states[input_state_names::KAPPA_RIGHT] = base_type::_name + ".right-tire.kappa";
 
     if constexpr (std::is_same<Axle_mode<0,0>,STEERING<0,0>>::value)
     {
         // steering angle
-        u[Axle_type::ISTEERING] = base_type::_name + ".steering-angle";
+        controls[control_names::STEERING] = base_type::_name + ".steering-angle";
     }
 
     if constexpr (std::is_same<Axle_mode<0,0>,POWERED<0,0>>::value) 
     {
         // boost
-        u[Axle_type::IBOOST] = base_type::_name + ".boost";
+        controls[control_names::BOOST] = base_type::_name + ".boost";
     }
 }
 
 
 template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t> typename Axle_mode, size_t STATE0, size_t CONTROL0>
 template<size_t NSTATE, size_t NCONTROL>
-void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::set_state_and_controls(const std::array<Timeseries_t,NSTATE>& q, const std::array<Timeseries_t,NCONTROL>& u) 
+void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::set_state_and_controls
+    (const std::array<Timeseries_t,NSTATE>& input_states, const std::array<Timeseries_t,NCONTROL>& controls) 
 {
-    base_type::set_state_and_controls(q,u);
+    base_type::set_state_and_controls(input_states, controls);
 
     // kappa left
-    _kappa_left  = q[Axle_type::IKAPPA_LEFT];
+    _kappa_dimensionless_left  = input_states[input_state_names::KAPPA_LEFT];
 
     // kappa right
-    _kappa_right  = q[Axle_type::IKAPPA_RIGHT];
+    _kappa_dimensionless_right  = input_states[input_state_names::KAPPA_RIGHT];
 
     if constexpr (std::is_same<Axle_mode<0,0>,STEERING<0,0>>::value)
     {
         // steering angle
-        _delta = u[Axle_type::ISTEERING];
+        _delta = controls[control_names::STEERING];
 
         // rotate the tires' frames
         std::get<LEFT>(base_type::_tires).get_frame().set_rotation_angle(0,_delta);
@@ -322,7 +354,7 @@ void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTRO
 
     if constexpr (std::is_same<Axle_mode<0,0>,POWERED<0,0>>::value) 
     {
-        _boost = u[Axle_type::IBOOST];
+        _boost = controls[control_names::BOOST];
     }
 }
 
@@ -330,35 +362,35 @@ void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTRO
 template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t> typename Axle_mode, size_t STATE0, size_t CONTROL0>
 template<size_t NSTATE, size_t NCONTROL>
 void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::set_state_and_control_upper_lower_and_default_values
-    (std::array<scalar, NSTATE>& q_def     , std::array<scalar, NSTATE>& q_lb     , std::array<scalar, NSTATE>& q_ub     ,
-    std::array<scalar , NCONTROL>& u_def   , std::array<scalar, NCONTROL>& u_lb   , std::array<scalar, NCONTROL>& u_ub) const
+    (std::array<scalar, NSTATE>& input_states_def     , std::array<scalar, NSTATE>& input_states_lb     , std::array<scalar, NSTATE>& input_states_ub     ,
+    std::array<scalar , NCONTROL>& controls_def   , std::array<scalar, NCONTROL>& controls_lb   , std::array<scalar, NCONTROL>& controls_ub) const
 {
-    base_type::set_state_and_control_upper_lower_and_default_values(q_def,q_lb,q_ub,u_def,u_lb,u_ub);
+    base_type::set_state_and_control_upper_lower_and_default_values(input_states_def,input_states_lb,input_states_ub,controls_def,controls_lb,controls_ub);
 
     // State ------------
     
     // Kappa left
-    q_def[Axle_type::IKAPPA_LEFT] = 0.0;
-    q_lb[Axle_type::IKAPPA_LEFT]  = -0.11;
-    q_ub[Axle_type::IKAPPA_LEFT]  =  0.11;
+    input_states_def[input_state_names::KAPPA_LEFT] = 0.0;
+    input_states_lb[input_state_names::KAPPA_LEFT]  = -1.0;
+    input_states_ub[input_state_names::KAPPA_LEFT]  =  1.0;
 
     // Kappa right
-    q_def[Axle_type::IKAPPA_RIGHT] = 0.0;
-    q_lb[Axle_type::IKAPPA_RIGHT]  = -0.11;
-    q_ub[Axle_type::IKAPPA_RIGHT]  =  0.11;
+    input_states_def[input_state_names::KAPPA_RIGHT] = 0.0;
+    input_states_lb[input_state_names::KAPPA_RIGHT]  = -1.0;
+    input_states_ub[input_state_names::KAPPA_RIGHT]  =  1.0;
 
     if constexpr (std::is_same_v<Axle_mode<0,0>,STEERING<0,0>>)
     {
-        u_def[Axle_type::ISTEERING] = 0.0;
-        u_lb[Axle_type::ISTEERING] = -20.0*DEG;
-        u_ub[Axle_type::ISTEERING] =  20.0*DEG;
+        controls_def[control_names::STEERING] = 0.0;
+        controls_lb[control_names::STEERING] = -20.0*DEG;
+        controls_ub[control_names::STEERING] =  20.0*DEG;
     }
 
     if constexpr (std::is_same<Axle_mode<0,0>,POWERED<0,0>>::value) 
     {
-        u_def[Axle_type::IBOOST] = 0.0;
-        u_lb[Axle_type::IBOOST] = 0.0;
-        u_ub[Axle_type::IBOOST] = 1.0;
+        controls_def[control_names::BOOST] = 0.0;
+        controls_lb[control_names::BOOST] = 0.0;
+        controls_ub[control_names::BOOST] = 1.0;
     }
 }
 

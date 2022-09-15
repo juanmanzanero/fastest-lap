@@ -1,5 +1,5 @@
-#ifndef __TIRE_HPP__
-#define __TIRE_HPP__
+#ifndef TIRE_HPP
+#define TIRE_HPP
 
 #include <iomanip>
 #include "lion/thirdparty/include/logger.hpp"
@@ -72,8 +72,6 @@ inline void Tire<Timeseries_t,STATE0,CONTROL0>::update(Timeseries_t omega)
     // Kappa and lambda
     _kappa = kappa();
     _lambda = lambda();
-
-    _dkappadomega = dkappadomega();
 }
 
 template<typename Timeseries_t, size_t STATE0, size_t CONTROL0>
@@ -96,7 +94,6 @@ inline void Tire<Timeseries_t,STATE0,CONTROL0>::update_from_kappa(Timeseries_t k
     // omega and lambda
     _lambda = lambda();
     _omega = (1.0+kappa)*_v[0]/_R0;
-    _dkappadomega = dkappadomega();
 }
 
 template<typename Timeseries_t, size_t STATE0, size_t CONTROL0>

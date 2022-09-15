@@ -1,5 +1,5 @@
-#ifndef __AXLE_CAR_6DOF_HPP__
-#define __AXLE_CAR_6DOF_HPP__
+#ifndef AXLE_CAR_6DOF_HPP
+#define AXLE_CAR_6DOF_HPP
 
 #include "src/core/foundation/fastest_lap_exception.h"
 
@@ -244,59 +244,63 @@ scalar Axle_car_6dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONT
 // ------- Handle state vector
 template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t> typename Axle_mode, size_t STATE0, size_t CONTROL0>
 template<size_t N>
-void Axle_car_6dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::get_state_derivative(std::array<Timeseries_t,N>& dqdt) const
+void Axle_car_6dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::get_state_and_state_derivative
+    (std::array<Timeseries_t,N>& state, std::array<Timeseries_t, N>& dstate_dt) const
 {
-    base_type::get_state_derivative(dqdt);
+    base_type::get_state_and_state_derivative(state, dstate_dt);
 
     if constexpr (std::is_same<Axle_mode<0,0>,POWERED_WITHOUT_DIFFERENTIAL<0,0>>::value)
     {
         // domega
-        dqdt[Axle_type::IIDOMEGA_AXLE] = _domega;
+        state[state_names::OMEGA_AXLE] = _omega;
+        dstate_dt[state_names::OMEGA_AXLE] = _domega;
     }
 }
 
 
 template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t> typename Axle_mode, size_t STATE0, size_t CONTROL0>
 template<size_t NSTATE, size_t NCONTROL>
-void Axle_car_6dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::set_state_and_control_names(std::array<std::string,NSTATE>& q, std::array<std::string,NCONTROL>& u) const
+void Axle_car_6dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::set_state_and_control_names
+    (std::array<std::string,NSTATE>& input_states, std::array<std::string,NCONTROL>& controls) const
 {
-    base_type::set_state_and_control_names(q,u);
+    base_type::set_state_and_control_names(input_states,controls);
 
     if constexpr (std::is_same<Axle_mode<0,0>,POWERED_WITHOUT_DIFFERENTIAL<0,0>>::value)
     {
         // omega
-        q[Axle_type::IOMEGA_AXLE] = base_type::_name + ".omega";
+        input_states[input_state_names::OMEGA_AXLE] = base_type::_name + ".omega";
 
         // axle torque
-        u[Axle_type::ITORQUE] = base_type::_name + ".throttle";
+        controls[control_names::TORQUE] = base_type::_name + ".throttle";
     }
 
     if constexpr (std::is_same<Axle_mode<0,0>,STEERING_FREE_ROLL<0,0>>::value)
     {
         // steering angle
-        u[Axle_type::ISTEERING] = base_type::_name + ".steering-angle";
+        controls[control_names::STEERING] = base_type::_name + ".steering-angle";
     }
 }
 
 
 template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t> typename Axle_mode, size_t STATE0, size_t CONTROL0>
 template<size_t NSTATE, size_t NCONTROL>
-void Axle_car_6dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::set_state_and_controls(const std::array<Timeseries_t,NSTATE>& q, const std::array<Timeseries_t,NCONTROL>& u)
+void Axle_car_6dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::set_state_and_controls
+    (const std::array<Timeseries_t,NSTATE>& input_states, const std::array<Timeseries_t,NCONTROL>& controls)
 {
-    base_type::set_state_and_controls(q,u);
+    base_type::set_state_and_controls(input_states,controls);
 
     if constexpr (std::is_same<Axle_mode<0,0>,POWERED_WITHOUT_DIFFERENTIAL<0,0>>::value)
     {
         // omega
-        const Timeseries_t& torque = u[Axle_type::ITORQUE];
-        const Timeseries_t& omega  = q[Axle_type::IOMEGA_AXLE];
+        const Timeseries_t& torque = controls[control_names::TORQUE];
+        const Timeseries_t& omega  = input_states[input_state_names::OMEGA_AXLE];
         set_throttle_and_omega(torque, omega);
     }
 
     if constexpr (std::is_same<Axle_mode<0,0>,STEERING_FREE_ROLL<0,0>>::value)
     {
         // steering angle
-        set_steering_angle(u[Axle_type::ISTEERING]);
+        set_steering_angle(controls[control_names::STEERING]);
     }
 }
 
@@ -304,38 +308,38 @@ void Axle_car_6dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTRO
 template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t> typename Axle_mode, size_t STATE0, size_t CONTROL0>
 template<size_t NSTATE, size_t NCONTROL>
 void Axle_car_6dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::set_state_and_control_upper_lower_and_default_values
-    (std::array<scalar, NSTATE>& q_def     , std::array<scalar, NSTATE>& q_lb     , std::array<scalar, NSTATE>& q_ub     ,
-    std::array<scalar , NCONTROL>& u_def   , std::array<scalar, NCONTROL>& u_lb   , std::array<scalar, NCONTROL>& u_ub) const
+    (std::array<scalar, NSTATE>& input_states_def     , std::array<scalar, NSTATE>& input_states_lb     , std::array<scalar, NSTATE>& input_states_ub     ,
+    std::array<scalar , NCONTROL>& controls_def   , std::array<scalar, NCONTROL>& controls_lb   , std::array<scalar, NCONTROL>& controls_ub) const
 {
-    base_type::set_state_and_control_upper_lower_and_default_values(q_def, q_lb, q_ub, u_def, u_lb, u_ub); 
+    base_type::set_state_and_control_upper_lower_and_default_values(input_states_def, input_states_lb, input_states_ub, controls_def, controls_lb, controls_ub); 
 
     if constexpr (std::is_same_v<Axle_mode<0,0>,POWERED_WITHOUT_DIFFERENTIAL<0,0>>)
     {
         // Set the omega of the axle
-        q_def[Axle_type::IOMEGA_AXLE] = 10.0*KMH/0.139; 
-        q_lb[Axle_type::IOMEGA_AXLE]  = 10.0*KMH/0.139;
-        q_ub[Axle_type::IOMEGA_AXLE]  = 200.0*KMH/0.139;
+        input_states_def[input_state_names::OMEGA_AXLE] = 10.0*KMH/0.139; 
+        input_states_lb[input_state_names::OMEGA_AXLE]  = 10.0*KMH/0.139;
+        input_states_ub[input_state_names::OMEGA_AXLE]  = 200.0*KMH/0.139;
 
         if ( !_engine.direct_torque() )
         {
-            u_def[Axle_type::ITORQUE] = 0.0;
-            u_lb[Axle_type::ITORQUE]  = -1.0;
-            u_ub[Axle_type::ITORQUE]  = 1.0;    
+            controls_def[control_names::TORQUE] = 0.0;
+            controls_lb[control_names::TORQUE]  = -1.0;
+            controls_ub[control_names::TORQUE]  = 1.0;    
         }
         else
         {
-            u_def[Axle_type::ITORQUE] = 0.0;
-            u_lb[Axle_type::ITORQUE]  = -200.0;
-            u_ub[Axle_type::ITORQUE]  =  200.0;
+            controls_def[control_names::TORQUE] = 0.0;
+            controls_lb[control_names::TORQUE]  = -200.0;
+            controls_ub[control_names::TORQUE]  =  200.0;
         }
 
     }
     
     if constexpr (std::is_same_v<Axle_mode<0,0>,STEERING_FREE_ROLL<0,0>>)
     {
-        u_def[Axle_type::ISTEERING] = 0.0;
-        u_lb[Axle_type::ISTEERING]  = -20.0*DEG;
-        u_ub[Axle_type::ISTEERING]  =  20.0*DEG;
+        controls_def[control_names::STEERING] = 0.0;
+        controls_lb[control_names::STEERING]  = -20.0*DEG;
+        controls_ub[control_names::STEERING]  =  20.0*DEG;
     }
 }
 

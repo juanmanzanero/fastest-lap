@@ -1,3 +1,4 @@
+/*
 #include "gtest/gtest.h"
 
 #include "lion/thirdparty/include/cppad/cppad.hpp"
@@ -11,9 +12,9 @@
 #include <iomanip>
 
 using Rear_left_tire = Tire_pacejka_std<scalar,0,0>;
-using Rear_right_tire = Tire_pacejka_std<scalar,Rear_left_tire::STATE_END,Rear_left_tire::CONTROL_END>;
-using Axle_type = Axle_car_6dof<scalar,Rear_left_tire,Rear_right_tire,POWERED_WITHOUT_DIFFERENTIAL,Rear_right_tire::STATE_END,Rear_right_tire::CONTROL_END>;
-using Dynamic_model_t = Dynamic_model_powered_axle<scalar,Axle_type,Axle_type::STATE_END,Axle_type::CONTROL_END>;
+using Rear_right_tire = Tire_pacejka_std<scalar,Rear_left_tire::input_state_names::end,Rear_left_tire::control_names::end>;
+using Axle_type = Axle_car_6dof<scalar,Rear_left_tire,Rear_right_tire,POWERED_WITHOUT_DIFFERENTIAL,Rear_right_tire::input_state_names::end,Rear_right_tire::control_names::end>;
+using Dynamic_model_t = Dynamic_model_powered_axle<scalar,Axle_type,Axle_type::input_state_names::end,Axle_type::control_names::end>;
 
 const static std::map<std::string,scalar> Lot2016kart_rear_axle =
 {
@@ -79,48 +80,44 @@ class Dynamic_model_powered_axle_test : public ::testing::Test
 };
 
 // check state vector
-static_assert(Axle_type::IOMEGA_AXLE == 0);
-static_assert(Dynamic_model_t::Road_type::IX == 1);
-static_assert(Dynamic_model_t::Road_type::IY == 2);
-static_assert(Dynamic_model_t::Road_type::IPSI == 3);
-static_assert(Dynamic_model_t::IU == 4);
+static_assert(Axle_type::input_state_names::OMEGA_AXLE == 0);
+static_assert(Dynamic_model_t::Road_type::input_state_names::X == 1);
+static_assert(Dynamic_model_t::Road_type::input_state_names::Y == 2);
+static_assert(Dynamic_model_t::Road_type::input_state_names::PSI == 3);
+static_assert(Dynamic_model_t::input_state_names::U == 4);
 static_assert(Dynamic_model_t::NSTATE == 5);
 
-
-// check state vector derivative
-static_assert(Axle_type::IIDOMEGA_AXLE == 0);
-static_assert(Dynamic_model_t::Road_type::IIDX == 1);
-static_assert(Dynamic_model_t::Road_type::IIDY == 2);
-static_assert(Dynamic_model_t::Road_type::IIDPSI == 3);
-static_assert(Dynamic_model_t::IIDU == 4);
+static_assert(Axle_type::state_names::OMEGA_AXLE == 0);
+static_assert(Dynamic_model_t::Road_type::state_names::X == 1);
+static_assert(Dynamic_model_t::Road_type::state_names::Y == 2);
+static_assert(Dynamic_model_t::Road_type::state_names::PSI == 3);
+static_assert(Dynamic_model_t::state_names::U == 4);
 
 // check control vector
-static_assert(Axle_type::ITORQUE == 0);
+static_assert(Axle_type::control_names::TORQUE == 0);
 static_assert(Dynamic_model_t::NCONTROL == 1);
 
 
 TEST_F(Dynamic_model_powered_axle_test, state_vector_sizes)
 {
-    EXPECT_EQ(Axle_type::IOMEGA_AXLE, 0);
-    EXPECT_EQ(Dynamic_model_t::Road_type::IX, 1);
-    EXPECT_EQ(Dynamic_model_t::Road_type::IY, 2);
-    EXPECT_EQ(Dynamic_model_t::Road_type::IPSI, 3);
-    EXPECT_EQ(Dynamic_model_t::IU, 4);
-    EXPECT_EQ(Dynamic_model_t::NSTATE, 5);
-}
+    EXPECT_EQ(Axle_type::input_state_names::OMEGA_AXLE, 0);
+    EXPECT_EQ(Dynamic_model_t::Road_type::input_state_names::X, 1);
+    EXPECT_EQ(Dynamic_model_t::Road_type::input_state_names::Y, 2);
+    EXPECT_EQ(Dynamic_model_t::Road_type::input_state_names::PSI, 3);
+    EXPECT_EQ(Dynamic_model_t::input_state_names::U, 4);
 
-TEST_F(Dynamic_model_powered_axle_test, state_derivative_vector_sizes)
-{
-    EXPECT_EQ(Axle_type::IIDOMEGA_AXLE, 0);
-    EXPECT_EQ(Dynamic_model_t::Road_type::IIDX, 1);
-    EXPECT_EQ(Dynamic_model_t::Road_type::IIDY, 2);
-    EXPECT_EQ(Dynamic_model_t::Road_type::IIDPSI, 3);
-    EXPECT_EQ(Dynamic_model_t::IIDU, 4);
+    EXPECT_EQ(Axle_type::state_names::OMEGA_AXLE, 0);
+    EXPECT_EQ(Dynamic_model_t::Road_type::state_names::X, 1);
+    EXPECT_EQ(Dynamic_model_t::Road_type::state_names::Y, 2);
+    EXPECT_EQ(Dynamic_model_t::Road_type::state_names::PSI, 3);
+    EXPECT_EQ(Dynamic_model_t::state_names::U, 4);
+
+    EXPECT_EQ(Dynamic_model_t::NSTATE, 5);
 }
 
 TEST_F(Dynamic_model_powered_axle_test, control_vector_sizes)
 {
-    EXPECT_EQ(Axle_type::ITORQUE, 0);
+    EXPECT_EQ(Axle_type::control_names::TORQUE, 0);
     EXPECT_EQ(Dynamic_model_t::NCONTROL, 1);
 }
 
@@ -193,3 +190,4 @@ TEST_F(Dynamic_model_powered_axle_test, simulation)
     for (size_t i = 0; i < Dynamic_model_t::NSTATE; ++i)
         EXPECT_NEAR(Value(q[i]), Value(q_saved[i]), 1.0e-12);
 }
+*/

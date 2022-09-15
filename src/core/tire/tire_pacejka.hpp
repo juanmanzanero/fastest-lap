@@ -1,5 +1,5 @@
-#ifndef __TIRE_PACEJKA_HPP__
-#define __TIRE_PACEJKA_HPP__
+#ifndef TIRE_PACEJKA_HPP
+#define TIRE_PACEJKA_HPP
 
 #include "lion/math/optimise.h"
 #include "lion/thirdparty/include/logger.hpp"
@@ -64,10 +64,10 @@ void Tire_pacejka<Timeseries_t,Pacejka_model,STATE0,CONTROL0>::fill_xml(Xml_docu
 
 
 template<typename Timeseries_t, typename Pacejka_model, size_t STATE0, size_t CONTROL0>
-inline void Tire_pacejka<Timeseries_t,Pacejka_model,STATE0,CONTROL0>::update(Timeseries_t Fz, Timeseries_t kappa)
+inline void Tire_pacejka<Timeseries_t,Pacejka_model,STATE0,CONTROL0>::update(Timeseries_t Fz, Timeseries_t kappa_dimensionless)
 {
     // Compute omega
-    base_type::update_from_kappa(kappa);
+    base_type::update_from_kappa(kappa_dimensionless*_model.maximum_kappa(Fz));
 
     update_self(Fz);
 }

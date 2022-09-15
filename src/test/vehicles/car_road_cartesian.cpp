@@ -22,39 +22,37 @@ using Dynamic_model_t       = lot2016kart<scalar>::cartesian;
 
 // Make sure that the enumerators are correct
 // Controls
-static_assert(Front_axle_t::ISTEERING==0);
-static_assert(Rear_axle_t::ITORQUE==1);
+static_assert(Front_axle_t::control_names::STEERING==0);
+static_assert(Rear_axle_t::control_names::TORQUE==1);
 
 // State
-static_assert(Rear_axle_t::IOMEGA_AXLE==0);
-static_assert(Chassis_t::IU==1);
-static_assert(Chassis_t::IV==2);
-static_assert(Chassis_t::IOMEGA==3);
-static_assert(Chassis_t::IZ==4);
-static_assert(Chassis_t::IPHI==5);
-static_assert(Chassis_t::IMU==6);
-static_assert(Chassis_t::IDZ==7);
-static_assert(Chassis_t::IDPHI==8);
-static_assert(Chassis_t::IDMU==9);
-static_assert(Road_t::IX==10);
-static_assert(Road_t::IY==11);
-static_assert(Road_t::IPSI==12);
+static_assert(Rear_axle_t::input_state_names::OMEGA_AXLE==0);
+static_assert(Chassis_t::input_state_names::U==1);
+static_assert(Chassis_t::input_state_names::V==2);
+static_assert(Chassis_t::input_state_names::OMEGA==3);
+static_assert(Chassis_t::input_state_names::Z==4);
+static_assert(Chassis_t::input_state_names::PHI==5);
+static_assert(Chassis_t::input_state_names::MU==6);
+static_assert(Chassis_t::input_state_names::DZDT==7);
+static_assert(Chassis_t::input_state_names::DPHIDT==8);
+static_assert(Chassis_t::input_state_names::DMUDT==9);
+static_assert(Road_t::input_state_names::X==10);
+static_assert(Road_t::input_state_names::Y==11);
+static_assert(Road_t::input_state_names::PSI==12);
 
-// Stateder
-static_assert(Rear_axle_t::IIDOMEGA_AXLE==0);
-static_assert(Chassis_t::IIDU==1);
-static_assert(Chassis_t::IIDV==2);
-static_assert(Chassis_t::IIDOMEGA==3);
-static_assert(Chassis_t::IIDZ==4);
-static_assert(Chassis_t::IIDPHI==5);
-static_assert(Chassis_t::IIDMU==6);
-static_assert(Chassis_t::IID2Z==7);
-static_assert(Chassis_t::IID2PHI==8);
-static_assert(Chassis_t::IID2MU==9);
-static_assert(Road_t::IIDX==10);
-static_assert(Road_t::IIDY==11);
-static_assert(Road_t::IIDPSI==12);
-
+static_assert(Rear_axle_t::state_names::OMEGA_AXLE==0);
+static_assert(Chassis_t::state_names::U==1);
+static_assert(Chassis_t::state_names::V==2);
+static_assert(Chassis_t::state_names::OMEGA==3);
+static_assert(Chassis_t::state_names::Z==4);
+static_assert(Chassis_t::state_names::PHI==5);
+static_assert(Chassis_t::state_names::MU==6);
+static_assert(Chassis_t::state_names::DZDT==7);
+static_assert(Chassis_t::state_names::DPHIDT==8);
+static_assert(Chassis_t::state_names::DMUDT==9);
+static_assert(Road_t::state_names::X==10);
+static_assert(Road_t::state_names::Y==11);
+static_assert(Road_t::state_names::PSI==12);
 
 class Control_acceleration
 {
@@ -877,24 +875,24 @@ TEST_F(Car_road_cartesian_test, dqdt)
 
     EXPECT_EQ(dqdt.size(), 12+1);
 
-    EXPECT_DOUBLE_EQ(Value(dqdt.at(Road_t::IIDX)), Value(dx));
-    EXPECT_DOUBLE_EQ(Value(dqdt.at(Road_t::IIDY)), Value(dy));
-    EXPECT_DOUBLE_EQ(Value(dqdt.at(Road_t::IIDPSI)), Value(omega));
+    EXPECT_DOUBLE_EQ(Value(dqdt.at(Road_t::state_names::X)), Value(dx));
+    EXPECT_DOUBLE_EQ(Value(dqdt.at(Road_t::state_names::Y)), Value(dy));
+    EXPECT_DOUBLE_EQ(Value(dqdt.at(Road_t::state_names::PSI)), Value(omega));
 
-    EXPECT_DOUBLE_EQ(Value(dqdt.at(Chassis_t::IIDZ)), Value(dz));
+    EXPECT_DOUBLE_EQ(Value(dqdt.at(Chassis_t::state_names::Z)), Value(dz));
 
-    EXPECT_DOUBLE_EQ(Value(dqdt.at(Chassis_t::IIDPHI)), Value(dphi));
-    EXPECT_DOUBLE_EQ(Value(dqdt.at(Chassis_t::IIDMU)), Value(dmu));
+    EXPECT_DOUBLE_EQ(Value(dqdt.at(Chassis_t::state_names::PHI)), Value(dphi));
+    EXPECT_DOUBLE_EQ(Value(dqdt.at(Chassis_t::state_names::MU)), Value(dmu));
 
-    EXPECT_DOUBLE_EQ(Value(dqdt.at(Chassis_t::IIDU)), Value(dv[X]));
-    EXPECT_DOUBLE_EQ(Value(dqdt.at(Chassis_t::IIDV)), Value(dv[Y]));
-    EXPECT_DOUBLE_EQ(Value(dqdt.at(Chassis_t::IID2Z)), Value(dv[Z]));
+    EXPECT_DOUBLE_EQ(Value(dqdt.at(Chassis_t::state_names::U)), Value(dv[X]));
+    EXPECT_DOUBLE_EQ(Value(dqdt.at(Chassis_t::state_names::V)), Value(dv[Y]));
+    EXPECT_DOUBLE_EQ(Value(dqdt.at(Chassis_t::state_names::DZDT)), Value(dv[Z]));
 
-    EXPECT_DOUBLE_EQ(Value(dqdt.at(Chassis_t::IID2PHI)), Value(d2phi[X]));
-    EXPECT_DOUBLE_EQ(Value(dqdt.at(Chassis_t::IID2MU)), Value(d2phi[Y]));
-    EXPECT_DOUBLE_EQ(Value(dqdt.at(Chassis_t::IIDOMEGA)), Value(d2phi[Z]));
+    EXPECT_DOUBLE_EQ(Value(dqdt.at(Chassis_t::state_names::DPHIDT)), Value(d2phi[X]));
+    EXPECT_DOUBLE_EQ(Value(dqdt.at(Chassis_t::state_names::DMUDT)), Value(d2phi[Y]));
+    EXPECT_DOUBLE_EQ(Value(dqdt.at(Chassis_t::state_names::OMEGA)), Value(d2phi[Z]));
 
-    EXPECT_DOUBLE_EQ(Value(dqdt.at(Rear_axle_t::IIDOMEGA_AXLE)), Value(domega_axle));
+    EXPECT_DOUBLE_EQ(Value(dqdt.at(Rear_axle_t::state_names::OMEGA_AXLE)), Value(domega_axle));
 }
 
 
@@ -1031,6 +1029,7 @@ TEST_F(Car_road_cartesian_test, jacobian_autodiff)
         }
 }
 
+
 TEST_F(Car_road_cartesian_test, jacobian_autodiff_integrated_function)
 {
     lot2016kart<CppAD::AD<double>>::cartesian car_ad(*database);
@@ -1041,19 +1040,19 @@ TEST_F(Car_road_cartesian_test, jacobian_autodiff_integrated_function)
     std::vector<double> x0 = {1.0942729386749036e+02, 1.3888864656170503e+01, -2.5944758219334368e-02, 1.4399999999999999e-01, 1.7813769736939513e-02, -2.8474281872469206e-03, 6.8675368270008927e-03, 0.0000000000000000e+00, 0.0000000000000000e+00, 0.0000000000000000e+00, 0.0000000000000000e+00, 0.0000000000000000e+00, 1.8680236782072025e-03, 9.4530179243706314e-03, 0.0000000000000000e+00};
   
     // Fill the inputs to the operator() of the vehicle 
-    std::array<double,13> q0;
-    std::array<double,2> u0;
+    std::array<double,13> input_states;
+    std::array<double,2> controls;
     for (size_t i = 0; i < 13; ++i)
     {
-        q0[i] = x0[i];
+        input_states[i] = x0[i];
     }
     for (size_t i = 0; i < 2; ++i)
     {
-        u0[i] = x0[i+13];
+        controls[i] = x0[i+13];
     }
 
     // Call operator()
-    auto solution = car_ad.equations(q0,{},u0,0.0);
+    auto solution = car_ad.equations(input_states,{},controls,0.0);
 
     // Compute the numerical Jacobian
 
@@ -1062,45 +1061,49 @@ TEST_F(Car_road_cartesian_test, jacobian_autodiff_integrated_function)
     // derivatives w.r.t q
     for (size_t i = 0; i < 13; ++i)
     {
-        // Freeze u0 and add a perturbation on q0 
-        const double eps = std::max(1.0,fabs(q0[i]))*1.0e-8;
-        q0[i] += eps;
+        // Freeze controls and add a perturbation on input_states 
+        const double eps = std::max(1.0,fabs(input_states[i]))*1.0e-8;
+        input_states[i] += eps;
 
-        auto dqdt_eps = car_sc(q0,u0,0.0);
+        auto dqdt_eps = car_sc(input_states,{},controls,0.0).dstates_dt;
 
-        q0[i] -= 2*eps;
+        input_states[i] -= 2*eps;
 
-        auto dqdt_meps = car_sc(q0,u0,0.0);
+        auto dqdt_meps = car_sc(input_states,{},controls,0.0).dstates_dt;
 
         numerical_jacobian[i] = (dqdt_eps - dqdt_meps)*(0.5/eps);
 
-        q0[i] += eps;
+        input_states[i] += eps;
     }
 
     // derivatives w.r.t u
     for (size_t i = 0; i < 2; ++i)
     {
-        // Freeze u0 and add a perturbation on q0 
-        const double eps = std::max(1.0,fabs(u0[i]))*1.0e-8;
-        u0[i] += eps;
+        // Freeze controls and add a perturbation on input_states 
+        const double eps = std::max(1.0,fabs(controls[i]))*1.0e-8;
+        controls[i] += eps;
 
-        auto dqdt_eps = car_sc(q0,u0,0.0);
+        auto dqdt_eps = car_sc(input_states,{},controls,0.0).dstates_dt;
 
-        u0[i] -= 2*eps;
+        controls[i] -= 2*eps;
 
-        auto dqdt_meps = car_sc(q0,u0,0.0);
+        auto dqdt_meps = car_sc(input_states,{},controls,0.0).dstates_dt;
 
         numerical_jacobian[i+13] = (dqdt_eps - dqdt_meps)*(0.5/eps);
 
-        u0[i] += eps;
+        controls[i] += eps;
     }
 
 
     for (size_t i = 0; i < 15; ++i)
         for (size_t j = 0; j < 13; ++j)
         {
-            EXPECT_NEAR(numerical_jacobian[i][j], solution.jac_dqdt[j][i], 2.0e-6*std::max(fabs(solution.jac_dqdt[j][i]),1.0)) << "with i = " << i << " and j = " << j ;
+            EXPECT_NEAR(numerical_jacobian[i][j], solution.jacobian_dstates_dt[j][i], 2.0e-6*std::max(fabs(solution.jacobian_dstates_dt[j][i]),1.0)) << "with i = " << i << " and j = " << j ;
         }
+
+    for (size_t i = 0; i < 13; ++i)
+        for (size_t j = 0; j < 13; ++j)
+            EXPECT_NEAR((i==j ? 1.0 : 0.0), solution.jacobian_states[j][i], 1.0e-6);
 }
 
 

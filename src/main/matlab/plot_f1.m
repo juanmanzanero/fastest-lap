@@ -12,6 +12,12 @@ else
     color = [1.0,1.0,1.0];
 end
 
+if ( nargin > 7 )
+    FaceAlpha = varargin{3};
+else
+    FaceAlpha = 1.0;
+end
+
 if ( strcmpi(skin,'generic') )
     [im_original,~,alpha_original] = imread('f1_marker.png');
     
@@ -155,7 +161,7 @@ for i = 1 : size(im_rotated,1)
 end
 
 h_im = imagesc(x_range,y_range,im_rotated);
-h_im.AlphaData = alpha_rotated;
+h_im.AlphaData = FaceAlpha*alpha_rotated;
 
 
 end

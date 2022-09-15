@@ -56,7 +56,7 @@ TEST_F(Steady_state_test_f1, max_lateral_accel_several_speeds)
         Steady_state ss(car);
         auto solution = ss.solve_max_lat_acc(v);
 
-        car_sc(solution.q,solution.qa,solution.u,0.0);
+        car_sc(solution.input_states,solution.algebraic_states,solution.controls,0.0);
     
         EXPECT_TRUE(solution.solved);
         vel[i] = v;
@@ -289,7 +289,7 @@ TEST_F(Steady_state_test_f1, _0g_0g_300kmh)
 
     EXPECT_NEAR(solution.ax, 0.0, 1.0e-4);
     EXPECT_NEAR(solution.ay, 0.0, 1.0e-4);
-    EXPECT_NEAR(solution.u[0], 0.0, 1.0e-4);
+    EXPECT_NEAR(solution.controls[0], 0.0, 1.0e-4);
 }
 
 
@@ -305,7 +305,7 @@ TEST_F(Steady_state_test_f1, max_longitudinal_acceleration)
     EXPECT_TRUE(solution_min.solved);
 
     // Check the minimum acceleration solution
-    car_sc(solution_min.q, solution_min.qa, solution_min.u, 0.0);
+    car_sc(solution_min.input_states, solution_min.algebraic_states, solution_min.controls, 0.0);
 
     auto max_ax_ref = references.get_element("f1_steady_state_test/maximum_longiudinal_acceleration/maximum_x_acceleration").get_value(scalar());
     auto min_ax_ref = references.get_element("f1_steady_state_test/maximum_longiudinal_acceleration/minimum_x_acceleration").get_value(scalar());
@@ -350,7 +350,7 @@ TEST_F(Steady_state_test_f1, max_longitudinal_acceleration_several_speeds)
         ax_min[i] = solution_min.ax;
         ax_max[i] = solution_max.ax;
 
-        car_sc(solution_max.q, solution_max.qa, solution_max.u, 0.0);
+        car_sc(solution_max.input_states, solution_max.algebraic_states, solution_max.controls, 0.0);
 
         kappa_max_acc_fl[i] = car_sc.get_chassis().get_front_axle().template get_tire<0>().get_kappa();
         kappa_max_acc_fr[i] = car_sc.get_chassis().get_front_axle().template get_tire<1>().get_kappa();
@@ -359,7 +359,7 @@ TEST_F(Steady_state_test_f1, max_longitudinal_acceleration_several_speeds)
         psi_max_acc[i] = car_sc.get_road().get_psi()*RAD;
         delta_max_acc[i] = car_sc.get_chassis().get_front_axle().get_steering_angle()*RAD;
 
-        car_sc(solution_min.q, solution_min.qa, solution_min.u, 0.0);
+        car_sc(solution_min.input_states, solution_min.algebraic_states, solution_min.controls, 0.0);
 
         kappa_min_acc_fl[i] = car_sc.get_chassis().get_front_axle().template get_tire<0>().get_kappa();
         kappa_min_acc_fr[i] = car_sc.get_chassis().get_front_axle().template get_tire<1>().get_kappa();
@@ -427,7 +427,7 @@ TEST_F(Steady_state_test_f1, max_longitudinal_acceleration_several_speeds_25perc
         ax_min[i] = solution_min.ax;
         ax_max[i] = solution_max.ax;
 
-        car_sc(solution_max.q, solution_max.qa, solution_max.u, 0.0);
+        car_sc(solution_max.input_states, solution_max.algebraic_states, solution_max.controls, 0.0);
 
         kappa_max_acc_fl[i] = car_sc.get_chassis().get_front_axle().template get_tire<0>().get_kappa();
         kappa_max_acc_fr[i] = car_sc.get_chassis().get_front_axle().template get_tire<1>().get_kappa();
@@ -436,7 +436,7 @@ TEST_F(Steady_state_test_f1, max_longitudinal_acceleration_several_speeds_25perc
         psi_max_acc[i] = car_sc.get_road().get_psi()*RAD;
         delta_max_acc[i] = car_sc.get_chassis().get_front_axle().get_steering_angle()*RAD;
 
-        car_sc(solution_min.q, solution_min.qa, solution_min.u, 0.0);
+        car_sc(solution_min.input_states, solution_min.algebraic_states, solution_min.controls, 0.0);
 
         kappa_min_acc_fl[i] = car_sc.get_chassis().get_front_axle().template get_tire<0>().get_kappa();
         kappa_min_acc_fr[i] = car_sc.get_chassis().get_front_axle().template get_tire<1>().get_kappa();
@@ -530,7 +530,7 @@ TEST_F(Steady_state_test_f1, max_longitudinal_acceleration_several_speeds_50perc
         ax_min[i] = solution_min.ax;
         ax_max[i] = solution_max.ax;
 
-        car_sc(solution_max.q, solution_max.qa, solution_max.u, 0.0);
+        car_sc(solution_max.input_states, solution_max.algebraic_states, solution_max.controls, 0.0);
 
         kappa_max_acc_fl[i] = car_sc.get_chassis().get_front_axle().template get_tire<0>().get_kappa();
         kappa_max_acc_fr[i] = car_sc.get_chassis().get_front_axle().template get_tire<1>().get_kappa();
@@ -539,7 +539,7 @@ TEST_F(Steady_state_test_f1, max_longitudinal_acceleration_several_speeds_50perc
         psi_max_acc[i] = car_sc.get_road().get_psi()*RAD;
         delta_max_acc[i] = car_sc.get_chassis().get_front_axle().get_steering_angle()*RAD;
 
-        car_sc(solution_min.q, solution_min.qa, solution_min.u, 0.0);
+        car_sc(solution_min.input_states, solution_min.algebraic_states, solution_min.controls, 0.0);
 
         kappa_min_acc_fl[i] = car_sc.get_chassis().get_front_axle().template get_tire<0>().get_kappa();
         kappa_min_acc_fr[i] = car_sc.get_chassis().get_front_axle().template get_tire<1>().get_kappa();
@@ -632,7 +632,7 @@ TEST_F(Steady_state_test_f1, max_longitudinal_acceleration_several_speeds_75perc
         ax_min[i] = solution_min.ax;
         ax_max[i] = solution_max.ax;
 
-        car_sc(solution_max.q, solution_max.qa, solution_max.u, 0.0);
+        car_sc(solution_max.input_states, solution_max.algebraic_states, solution_max.controls, 0.0);
 
         kappa_max_acc_fl[i] = car_sc.get_chassis().get_front_axle().template get_tire<0>().get_kappa();
         kappa_max_acc_fr[i] = car_sc.get_chassis().get_front_axle().template get_tire<1>().get_kappa();
@@ -641,7 +641,7 @@ TEST_F(Steady_state_test_f1, max_longitudinal_acceleration_several_speeds_75perc
         psi_max_acc[i] = car_sc.get_road().get_psi()*RAD;
         delta_max_acc[i] = car_sc.get_chassis().get_front_axle().get_steering_angle()*RAD;
 
-        car_sc(solution_min.q, solution_min.qa, solution_min.u, 0.0);
+        car_sc(solution_min.input_states, solution_min.algebraic_states, solution_min.controls, 0.0);
 
         kappa_min_acc_fl[i] = car_sc.get_chassis().get_front_axle().template get_tire<0>().get_kappa();
         kappa_min_acc_fr[i] = car_sc.get_chassis().get_front_axle().template get_tire<1>().get_kappa();
@@ -734,7 +734,7 @@ TEST_F(Steady_state_test_f1, max_longitudinal_acceleration_several_speeds_95perc
         ax_min[i] = solution_min.ax;
         ax_max[i] = solution_max.ax;
 
-        car_sc(solution_max.q, solution_max.qa, solution_max.u, 0.0);
+        car_sc(solution_max.input_states, solution_max.algebraic_states, solution_max.controls, 0.0);
 
         kappa_max_acc_fl[i] = car_sc.get_chassis().get_front_axle().template get_tire<0>().get_kappa();
         kappa_max_acc_fr[i] = car_sc.get_chassis().get_front_axle().template get_tire<1>().get_kappa();
@@ -743,7 +743,7 @@ TEST_F(Steady_state_test_f1, max_longitudinal_acceleration_several_speeds_95perc
         psi_max_acc[i] = car_sc.get_road().get_psi()*RAD;
         delta_max_acc[i] = car_sc.get_chassis().get_front_axle().get_steering_angle()*RAD;
 
-        car_sc(solution_min.q, solution_min.qa, solution_min.u, 0.0);
+        car_sc(solution_min.input_states, solution_min.algebraic_states, solution_min.controls, 0.0);
 
         kappa_min_acc_fl[i] = car_sc.get_chassis().get_front_axle().template get_tire<0>().get_kappa();
         kappa_min_acc_fr[i] = car_sc.get_chassis().get_front_axle().template get_tire<1>().get_kappa();
@@ -821,7 +821,7 @@ TEST_F(Steady_state_test_f1, max_lateral_accel_300kmh)
     Steady_state ss(car);
     auto solution = ss.solve_max_lat_acc(v);
 
-    car_sc(solution.q,solution.qa,solution.u,0.0);
+    car_sc(solution.input_states,solution.algebraic_states,solution.controls,0.0);
     
     EXPECT_TRUE(solution.solved);
 }

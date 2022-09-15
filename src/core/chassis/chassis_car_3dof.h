@@ -1,5 +1,5 @@
-#ifndef __CHASSIS_CAR_3DOF_H__
-#define __CHASSIS_CAR_3DOF_H__
+#ifndef CHASSIS_CAR_3DOF_H
+#define CHASSIS_CAR_3DOF_H
 
 #include "src/core/foundation/fastest_lap_exception.h"
 #include "chassis.h"
@@ -49,15 +49,24 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
     enum Axles { FRONT, REAR }; 
 
     // State variables: none
-    enum State { STATE_END = base_type::STATE_END };
-
-    //! Control variables: throttle/brake
-    enum Controls  { ITHROTTLE = base_type::CONTROL_END, IBRAKE_BIAS, CONTROL_END };
+    struct input_state_names : public base_type::input_state_names
+    {
+        enum { end = base_type::input_state_names::end };
+    };
+   
+    //! Control variables:: throttle/brake, and brake-bias
+    struct control_names : public base_type::control_names
+    {
+        enum { THROTTLE = base_type::control_names::end, BRAKE_BIAS, end};
+    };
 
     //! Algebraic variables: the four vertical forces
-    enum Algebraic { IFZFL, IFZFR, IFZRL, IFZRR, ALGEBRAIC_END };
+    struct algebraic_state_names
+    {
+        enum Algebraic { FZFL, FZFR, FZRL, FZRR, end };
+    };
 
-    constexpr static size_t NALGEBRAIC = ALGEBRAIC_END;
+    constexpr static size_t NALGEBRAIC = algebraic_state_names::end;
 
     //! Default constructor
     Chassis_car_3dof();
@@ -88,6 +97,11 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
 
     //! Fill the corresponding nodes of an xml document
     void fill_xml(Xml_document& doc) const;
+
+    template<size_t NSTATE, size_t NCONTROL>
+    void transform_states_to_input_states(const std::array<Timeseries_t,NSTATE>& states, 
+                                          const std::array<Timeseries_t,NCONTROL>& controls,
+                                          std::array<Timeseries_t,NSTATE>& input_states);
 
     //! Update the chassis: update the axles to get forces and compute accelerations
     //! @param[in] x: x-coordinate of the road frame [m]
@@ -127,14 +141,14 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
     Vector3d<Timeseries_t> get_rear_axle_velocity() const { return {0.0, 0.0, 0.0}; }
 
     //! Get a negative normal force
-    const Timeseries_t& get_negative_normal_force(const Algebraic id) const
+    const Timeseries_t& get_negative_normal_force(const typename algebraic_state_names::Algebraic id) const
     {
         switch(id)
         {
-         case (IFZFL): return _neg_Fz_fl; break; 
-         case (IFZFR): return _neg_Fz_fr; break; 
-         case (IFZRL): return _neg_Fz_rl; break; 
-         case (IFZRR): return _neg_Fz_rr; break; 
+        case (algebraic_state_names::FZFL): return _neg_Fz_fl; break; 
+        case (algebraic_state_names::FZFR): return _neg_Fz_fr; break; 
+        case (algebraic_state_names::FZRL): return _neg_Fz_rl; break; 
+        case (algebraic_state_names::FZRR): return _neg_Fz_rr; break; 
          default:      throw fastest_lap_exception("Id is incorrect");
         }
     }
@@ -152,42 +166,44 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
     //! Load the time derivative of the state variables computed herein to the dqdt
     //! @param[out] dqdt: the vehicle state vector time derivative
     template<size_t N>
-    void get_state_derivative(std::array<Timeseries_t,N>& dqdt) const;
+    void get_state_and_state_derivative(std::array<Timeseries_t,N>& state,
+                                        std::array<Timeseries_t, N>& dstate_dt
+                                        ) const;
 
     //! Load the algebraic constraints computed herein to the dqa
     //! @param[out] dqa: the algebraic constraints
     template<size_t NALGEBRAIC_>
-    void get_algebraic_constraints(std::array<Timeseries_t,NALGEBRAIC_>& dqa) const;
+    void get_algebraic_constraints(std::array<Timeseries_t,NALGEBRAIC_>& algebraic_equations) const;
 
     //! Set the state variables of this class
     //! @param[in] q: the vehicle state vector 
     //! @param[in] u: the vehicle control vector
     template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_controls(const std::array<Timeseries_t,NSTATE>& q, 
-                                const std::array<Timeseries_t,NALGEBRAIC>& qa,
-                                const std::array<Timeseries_t,NCONTROL>& u);
+    void set_state_and_controls(const std::array<Timeseries_t,NSTATE>& input_states, 
+                                const std::array<Timeseries_t,NALGEBRAIC>& algebraic_states,
+                                const std::array<Timeseries_t,NCONTROL>& controls);
 
 
     //! Set the state and controls upper, lower, and default values
     template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_control_upper_lower_and_default_values(std::array<scalar,NSTATE>& q_def,
-                                                               std::array<scalar,NSTATE>& q_lb,
-                                                               std::array<scalar,NSTATE>& q_ub,
-                                                               std::array<scalar,NALGEBRAIC>& qa_def,
-                                                               std::array<scalar,NALGEBRAIC>& qa_lb,
-                                                               std::array<scalar,NALGEBRAIC>& qa_ub,
-                                                               std::array<scalar,NCONTROL>& u_def,
-                                                               std::array<scalar,NCONTROL>& u_lb,
-                                                               std::array<scalar,NCONTROL>& u_ub 
+    void set_state_and_control_upper_lower_and_default_values(std::array<scalar,NSTATE>& input_states_def,
+                                                              std::array<scalar,NSTATE>& input_states_lb,
+                                                              std::array<scalar,NSTATE>& input_states_ub,
+                                                              std::array<scalar,NALGEBRAIC>& algebraic_states_def,
+                                                              std::array<scalar,NALGEBRAIC>& algebraic_states_lb,
+                                                              std::array<scalar,NALGEBRAIC>& algebraic_states_ub,
+                                                              std::array<scalar,NCONTROL>& control_def,
+                                                              std::array<scalar,NCONTROL>& control_lb,
+                                                              std::array<scalar,NCONTROL>& control_ub
                                                               ) const;
 
     //! Get the names of the state and control varaibles of this class
     //! @param[out] q: the vehicle state names
     //! @param[out] u: the vehicle control names
     template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_control_names(std::array<std::string,NSTATE>& q, 
-                                     std::array<std::string,NALGEBRAIC>& qa,
-                                     std::array<std::string,NCONTROL>& u) const;
+    void set_state_and_control_names(std::array<std::string,NSTATE>& input_states, 
+                                     std::array<std::string,NALGEBRAIC>& algebraic_states,
+                                     std::array<std::string,NCONTROL>& control_states) const;
 
     bool is_ready() const { return base_type::is_ready() && 
         std::all_of(__used_parameters.begin(), __used_parameters.end(), [](const auto& v) -> auto { return v; }); }

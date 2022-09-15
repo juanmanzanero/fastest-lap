@@ -1,5 +1,5 @@
-#ifndef __TIRE_PACEJKA_H__
-#define __TIRE_PACEJKA_H__
+#ifndef TIRE_PACEJKA_H
+#define TIRE_PACEJKA_H
 
 #include "tire.h"
 #include "lion/math/matrix_extensions.h"
@@ -191,10 +191,16 @@ class Tire_pacejka : public Tire<Timeseries_t, STATE0,CONTROL0>
     using base_type = Tire<Timeseries_t,STATE0,CONTROL0>;
 
     //! Indices of the state variables of this class: none
-    enum State     { STATE_END    = base_type::STATE_END } ;
+    struct input_state_names
+    {
+        enum { end = base_type::input_state_names::end };
+    };
 
     //! Indices of the control variables of this class: none
-    enum Controls  { CONTROL_END  = base_type::CONTROL_END  } ;
+    struct control_names
+    {
+        enum { end = base_type::control_names::end };
+    };
 
     //! Default constructor
     Tire_pacejka() = default;
@@ -229,8 +235,8 @@ class Tire_pacejka : public Tire<Timeseries_t, STATE0,CONTROL0>
     //! This updates the tire dynamics and tire forces
     //! In this function, the normal load is provided externally
     //! @param[in] Fz: the normal load
-    //! @param[in] kappa: new value for tire longitudinal slip [-]
-    void update(Timeseries_t Fz, Timeseries_t kappa);
+    //! @param[in] kappa_dimensionless: new value for tire longitudinal slip [-]
+    void update(Timeseries_t Fz, Timeseries_t kappa_dimensionless);
 
     //! Calls update(omega) of the base class, and calls update_self()
     //! @param[in] omega: new value for tire angular speed [rad/s]
@@ -246,32 +252,32 @@ class Tire_pacejka : public Tire<Timeseries_t, STATE0,CONTROL0>
     //! Load the time derivative of the state variables computed herein to the dqdt
     //! @param[out] dqdt: the vehicle state vector time derivative
     template<size_t N>
-    void get_state_derivative(std::array<Timeseries_t,N>& dqdt) const {};
+    void get_state_and_state_derivative(std::array<Timeseries_t,N>& state, std::array<Timeseries_t,N>& dstate_dt) const {};
 
     //! Set the state variables of this class
     //! @param[in] q: the vehicle state vector 
     //! @param[in] u: the vehicle control vector
     template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_controls(const std::array<Timeseries_t,NSTATE>& q, 
-                                const std::array<Timeseries_t,NCONTROL>& u) {};
+    void set_state_and_controls(const std::array<Timeseries_t,NSTATE>& input_states,
+                                const std::array<Timeseries_t,NCONTROL>& controls) {};
 
 
     //! Set the state and controls upper, lower, and default values
     template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_control_upper_lower_and_default_values(const std::array<scalar,NSTATE>& q_def,
-                                                               const std::array<scalar,NSTATE>& q_lb,
-                                                               const std::array<scalar,NSTATE>& q_ub,
-                                                               const std::array<scalar,NCONTROL>& u_def,
-                                                               const std::array<scalar,NCONTROL>& u_lb,
-                                                               const std::array<scalar,NCONTROL>& u_ub 
+    void set_state_and_control_upper_lower_and_default_values(const std::array<scalar,NSTATE>& input_states_def,
+                                                               const std::array<scalar,NSTATE>& input_states_lb,
+                                                               const std::array<scalar,NSTATE>& input_states_ub,
+                                                               const std::array<scalar,NCONTROL>& controls_def,
+                                                               const std::array<scalar,NCONTROL>& controls_lb,
+                                                               const std::array<scalar,NCONTROL>& controls_ub 
                                                               ) const {};
 
     //! Get the names of the state and control varaibles of this class
     //! @param[out] q: the vehicle state names
     //! @param[out] u: the vehicle control names
     template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_control_names(std::array<std::string,NSTATE>& q, 
-                                     std::array<std::string,NCONTROL>& u) const {};
+    void set_state_and_control_names(std::array<std::string,NSTATE>& input_states, 
+                                     std::array<std::string,NCONTROL>& controls) const {};
 
     static std::string type() { return "tire_pacejka"; }
 

@@ -1,5 +1,5 @@
-#ifndef __AXLE_H__
-#define __AXLE_H__
+#ifndef AXLE_H
+#define AXLE_H
 
 #include <unordered_map>
 #include "lion/frame/frame.h"
@@ -23,10 +23,18 @@ class Axle
     constexpr static size_t NTIRES = std::tuple_size<Tires_tuple>::value;
 
     //! Indices of the state variables of this class: none
-    enum State     { STATE_END    = STATE0    } ;
+    struct input_state_names
+    {
+        enum { end = STATE0 };
+    };
 
     //! Indices of the control variables of this class: none
-    enum Controls  { CONTROL_END  = CONTROL0  } ;
+    struct control_names
+    {
+        enum { end = CONTROL0 };
+    };
+
+    struct state_names {};
 
     //! Default constructor
     Axle() = default;
@@ -69,31 +77,31 @@ class Axle
     //! Load the time derivative of the state variables computed herein to the dqdt
     //! @param[out] dqdt: the vehicle state vector time derivative
     template<size_t N>
-    void get_state_derivative(std::array<Timeseries_t,N>& dqdt) const;
+    void get_state_and_state_derivative(std::array<Timeseries_t,N>& state, std::array<Timeseries_t,N>& dstate_dt) const;
 
     //! Set the state variables of this class
     //! @param[in] q: the vehicle state vector 
     //! @param[in] u: the vehicle control vector
     template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_controls(const std::array<Timeseries_t,NSTATE>& q, 
-                                const std::array<Timeseries_t,NCONTROL>& u);
+    void set_state_and_controls(const std::array<Timeseries_t,NSTATE>& input_states, 
+                                const std::array<Timeseries_t,NCONTROL>& controls);
 
     //! Set the state and controls upper, lower, and default values
     template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_control_upper_lower_and_default_values(std::array<scalar,NSTATE>& q_def,
-                                                               std::array<scalar,NSTATE>& q_lb,
-                                                               std::array<scalar,NSTATE>& q_ub,
-                                                               std::array<scalar,NCONTROL>& u_def,
-                                                               std::array<scalar,NCONTROL>& u_lb,
-                                                               std::array<scalar,NCONTROL>& u_ub 
+    void set_state_and_control_upper_lower_and_default_values(std::array<scalar,NSTATE>& input_states_def,
+                                                               std::array<scalar,NSTATE>& input_states_lb,
+                                                               std::array<scalar,NSTATE>& input_states_ub,
+                                                               std::array<scalar,NCONTROL>& controls_def,
+                                                               std::array<scalar,NCONTROL>& controls_lb,
+                                                               std::array<scalar,NCONTROL>& controls_ub 
                                                               ) const;
 
     //! Get the names of the state and control varaibles of this class
     //! @param[out] q: the vehicle state names
     //! @param[out] u: the vehicle control names
     template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_control_names(std::array<std::string,NSTATE>& q, 
-                                     std::array<std::string,NCONTROL>& u) const;
+    void set_state_and_control_names(std::array<std::string,NSTATE>& input_states, 
+                                     std::array<std::string,NCONTROL>& controls) const;
 
     bool is_ready() const;
 

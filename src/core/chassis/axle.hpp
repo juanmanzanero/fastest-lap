@@ -1,5 +1,5 @@
-#ifndef __AXLE_HPP__
-#define __AXLE_HPP__
+#ifndef AXLE_HPP
+#define AXLE_HPP
 
 #include "src/core/foundation/fastest_lap_exception.h"
 
@@ -67,47 +67,47 @@ inline Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>& Axle<Timeseries_t,Tires_t
 
 template<typename Timeseries_t, typename Tires_tuple, size_t STATE0, size_t CONTROL0>
 template<size_t N>
-void Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>::get_state_derivative(std::array<Timeseries_t,N>& dqdt) const
+void Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>::get_state_and_state_derivative(std::array<Timeseries_t,N>& state, std::array<Timeseries_t,N>& dstate_dt) const
 {
-    std::get<0>(_tires).get_state_derivative(dqdt);
+    std::get<0>(_tires).get_state_and_state_derivative(state, dstate_dt);
 
     if constexpr (NTIRES == 2)
-        std::get<1>(_tires).get_state_derivative(dqdt);
+        std::get<1>(_tires).get_state_and_state_derivative(state, dstate_dt);
 }
 
 
 template<typename Timeseries_t, typename Tires_tuple, size_t STATE0, size_t CONTROL0>
 template<size_t NSTATE, size_t NCONTROL>
-void Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>::set_state_and_control_names(std::array<std::string,NSTATE>& q, std::array<std::string,NCONTROL>& u) const
+void Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>::set_state_and_control_names(std::array<std::string,NSTATE>& input_states, std::array<std::string,NCONTROL>& controls) const
 {
-    std::get<0>(_tires).set_state_and_control_names(q,u);
+    std::get<0>(_tires).set_state_and_control_names(input_states, controls);
     
     if constexpr (NTIRES == 2)
-        std::get<1>(_tires).set_state_and_control_names(q,u);
+        std::get<1>(_tires).set_state_and_control_names(input_states, controls);
 }
 
 
 template<typename Timeseries_t, typename Tires_tuple, size_t STATE0, size_t CONTROL0>
 template<size_t NSTATE, size_t NCONTROL>
-void Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>::set_state_and_controls(const std::array<Timeseries_t,NSTATE>& q, const std::array<Timeseries_t,NCONTROL>& u)
+void Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>::set_state_and_controls(const std::array<Timeseries_t,NSTATE>& input_states, const std::array<Timeseries_t,NCONTROL>& controls)
 {
-    std::get<0>(_tires).set_state_and_controls(q,u);
+    std::get<0>(_tires).set_state_and_controls(input_states,controls);
 
     if constexpr (NTIRES == 2)
-        std::get<1>(_tires).set_state_and_controls(q,u);
+        std::get<1>(_tires).set_state_and_controls(input_states,controls);
 }
 
 
 template<typename Timeseries_t, typename Tires_tuple, size_t STATE0, size_t CONTROL0>
 template<size_t NSTATE, size_t NCONTROL>
 void Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>::set_state_and_control_upper_lower_and_default_values
-    (std::array<scalar, NSTATE>& q_def     , std::array<scalar, NSTATE>& q_lb     , std::array<scalar, NSTATE>& q_ub     ,
-    std::array<scalar , NCONTROL>& u_def   , std::array<scalar, NCONTROL>& u_lb   , std::array<scalar, NCONTROL>& u_ub) const
+    (std::array<scalar, NSTATE>& input_states_def     , std::array<scalar, NSTATE>& input_states_lb     , std::array<scalar, NSTATE>& input_states_ub     ,
+    std::array<scalar , NCONTROL>& controls_def   , std::array<scalar, NCONTROL>& controls_lb   , std::array<scalar, NCONTROL>& controls_ub) const
 {
-    std::get<0>(_tires).set_state_and_control_upper_lower_and_default_values(q_def, q_lb, q_ub, u_def, u_lb, u_ub); 
+    std::get<0>(_tires).set_state_and_control_upper_lower_and_default_values(input_states_def, input_states_lb, input_states_ub, controls_def, controls_lb, controls_ub); 
 
     if constexpr (NTIRES == 2)
-        std::get<1>(_tires).set_state_and_control_upper_lower_and_default_values(q_def, q_lb, q_ub, u_def, u_lb, u_ub);
+        std::get<1>(_tires).set_state_and_control_upper_lower_and_default_values(input_states_def, input_states_lb, input_states_ub, controls_def, controls_lb, controls_ub);
 }
 
 template<typename Timeseries_t, typename Tires_tuple, size_t STATE0, size_t CONTROL0>
@@ -160,6 +160,5 @@ inline bool Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>::is_ready() const
             std::all_of(__used_parameters.begin(), __used_parameters.end(), [](const auto& v) -> auto { return v; });
     }
 }
-
 
 #endif

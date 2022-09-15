@@ -1,14 +1,31 @@
-#ifndef __CAR_HPP__
-#define __CAR_HPP__
+#ifndef DYNAMIC_MODEL_CAR_HPP
+#define DYNAMIC_MODEL_CAR_HPP
 
 #include "lion/math/matrix_extensions.h"
 
+
+template<typename Timeseries_t, typename Chassis_t, typename RoadModel_t, size_t _NSTATE, size_t _NCONTROL>
+std::array<Timeseries_t, _NSTATE> Dynamic_model_car<Timeseries_t,Chassis_t,RoadModel_t,_NSTATE,_NCONTROL>::transform_states_to_input_states
+    (const std::array<Timeseries_t, _NSTATE>& states,const std::array<Timeseries_t, _NCONTROL>& controls) const
+{
+    // (1) Define input_states
+    std::array<Timeseries_t, _NSTATE> input_states = states;
+
+    // (2) Duplicate the chassis: we do not want to modify its internal state
+    auto chassis = get_chassis();
+    chassis.transform_states_to_input_states(states, controls, input_states);
+
+    return input_states;
+}
+
 template<typename Timeseries_t, typename Chassis_t, typename RoadModel_t, size_t _NSTATE, size_t _NCONTROL>
 template<size_t NALG>
-std::enable_if_t<NALG==0,std::array<Timeseries_t,_NSTATE>> Dynamic_model_car<Timeseries_t,Chassis_t,RoadModel_t,_NSTATE,_NCONTROL>::operator()
-    (const std::array<Timeseries_t,_NSTATE>& q, const std::array<Timeseries_t,_NCONTROL>& u, scalar t)
+std::enable_if_t<NALG==0, std::array<Timeseries_t,_NSTATE>> 
+    Dynamic_model_car<Timeseries_t,Chassis_t,RoadModel_t,_NSTATE,_NCONTROL>::operator()
+        (const std::array<Timeseries_t,_NSTATE>& states, const std::array<Timeseries_t,_NCONTROL>& controls, scalar time)
 {
-    return std::get<0>((*this)(q,{},u,t));
+    const auto input_states = transform_states_to_input_states(states, controls);
+    return (*this)(input_states,{},controls,time).dstates_dt;
 }
 
 
@@ -31,139 +48,159 @@ void Dynamic_model_car<Timeseries_t,Chassis_t,RoadModel_t,_NSTATE,_NCONTROL>::se
 
 
 template<typename Timeseries_t, typename Chassis_t, typename RoadModel_t, size_t _NSTATE, size_t _NCONTROL>
-std::pair<std::array<Timeseries_t,_NSTATE>,std::array<Timeseries_t,Chassis_t::NALGEBRAIC>> Dynamic_model_car<Timeseries_t,Chassis_t,RoadModel_t,_NSTATE,_NCONTROL>::operator()
-    (const std::array<Timeseries_t,_NSTATE>& q, const std::array<Timeseries_t,NALGEBRAIC>& qa, const std::array<Timeseries_t,_NCONTROL>& u, scalar t)
+typename Dynamic_model_car<Timeseries_t,Chassis_t,RoadModel_t,_NSTATE,_NCONTROL>::Dynamics_equations
+    Dynamic_model_car<Timeseries_t,Chassis_t,RoadModel_t,_NSTATE,_NCONTROL>::operator()
+        (const std::array<Timeseries_t,_NSTATE>& input_states, const std::array<Timeseries_t,NALGEBRAIC>& algebraic_states, 
+         const std::array<Timeseries_t,_NCONTROL>& controls, scalar time)
 {
-    std::array<Timeseries_t,NSTATE> dqdt;
-    std::array<Timeseries_t,NALGEBRAIC> dqa;
+    // (1) Initialize outputs
+    Dynamics_equations dynamics_equations;
 
-    // (1) Set the variable parameters
+    auto& states              = dynamics_equations.states;
+    auto& dstates_dt          = dynamics_equations.dstates_dt;
+    auto& algebraic_equations = dynamics_equations.algebraic_equations;
+
+    // (1.1) Default to state vector being the input state vector
+    std::copy(input_states.cbegin(), input_states.cend(), states.begin());
+
+    // (2) Set the variable parameters
     for (auto const& parameter : base_type::get_parameters() )
-        get_chassis().set_parameter(parameter.get_path(), parameter(t));
+        get_chassis().set_parameter(parameter.get_path(), parameter(time));
 
-    // (2) Set state and controls
-    _chassis.set_state_and_controls(q,qa,u);
-    _road.set_state_and_controls(t,q,u);
+    // (3) Set state and controls
+    _chassis.set_state_and_controls(input_states,algebraic_states,controls);
+    _road.set_state_and_controls(time,input_states,controls);
 
-    // (3) Update
+    // (4) Update
     _road.update(_chassis.get_u(), _chassis.get_v(), _chassis.get_omega());
     _chassis.update(_road.get_x(), _road.get_y(), _road.get_psi());
 
-    // (4) Get time derivative
-    _chassis.get_state_derivative(dqdt);
-    _road.get_state_derivative(dqdt);
+    // (5) Get state and state time derivative
+    _chassis.get_state_and_state_derivative(states,dstates_dt);
+    _road.get_state_and_state_derivative(states,dstates_dt);
 
-    // (5) Get algebraic constraints from the chassis
-    if constexpr (NALGEBRAIC != 0)
-        _chassis.get_algebraic_constraints(dqa);
+    // (6) Get algebraic constraints from the chassis
+    if constexpr (NALGEBRAIC > 0)
+        _chassis.get_algebraic_constraints(algebraic_equations);
 
-    // (6) Scale the temporal parameter to curvilinear if needed
-    for (auto it = dqdt.begin(); it != dqdt.end(); ++it)
+    // (7) Scale the temporal parameter to curvilinear if needed
+    for (auto it = dstates_dt.begin(); it != dstates_dt.end(); ++it)
         (*it) *= _road.get_dtimedt();
 
-    return {dqdt,dqa};
+    return dynamics_equations;
 }
 
 
 template<typename Timeseries_t, typename Chassis_t, typename RoadModel_t, size_t _NSTATE, size_t _NCONTROL>
 typename Dynamic_model_car<Timeseries_t,Chassis_t,RoadModel_t,_NSTATE,_NCONTROL>::Equations 
-    Dynamic_model_car<Timeseries_t,Chassis_t,RoadModel_t,_NSTATE,_NCONTROL>::equations
-        (const std::array<scalar,_NSTATE>& q, const std::array<scalar,NALGEBRAIC>& qa,
-         const std::array<scalar,_NCONTROL>& u, scalar t)
+Dynamic_model_car<Timeseries_t, Chassis_t, RoadModel_t, _NSTATE, _NCONTROL>::equations
+(const std::array<scalar, _NSTATE>& input_states, const std::array<scalar, NALGEBRAIC>& algebraic_states,
+    const std::array<scalar, _NCONTROL>& controls, scalar time)
 {
-    // Put the states into a single vector, which will be declared as independent variables
+    // (1) Put the states into a single vector, which will be declared as independent variables
     constexpr const size_t n_total = _NSTATE + NALGEBRAIC + _NCONTROL;
-    std::vector<CppAD::AD<double>> x0(n_total);
+    std::vector<CppAD::AD<double>> inputs_all_ad(n_total);
 
-    for (size_t i = 0; i < _NSTATE; ++i)
-        x0[i] = q[i];
+    std::copy(input_states.cbegin(), input_states.cend(), inputs_all_ad.begin());
+    std::copy(algebraic_states.cbegin(), algebraic_states.cend(), inputs_all_ad.begin() + _NSTATE);
+    std::copy(controls.cbegin(), controls.cend(), inputs_all_ad.begin() + _NSTATE + NALGEBRAIC);
 
-    for (size_t i = 0; i < NALGEBRAIC; ++i)
-        x0[i+_NSTATE] = qa[i];
+    // (2) Declare the contents of x0 as the independent variables
+    CppAD::Independent(inputs_all_ad);
 
-    for (size_t i = 0; i < _NCONTROL; ++i)
-        x0[i+_NSTATE+NALGEBRAIC] = u[i];
+    // (3) Create new inputs to the operator() of the vehicle 
+    std::array<CppAD::AD<double>, _NSTATE>     input_states_ad;
+    std::array<CppAD::AD<double>, NALGEBRAIC>  algebraic_states_ad;
+    std::array<CppAD::AD<double>, _NCONTROL>   controls_ad;
 
-    // Declare the contents of x0 as the independent variables
-    CppAD::Independent(x0);
+    std::copy_n(inputs_all_ad.cbegin(), _NSTATE, input_states_ad.begin());
+    std::copy_n(inputs_all_ad.cbegin() + _NSTATE, NALGEBRAIC, algebraic_states_ad.begin());
+    std::copy(inputs_all_ad.cbegin() + _NSTATE + NALGEBRAIC, inputs_all_ad.cend(), controls_ad.begin());
 
-    // Create new inputs to the operator() of the vehicle 
-    std::array<CppAD::AD<double>,_NSTATE>     q0;
-    std::array<CppAD::AD<double>,NALGEBRAIC> qa0;
-    std::array<CppAD::AD<double>,_NCONTROL>   u0;
+    // (4) Call operator(), transform arrays to vectors
+    auto dynamic_equations = (*this)(input_states_ad, algebraic_states_ad, controls_ad, 0.0);
+    const auto& state_ad = dynamic_equations.states;
+    const auto& dstates_dt_ad = dynamic_equations.dstates_dt;
+    const auto& algebraic_equations_ad = dynamic_equations.algebraic_equations;
 
-    for (size_t i = 0; i < _NSTATE; ++i)
-        q0[i] = x0[i];
+    // (5) Concatenate [states, dstates_dt, algebraic_equations]
+    std::vector<CppAD::AD<double>> outputs_all_ad(state_ad.cbegin(), state_ad.cend());
+    outputs_all_ad.insert(outputs_all_ad.end(), dstates_dt_ad.cbegin(), dstates_dt_ad.cend());
+    outputs_all_ad.insert(outputs_all_ad.end(), algebraic_equations_ad.cbegin(), algebraic_equations_ad.cend());
 
-    for (size_t i = 0; i < NALGEBRAIC; ++i)
-        qa0[i] = x0[i+_NSTATE];
-
-    for (size_t i = 0; i < _NCONTROL; ++i)
-        u0[i] = x0[i+_NSTATE+NALGEBRAIC];
-
-    // Call operator(), transform arrays to vectors
-    auto [dqdt_out,dqa_out] = (*this)(q0,qa0,u0,0.0);
-    std::vector<CppAD::AD<double>> out_vector(dqdt_out.cbegin(), dqdt_out.cend());
-    out_vector.insert(out_vector.end(), dqa_out.cbegin(), dqa_out.cend());
-
-    // Create the AD functions and stop the recording
+    // (6) Create the AD functions and stop the recording
     CppAD::ADFun<double> f;
-    f.Dependent(x0,out_vector);
+    f.Dependent(inputs_all_ad, outputs_all_ad);
 
-    // Transform x0 to double, to evaluate the functions
-    std::vector<scalar> x0_double(x0.size());
-
-    for (size_t i = 0; i < x0.size(); ++i)
-        x0_double[i] = Value(x0[i]);
-
-    // Evaluate y = f(q0,u0,0)
-    auto out0 = f.Forward(0, x0_double);
-    auto out0_jacobian = f.Jacobian(x0_double);
+    // (7) Transform inputs to double, to evaluate the functions
+    std::vector<scalar> inputs_all(inputs_all_ad.size());
+    std::transform(inputs_all_ad.cbegin(), inputs_all_ad.cend(), inputs_all.begin(),
+        [](const auto& ad) -> auto { return Value(ad); });
     
-    std::vector<std::vector<double>> out0_hessian(_NSTATE+NALGEBRAIC);
+    // (8) Evaluate y = f(q0,u0,0)
+    auto outputs_all = f.Forward(0, inputs_all);
+    auto jacobian_outputs_all = f.Jacobian(inputs_all);
+    
+    std::vector<std::vector<double>> hessian_outputs_all(_NSTATE + _NSTATE + NALGEBRAIC);
 
-    for (size_t i = 0; i < _NSTATE + NALGEBRAIC; ++i)
-        out0_hessian[i] = f.Hessian(x0_double,i);
+    for (size_t i = 0; i < _NSTATE + _NSTATE + NALGEBRAIC; ++i)
+        hessian_outputs_all[i] = f.Hessian(inputs_all,i);
 
-    // Fill the solution struct
+    // (9) Fill the solution struct
     Equations solution;
 
-    for (size_t i = 0; i < _NSTATE; ++i)
-        solution.dqdt[i] = out0[i];
+    // (9.1) Solution
+    std::copy_n(outputs_all.cbegin()              , _NSTATE           , solution.states.begin());
+    std::copy_n(outputs_all.cbegin() + _NSTATE    , _NSTATE           , solution.dstates_dt.begin());
+    std::copy  (outputs_all.cbegin() + 2 * _NSTATE, outputs_all.cend(), solution.algebraic_equations.begin());
 
-    for (size_t i = 0; i < NALGEBRAIC; ++i)
-        solution.dqa[i] = out0[i+_NSTATE];
+    // (9.2) Jacobians
+    for (size_t i = 0; i < _NSTATE; ++i)
+        for (size_t j = 0; j < n_total; ++j)
+            // The CppAD jacobian is sorted row major, [dy1/dx1, ..., dy1/dxn, dy2/dx1, ..., dy2/dxn, ...]
+            solution.jacobian_states[i][j] = jacobian_outputs_all[j + n_total*i];
 
     for (size_t i = 0; i < _NSTATE; ++i)
         for (size_t j = 0; j < n_total; ++j)
-            // The CppAD jacobian is sorted as [dy1/dx1, ..., dy1/dxn, dy2/dx1, ..., dy2/dxn, ...]
-            solution.jac_dqdt[i][j] = out0_jacobian[j + n_total*i];
+            // The CppAD jacobian is sorted row major, [dy1/dx1, ..., dy1/dxn, dy2/dx1, ..., dy2/dxn, ...]
+            solution.jacobian_dstates_dt[i][j] = jacobian_outputs_all[j + n_total*(i+_NSTATE)];
 
     for (size_t i = 0; i < NALGEBRAIC; ++i)
         for (size_t j = 0; j < n_total; ++j)
-            solution.jac_dqa[i][j] = out0_jacobian[j + n_total*(i+_NSTATE)];
+            solution.jacobian_algebraic_equations[i][j] = jacobian_outputs_all[j + n_total*(i+2*_NSTATE)];
+
+    // (9.3) Hessians
+    for (size_t var = 0; var < _NSTATE; ++var)
+        for (size_t i = 0; i < n_total; ++i)
+            for (size_t j = 0; j < n_total; ++j)
+            {
+                solution.hessian_states[var][i][j] = hessian_outputs_all[var][j + n_total*i];
+    
+                // Check its symmetry
+                assert(std::abs(hessian_outputs_all[var][j + n_total*i]- hessian_outputs_all[var][i + n_total*j])
+                         < 1.0e-10*std::max(1.0,std::abs(hessian_outputs_all[var][j+n_total*i])));
+            }
 
     for (size_t var = 0; var < _NSTATE; ++var)
         for (size_t i = 0; i < n_total; ++i)
             for (size_t j = 0; j < n_total; ++j)
             {
-                solution.hess_dqdt[var][i][j] = out0_hessian[var][j + n_total*i];
+                solution.hessian_dstates_dt[var][i][j] = hessian_outputs_all[var+_NSTATE][j + n_total*i];
     
                 // Check its symmetry
-                assert(std::abs(out0_hessian[var][j + n_total*i]-out0_hessian[var][i + n_total*j]) 
-                         < 1.0e-10*std::max(1.0,std::abs(out0_hessian[var][j+n_total*i])));
-
+                assert(std::abs(hessian_outputs_all[var+_NSTATE][j + n_total*i]- hessian_outputs_all[var+_NSTATE][i + n_total*j])
+                         < 1.0e-10*std::max(1.0,std::abs(hessian_outputs_all[var+_NSTATE][j+n_total*i])));
             }
 
     for (size_t var = 0; var < NALGEBRAIC; ++var)
         for (size_t i = 0; i < n_total; ++i)
             for (size_t j = 0; j < n_total; ++j)
             {
-                solution.hess_dqa[var][i][j] = out0_hessian[var+_NSTATE][j + n_total*i];
+                solution.hessian_algebraic_equations[var][i][j] = hessian_outputs_all[var+2*_NSTATE][j + n_total*i];
 
                 // Check its symmetry
-                assert(std::abs(out0_hessian[var+_NSTATE][j + n_total*i]-out0_hessian[var+_NSTATE][i + n_total*j]) 
-                         < 1.0e-10*std::max(1.0,std::abs(out0_hessian[var+_NSTATE][j+n_total*i])));
+                assert(std::abs(hessian_outputs_all[var+2*_NSTATE][j + n_total*i]- hessian_outputs_all[var+2*_NSTATE][i + n_total*j])
+                         < 1.0e-10*std::max(1.0,std::abs(hessian_outputs_all[var+2*_NSTATE][j+n_total*i])));
             }
 
     return solution;
@@ -174,15 +211,15 @@ template<typename Timeseries_t, typename Chassis_t, typename RoadModel_t, size_t
 std::tuple<std::string,std::array<std::string,_NSTATE>,std::array<std::string,Chassis_t::NALGEBRAIC>,std::array<std::string,_NCONTROL>> Dynamic_model_car<Timeseries_t,Chassis_t,RoadModel_t,_NSTATE,_NCONTROL>::get_state_and_control_names() const 
 {
     std::string key_name;
-    std::array<std::string,NSTATE> q_names;
-    std::array<std::string,NALGEBRAIC> qa_names;
-    std::array<std::string,NCONTROL> u_names;
-    RoadModel_t::set_state_and_control_names(key_name,q_names,u_names);
-    _chassis.set_state_and_control_names(q_names,qa_names,u_names);
+    std::array<std::string,NSTATE> input_states_names;
+    std::array<std::string,NALGEBRAIC> algebraic_states_names;
+    std::array<std::string,NCONTROL> controls_names;
 
-    return {key_name,q_names,qa_names,u_names};
+    RoadModel_t::set_state_and_control_names(key_name,input_states_names,controls_names);
+    _chassis.set_state_and_control_names(input_states_names,algebraic_states_names,controls_names);
+
+    return {key_name,input_states_names,algebraic_states_names,controls_names};
 }
-
 
 
 template<typename Timeseries_t, typename Chassis_t, typename RoadModel_t, size_t _NSTATE, size_t _NCONTROL>
@@ -190,29 +227,31 @@ typename Dynamic_model_car<Timeseries_t,Chassis_t,RoadModel_t,_NSTATE,_NCONTROL>
     Dynamic_model_car<Timeseries_t,Chassis_t,RoadModel_t,_NSTATE,_NCONTROL>::get_state_and_control_upper_lower_and_default_values() const
 {
     // (1) Define outputs
-    std::array<scalar,_NSTATE> q_def;
-    std::array<scalar,_NSTATE> q_lb;
-    std::array<scalar,_NSTATE> q_ub;
-    std::array<scalar,NALGEBRAIC> qa_def;
-    std::array<scalar,NALGEBRAIC> qa_lb;
-    std::array<scalar,NALGEBRAIC> qa_ub;
-    std::array<scalar,_NCONTROL> u_def;
-    std::array<scalar,_NCONTROL> u_lb;
-    std::array<scalar,_NCONTROL> u_ub;
+    State_and_control_upper_lower_and_default_values values_all;
+
+    auto& input_states_def = values_all.input_states_def;
+    auto& input_states_lb  = values_all.input_states_lb;
+    auto& input_states_ub  = values_all.input_states_ub;
+
+    auto& algebraic_states_def = values_all.algebraic_states_def;
+    auto& algebraic_states_lb = values_all.algebraic_states_lb;
+    auto& algebraic_states_ub = values_all.algebraic_states_ub;
+
+    auto& controls_def = values_all.controls_def;
+    auto& controls_lb = values_all.controls_lb;
+    auto& controls_ub = values_all.controls_ub;
 
     // (2) Outputs are filled by chassis
-    _chassis.set_state_and_control_upper_lower_and_default_values(q_def, q_lb, q_ub, qa_def, qa_lb, qa_ub, u_def, u_lb, u_ub);
+    _chassis.set_state_and_control_upper_lower_and_default_values(input_states_def, input_states_lb, input_states_ub, 
+        algebraic_states_def, algebraic_states_lb, algebraic_states_ub, 
+        controls_def, controls_lb, controls_ub);
 
     // (3) Outputs are filled by road
-    _road.set_state_and_control_upper_lower_and_default_values(q_def, q_lb, q_ub, u_def, u_lb, u_ub);
+    _road.set_state_and_control_upper_lower_and_default_values(input_states_def, input_states_lb, input_states_ub,
+            controls_def, controls_lb, controls_ub);
 
     // (4) Return
-    return State_and_control_upper_lower_and_default_values 
-    {
-        .q_def  = q_def , .q_lb  = q_lb , .q_ub  = q_ub , 
-        .qa_def = qa_def, .qa_lb = qa_lb, .qa_ub = qa_ub, 
-        .u_def  = u_def , .u_lb  = u_lb , .u_ub  = u_ub   
-    };
+    return values_all;
 }
 
 

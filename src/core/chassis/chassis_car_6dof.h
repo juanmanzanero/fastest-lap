@@ -1,5 +1,5 @@
-#ifndef __CHASSIS_CAR_6DOF_H__
-#define __CHASSIS_CAR_6DOF_H__
+#ifndef CHASSIS_CAR_6DOF_H
+#define CHASSIS_CAR_6DOF_H
 
 #include "chassis.h"
 #include <array>
@@ -47,26 +47,41 @@ class Chassis_car_6dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
     enum Axles { FRONT, REAR }; 
 
     // State variables: six dof rigid body motion - add the 3 remaining dofs
-    enum State     
-    { 
-        IZ = base_type::STATE_END,  //! Vertical displacement of the chassis [m]
-        IPHI,                       //! Roll angle (assumed small) [rad]
-        IMU,                        //! Pitch angle (assumed small) [rad]
-        IDZ,                        //! Vertical displacement derivative [m/s]
-        IDPHI,                      //! Roll angular speed [rad/s]
-        IDMU,                       //! Pitch angular speed [rad/s]
-        STATE_END
+    struct input_state_names : public base_type::input_state_names
+    {
+        enum
+        {
+            Z = base_type::input_state_names::end,  //! Vertical displacement of the chassis [m]
+            PHI,                                    //! Roll angle (assumed small) [rad]
+            MU,                                     //! Pitch angle (assumed small) [rad]
+            DZDT,                                   //! Vertical displacement derivative [m/s]
+            DPHIDT,                                 //! Roll angular speed [rad/s]
+            DMUDT,                                  //! Pitch angular speed [rad/s]
+            end
+        };
+    };
+
+    struct state_names : public base_type::state_names
+    {
+        enum
+        {
+            Z      = input_state_names::Z,
+            PHI    = input_state_names::PHI,
+            MU     = input_state_names::MU,
+            DZDT   = input_state_names::DZDT,
+            DPHIDT = input_state_names::DPHIDT,
+            DMUDT  = input_state_names::DMUDT
+        };
     };
 
     //! Control variables: none
-    enum Controls  { CONTROL_END = base_type::CONTROL_END};
-
-    constexpr static size_t IIDZ    = IZ;    //! Vertical velocity [m/s]
-    constexpr static size_t IIDPHI  = IPHI;  //! Roll angular speed [rad/s]
-    constexpr static size_t IIDMU   = IMU;   //! Pitch angular speed [rad/s]
-    constexpr static size_t IID2Z   = IDZ;   //! Vertical acceleration [m/s2]
-    constexpr static size_t IID2PHI = IDPHI; //! Roll acceleration [rad/s2]
-    constexpr static size_t IID2MU  = IDMU;  //! Pitch acceleration [rad/s2]
+    struct control_names : public base_type::control_names
+    {
+        enum 
+        {
+            end = base_type::control_names::end
+        };
+    };
 
     constexpr static size_t NALGEBRAIC = 0;  //! Number of algebraic equations
 
@@ -151,38 +166,38 @@ class Chassis_car_6dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
     //! Load the time derivative of the state variables computed herein to the dqdt
     //! @param[out] dqdt: the vehicle state vector time derivative
     template<size_t N>
-    void get_state_derivative(std::array<Timeseries_t,N>& dqdt) const;
+    void get_state_and_state_derivative(std::array<Timeseries_t, N>& state, 
+                                        std::array<Timeseries_t,N>& dstate_dt
+                                       ) const;
 
     //! Set the state variables of this class
     //! @param[in] q: the vehicle state vector 
     //! @param[in] u: the vehicle control vector
     template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_controls(const std::array<Timeseries_t,NSTATE>& q, 
-                                const std::array<Timeseries_t,NALGEBRAIC>& qa,
-                                const std::array<Timeseries_t,NCONTROL>& u);
+    void set_state_and_controls(const std::array<Timeseries_t,NSTATE>& input_states, 
+                                const std::array<Timeseries_t,NALGEBRAIC>& algebraic_states,
+                                const std::array<Timeseries_t,NCONTROL>& controls);
 
     //! Set the state and controls upper, lower, and default values
     template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_control_upper_lower_and_default_values(std::array<scalar,NSTATE>& q_def,
-                                                               std::array<scalar,NSTATE>& q_lb,
-                                                               std::array<scalar,NSTATE>& q_ub,
-                                                               std::array<scalar,NALGEBRAIC>& qa_def,
-                                                               std::array<scalar,NALGEBRAIC>& qa_lb,
-                                                               std::array<scalar,NALGEBRAIC>& qa_ub,
-                                                               std::array<scalar,NCONTROL>& u_def,
-                                                               std::array<scalar,NCONTROL>& u_lb,
-                                                               std::array<scalar,NCONTROL>& u_ub 
-                                                              ) const;
-
+    void set_state_and_control_upper_lower_and_default_values(std::array<scalar, NSTATE>& input_states_def,
+        std::array<scalar, NSTATE>& input_states_lb,
+        std::array<scalar, NSTATE>& input_states_ub,
+        std::array<scalar, NALGEBRAIC>& algebraic_states_def,
+        std::array<scalar, NALGEBRAIC>& algebraic_states_lb,
+        std::array<scalar, NALGEBRAIC>& algebraic_states_ub,
+        std::array<scalar, NCONTROL>& control_def,
+        std::array<scalar, NCONTROL>& control_lb,
+        std::array<scalar, NCONTROL>& control_ub
+    ) const;
 
     //! Get the names of the state and control varaibles of this class
     //! @param[out] q: the vehicle state names
     //! @param[out] u: the vehicle control names
     template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_control_names(std::array<std::string,NSTATE>& q, 
-                                     std::array<std::string,NALGEBRAIC>& qa,
-                                     std::array<std::string,NCONTROL>& u) const;
-
+    void set_state_and_control_names(std::array<std::string, NSTATE>& input_states,
+        std::array<std::string, NALGEBRAIC>& algebraic_states,
+        std::array<std::string, NCONTROL>& control_states) const;
 
     bool is_ready() const { return base_type::is_ready() && 
         std::all_of(__used_parameters.begin(), __used_parameters.end(), [](const auto& v) -> auto { return v; }); }

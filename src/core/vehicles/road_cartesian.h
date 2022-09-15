@@ -1,5 +1,5 @@
-#ifndef __ROAD_CARTESIAN_H__
-#define __ROAD_CARTESIAN_H__
+#ifndef ROAD_CARTESIAN_H
+#define ROAD_CARTESIAN_H
 
 #include "road.h"
 
@@ -9,36 +9,42 @@ class Road_cartesian : public Road<Timeseries_t,STATE0,CONTROL0>
  public:
     using base_type = Road<Timeseries_t,STATE0,CONTROL0>;
 
-    enum State { IX = base_type::STATE_END, IY, IPSI, STATE_END };
-    enum Controls { CONTROL_END = base_type::CONTROL_END };
+    struct input_state_names
+    {
+        enum { X = base_type::input_state_names::end, Y, PSI, end };
+    };
+    
+    struct control_names
+    {
+        enum { end = base_type::control_names::end };
+    };
 
-    constexpr static size_t IIDX   = IX;
-    constexpr static size_t IIDY   = IY;
-    constexpr static size_t IIDPSI = IPSI;
+    struct state_names : public input_state_names {};
 
     void update(const Timeseries_t u, const Timeseries_t v, const Timeseries_t omega);
 
     template<size_t N>
-    void get_state_derivative(std::array<Timeseries_t,N>& dqdt) const;
+    void get_state_and_state_derivative(std::array<Timeseries_t, N>& state, std::array<Timeseries_t,N>& dstate_dt) const;
 
     template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_controls(const Timeseries_t t, const std::array<Timeseries_t,NSTATE>& q, const std::array<Timeseries_t,NCONTROL>& u);
-
+    void set_state_and_controls(const Timeseries_t t, const std::array<Timeseries_t,NSTATE>& input_state, const std::array<Timeseries_t,NCONTROL>& controls);
 
     //! Set the state and controls upper, lower, and default values
     template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_control_upper_lower_and_default_values(std::array<scalar,NSTATE>& q_def,
-                                                               std::array<scalar,NSTATE>& q_lb,
-                                                               std::array<scalar,NSTATE>& q_ub,
-                                                               std::array<scalar,NCONTROL>& u_def,
-                                                               std::array<scalar,NCONTROL>& u_lb,
-                                                               std::array<scalar,NCONTROL>& u_ub 
-                                                              ) const;
-
+    static void set_state_and_control_upper_lower_and_default_values(std::array<scalar, NSTATE>& input_states_def,
+        std::array<scalar, NSTATE>& input_states_lb,
+        std::array<scalar, NSTATE>& input_states_ub,
+        std::array<scalar, NCONTROL>& controls_def,
+        std::array<scalar, NCONTROL>& controls_lb,
+        std::array<scalar, NCONTROL>& controls_ub
+    );
 
     template<size_t NSTATE, size_t NCONTROL>
-    static void set_state_and_control_names(std::string& key_name, std::array<std::string,NSTATE>& q, std::array<std::string,NCONTROL>& u);
-
+    static void set_state_and_control_names(std::string& key_name,
+        std::array<std::string, NSTATE>& input_state_names,
+        std::array<std::string, NCONTROL>& control_names
+    );
+ 
  private:
     Timeseries_t _dx;
     Timeseries_t _dy;

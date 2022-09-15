@@ -26,30 +26,34 @@ Dynamic_model_powered_axle<Timeseries_t,Axle_t,STATE0,CONTROL0>::Dynamic_model_p
 
 
 template<typename Timeseries_t, typename Axle_t, size_t STATE0, size_t CONTROL0>
-std::array<Timeseries_t,Dynamic_model_powered_axle<Timeseries_t,Axle_t,STATE0,CONTROL0>::NSTATE> Dynamic_model_powered_axle<Timeseries_t,Axle_t,STATE0,CONTROL0>::operator()(
-    const std::array<Timeseries_t,Dynamic_model_powered_axle<Timeseries_t,Axle_t,STATE0,CONTROL0>::NSTATE>& q, 
-    const std::array<Timeseries_t,Dynamic_model_powered_axle<Timeseries_t,Axle_t,STATE0,CONTROL0>::NCONTROL>& u, Timeseries_t t)
+std::array<Timeseries_t,Dynamic_model_powered_axle<Timeseries_t,Axle_t,STATE0,CONTROL0>::NSTATE>
+    Dynamic_model_powered_axle<Timeseries_t,Axle_t,STATE0,CONTROL0>::operator()(
+        const std::array<Timeseries_t,Dynamic_model_powered_axle<Timeseries_t,Axle_t,STATE0,CONTROL0>::NSTATE>& states, 
+        const std::array<Timeseries_t,Dynamic_model_powered_axle<Timeseries_t,Axle_t,STATE0,CONTROL0>::NCONTROL>& controls, Timeseries_t t)
 {
+    const auto input_states = transform_states_to_input_states(states, controls);
+
     // (1) Set state and controls
-    _axle.set_state_and_controls(q,u);
-    _road.set_state_and_controls(t,q,u);
-    _u = q[IU];
+    _axle.set_state_and_controls(input_states, controls);
+    _road.set_state_and_controls(t,input_states,controls);
+    _u = input_states[input_state_names::U];
 
     // (2) Update
     _road.update(_u,0.0,0.0);
-    _axle.update({q[Road_type::IX],0.0,_z}, {_u,0.0,0.0}, 0.0, 0.0);
+    _axle.update({input_states[Road_type::input_state_names::X],0.0,_z}, {_u,0.0,0.0}, 0.0, 0.0);
 
     // (3) Set state derivative
-    std::array<Timeseries_t,NSTATE> dqdt;
+    std::array<Timeseries_t,Dynamic_model_powered_axle<Timeseries_t,Axle_t,STATE0,CONTROL0>::NSTATE> dstates_dt;
+    auto states_recompute = states;
 
-    _axle.get_state_derivative(dqdt);
-    _road.get_state_derivative(dqdt);
+    _axle.get_state_and_state_derivative(states_recompute, dstates_dt);
+    _road.get_state_and_state_derivative(states_recompute, dstates_dt);
 
     const Vector3d<Timeseries_t> F_rear  = _axle.get_force();
     const Timeseries_t F_aero = 0.5*1.2*_u*_u*0.7; 
-    dqdt[IIDU] = (F_rear[0]-F_aero)/_m;
+    dstates_dt[state_names::U] = (F_rear[0]-F_aero)/_m;
 
-    return dqdt;
+    return dstates_dt;
 }
 
 #endif

@@ -79,7 +79,7 @@ TEST_F(Tire_pacejka_simple_test, update)
     const scalar kappa = (1.0-v0[0])/v0[0];
     const scalar lambda = -v0[1]/v0[0]; 
 
-    tire.update(Fz,kappa); 
+    tire.update(Fz,kappa/tire.get_model().maximum_kappa(Fz)); 
 
     EXPECT_DOUBLE_EQ(tire.get_omega(), 1/0.33);
     EXPECT_DOUBLE_EQ(tire.get_kappa(), kappa);

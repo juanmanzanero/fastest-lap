@@ -13,21 +13,32 @@ class Dynamic_model_powered_axle
     using Axle_type = Axle_t;
     using Road_type = Road_cartesian<Timeseries_t,STATE0,CONTROL0>;
 
-    enum State    { IU          = Road_type::STATE_END   , STATE_END    } ;
-    enum Control  { CONTROL_END = Road_type::CONTROL_END                } ;
+    struct input_state_names
+    {
+        enum { U = Road_type::input_state_names::end, end };
+    };
 
-    constexpr static size_t IIDU = IU;
+    struct state_names : public input_state_names {};
 
-    constexpr static size_t NSTATE    = STATE_END;
-    constexpr static size_t NCONTROL  = CONTROL_END;
+    struct control_names
+    {
+        enum { end = Road_type::control_names::end };
+    };
+
+    constexpr static size_t NSTATE    = input_state_names::end;
+    constexpr static size_t NCONTROL  = control_names::end;
 
     Dynamic_model_powered_axle(const scalar Fz, Xml_document& database);
 
-    std::array<Timeseries_t,NSTATE> operator()(const std::array<Timeseries_t,NSTATE>& q, 
-                                             const std::array<Timeseries_t,NCONTROL>& u,
-                                             Timeseries_t t);
+    std::array<Timeseries_t,NSTATE> operator()(const std::array<Timeseries_t,NSTATE>& input_states, 
+                                  const std::array<Timeseries_t,NCONTROL>& controls,
+                                  Timeseries_t t);
 
     const Axle_t& get_axle() const { return _axle; }
+
+    std::array<Timeseries_t, NSTATE> transform_states_to_input_states(const std::array<Timeseries_t, NSTATE>& states, 
+                                                                       const std::array<Timeseries_t, NCONTROL>& controls 
+                                                                      ) const { return states; }
 
 
  private:

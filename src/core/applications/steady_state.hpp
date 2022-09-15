@@ -44,12 +44,22 @@ std::enable_if_t<std::is_same<T,scalar>::value,typename Steady_state<Dynamic_mod
     typename Solve_constraints::argument_type x;
     std::copy(result.x.cbegin(), result.x.cend(), x.begin());
     c(x);
-    std::array<Timeseries_t,Dynamic_model_t::NSTATE> q = c.get_q();
-    std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC> qa = c.get_qa();
-    std::array<Timeseries_t,Dynamic_model_t::NCONTROL> u = c.get_u();
-    auto [dqdt,dqa] = _car(q,qa,u,0.0);
+    std::array<Timeseries_t,Dynamic_model_t::NSTATE> input_states = c.get_input_states();
+    std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC> algebraic_states = c.get_algebraic_states();
+    std::array<Timeseries_t,Dynamic_model_t::NCONTROL> controls = c.get_controls();
+    auto [states,dstates_dt,algebraic_equations] = _car(input_states, algebraic_states, controls, 0.0);
 
-    return { result.solved, v, ax, ay, q, qa, u, dqdt };
+    return Solution
+    {
+        .solved           = result.solved,
+        .v                = v,
+        .ax               = ax,
+        .ay               = ay,
+        .input_states     = input_states,
+        .algebraic_states = algebraic_states,
+        .controls         = controls,
+        .dstates_dt       = dstates_dt
+    };
 }
 
 template<typename Dynamic_model_t>
@@ -91,37 +101,37 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,typename Steady_state<
     typename Solve_constraints::argument_type x;
     std::copy(solution.x.cbegin(), solution.x.cend(), x.begin());
     c(x);
-    std::array<CppAD::AD<scalar>,Dynamic_model_t::NSTATE>      q = c.get_q();
-    std::array<CppAD::AD<scalar>,Dynamic_model_t::NALGEBRAIC> qa = c.get_qa();
-    std::array<CppAD::AD<scalar>,Dynamic_model_t::NCONTROL>    u = c.get_u();
-    auto [dqdt,dqa] = _car(q,qa,u,0.0);
+    std::array<CppAD::AD<scalar>,Dynamic_model_t::NSTATE>      input_states = c.get_input_states();
+    std::array<CppAD::AD<scalar>,Dynamic_model_t::NALGEBRAIC> algebraic_states = c.get_algebraic_states();
+    std::array<CppAD::AD<scalar>,Dynamic_model_t::NCONTROL>    controls = c.get_controls();
+    auto [states,dstates_dt,dqa] = _car(input_states,algebraic_states,controls,0.0);
 
     // Transform all AD to scalar
-    std::array<scalar,Dynamic_model_t::NSTATE> q_sc;
+    std::array<scalar,Dynamic_model_t::NSTATE> input_states_sc;
     for (size_t i = 0; i < Dynamic_model_t::NSTATE; ++i)
     {
-        q_sc[i] = Value(q[i]);
+        input_states_sc[i] = Value(input_states[i]);
     }
 
-    std::array<scalar,Dynamic_model_t::NALGEBRAIC> qa_sc;
+    std::array<scalar,Dynamic_model_t::NALGEBRAIC> algebraic_states_sc;
     for (size_t i = 0; i < Dynamic_model_t::NALGEBRAIC; ++i)
     {
-        qa_sc[i] = Value(qa[i]);
+        algebraic_states_sc[i] = Value(algebraic_states[i]);
     }
 
-    std::array<scalar,Dynamic_model_t::NCONTROL> u_sc;
+    std::array<scalar,Dynamic_model_t::NCONTROL> controls_sc;
     for (size_t i = 0; i < Dynamic_model_t::NCONTROL; ++i)
     {
-        u_sc[i] = Value(u[i]);
+        controls_sc[i] = Value(controls[i]);
     }
 
-    std::array<scalar,Dynamic_model_t::NSTATE> dqdt_sc;
+    std::array<scalar,Dynamic_model_t::NSTATE> dstates_dt_sc;
     for (size_t i = 0; i < Dynamic_model_t::NSTATE; ++i)
     {
-        dqdt_sc[i] = Value(dqdt[i]);
+        dstates_dt_sc[i] = Value(dstates_dt[i]);
     }
 
-    return { solution.status == CppAD::ipopt_cppad_result<std::vector<scalar>>::success, v, ax, ay, q_sc, qa_sc, u_sc, dqdt_sc };
+    return { solution.status == CppAD::ipopt_cppad_result<std::vector<scalar>>::success, v, ax, ay, input_states_sc, algebraic_states_sc, controls_sc, dstates_dt_sc };
 }
 
 template<typename Dynamic_model_t>
@@ -136,7 +146,7 @@ std::enable_if_t<std::is_same<T,scalar>::value,typename Steady_state<Dynamic_mod
     // Get the solution with ax = ay = 0 as initial point
     auto result_0g = solve(v,0.0,0.0);
 
-    std::vector<scalar> x0 = _car.get_x(result_0g.q, result_0g.qa, result_0g.u, v);
+    std::vector<scalar> x0 = _car.get_x(result_0g.input_states, result_0g.algebraic_states, result_0g.controls, v);
     x0.push_back(0.0);
     x0.push_back(0.0);
 
@@ -153,12 +163,12 @@ std::enable_if_t<std::is_same<T,scalar>::value,typename Steady_state<Dynamic_mod
     typename Max_lat_acc_constraints::argument_type x;
     std::copy(result.x.cbegin(), result.x.cend(), x.begin());
     c(x);
-    std::array<Timeseries_t,Dynamic_model_t::NSTATE> q = c.get_q();
-    std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC> qa = c.get_qa();
-    std::array<Timeseries_t,Dynamic_model_t::NCONTROL> u = c.get_u();
-    auto [dqdt,dqa] = _car(q,qa,u,0.0);
+    std::array<Timeseries_t,Dynamic_model_t::NSTATE> input_states = c.get_input_states();
+    std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC> algebraic_states = c.get_algebraic_states();
+    std::array<Timeseries_t,Dynamic_model_t::NCONTROL> controls = c.get_controls();
+    auto [states,dstates_dt,dqa] = _car(input_states,algebraic_states,controls,0.0);
 
-    return { result.solved, v, result.x[Dynamic_model_t::N_SS_VARS], result.x[Dynamic_model_t::N_SS_VARS+1], q, qa, u, dqdt };
+    return { result.solved, v, result.x[Dynamic_model_t::N_SS_VARS], result.x[Dynamic_model_t::N_SS_VARS+1], input_states, algebraic_states, controls, dstates_dt };
 }
 
 template<typename Dynamic_model_t>
@@ -171,7 +181,7 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,typename Steady_state<
     // Get the solution with ax = ay = 0 as initial point
     auto result_0g = solve(v,0.0,0.0);
 
-    std::vector<scalar> x0 = _car.get_x(result_0g.q, result_0g.qa, result_0g.u, v);
+    std::vector<scalar> x0 = _car.get_x(result_0g.input_states, result_0g.algebraic_states, result_0g.controls, v);
     x0.push_back(0.0);
     x0.push_back(0.0);
 
@@ -251,34 +261,34 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,typename Steady_state<
     typename Max_lat_acc_constraints::argument_type x;
     std::copy(solution.x.cbegin(), solution.x.cend(), x.begin());
     auto constraints = c(x);
-    std::array<CppAD::AD<scalar>,Dynamic_model_t::NSTATE> q = c.get_q();
-    std::array<CppAD::AD<scalar>,Dynamic_model_t::NALGEBRAIC> qa = c.get_qa();
-    std::array<CppAD::AD<scalar>,Dynamic_model_t::NCONTROL> u = c.get_u();
-    auto [dqdt,dqa] = _car(q,qa,u,0.0);
+    std::array<CppAD::AD<scalar>,Dynamic_model_t::NSTATE> input_states = c.get_input_states();
+    std::array<CppAD::AD<scalar>,Dynamic_model_t::NALGEBRAIC> algebraic_states = c.get_algebraic_states();
+    std::array<CppAD::AD<scalar>,Dynamic_model_t::NCONTROL> controls = c.get_controls();
+    auto [states,dstates_dt,dqa] = _car(input_states,algebraic_states,controls,0.0);
 
     // Transform all AD to scalar
-    std::array<scalar,Dynamic_model_t::NSTATE> q_sc;
+    std::array<scalar,Dynamic_model_t::NSTATE> input_states_sc;
     for (size_t i = 0; i < Dynamic_model_t::NSTATE; ++i)
     {
-        q_sc[i] = Value(q[i]);
+        input_states_sc[i] = Value(input_states[i]);
     }
 
-    std::array<scalar,Dynamic_model_t::NALGEBRAIC> qa_sc;
+    std::array<scalar,Dynamic_model_t::NALGEBRAIC> algebraic_states_sc;
     for (size_t i = 0; i < Dynamic_model_t::NALGEBRAIC; ++i)
     {
-        qa_sc[i] = Value(qa[i]);
+        algebraic_states_sc[i] = Value(algebraic_states[i]);
     }
 
-    std::array<scalar,Dynamic_model_t::NCONTROL> u_sc;
+    std::array<scalar,Dynamic_model_t::NCONTROL> controls_sc;
     for (size_t i = 0; i < Dynamic_model_t::NCONTROL; ++i)
     {
-        u_sc[i] = Value(u[i]);
+        controls_sc[i] = Value(controls[i]);
     }
 
-    std::array<scalar,Dynamic_model_t::NSTATE> dqdt_sc;
+    std::array<scalar,Dynamic_model_t::NSTATE> dstates_dt_sc;
     for (size_t i = 0; i < Dynamic_model_t::NSTATE; ++i)
     {
-        dqdt_sc[i] = Value(dqdt[i]);
+        dstates_dt_sc[i] = Value(dstates_dt[i]);
     }
 
     if ( solution.status != CppAD::ipopt_cppad_result<std::vector<scalar>>::success )
@@ -297,7 +307,7 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,typename Steady_state<
 
     }
 
-    return { solution.status == CppAD::ipopt_cppad_result<std::vector<scalar>>::success, v, Value(solution.x[Dynamic_model_t::N_SS_VARS]*Dynamic_model_t::acceleration_units), Value(solution.x[Dynamic_model_t::N_SS_VARS+1]*Dynamic_model_t::acceleration_units), q_sc, qa_sc, u_sc, dqdt_sc };
+    return { solution.status == CppAD::ipopt_cppad_result<std::vector<scalar>>::success, v, Value(solution.x[Dynamic_model_t::N_SS_VARS]*Dynamic_model_t::acceleration_units), Value(solution.x[Dynamic_model_t::N_SS_VARS+1]*Dynamic_model_t::acceleration_units), input_states_sc, algebraic_states_sc, controls_sc, dstates_dt_sc };
 }
 
 
@@ -323,13 +333,13 @@ std::enable_if_t<std::is_same<T,scalar>::value,std::pair<typename Steady_state<D
 
     // (3)
     // Compute the steady state with ax = ax_aymax.ay/ay_max
-    std::vector<scalar> x0_ss_ay = _car.get_x(result_0g.q, result_0g.qa, result_0g.u, v);
+    std::vector<scalar> x0_ss_ay = _car.get_x(result_0g.input_states, result_0g.algebraic_states, result_0g.controls, v);
 
     auto result_ss_ay = solve(v,result_max_lat_acc.ax*ay/result_max_lat_acc.ay, ay, 1, true, x0_ss_ay);
     
     // (4)
     // Optimise using the last optimization
-    std::vector<scalar> x0 = _car.get_x(result_ss_ay.q, result_ss_ay.qa, result_ss_ay.u, v);
+    std::vector<scalar> x0 = _car.get_x(result_ss_ay.input_states, result_ss_ay.algebraic_states, result_ss_ay.controls, v);
     x0.push_back(result_ss_ay.ax/Dynamic_model_t::acceleration_units);
 
     Max_lon_acc_fitness fmax;
@@ -348,12 +358,12 @@ std::enable_if_t<std::is_same<T,scalar>::value,std::pair<typename Steady_state<D
     typename Max_lon_acc_constraints::argument_type x_max;
     std::copy(result_max.x.cbegin(), result_max.x.cend(), x_max.begin());
     c(x_max);
-    std::array<Timeseries_t,Dynamic_model_t::NSTATE> q_max = c.get_q();
-    std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC> qa_max = c.get_qa();
-    std::array<Timeseries_t,Dynamic_model_t::NCONTROL> u_max = c.get_u();
-    auto [dqdt_max,dqa] = _car(q_max,qa_max,u_max,0.0);
+    std::array<Timeseries_t,Dynamic_model_t::NSTATE> input_states_max = c.get_input_states();
+    std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC> algebraic_states_max = c.get_algebraic_states();
+    std::array<Timeseries_t,Dynamic_model_t::NCONTROL> controls_max = c.get_controls();
+    auto [states_max,dstates_dt_max,dqa] = _car(input_states_max,algebraic_states_max,controls_max,0.0);
 
-    Solution solution_max = {result_max.solved, v, result_max.x[Dynamic_model_t::N_SS_VARS], ay, q_max, qa_max, u_max, dqdt_max};
+    Solution solution_max = {result_max.solved, v, result_max.x[Dynamic_model_t::N_SS_VARS], ay, input_states_max, algebraic_states_max, controls_max, dstates_dt_max};
 
     // Solve minimum acceleration
     std::tie(x_lb, x_ub) = Dynamic_model_t::steady_state_variable_bounds();
@@ -365,12 +375,12 @@ std::enable_if_t<std::is_same<T,scalar>::value,std::pair<typename Steady_state<D
     typename Max_lon_acc_constraints::argument_type x_min;
     std::copy(result_min.x.cbegin(), result_min.x.cend(), x_min.begin());
     c(x_min);
-    std::array<Timeseries_t,Dynamic_model_t::NSTATE> q_min = c.get_q();
-    std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC> qa_min = c.get_qa();
-    std::array<Timeseries_t,Dynamic_model_t::NCONTROL> u_min = c.get_u();
-    auto [dqdt_min,dqa_min] = _car(q_min,qa_min,u_min,0.0);
+    std::array<Timeseries_t,Dynamic_model_t::NSTATE> input_states_min = c.get_input_states();
+    std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC> algebraic_states_min = c.get_algebraic_states();
+    std::array<Timeseries_t,Dynamic_model_t::NCONTROL> controls_min = c.get_controls();
+    auto [states_min,dstates_dt_min,dqa_min] = _car(input_states_min,algebraic_states_min,controls_min,0.0);
 
-    Solution solution_min = {result_min.solved, v, result_min.x[Dynamic_model_t::N_SS_VARS], ay, q_min, qa_min, u_min, dqdt_min};
+    Solution solution_min = {result_min.solved, v, result_min.x[Dynamic_model_t::N_SS_VARS], ay, input_states_min, algebraic_states_min, controls_min, dstates_dt_min};
 
     return {solution_max, solution_min};
 }
@@ -396,13 +406,13 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,std::pair<typename Ste
 
     // (3)
     // Compute the steady state with ax = ax_aymax.ay/ay_max
-    std::vector<scalar> x0_ss_ay = _car.get_x(result_0g.q, result_0g.qa, result_0g.u, v);
+    std::vector<scalar> x0_ss_ay = _car.get_x(result_0g.input_states, result_0g.algebraic_states, result_0g.controls, v);
 
     auto result_ss_ay = solve(v,result_max_lat_acc.ax*ay/result_max_lat_acc.ay, ay, 1, true, x0_ss_ay);
 
     // (4)
     // Optimise using the last optimization
-    std::vector<scalar> x0 = _car.get_x(result_ss_ay.q, result_ss_ay.qa, result_ss_ay.u, v);
+    std::vector<scalar> x0 = _car.get_x(result_ss_ay.input_states, result_ss_ay.algebraic_states, result_ss_ay.controls, v);
     x0.push_back(result_ss_ay.ax/Dynamic_model_t::acceleration_units);
 
     auto [x_lb, x_ub] = Dynamic_model_t::steady_state_variable_bounds_accelerate();
@@ -441,10 +451,10 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,std::pair<typename Ste
             x_lb[Dynamic_model_t::N_SS_VARS] *= 2.0;
         }
 
-        if ( std::abs(x_ub[Dynamic_model_t::N_SS_VARS] - result_max.x[Dynamic_model_t::N_SS_VARS]) < 1.0e-2 )
+        if ( std::abs(x_ub[Dynamic_model_t::N_SS_VARS] - result_max.x[Dynamic_model_t::N_SS_VARS]) < 2.0e-1 )
         {
             success = false;
-            x_ub[Dynamic_model_t::N_SS_VARS] *= 2.0;
+            x_ub[Dynamic_model_t::N_SS_VARS] *= 1.2;
         }
 
         if ( success ) break;
@@ -454,34 +464,34 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,std::pair<typename Ste
     typename Max_lon_acc_constraints::argument_type x_max;
     std::copy(result_max.x.cbegin(), result_max.x.cend(), x_max.begin());
     auto constraints = c(x_max);
-    std::array<Timeseries_t,Dynamic_model_t::NSTATE> q_max = c.get_q();
-    std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC> qa_max = c.get_qa();
-    std::array<Timeseries_t,Dynamic_model_t::NCONTROL> u_max = c.get_u();
-    auto [dqdt_max,dqa_max] = _car(q_max,qa_max,u_max,0.0);
+    std::array<Timeseries_t,Dynamic_model_t::NSTATE> input_states_max = c.get_input_states();
+    std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC> algebraic_states_max = c.get_algebraic_states();
+    std::array<Timeseries_t,Dynamic_model_t::NCONTROL> controls_max = c.get_controls();
+    auto [states_max,dstates_dt_max,dqa_max] = _car(input_states_max,algebraic_states_max,controls_max,0.0);
 
     // Transform all AD to scalar
-    std::array<scalar,Dynamic_model_t::NSTATE> q_max_sc;
+    std::array<scalar,Dynamic_model_t::NSTATE> input_states_max_sc;
     for (size_t i = 0; i < Dynamic_model_t::NSTATE; ++i)
     {
-        q_max_sc[i] = Value(q_max[i]);
+        input_states_max_sc[i] = Value(input_states_max[i]);
     }
 
-    std::array<scalar,Dynamic_model_t::NALGEBRAIC> qa_max_sc;
+    std::array<scalar,Dynamic_model_t::NALGEBRAIC> algebraic_states_max_sc;
     for (size_t i = 0; i < Dynamic_model_t::NALGEBRAIC; ++i)
     {
-        qa_max_sc[i] = Value(qa_max[i]);
+        algebraic_states_max_sc[i] = Value(algebraic_states_max[i]);
     }
 
-    std::array<scalar,Dynamic_model_t::NCONTROL> u_max_sc;
+    std::array<scalar,Dynamic_model_t::NCONTROL> controls_max_sc;
     for (size_t i = 0; i < Dynamic_model_t::NCONTROL; ++i)
     {
-        u_max_sc[i] = Value(u_max[i]);
+        controls_max_sc[i] = Value(controls_max[i]);
     }
 
-    std::array<scalar,Dynamic_model_t::NSTATE> dqdt_max_sc;
+    std::array<scalar,Dynamic_model_t::NSTATE> dstates_dt_max_sc;
     for (size_t i = 0; i < Dynamic_model_t::NSTATE; ++i)
     {
-        dqdt_max_sc[i] = Value(dqdt_max[i]);
+        dstates_dt_max_sc[i] = Value(dstates_dt_max[i]);
     }
 
     if ( result_max.status != CppAD::ipopt_cppad_result<std::vector<scalar>>::success )
@@ -502,7 +512,7 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,std::pair<typename Ste
     }
 
     const bool max_solved = result_max.status == CppAD::ipopt_cppad_result<std::vector<scalar>>::success;
-    Solution solution_max = {max_solved, v, Value(result_max.x[Dynamic_model_t::N_SS_VARS])*Dynamic_model_t::acceleration_units, ay, q_max_sc, qa_max_sc, u_max_sc, dqdt_max_sc};
+    Solution solution_max = {max_solved, v, Value(result_max.x[Dynamic_model_t::N_SS_VARS])*Dynamic_model_t::acceleration_units, ay, input_states_max_sc, algebraic_states_max_sc, controls_max_sc, dstates_dt_max_sc};
 
     // Solve minimum acceleration
     std::tie(x_lb, x_ub) = Dynamic_model_t::steady_state_variable_bounds_brake();
@@ -516,7 +526,7 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,std::pair<typename Ste
 
 
     // Restore the initial point
-    x0 = _car.get_x(result_ss_ay.q, result_ss_ay.qa, result_ss_ay.u, v);
+    x0 = _car.get_x(result_ss_ay.input_states, result_ss_ay.algebraic_states, result_ss_ay.controls, v);
     x0.push_back(result_ss_ay.ax/Dynamic_model_t::acceleration_units);
 
     // place to return solution
@@ -547,34 +557,34 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,std::pair<typename Ste
     typename Max_lon_acc_constraints::argument_type x_min;
     std::copy(result_min.x.cbegin(), result_min.x.cend(), x_min.begin());
     constraints = c(x_min);
-    std::array<Timeseries_t,Dynamic_model_t::NSTATE> q_min = c.get_q();
-    std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC> qa_min = c.get_qa();
-    std::array<Timeseries_t,Dynamic_model_t::NCONTROL> u_min = c.get_u();
-    auto [dqdt_min,dqa] = _car(q_min,qa_min,u_min,0.0);
+    std::array<Timeseries_t,Dynamic_model_t::NSTATE> input_states_min = c.get_input_states();
+    std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC> algebraic_states_min = c.get_algebraic_states();
+    std::array<Timeseries_t,Dynamic_model_t::NCONTROL> controls_min = c.get_controls();
+    auto [states_min,dstates_dt_min,dqa] = _car(input_states_min,algebraic_states_min,controls_min,0.0);
 
     // Transform all AD to scalar
-    std::array<scalar,Dynamic_model_t::NSTATE> q_min_sc;
+    std::array<scalar,Dynamic_model_t::NSTATE> input_states_min_sc;
     for (size_t i = 0; i < Dynamic_model_t::NSTATE; ++i)
     {
-        q_min_sc[i] = Value(q_min[i]);
+        input_states_min_sc[i] = Value(input_states_min[i]);
     }
 
-    std::array<scalar,Dynamic_model_t::NALGEBRAIC> qa_min_sc;
+    std::array<scalar,Dynamic_model_t::NALGEBRAIC> algebraic_states_min_sc;
     for (size_t i = 0; i < Dynamic_model_t::NALGEBRAIC; ++i)
     {
-        qa_min_sc[i] = Value(qa_min[i]);
+        algebraic_states_min_sc[i] = Value(algebraic_states_min[i]);
     }
 
-    std::array<scalar,Dynamic_model_t::NCONTROL> u_min_sc;
+    std::array<scalar,Dynamic_model_t::NCONTROL> controls_min_sc;
     for (size_t i = 0; i < Dynamic_model_t::NCONTROL; ++i)
     {
-        u_min_sc[i] = Value(u_min[i]);
+        controls_min_sc[i] = Value(controls_min[i]);
     }
 
-    std::array<scalar,Dynamic_model_t::NSTATE> dqdt_min_sc;
+    std::array<scalar,Dynamic_model_t::NSTATE> dstates_dt_min_sc;
     for (size_t i = 0; i < Dynamic_model_t::NSTATE; ++i)
     {
-        dqdt_min_sc[i] = Value(dqdt_min[i]);
+        dstates_dt_min_sc[i] = Value(dstates_dt_min[i]);
     }
 
     if ( result_min.status != CppAD::ipopt_cppad_result<std::vector<scalar>>::success )
@@ -603,7 +613,7 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,std::pair<typename Ste
     }
 
     const bool min_solved = result_min.status == CppAD::ipopt_cppad_result<std::vector<scalar>>::success;
-    Solution solution_min = {min_solved, v, Value(result_min.x[Dynamic_model_t::N_SS_VARS])*Dynamic_model_t::acceleration_units, ay, q_min_sc, qa_min_sc, u_min_sc, dqdt_min_sc};
+    Solution solution_min = {min_solved, v, Value(result_min.x[Dynamic_model_t::N_SS_VARS])*Dynamic_model_t::acceleration_units, ay, input_states_min_sc, algebraic_states_min_sc, controls_min_sc, dstates_dt_min_sc};
 
     return {solution_max, solution_min};
 }
@@ -635,7 +645,7 @@ std::enable_if_t<std::is_same<T,scalar>::value,
 
     // (3)
     // Loop on the requested lateral accelerations
-    std::vector<scalar> x0_ss_ay = _car.get_x(result_0g.q, result_0g.qa, result_0g.u, v);
+    std::vector<scalar> x0_ss_ay = _car.get_x(result_0g.input_states, result_0g.algebraic_states, result_0g.controls, v);
 
     Solution result_ss_ay = result_0g;
 
@@ -652,7 +662,7 @@ std::enable_if_t<std::is_same<T,scalar>::value,
     
         // (4)
         // Optimise using the last optimization
-        std::vector<scalar> x0 = _car.get_x(result_ss_ay.q, result_ss_ay.qa, result_ss_ay.u, v);
+        std::vector<scalar> x0 = _car.get_x(result_ss_ay.input_states, result_ss_ay.algebraic_states, result_ss_ay.controls, v);
         x0.push_back(result_ss_ay.ax);
 
         Max_lon_acc_fitness fmax;
@@ -671,12 +681,12 @@ std::enable_if_t<std::is_same<T,scalar>::value,
         typename Max_lon_acc_constraints::argument_type x_max;
         std::copy(result_max.x.cbegin(), result_max.x.cend(), x_max.begin());
         c(x_max);
-        std::array<Timeseries_t,Dynamic_model_t::NSTATE> q_max = c.get_q();
-        std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC> qa_max = c.get_qa();
-        std::array<Timeseries_t,Dynamic_model_t::NCONTROL> u_max = c.get_u();
-        auto [dqdt_max,dqa_max] = _car(q_max,qa_max,u_max,0.0);
+        std::array<Timeseries_t,Dynamic_model_t::NSTATE> input_states_max = c.get_input_states();
+        std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC> algebraic_states_max = c.get_algebraic_states();
+        std::array<Timeseries_t,Dynamic_model_t::NCONTROL> controls_max = c.get_controls();
+        auto [states_max,dstates_dt_max,dqa_max] = _car(input_states_max,algebraic_states_max,controls_max,0.0);
     
-        solution_max[i] = {result_max.solved, v, result_max.x[Dynamic_model_t::N_SS_VARS], ay_gg[i], q_max, qa_max, u_max, dqdt_max};
+        solution_max[i] = {result_max.solved, v, result_max.x[Dynamic_model_t::N_SS_VARS], ay_gg[i], input_states_max, algebraic_states_max, controls_max, dstates_dt_max};
     
         // Solve minimum acceleration
         std::tie(x_lb, x_ub) = Dynamic_model_t::steady_state_variable_bounds();
@@ -688,14 +698,14 @@ std::enable_if_t<std::is_same<T,scalar>::value,
         typename Max_lon_acc_constraints::argument_type x_min;
         std::copy(result_min.x.cbegin(), result_min.x.cend(), x_min.begin());
         c(x_min);
-        std::array<Timeseries_t,Dynamic_model_t::NSTATE> q_min = c.get_q();
-        std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC> qa_min = c.get_qa();
-        std::array<Timeseries_t,Dynamic_model_t::NCONTROL> u_min = c.get_u();
-        auto [dqdt_min,dqa_min] = _car(q_min,qa_min,u_min,0.0);
+        std::array<Timeseries_t,Dynamic_model_t::NSTATE> input_states_min = c.get_input_states();
+        std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC> algebraic_states_min = c.get_algebraic_states();
+        std::array<Timeseries_t,Dynamic_model_t::NCONTROL> controls_min = c.get_controls();
+        auto [states_min,dstates_dt_min,dqa_min] = _car(input_states_min,algebraic_states_min,controls_min,0.0);
     
-        solution_min[i] = {result_min.solved, v, result_min.x[Dynamic_model_t::N_SS_VARS], ay_gg[i], q_min, qa_min, u_min, dqdt_min};
+        solution_min[i] = {result_min.solved, v, result_min.x[Dynamic_model_t::N_SS_VARS], ay_gg[i], input_states_min, algebraic_states_min, controls_min, dstates_dt_min};
 
-        std::vector<scalar> x0_ss_ay = _car.get_x(result_ss_ay.q, result_ss_ay.qa, result_ss_ay.u, v);
+        std::vector<scalar> x0_ss_ay = _car.get_x(result_ss_ay.input_states, result_ss_ay.algebraic_states, result_ss_ay.controls, v);
     }
 
     out(2).stop_progress_bar();
@@ -733,7 +743,7 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,
 
     // (3)
     // Loop on the requested lateral accelerations
-    std::vector<scalar> x0_ss_ay = _car.get_x(result_0g.q, result_0g.qa, result_0g.u, v);
+    std::vector<scalar> x0_ss_ay = _car.get_x(result_0g.input_states, result_0g.algebraic_states, result_0g.controls, v);
 
     Solution result_ss_ay = result_0g;
 
@@ -749,7 +759,7 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,
     
         // (4)
         // Optimise using the last optimization
-        std::vector<scalar> x0 = _car.get_x(result_ss_ay.q, result_ss_ay.qa, result_ss_ay.u, v);
+        std::vector<scalar> x0 = _car.get_x(result_ss_ay.input_states, result_ss_ay.algebraic_states, result_ss_ay.controls, v);
         x0.push_back(result_ss_ay.ax/Dynamic_model_t::acceleration_units);
 
         auto [x_lb, x_ub] = Dynamic_model_t::steady_state_variable_bounds_accelerate();
@@ -778,35 +788,35 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,
         typename Max_lon_acc_constraints::argument_type x_max;
         std::copy(result_max.x.cbegin(), result_max.x.cend(), x_max.begin());
         const auto constraints_max = c(x_max);
-        std::array<Timeseries_t,Dynamic_model_t::NSTATE> q_max = c.get_q();
-        std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC> qa_max = c.get_qa();
-        std::array<Timeseries_t,Dynamic_model_t::NCONTROL> u_max = c.get_u();
-        auto [dqdt_max, dqa_max] = _car(q_max,qa_max,u_max,0.0);
+        std::array<Timeseries_t,Dynamic_model_t::NSTATE> input_states_max = c.get_input_states();
+        std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC> algebraic_states_max = c.get_algebraic_states();
+        std::array<Timeseries_t,Dynamic_model_t::NCONTROL> controls_max = c.get_controls();
+        auto [states_max, dstates_dt_max, dqa_max] = _car(input_states_max,algebraic_states_max,controls_max,0.0);
 
         // Transform all AD to scalar
-        std::array<scalar,Dynamic_model_t::NSTATE> q_max_sc;
+        std::array<scalar,Dynamic_model_t::NSTATE> input_states_max_sc;
         for (size_t i = 0; i < Dynamic_model_t::NSTATE; ++i)
         {
-            q_max_sc[i] = Value(q_max[i]);
+            input_states_max_sc[i] = Value(input_states_max[i]);
         }
 
-        std::array<scalar,Dynamic_model_t::NALGEBRAIC> qa_max_sc;
+        std::array<scalar,Dynamic_model_t::NALGEBRAIC> algebraic_states_max_sc;
         for (size_t i = 0; i < Dynamic_model_t::NALGEBRAIC; ++i)
         {
-            qa_max_sc[i] = Value(qa_max[i]);
+            algebraic_states_max_sc[i] = Value(algebraic_states_max[i]);
         }
     
     
-        std::array<scalar,Dynamic_model_t::NCONTROL> u_max_sc;
+        std::array<scalar,Dynamic_model_t::NCONTROL> controls_max_sc;
         for (size_t i = 0; i < Dynamic_model_t::NCONTROL; ++i)
         {
-            u_max_sc[i] = Value(u_max[i]);
+            controls_max_sc[i] = Value(controls_max[i]);
         }
     
-        std::array<scalar,Dynamic_model_t::NSTATE> dqdt_max_sc;
+        std::array<scalar,Dynamic_model_t::NSTATE> dstates_dt_max_sc;
         for (size_t i = 0; i < Dynamic_model_t::NSTATE; ++i)
         {
-            dqdt_max_sc[i] = Value(dqdt_max[i]);
+            dstates_dt_max_sc[i] = Value(dstates_dt_max[i]);
         }
 
         if ( result_max.status != CppAD::ipopt_cppad_result<std::vector<scalar>>::success )
@@ -828,7 +838,7 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,
         }
     
         const bool max_solved = result_max.status == CppAD::ipopt_cppad_result<std::vector<scalar>>::success;
-        solution_max[i] = {max_solved, v, Value(result_max.x[Dynamic_model_t::N_SS_VARS])*Dynamic_model_t::acceleration_units, ay_gg[i], q_max_sc, qa_max_sc, u_max_sc, dqdt_max_sc};
+        solution_max[i] = {max_solved, v, Value(result_max.x[Dynamic_model_t::N_SS_VARS])*Dynamic_model_t::acceleration_units, ay_gg[i], input_states_max_sc, algebraic_states_max_sc, controls_max_sc, dstates_dt_max_sc};
 
         // Solve minimum acceleration
         std::tie(x_lb, x_ub) = Dynamic_model_t::steady_state_variable_bounds_brake();
@@ -848,7 +858,7 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,
             // Second attempt using the previous solution as initial point
             if ( i > 0 )
             {
-                auto x = _car.get_x(solution_min[i-1].q, solution_min[i-1].qa, solution_min[i-1].u, v);
+                auto x = _car.get_x(solution_min[i-1].input_states, solution_min[i-1].algebraic_states, solution_min[i-1].controls, v);
                 x.push_back(solution_min[i-1].ax/Dynamic_model_t::acceleration_units);
                 CppAD::ipopt_cppad_solve<std::vector<scalar>, Min_lon_acc>(options, x, x_lb, x_ub, c_lb, c_ub, f_min, result_min);
             }
@@ -857,34 +867,34 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,
         typename Max_lon_acc_constraints::argument_type x_min;
         std::copy(result_min.x.cbegin(), result_min.x.cend(), x_min.begin());
         auto constraints = c(x_min);
-        std::array<Timeseries_t,Dynamic_model_t::NSTATE> q_min = c.get_q();
-        std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC> qa_min = c.get_qa();
-        std::array<Timeseries_t,Dynamic_model_t::NCONTROL> u_min = c.get_u();
-        auto [dqdt_min,dqa_min] = _car(q_min,qa_min,u_min,0.0);
+        std::array<Timeseries_t,Dynamic_model_t::NSTATE> input_states_min = c.get_input_states();
+        std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC> algebraic_states_min = c.get_algebraic_states();
+        std::array<Timeseries_t,Dynamic_model_t::NCONTROL> controls_min = c.get_controls();
+        auto [states_min,dstates_dt_min,dqa_min] = _car(input_states_min,algebraic_states_min,controls_min,0.0);
     
         // Transform all AD to scalar
-        std::array<scalar,Dynamic_model_t::NSTATE> q_min_sc;
+        std::array<scalar,Dynamic_model_t::NSTATE> input_states_min_sc;
         for (size_t i = 0; i < Dynamic_model_t::NSTATE; ++i)
         {
-            q_min_sc[i] = Value(q_min[i]);
+            input_states_min_sc[i] = Value(input_states_min[i]);
         }
 
-        std::array<scalar,Dynamic_model_t::NALGEBRAIC> qa_min_sc;
+        std::array<scalar,Dynamic_model_t::NALGEBRAIC> algebraic_states_min_sc;
         for (size_t i = 0; i < Dynamic_model_t::NALGEBRAIC; ++i)
         {
-            qa_min_sc[i] = Value(qa_min[i]);
+            algebraic_states_min_sc[i] = Value(algebraic_states_min[i]);
         }
        
-        std::array<scalar,Dynamic_model_t::NCONTROL> u_min_sc;
+        std::array<scalar,Dynamic_model_t::NCONTROL> controls_min_sc;
         for (size_t i = 0; i < Dynamic_model_t::NCONTROL; ++i)
         {
-            u_min_sc[i] = Value(u_min[i]);
+            controls_min_sc[i] = Value(controls_min[i]);
         }
     
-        std::array<scalar,Dynamic_model_t::NSTATE> dqdt_min_sc;
+        std::array<scalar,Dynamic_model_t::NSTATE> dstates_dt_min_sc;
         for (size_t i = 0; i < Dynamic_model_t::NSTATE; ++i)
         {
-            dqdt_min_sc[i] = Value(dqdt_min[i]);
+            dstates_dt_min_sc[i] = Value(dstates_dt_min[i]);
         }
 
         if ( result_min.status != CppAD::ipopt_cppad_result<std::vector<scalar>>::success )
@@ -906,9 +916,9 @@ std::enable_if_t<std::is_same<T,CppAD::AD<scalar>>::value,
         }
 
         const bool min_solved = result_min.status == CppAD::ipopt_cppad_result<std::vector<scalar>>::success;
-        solution_min[i] = {min_solved, v, Value(result_min.x[Dynamic_model_t::N_SS_VARS])*Dynamic_model_t::acceleration_units, ay_gg[i], q_min_sc, qa_min_sc, u_min_sc, dqdt_min_sc};
+        solution_min[i] = {min_solved, v, Value(result_min.x[Dynamic_model_t::N_SS_VARS])*Dynamic_model_t::acceleration_units, ay_gg[i], input_states_min_sc, algebraic_states_min_sc, controls_min_sc, dstates_dt_min_sc};
 
-        std::vector<scalar> x0_ss_ay = _car.get_x(result_ss_ay.q, result_ss_ay.qa, result_ss_ay.u, v);
+        std::vector<scalar> x0_ss_ay = _car.get_x(result_ss_ay.input_states, result_ss_ay.algebraic_states, result_ss_ay.controls, v);
     }
 
     // Add the last point corresponding to the maximum lateral acceleration 
@@ -927,7 +937,7 @@ typename Steady_state<Dynamic_model_t>::Solve_constraints::output_type Steady_st
 {
     // The content of x is: x = [w_axle, z, phi, mu, psi, delta]
     std::array<Timeseries_t,Dynamic_model_t::N_SS_EQNS> constraints;
-    std::tie(constraints,_q,_qa,_u) = _car->steady_state_equations(x,_ax,_ay,_v);
+    std::tie(constraints,_input_states,_algebraic_states,_controls) = _car->steady_state_equations(x,_ax,_ay,_v);
 
     return constraints;
 }
@@ -945,7 +955,7 @@ typename Steady_state<Dynamic_model_t>::Max_lat_acc_constraints::output_type Ste
     std::copy(x.data(), x.data() + Dynamic_model_t::N_SS_VARS, x_reduced.begin());
 
     std::array<Timeseries_t,Dynamic_model_t::N_SS_EQNS> constraints;
-    std::tie(constraints,_q,_qa,_u) = _car->steady_state_equations(x_reduced,ax,ay,_v);
+    std::tie(constraints,_input_states,_algebraic_states,_controls) = _car->steady_state_equations(x_reduced,ax,ay,_v);
 
     return constraints;
 }
@@ -962,7 +972,7 @@ typename Steady_state<Dynamic_model_t>::Max_lon_acc_constraints::output_type Ste
     std::copy(x.data(), x.data() + Dynamic_model_t::N_SS_VARS, x_reduced.begin());
 
     std::array<Timeseries_t,Dynamic_model_t::N_SS_EQNS> constraints;
-    std::tie(constraints,_q,_qa,_u) = _car->steady_state_equations(x_reduced,ax,_ay,_v);
+    std::tie(constraints,_input_states,_algebraic_states,_controls) = _car->steady_state_equations(x_reduced,ax,_ay,_v);
 
     return constraints;
 }

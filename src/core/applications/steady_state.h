@@ -19,10 +19,10 @@ class Steady_state
         scalar v;
         scalar ax;
         scalar ay;
-        std::array<scalar,Dynamic_model_t::NSTATE> q;
-        std::array<scalar,Dynamic_model_t::NALGEBRAIC> qa;
-        std::array<scalar,Dynamic_model_t::NCONTROL> u;
-        std::array<scalar,Dynamic_model_t::NSTATE> dqdt;
+        std::array<scalar,Dynamic_model_t::NSTATE> input_states;
+        std::array<scalar,Dynamic_model_t::NALGEBRAIC> algebraic_states;
+        std::array<scalar,Dynamic_model_t::NCONTROL> controls;
+        std::array<scalar,Dynamic_model_t::NSTATE> dstates_dt;
     };
     
     //! Solve with numerical Jacobian
@@ -79,13 +79,14 @@ class Steady_state
      public:
         using argument_type = std::array<Timeseries_t,Dynamic_model_t::N_SS_VARS>;
         using output_type   = std::array<Timeseries_t,Dynamic_model_t::N_SS_EQNS>;
-        Solve_constraints(Dynamic_model_t& car, scalar v, scalar ax, scalar ay) : _car(&car), _v(v), _ax(ax), _ay(ay), _q(), _qa(), _u() {}
+        Solve_constraints(Dynamic_model_t& car, scalar v, scalar ax, scalar ay) : _car(&car), _v(v), _ax(ax), _ay(ay), _input_states(), 
+                                                                                  _algebraic_states(), _controls() {}
 
         output_type operator()(const argument_type& x);
 
-        const std::array<Timeseries_t,Dynamic_model_t::NSTATE>& get_q() const { return _q; }
-        const std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC>& get_qa() const { return _qa; }
-        const std::array<Timeseries_t,Dynamic_model_t::NCONTROL>& get_u() const { return _u; }
+        const std::array<Timeseries_t,Dynamic_model_t::NSTATE>& get_input_states() const { return _input_states; }
+        const std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC>& get_algebraic_states() const { return _algebraic_states; }
+        const std::array<Timeseries_t,Dynamic_model_t::NCONTROL>& get_controls() const { return _controls; }
 
      private:
         Dynamic_model_t* _car;
@@ -93,9 +94,9 @@ class Steady_state
         scalar _ax;
         scalar _ay;
 
-        std::array<Timeseries_t,Dynamic_model_t::NSTATE> _q;
-        std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC> _qa;
-        std::array<Timeseries_t,Dynamic_model_t::NCONTROL> _u;
+        std::array<Timeseries_t,Dynamic_model_t::NSTATE> _input_states;
+        std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC> _algebraic_states;
+        std::array<Timeseries_t,Dynamic_model_t::NCONTROL> _controls;
     };
 
     class Solve
@@ -142,21 +143,21 @@ class Steady_state
      public:
         using argument_type = std::array<Timeseries_t,2+Dynamic_model_t::N_SS_VARS>;
         using output_type   = std::array<Timeseries_t,Dynamic_model_t::N_SS_EQNS>;
-        Max_lat_acc_constraints(Dynamic_model_t& car, scalar v) : _car(&car), _v(v), _q(), _qa(), _u() {}
+        Max_lat_acc_constraints(Dynamic_model_t& car, scalar v) : _car(&car), _v(v), _input_states(), _algebraic_states(), _controls() {}
 
         output_type operator()(const argument_type& x);
 
-        const std::array<Timeseries_t,Dynamic_model_t::NSTATE>& get_q() const { return _q; }
-        const std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC>& get_qa() const { return _qa; }
-        const std::array<Timeseries_t,Dynamic_model_t::NCONTROL>& get_u() const { return _u; }
+        const std::array<Timeseries_t,Dynamic_model_t::NSTATE>& get_input_states() const { return _input_states; }
+        const std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC>& get_algebraic_states() const { return _algebraic_states; }
+        const std::array<Timeseries_t,Dynamic_model_t::NCONTROL>& get_controls() const { return _controls; }
 
      private:
         Dynamic_model_t* _car;
         scalar _v;
 
-        std::array<Timeseries_t,Dynamic_model_t::NSTATE> _q;
-        std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC> _qa;
-        std::array<Timeseries_t,Dynamic_model_t::NCONTROL> _u;
+        std::array<Timeseries_t,Dynamic_model_t::NSTATE>     _input_states;
+        std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC> _algebraic_states;
+        std::array<Timeseries_t,Dynamic_model_t::NCONTROL>   _controls;
     };
 
     class Max_lat_acc
@@ -209,22 +210,22 @@ class Steady_state
      public:
         using argument_type = std::array<Timeseries_t,1+Dynamic_model_t::N_SS_VARS>;
         using output_type   = std::array<Timeseries_t,Dynamic_model_t::N_SS_EQNS>;
-        Max_lon_acc_constraints(Dynamic_model_t& car, scalar v, scalar ay) : _car(&car), _v(v), _ay(ay), _q(), _qa(), _u() {}
+        Max_lon_acc_constraints(Dynamic_model_t& car, scalar v, scalar ay) : _car(&car), _v(v), _ay(ay), _input_states(), _algebraic_states(), _controls() {}
 
         output_type operator()(const argument_type& x);
 
-        const std::array<Timeseries_t,Dynamic_model_t::NSTATE>& get_q() const { return _q; }
-        const std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC>& get_qa() const { return _qa; }
-        const std::array<Timeseries_t,Dynamic_model_t::NCONTROL>& get_u() const { return _u; }
+        const std::array<Timeseries_t,Dynamic_model_t::NSTATE>& get_input_states() const { return _input_states; }
+        const std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC>& get_algebraic_states() const { return _algebraic_states; }
+        const std::array<Timeseries_t,Dynamic_model_t::NCONTROL>& get_controls() const { return _controls; }
 
      private:
         Dynamic_model_t* _car;
         scalar _v;
         scalar _ay;
 
-        std::array<Timeseries_t,Dynamic_model_t::NSTATE> _q;
-        std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC> _qa;
-        std::array<Timeseries_t,Dynamic_model_t::NCONTROL> _u;
+        std::array<Timeseries_t,Dynamic_model_t::NSTATE>     _input_states;
+        std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC> _algebraic_states;
+        std::array<Timeseries_t,Dynamic_model_t::NCONTROL>   _controls;
     };
 
     class Max_lon_acc

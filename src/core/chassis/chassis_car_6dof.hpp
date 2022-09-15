@@ -1,5 +1,5 @@
-#ifndef __CHASSIS_CAR_6DOF_HPP__
-#define __CHASSIS_CAR_6DOF_HPP__
+#ifndef CHASSIS_CAR_6DOF_HPP
+#define CHASSIS_CAR_6DOF_HPP
 
 #include "src/core/foundation/fastest_lap_exception.h"
 
@@ -218,136 +218,151 @@ scalar Chassis_car_6dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::ge
 // ------- Handle state vector
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
 template<size_t N>
-void Chassis_car_6dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::get_state_derivative(std::array<Timeseries_t,N>& dqdt) const
+void Chassis_car_6dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::get_state_and_state_derivative
+    (std::array<Timeseries_t,N>& state, std::array<Timeseries_t, N>& dstate_dt) const
 {
-    base_type::get_state_derivative(dqdt);
+    base_type::get_state_and_state_derivative(state,dstate_dt);
     // 1st order
 
     // dzdt
-    dqdt[IIDZ] = _dz;
+    state[state_names::Z]     = _z;
+    dstate_dt[state_names::Z] = _dz;
 
     // dphidt
-    dqdt[IIDPHI] = _dphi;
+    state[state_names::PHI]     = _phi;
+    dstate_dt[state_names::PHI] = _dphi;
 
     // dmudt
-    dqdt[IIDMU] = _dmu;
+    state[state_names::MU]     = _mu;
+    dstate_dt[state_names::MU] = _dmu;
 
     // 2nd order
     
     // d2zdt2
-    dqdt[IID2Z] = _d2z;
+    state[state_names::DZDT]     = _dz;
+    dstate_dt[state_names::DZDT] = _d2z;
 
     // d2phidt2
-    dqdt[IID2PHI] = _d2phi;
+    state[state_names::DPHIDT]     = _dphi;
+    dstate_dt[state_names::DPHIDT] = _d2phi;
 
     // d2mudt2
-    dqdt[IID2MU] = _d2mu;
+    state[state_names::DMUDT]     = _dmu;
+    dstate_dt[state_names::DMUDT] = _d2mu;
 }
 
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
 template<size_t NSTATE, size_t NCONTROL>
-void Chassis_car_6dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_state_and_control_names(std::array<std::string,NSTATE>& q, std::array<std::string,NALGEBRAIC>& qa, std::array<std::string,NCONTROL>& u) const
+void Chassis_car_6dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_state_and_control_names(std::array<std::string, NSTATE>& input_states,
+    std::array<std::string, NALGEBRAIC>& algebraic_states, std::array<std::string, NCONTROL>& controls) const
 {
-    base_type::set_state_and_control_names(q,u);
+    base_type::set_state_and_control_names(input_states,controls);
 
     // z
-    q[IZ] = "chassis.position.z";
+    input_states[input_state_names::Z] = "chassis.position.z";
 
     // phi
-    q[IPHI] = "chassis.attitude.phi";
+    input_states[input_state_names::PHI] = "chassis.attitude.phi";
 
     // mu
-    q[IMU] = "chassis.attitude.mu";
+    input_states[input_state_names::MU] = "chassis.attitude.mu";
 
     // 2nd order
 
     // dzdt
-    q[IDZ] = "chassis.velocity.z";
+    input_states[input_state_names::DZDT] = "chassis.velocity.z";
 
     // dphidt
-    q[IDPHI] = "chassis.omega.x";
+    input_states[input_state_names::DPHIDT] = "chassis.omega.x";
 
     // dmudt
-    q[IDMU] = "chassis.omega.y";
+    input_states[input_state_names::DMUDT] = "chassis.omega.y";
 }
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
 template<size_t NSTATE, size_t NCONTROL>
-void Chassis_car_6dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_state_and_controls(const std::array<Timeseries_t,NSTATE>& q, const std::array<Timeseries_t,NALGEBRAIC>& qa, const std::array<Timeseries_t,NCONTROL>& u)
+void Chassis_car_6dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_state_and_controls
+    (const std::array<Timeseries_t,NSTATE>& input_states, 
+     const std::array<Timeseries_t,NALGEBRAIC>& algebraic_states, 
+     const std::array<Timeseries_t,NCONTROL>& controls)
 {
-    base_type::set_state_and_controls(q,u);
+    base_type::set_state_and_controls(input_states,controls);
 
     // State ---
 
     // 1st order
 
     // z
-    _z = q[IZ];
+    _z = input_states[input_state_names::Z];
 
     // phi
-    _phi = q[IPHI];
+    _phi = input_states[input_state_names::PHI];
 
     // mu
-    _mu = q[IMU];
+    _mu = input_states[input_state_names::MU];
 
     // 2nd order
 
     // dz
-    _dz = q[IDZ];
+    _dz = input_states[input_state_names::DZDT];
 
     // dphidt
-    _dphi = q[IDPHI];
+    _dphi = input_states[input_state_names::DPHIDT];
 
     // dmudt
-    _dmu = q[IDMU];
+    _dmu = input_states[input_state_names::DMUDT];
 }
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
 template<size_t NSTATE, size_t NCONTROL>
 void Chassis_car_6dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_state_and_control_upper_lower_and_default_values
-    (std::array<scalar, NSTATE>& q_def     , std::array<scalar, NSTATE>& q_lb     , std::array<scalar, NSTATE>& q_ub     ,
-    std::array<scalar , NALGEBRAIC>& qa_def, std::array<scalar, NALGEBRAIC>& qa_lb, std::array<scalar, NALGEBRAIC>& qa_ub,
-    std::array<scalar , NCONTROL>& u_def   , std::array<scalar, NCONTROL>& u_lb   , std::array<scalar, NCONTROL>& u_ub) const
+    (std::array<scalar, NSTATE>& input_states_def, std::array<scalar, NSTATE>& input_states_lb,
+        std::array<scalar, NSTATE>& input_states_ub, std::array<scalar, NALGEBRAIC>& algebraic_states_def,
+        std::array<scalar, NALGEBRAIC>& algebraic_states_lb, std::array<scalar, NALGEBRAIC>& algebraic_states_ub,
+        std::array<scalar, NCONTROL>& controls_def, std::array<scalar, NCONTROL>& controls_lb,
+        std::array<scalar, NCONTROL>& controls_ub) const
 {
     // Call function for the parent class
-    base_type::set_state_and_control_upper_lower_and_default_values(q_def, q_lb, q_ub, u_def, u_lb, u_ub, 10.0*KMH, 200.0*KMH, 10.0*KMH, 10.0);
-
+    base_type::set_state_and_control_upper_lower_and_default_values
+        (input_states_def, input_states_lb, input_states_ub,
+         controls_def, controls_lb, controls_ub,
+         10.0 * KMH, 200.0 * KMH, 10.0 * KMH, 10.0);
     // State ---
 
     // 1st order
 
     // z
-    q_def[IZ] = 1.0e-5;
-    q_lb[IZ]  = 1.0e-5;
-    q_ub[IZ]  = 0.139;
+    input_states_def[input_state_names::Z] = 1.0e-5;
+    input_states_lb[input_state_names::Z]  = 1.0e-5;
+    input_states_ub[input_state_names::Z]  = 0.139;
 
     // phi
-    q_def[IPHI] = 0.0;
-    q_lb[IPHI]  = -30.0*DEG;
-    q_ub[IPHI]  =  30.0*DEG;
+    input_states_def[input_state_names::PHI] = 0.0;
+    input_states_lb[input_state_names::PHI]  = -30.0*DEG;
+    input_states_ub[input_state_names::PHI]  =  30.0*DEG;
 
     // mu
-    q_def[IMU] = 0.0;
-    q_lb[IMU]  = -30.0*DEG;
-    q_ub[IMU]  =  30.0*DEG;
+    input_states_def[input_state_names::MU] = 0.0;
+    input_states_lb[input_state_names::MU]  = -30.0*DEG;
+    input_states_ub[input_state_names::MU]  =  30.0*DEG;
 
     // 2nd order
 
     // dz
-    q_def[IDZ] = 0.0;
-    q_lb[IDZ]  = -10.0;
-    q_ub[IDZ]  =  10.0;
+    input_states_def[input_state_names::DZDT] = 0.0;
+    input_states_lb[input_state_names::DZDT]  = -10.0;
+    input_states_ub[input_state_names::DZDT]  =  10.0;
 
     // dphidt
-    q_def[IDPHI] = 0.0;
-    q_lb[IDPHI]  = -10.0; 
-    q_ub[IDPHI]  =  10.0;
+    input_states_def[input_state_names::DPHIDT] = 0.0;
+    input_states_lb[input_state_names::DPHIDT]  = -10.0;
+    input_states_ub[input_state_names::DPHIDT]  =  10.0;
 
     // dmudt
-    q_def[IDMU] = 0.0;
-    q_lb[IDMU]  = -10.0;
-    q_ub[IDMU]  =  10.0;
+    input_states_def[input_state_names::DMUDT] = 0.0;
+    input_states_lb[input_state_names::DMUDT]  = -10.0;
+    input_states_ub[input_state_names::DMUDT]  =  10.0;
 }
 
 #endif

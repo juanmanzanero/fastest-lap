@@ -28,72 +28,76 @@ class limebeer2014f1_test : public testing::Test
 
 
 // Check expected indexes for state variables
-static_assert(Front_axle_t::IKAPPA_LEFT  == 0);
-static_assert(Front_axle_t::IKAPPA_RIGHT == 1);
-static_assert(Rear_axle_t::IKAPPA_LEFT   == 2);
-static_assert(Rear_axle_t::IKAPPA_RIGHT  == 3);
-static_assert(Chassis_t::IU              == 4);
-static_assert(Chassis_t::IV              == 5);
-static_assert(Chassis_t::IOMEGA          == 6);
-static_assert(Road_t::IX                 == 7);
-static_assert(Road_t::IY                 == 8);
-static_assert(Road_t::IPSI               == 9);
+static_assert(Front_axle_t::input_state_names::KAPPA_LEFT  == 0);
+static_assert(Front_axle_t::input_state_names::KAPPA_RIGHT == 1);
+static_assert(Rear_axle_t::input_state_names::KAPPA_LEFT   == 2);
+static_assert(Rear_axle_t::input_state_names::KAPPA_RIGHT  == 3);
+static_assert(Chassis_t::input_state_names::U              == 4);
+static_assert(Chassis_t::input_state_names::V              == 5);
+static_assert(Chassis_t::input_state_names::OMEGA          == 6);
+static_assert(Road_t::input_state_names::X                 == 7);
+static_assert(Road_t::input_state_names::Y                 == 8);
+static_assert(Road_t::input_state_names::PSI               == 9);
+static_assert(limebeer2014f1<scalar>::cartesian::NSTATE == 10);
+
+static_assert(Front_axle_t::state_names::OMEGA_LEFT  == 0);
+static_assert(Front_axle_t::state_names::OMEGA_RIGHT == 1);
+static_assert(Rear_axle_t::state_names::OMEGA_LEFT   == 2);
+static_assert(Rear_axle_t::state_names::OMEGA_RIGHT  == 3);
+static_assert(Chassis_t::state_names::U              == 4);
+static_assert(Chassis_t::state_names::V              == 5);
+static_assert(Chassis_t::state_names::OMEGA          == 6);
+static_assert(Road_t::state_names::X                 == 7);
+static_assert(Road_t::state_names::Y                 == 8);
+static_assert(Road_t::state_names::PSI               == 9);
 static_assert(limebeer2014f1<scalar>::cartesian::NSTATE == 10);
 
 // Check expected indexes for control variables
-static_assert(Front_axle_t::ISTEERING == 0);
-static_assert(Rear_axle_t::IBOOST     == 1);
-static_assert(Chassis_t::ITHROTTLE    == 2);
-static_assert(Chassis_t::IBRAKE_BIAS  == 3);
+static_assert(Front_axle_t::control_names::STEERING == 0);
+static_assert(Rear_axle_t::control_names::BOOST     == 1);
+static_assert(Chassis_t::control_names::THROTTLE    == 2);
+static_assert(Chassis_t::control_names::BRAKE_BIAS  == 3);
 static_assert(limebeer2014f1<scalar>::cartesian::NCONTROL == 4);
 
-// Check expected indexes for state derivative variables
-static_assert(Front_axle_t::IIDKAPPA_LEFT  == 0);
-static_assert(Front_axle_t::IIDKAPPA_RIGHT == 1);
-static_assert(Rear_axle_t::IIDKAPPA_LEFT   == 2);
-static_assert(Rear_axle_t::IIDKAPPA_RIGHT  == 3);
-static_assert(Chassis_t::IIDU              == 4);
-static_assert(Chassis_t::IIDV              == 5);
-static_assert(Chassis_t::IIDOMEGA          == 6);
-static_assert(Road_t::IIDX                 == 7);
-static_assert(Road_t::IIDY                 == 8);
-static_assert(Road_t::IIDPSI               == 9);
 
-
+static_assert(Chassis_t::algebraic_state_names::FZFL == 0);
+static_assert(Chassis_t::algebraic_state_names::FZFR == 1);
+static_assert(Chassis_t::algebraic_state_names::FZRL == 2);
+static_assert(Chassis_t::algebraic_state_names::FZRR == 3);
 static_assert(limebeer2014f1<scalar>::cartesian::NALGEBRAIC == 4);
 
 
 TEST_F(limebeer2014f1_test, indexes)
 {
-    EXPECT_EQ(Front_axle_t::IKAPPA_LEFT  , 0);
-    EXPECT_EQ(Front_axle_t::IKAPPA_RIGHT , 1);
-    EXPECT_EQ(Rear_axle_t::IKAPPA_LEFT   , 2);
-    EXPECT_EQ(Rear_axle_t::IKAPPA_RIGHT  , 3);
-    EXPECT_EQ(Chassis_t::IU              , 4);
-    EXPECT_EQ(Chassis_t::IV              , 5);
-    EXPECT_EQ(Chassis_t::IOMEGA          , 6);
-    EXPECT_EQ(Road_t::IX                 , 7);
-    EXPECT_EQ(Road_t::IY                 , 8);
-    EXPECT_EQ(Road_t::IPSI               , 9);
+    EXPECT_EQ(Front_axle_t::input_state_names::KAPPA_LEFT  , 0);
+    EXPECT_EQ(Front_axle_t::input_state_names::KAPPA_RIGHT , 1);
+    EXPECT_EQ(Rear_axle_t::input_state_names::KAPPA_LEFT   , 2);
+    EXPECT_EQ(Rear_axle_t::input_state_names::KAPPA_RIGHT  , 3);
+    EXPECT_EQ(Chassis_t::input_state_names::U              , 4);
+    EXPECT_EQ(Chassis_t::input_state_names::V              , 5);
+    EXPECT_EQ(Chassis_t::input_state_names::OMEGA          , 6);
+    EXPECT_EQ(Road_t::input_state_names::X                 , 7);
+    EXPECT_EQ(Road_t::input_state_names::Y                 , 8);
+    EXPECT_EQ(Road_t::input_state_names::PSI               , 9);
+
+    EXPECT_EQ(Front_axle_t::state_names::OMEGA_LEFT  , 0);
+    EXPECT_EQ(Front_axle_t::state_names::OMEGA_RIGHT , 1);
+    EXPECT_EQ(Rear_axle_t::state_names::OMEGA_LEFT   , 2);
+    EXPECT_EQ(Rear_axle_t::state_names::OMEGA_RIGHT  , 3);
+    EXPECT_EQ(Chassis_t::state_names::U              , 4);
+    EXPECT_EQ(Chassis_t::state_names::V              , 5);
+    EXPECT_EQ(Chassis_t::state_names::OMEGA          , 6);
+    EXPECT_EQ(Road_t::state_names::X                 , 7);
+    EXPECT_EQ(Road_t::state_names::Y                 , 8);
+    EXPECT_EQ(Road_t::state_names::PSI               , 9);
 
     EXPECT_EQ(limebeer2014f1<scalar>::cartesian::NSTATE, 10);
 
-    EXPECT_EQ(Front_axle_t::ISTEERING, 0);
-    EXPECT_EQ(Rear_axle_t::IBOOST , 1);
-    EXPECT_EQ(Chassis_t::ITHROTTLE, 2);
-    EXPECT_EQ(Chassis_t::IBRAKE_BIAS, 3);
+    EXPECT_EQ(Front_axle_t::control_names::STEERING, 0);
+    EXPECT_EQ(Rear_axle_t::control_names::BOOST , 1);
+    EXPECT_EQ(Chassis_t::control_names::THROTTLE, 2);
+    EXPECT_EQ(Chassis_t::control_names::BRAKE_BIAS, 3);
     EXPECT_EQ(limebeer2014f1<scalar>::cartesian::NCONTROL, 4);
-
-    EXPECT_EQ(Front_axle_t::IIDKAPPA_LEFT  , 0);
-    EXPECT_EQ(Front_axle_t::IIDKAPPA_RIGHT , 1);
-    EXPECT_EQ(Rear_axle_t::IIDKAPPA_LEFT   , 2);
-    EXPECT_EQ(Rear_axle_t::IIDKAPPA_RIGHT  , 3);
-    EXPECT_EQ(Chassis_t::IIDU              , 4);
-    EXPECT_EQ(Chassis_t::IIDV              , 5);
-    EXPECT_EQ(Chassis_t::IIDOMEGA          , 6);
-    EXPECT_EQ(Road_t::IIDX                 , 7);
-    EXPECT_EQ(Road_t::IIDY                 , 8);
-    EXPECT_EQ(Road_t::IIDPSI               , 9);
 }
 
 TEST_F(limebeer2014f1_test, vehicle_from_xml_variable_names)
@@ -102,26 +106,26 @@ TEST_F(limebeer2014f1_test, vehicle_from_xml_variable_names)
     auto [s_name, q_names, qa_names, u_names] = car_sc.get_state_and_control_names();
 
     EXPECT_EQ(s_name, "road.arclength");
-    EXPECT_EQ(q_names[Front_axle_t::IKAPPA_LEFT]                                , "front-axle.left-tire.kappa");
-    EXPECT_EQ(q_names[Front_axle_t::IKAPPA_RIGHT]                               , "front-axle.right-tire.kappa");
-    EXPECT_EQ(q_names[Rear_axle_t::IKAPPA_LEFT]                                 , "rear-axle.left-tire.kappa");
-    EXPECT_EQ(q_names[Rear_axle_t::IKAPPA_RIGHT]                                , "rear-axle.right-tire.kappa");
-    EXPECT_EQ(q_names[Chassis_t::IU]                                            , "chassis.velocity.x");
-    EXPECT_EQ(q_names[Chassis_t::IV]                                            , "chassis.velocity.y");
-    EXPECT_EQ(q_names[Chassis_t::IOMEGA]                                        , "chassis.omega.z");
-    EXPECT_EQ(q_names[limebeer2014f1<double>::curvilinear_p::Road_type::ITIME]  , "time");
-    EXPECT_EQ(q_names[limebeer2014f1<double>::curvilinear_p::Road_type::IN]     , "road.lateral-displacement");
-    EXPECT_EQ(q_names[limebeer2014f1<double>::curvilinear_p::Road_type::IALPHA] , "road.track-heading-angle");
+    EXPECT_EQ(q_names[Front_axle_t::input_state_names::KAPPA_LEFT]                                , "front-axle.left-tire.kappa");
+    EXPECT_EQ(q_names[Front_axle_t::input_state_names::KAPPA_RIGHT]                               , "front-axle.right-tire.kappa");
+    EXPECT_EQ(q_names[Rear_axle_t::input_state_names::KAPPA_LEFT]                                 , "rear-axle.left-tire.kappa");
+    EXPECT_EQ(q_names[Rear_axle_t::input_state_names::KAPPA_RIGHT]                                , "rear-axle.right-tire.kappa");
+    EXPECT_EQ(q_names[Chassis_t::input_state_names::U]                                            , "chassis.velocity.x");
+    EXPECT_EQ(q_names[Chassis_t::input_state_names::V]                                            , "chassis.velocity.y");
+    EXPECT_EQ(q_names[Chassis_t::input_state_names::OMEGA]                                        , "chassis.omega.z");
+    EXPECT_EQ(q_names[limebeer2014f1<double>::curvilinear_p::Road_type::input_state_names::TIME]  , "time");
+    EXPECT_EQ(q_names[limebeer2014f1<double>::curvilinear_p::Road_type::input_state_names::N]     , "road.lateral-displacement");
+    EXPECT_EQ(q_names[limebeer2014f1<double>::curvilinear_p::Road_type::input_state_names::ALPHA] , "road.track-heading-angle");
 
-    EXPECT_EQ(qa_names[Chassis_t::IFZFL], "chassis.Fz_fl");
-    EXPECT_EQ(qa_names[Chassis_t::IFZFR], "chassis.Fz_fr");
-    EXPECT_EQ(qa_names[Chassis_t::IFZRL], "chassis.Fz_rl");
-    EXPECT_EQ(qa_names[Chassis_t::IFZRR], "chassis.Fz_rr");
+    EXPECT_EQ(qa_names[Chassis_t::algebraic_state_names::FZFL], "chassis.Fz_fl");
+    EXPECT_EQ(qa_names[Chassis_t::algebraic_state_names::FZFR], "chassis.Fz_fr");
+    EXPECT_EQ(qa_names[Chassis_t::algebraic_state_names::FZRL], "chassis.Fz_rl");
+    EXPECT_EQ(qa_names[Chassis_t::algebraic_state_names::FZRR], "chassis.Fz_rr");
 
-    EXPECT_EQ(u_names[Chassis_t::ITHROTTLE], "chassis.throttle");
-    EXPECT_EQ(u_names[Chassis_t::IBRAKE_BIAS], "chassis.brake-bias");
-    EXPECT_EQ(u_names[Front_axle_t::ISTEERING], "front-axle.steering-angle");
-    EXPECT_EQ(u_names[Rear_axle_t::IBOOST], "rear-axle.boost");
+    EXPECT_EQ(u_names[Chassis_t::control_names::THROTTLE]   , "chassis.throttle");
+    EXPECT_EQ(u_names[Chassis_t::control_names::BRAKE_BIAS] , "chassis.brake-bias");
+    EXPECT_EQ(u_names[Front_axle_t::control_names::STEERING], "front-axle.steering-angle");
+    EXPECT_EQ(u_names[Rear_axle_t::control_names::BOOST]    , "rear-axle.boost");
 }
 
 TEST_F(limebeer2014f1_test, vehicle_empty_variable_names)
@@ -131,25 +135,25 @@ TEST_F(limebeer2014f1_test, vehicle_empty_variable_names)
     auto [s_name, q_names, qa_names, u_names] = car.get_state_and_control_names();
 
     EXPECT_EQ(s_name, "road.arclength");
-    EXPECT_EQ(q_names[Front_axle_t::IKAPPA_LEFT]                                , "front-axle.left-tire.kappa");
-    EXPECT_EQ(q_names[Front_axle_t::IKAPPA_RIGHT]                               , "front-axle.right-tire.kappa");
-    EXPECT_EQ(q_names[Rear_axle_t::IKAPPA_LEFT]                                 , "rear-axle.left-tire.kappa");
-    EXPECT_EQ(q_names[Rear_axle_t::IKAPPA_RIGHT]                                , "rear-axle.right-tire.kappa");
-    EXPECT_EQ(q_names[Chassis_t::IU]                                            , "chassis.velocity.x");
-    EXPECT_EQ(q_names[Chassis_t::IV]                                            , "chassis.velocity.y");
-    EXPECT_EQ(q_names[Chassis_t::IOMEGA]                                        , "chassis.omega.z");
-    EXPECT_EQ(q_names[limebeer2014f1<double>::curvilinear_p::Road_type::ITIME]  , "time");
-    EXPECT_EQ(q_names[limebeer2014f1<double>::curvilinear_p::Road_type::IN]     , "road.lateral-displacement");
-    EXPECT_EQ(q_names[limebeer2014f1<double>::curvilinear_p::Road_type::IALPHA] , "road.track-heading-angle");
+    EXPECT_EQ(q_names[Front_axle_t::input_state_names::KAPPA_LEFT]                                , "front-axle.left-tire.kappa");
+    EXPECT_EQ(q_names[Front_axle_t::input_state_names::KAPPA_RIGHT]                               , "front-axle.right-tire.kappa");
+    EXPECT_EQ(q_names[Rear_axle_t::input_state_names::KAPPA_LEFT]                                 , "rear-axle.left-tire.kappa");
+    EXPECT_EQ(q_names[Rear_axle_t::input_state_names::KAPPA_RIGHT]                                , "rear-axle.right-tire.kappa");
+    EXPECT_EQ(q_names[Chassis_t::input_state_names::U]                                            , "chassis.velocity.x");
+    EXPECT_EQ(q_names[Chassis_t::input_state_names::V]                                            , "chassis.velocity.y");
+    EXPECT_EQ(q_names[Chassis_t::input_state_names::OMEGA]                                        , "chassis.omega.z");
+    EXPECT_EQ(q_names[limebeer2014f1<double>::curvilinear_p::Road_type::input_state_names::TIME]  , "time");
+    EXPECT_EQ(q_names[limebeer2014f1<double>::curvilinear_p::Road_type::input_state_names::N]     , "road.lateral-displacement");
+    EXPECT_EQ(q_names[limebeer2014f1<double>::curvilinear_p::Road_type::input_state_names::ALPHA] , "road.track-heading-angle");
 
-    EXPECT_EQ(qa_names[Chassis_t::IFZFL], "chassis.Fz_fl");
-    EXPECT_EQ(qa_names[Chassis_t::IFZFR], "chassis.Fz_fr");
-    EXPECT_EQ(qa_names[Chassis_t::IFZRL], "chassis.Fz_rl");
-    EXPECT_EQ(qa_names[Chassis_t::IFZRR], "chassis.Fz_rr");
+    EXPECT_EQ(qa_names[Chassis_t::algebraic_state_names::FZFL], "chassis.Fz_fl");
+    EXPECT_EQ(qa_names[Chassis_t::algebraic_state_names::FZFR], "chassis.Fz_fr");
+    EXPECT_EQ(qa_names[Chassis_t::algebraic_state_names::FZRL], "chassis.Fz_rl");
+    EXPECT_EQ(qa_names[Chassis_t::algebraic_state_names::FZRR], "chassis.Fz_rr");
 
-    EXPECT_EQ(u_names[Chassis_t::ITHROTTLE], "chassis.throttle");
-    EXPECT_EQ(u_names[Chassis_t::IBRAKE_BIAS], "chassis.brake-bias");
-    EXPECT_EQ(u_names[Front_axle_t::ISTEERING], "front-axle.steering-angle");
+    EXPECT_EQ(u_names[Chassis_t::control_names::THROTTLE], "chassis.throttle");
+    EXPECT_EQ(u_names[Chassis_t::control_names::BRAKE_BIAS], "chassis.brake-bias");
+    EXPECT_EQ(u_names[Front_axle_t::control_names::STEERING], "front-axle.steering-angle");
 }
 
 TEST_F(limebeer2014f1_test, is_ready)
@@ -249,180 +253,214 @@ TEST_F(limebeer2014f1_test, is_not_ready)
 
 TEST_F(limebeer2014f1_test, jacobian_autodiff)
 {
+    const auto& NSTATE    = limebeer2014f1<double>::cartesian::NSTATE;
+    const auto& NALGEBRAIC = limebeer2014f1<double>::cartesian::NALGEBRAIC;
+    const auto& NCONTROL   = limebeer2014f1<double>::cartesian::NCONTROL;
+
     limebeer2014f1<CppAD::AD<double>>::cartesian car_ad(database);
     limebeer2014f1<double>::cartesian            car_sc(database);
 
     // Fill the inputs to the operator() of the vehicle. These inputs belong to a 0g trim at 300km/h
-    std::array<double,10> q0 = {0.0, 0.0, 0.0111971, 0.0111971, 83.3333, 0.0, 0.0, 0.0, 0.0, 0.0};
-    std::array<double,4> qa0 = {-0.874103, -0.874103, -1.07386, -1.07386};
-    auto u0 = car_ad.get_state_and_control_upper_lower_and_default_values().u_def;
-    u0[decltype(car_ad)::Chassis_type::ITHROTTLE] = 0.644468;
+    std::array<double,10> input_states = {0.0, 0.0, 0.111971, 0.111971, 83.3333, 0.0, 0.0, 0.0, 0.0, 0.0};
+    std::array<double,4> algebraic_states = {-0.874103, -0.874103, -1.07386, -1.07386};
+    auto controls = car_ad.get_state_and_control_upper_lower_and_default_values().controls_def;
+    controls[decltype(car_ad)::Chassis_type::control_names::THROTTLE] = 0.644468;
 
     // Call operator()
-    auto solution = car_ad.equations(q0,qa0,u0,0.0);
+    auto solution = car_ad.equations(input_states,algebraic_states,controls,0.0);
 
     // Compute the numerical Jacobian
-    std::array<std::array<double,10>,10+4+4> numerical_jacobian;
-    std::array<std::array<double,4>,10+4+4> numerical_jacobian_dqa;
+    std::array<std::array<double,NSTATE>,NSTATE+NALGEBRAIC+NCONTROL> numerical_jacobian_states;
+    std::array<std::array<double,NSTATE>,NSTATE+NALGEBRAIC+NCONTROL> numerical_jacobian_dstates_dt;
+    std::array<std::array<double,NALGEBRAIC>,NSTATE+NALGEBRAIC+NCONTROL> numerical_jacobian_algebraic_equations;
 
-    // derivatives w.r.t q
-    for (size_t i = 0; i < 10; ++i)
+    // derivatives w.r.t input_states
+    for (size_t i = 0; i < NSTATE; ++i)
     {
-        // Freeze u0 and add a perturbation on q0 
-        const double eps = std::max(1.0,fabs(q0[i]))*1.0e-8;
-        q0[i] += eps;
+        // Freeze u0 and add a perturbation on input_states 
+        const double eps = std::max(1.0,fabs(input_states[i]))*1.0e-7;
+        input_states[i] += eps;
 
-        auto [dqdt_eps, dqa_eps] = car_sc(q0,qa0,u0,0.0);
+        auto [states_eps, dstates_dt_eps, algebraic_equations_eps] = car_sc(input_states,algebraic_states,controls,0.0);
 
-        q0[i] -= 2*eps;
+        input_states[i] -= 2*eps;
 
-        auto [dqdt_meps, dqa_meps] = car_sc(q0,qa0,u0,0.0);
+        auto [states_meps, dstates_dt_meps, algebraic_equations_meps] = car_sc(input_states,algebraic_states,controls,0.0);
 
-        numerical_jacobian[i] = (dqdt_eps - dqdt_meps)*(0.5/eps);
-        numerical_jacobian_dqa[i] = (dqa_eps - dqa_meps)*(0.5/eps);
+        numerical_jacobian_states[i]              = (states_eps - states_meps)*(0.5/eps);
+        numerical_jacobian_dstates_dt[i]          = (dstates_dt_eps - dstates_dt_meps)*(0.5/eps);
+        numerical_jacobian_algebraic_equations[i] = (algebraic_equations_eps - algebraic_equations_meps)*(0.5/eps);
 
-        q0[i] += eps;
+        input_states[i] += eps;
     }
 
-    // derivatives w.r.t qa
-    for (size_t i = 0; i < 4; ++i)
+    // derivatives w.r.t algebraic_states
+    for (size_t i = 0; i < NALGEBRAIC; ++i)
     {
-        // Freeze u0 and add a perturbation on q0 
-        const double eps = std::max(1.0,fabs(q0[i]))*1.0e-8;
-        qa0[i] += eps;
+        // Freeze controls and add a perturbation on input_states 
+        const double eps = std::max(1.0,fabs(algebraic_states[i]))*1.0e-7;
+        algebraic_states[i] += eps;
 
-        auto [dqdt_eps, dqa_eps] = car_sc(q0,qa0,u0,0.0);
+        auto [states_eps, dstates_dt_eps, algebraic_equations_eps] = car_sc(input_states,algebraic_states,controls,0.0);
 
-        qa0[i] -= 2*eps;
+        algebraic_states[i] -= 2*eps;
 
-        auto [dqdt_meps, dqa_meps] = car_sc(q0,qa0,u0,0.0);
+        auto [states_meps, dstates_dt_meps, algebraic_equations_meps] = car_sc(input_states,algebraic_states,controls,0.0);
 
-        numerical_jacobian[i+10] = (dqdt_eps - dqdt_meps)*(0.5/eps);
-        numerical_jacobian_dqa[i+10] = (dqa_eps - dqa_meps)*(0.5/eps);
+        numerical_jacobian_states[i+NSTATE]              = (states_eps - states_meps)*(0.5/eps);
+        numerical_jacobian_dstates_dt[i+NSTATE]          = (dstates_dt_eps - dstates_dt_meps)*(0.5/eps);
+        numerical_jacobian_algebraic_equations[i+NSTATE] = (algebraic_equations_eps - algebraic_equations_meps)*(0.5/eps);
 
-        qa0[i] += eps;
+        algebraic_states[i] += eps;
     }
 
     // derivatives w.r.t u
-    for (size_t i = 0; i < 4; ++i)
+    for (size_t i = 0; i < NCONTROL; ++i)
     {
-        // Freeze u0 and add a perturbation on q0 
-        const double eps = std::max(1.0,fabs(u0[i]))*1.0e-8;
-        u0[i] += eps;
+        // Freeze controls and add a perturbation on input_states 
+        const double eps = std::max(1.0,fabs(controls[i]))*1.0e-7;
+        controls[i] += eps;
 
-        auto [dqdt_eps,dqa_eps] = car_sc(q0,qa0,u0,0.0);
+        auto [states_eps, dstates_dt_eps, algebraic_equations_eps] = car_sc(input_states,algebraic_states,controls,0.0);
 
-        u0[i] -= 2*eps;
+        controls[i] -= 2*eps;
 
-        auto [dqdt_meps,dqa_meps] = car_sc(q0,qa0,u0,0.0);
+        auto [states_meps, dstates_dt_meps, algebraic_equations_meps] = car_sc(input_states,algebraic_states,controls,0.0);
 
-        numerical_jacobian[i+14] = (dqdt_eps - dqdt_meps)*(0.5/eps);
-        numerical_jacobian_dqa[i+14] = (dqa_eps - dqa_meps)*(0.5/eps);
+        numerical_jacobian_states[i+NSTATE+NALGEBRAIC]              = (states_eps - states_meps)*(0.5/eps);
+        numerical_jacobian_dstates_dt[i+NSTATE+NALGEBRAIC]          = (dstates_dt_eps - dstates_dt_meps)*(0.5/eps);
+        numerical_jacobian_algebraic_equations[i+NSTATE+NALGEBRAIC] = (algebraic_equations_eps - algebraic_equations_meps)*(0.5/eps);
 
-        u0[i] += eps;
+        controls[i] += eps;
     }
 
-
-    for (size_t i = 0; i < 10+4+4; ++i)
-        for (size_t j = 0; j < 10; ++j)
+    for (size_t i = 0; i < NSTATE+NALGEBRAIC+NCONTROL; ++i)
+        for (size_t j = 0; j < NSTATE; ++j)
         {
-            EXPECT_NEAR(numerical_jacobian[i][j], solution.jac_dqdt[j][i], 2.0e-6*std::max(fabs(solution.jac_dqdt[j][i]),1.0)) << "with i = " << i << " and j = " << j ;
+            EXPECT_NEAR(numerical_jacobian_states[i][j], 
+                        solution.jacobian_states[j][i], 2.0e-6*std::max(fabs(solution.jacobian_states[j][i]),1.0)) << "with i = " << i << " and j = " << j ;
         }
 
-    for (size_t i = 0; i < 10+4+4; ++i)
-        for (size_t j = 0; j < 4; ++j)
+
+    for (size_t i = 0; i < NSTATE+NALGEBRAIC+NCONTROL; ++i)
+        for (size_t j = 0; j < NSTATE; ++j)
         {
-            EXPECT_NEAR(numerical_jacobian_dqa[i][j], solution.jac_dqa[j][i], 2.0e-6*std::max(fabs(solution.jac_dqa[j][i]),1.0)) << "with i = " << i << " and j = " << j ;
+            EXPECT_NEAR(numerical_jacobian_dstates_dt[i][j], 
+                        solution.jacobian_dstates_dt[j][i], 2.0e-6*std::max(fabs(solution.jacobian_dstates_dt[j][i]),1.0)) << "with i = " << i << " and j = " << j ;
+        }
+
+    for (size_t i = 0; i < NSTATE+NALGEBRAIC+NCONTROL; ++i)
+        for (size_t j = 0; j < NALGEBRAIC; ++j)
+        {
+            EXPECT_NEAR(numerical_jacobian_algebraic_equations[i][j], 
+                        solution.jacobian_algebraic_equations[j][i], 2.0e-6*std::max(fabs(solution.jacobian_algebraic_equations[j][i]),1.0)) << "with i = " << i << " and j = " << j ;
         }
 }
 
 TEST_F(limebeer2014f1_test, jacobian_autodiff_random)
 {
+    const auto& NSTATE    = limebeer2014f1<double>::cartesian::NSTATE;
+    const auto& NALGEBRAIC = limebeer2014f1<double>::cartesian::NALGEBRAIC;
+    const auto& NCONTROL   = limebeer2014f1<double>::cartesian::NCONTROL;
+
     limebeer2014f1<CppAD::AD<double>>::cartesian car_ad(database);
     limebeer2014f1<double>::cartesian            car_sc(database);
 
     // Fill the inputs to the operator() of the vehicle. These are made up inputs
-    std::array<double,10> q0 = {-0.05, -0.08, 0.0200000, 0.0800000, 50.0000, -5.0, 0.4, 0.0, 0.0, 5.0*DEG};
-    std::array<double,4> qa0 = {-0.674103, -0.474103, -0.80386, -0.70386};
-    auto u0 = car_ad.get_state_and_control_upper_lower_and_default_values().u_def;
-    u0[decltype(car_ad)::Chassis_type::front_axle_type::ISTEERING] = -2.0*DEG;
-    u0[decltype(car_ad)::Chassis_type::ITHROTTLE] = 0.100000;
+    std::array<double,10> input_states = {-0.5, -0.8, 0.200000, 0.800000, 50.0000, -5.0, 0.4, 0.0, 0.0, 5.0*DEG};
+    std::array<double,4> algebraic_states = {-0.674103, -0.474103, -0.80386, -0.70386};
+    auto controls = car_ad.get_state_and_control_upper_lower_and_default_values().controls_def;
+    controls[decltype(car_ad)::Chassis_type::front_axle_type::control_names::STEERING] = -2.0*DEG;
+    controls[decltype(car_ad)::Chassis_type::control_names::THROTTLE] = 0.100000;
 
     // Call operator()
-    auto solution = car_ad.equations(q0,qa0,u0,0.0);
+    auto solution = car_ad.equations(input_states,algebraic_states,controls,0.0);
 
     // Compute the numerical Jacobian
-    std::array<std::array<double,10>,10+4+4> numerical_jacobian;
-    std::array<std::array<double,4>,10+4+4> numerical_jacobian_dqa;
+    std::array<std::array<double,NSTATE>,NSTATE+NALGEBRAIC+NCONTROL> numerical_jacobian_states;
+    std::array<std::array<double,NSTATE>,NSTATE+NALGEBRAIC+NCONTROL> numerical_jacobian_dstates_dt;
+    std::array<std::array<double,NALGEBRAIC>,NSTATE+NALGEBRAIC+NCONTROL> numerical_jacobian_algebraic_equations;
 
-    // derivatives w.r.t q
-    for (size_t i = 0; i < 10; ++i)
+    // derivatives w.r.t input_states
+    for (size_t i = 0; i < NSTATE; ++i)
     {
-        // Freeze u0 and add a perturbation on q0 
-        const double eps = std::max(1.0,fabs(q0[i]))*1.0e-8;
-        q0[i] += eps;
+        // Freeze u0 and add a perturbation on input_states 
+        const double eps = std::max(1.0,fabs(input_states[i]))*1.0e-7;
+        input_states[i] += eps;
 
-        auto [dqdt_eps, dqa_eps] = car_sc(q0,qa0,u0,0.0);
+        auto [states_eps, dstates_dt_eps, algebraic_equations_eps] = car_sc(input_states,algebraic_states,controls,0.0);
 
-        q0[i] -= 2*eps;
+        input_states[i] -= 2*eps;
 
-        auto [dqdt_meps, dqa_meps] = car_sc(q0,qa0,u0,0.0);
+        auto [states_meps, dstates_dt_meps, algebraic_equations_meps] = car_sc(input_states,algebraic_states,controls,0.0);
 
-        numerical_jacobian[i] = (dqdt_eps - dqdt_meps)*(0.5/eps);
-        numerical_jacobian_dqa[i] = (dqa_eps - dqa_meps)*(0.5/eps);
+        numerical_jacobian_states[i]              = (states_eps - states_meps)*(0.5/eps);
+        numerical_jacobian_dstates_dt[i]          = (dstates_dt_eps - dstates_dt_meps)*(0.5/eps);
+        numerical_jacobian_algebraic_equations[i] = (algebraic_equations_eps - algebraic_equations_meps)*(0.5/eps);
 
-        q0[i] += eps;
+        input_states[i] += eps;
     }
 
-    // derivatives w.r.t qa
-    for (size_t i = 0; i < 4; ++i)
+    // derivatives w.r.t algebraic_states
+    for (size_t i = 0; i < NALGEBRAIC; ++i)
     {
-        // Freeze u0 and add a perturbation on q0 
-        const double eps = std::max(1.0,fabs(q0[i]))*1.0e-8;
-        qa0[i] += eps;
+        // Freeze controls and add a perturbation on input_states 
+        const double eps = std::max(1.0,fabs(algebraic_states[i]))*1.0e-7;
+        algebraic_states[i] += eps;
 
-        auto [dqdt_eps, dqa_eps] = car_sc(q0,qa0,u0,0.0);
+        auto [states_eps, dstates_dt_eps, algebraic_equations_eps] = car_sc(input_states,algebraic_states,controls,0.0);
 
-        qa0[i] -= 2*eps;
+        algebraic_states[i] -= 2*eps;
 
-        auto [dqdt_meps, dqa_meps] = car_sc(q0,qa0,u0,0.0);
+        auto [states_meps, dstates_dt_meps, algebraic_equations_meps] = car_sc(input_states,algebraic_states,controls,0.0);
 
-        numerical_jacobian[i+10] = (dqdt_eps - dqdt_meps)*(0.5/eps);
-        numerical_jacobian_dqa[i+10] = (dqa_eps - dqa_meps)*(0.5/eps);
+        numerical_jacobian_states[i+NSTATE]              = (states_eps - states_meps)*(0.5/eps);
+        numerical_jacobian_dstates_dt[i+NSTATE]          = (dstates_dt_eps - dstates_dt_meps)*(0.5/eps);
+        numerical_jacobian_algebraic_equations[i+NSTATE] = (algebraic_equations_eps - algebraic_equations_meps)*(0.5/eps);
 
-        qa0[i] += eps;
+        algebraic_states[i] += eps;
     }
 
     // derivatives w.r.t u
-    for (size_t i = 0; i < 4; ++i)
+    for (size_t i = 0; i < NCONTROL; ++i)
     {
-        // Freeze u0 and add a perturbation on q0 
-        const double eps = std::max(1.0,fabs(u0[i]))*1.0e-8;
-        u0[i] += eps;
+        // Freeze controls and add a perturbation on input_states 
+        const double eps = std::max(1.0,fabs(controls[i]))*1.0e-7;
+        controls[i] += eps;
 
-        auto [dqdt_eps,dqa_eps] = car_sc(q0,qa0,u0,0.0);
+        auto [states_eps, dstates_dt_eps, algebraic_equations_eps] = car_sc(input_states,algebraic_states,controls,0.0);
 
-        u0[i] -= 2*eps;
+        controls[i] -= 2*eps;
 
-        auto [dqdt_meps,dqa_meps] = car_sc(q0,qa0,u0,0.0);
+        auto [states_meps, dstates_dt_meps, algebraic_equations_meps] = car_sc(input_states,algebraic_states,controls,0.0);
 
-        numerical_jacobian[i+14] = (dqdt_eps - dqdt_meps)*(0.5/eps);
-        numerical_jacobian_dqa[i+14] = (dqa_eps - dqa_meps)*(0.5/eps);
+        numerical_jacobian_states[i+NSTATE+NALGEBRAIC]              = (states_eps - states_meps)*(0.5/eps);
+        numerical_jacobian_dstates_dt[i+NSTATE+NALGEBRAIC]          = (dstates_dt_eps - dstates_dt_meps)*(0.5/eps);
+        numerical_jacobian_algebraic_equations[i+NSTATE+NALGEBRAIC] = (algebraic_equations_eps - algebraic_equations_meps)*(0.5/eps);
 
-        u0[i] += eps;
+        controls[i] += eps;
     }
 
-
-    for (size_t i = 0; i < 10+4+4; ++i)
-        for (size_t j = 0; j < 10; ++j)
+    for (size_t i = 0; i < NSTATE+NALGEBRAIC+NCONTROL; ++i)
+        for (size_t j = 0; j < NSTATE; ++j)
         {
-            EXPECT_NEAR(numerical_jacobian[i][j], solution.jac_dqdt[j][i], 2.0e-6*std::max(fabs(solution.jac_dqdt[j][i]),1.0)) << "with i = " << i << " and j = " << j ;
+            EXPECT_NEAR(numerical_jacobian_states[i][j], 
+                        solution.jacobian_states[j][i], 2.0e-6*std::max(fabs(solution.jacobian_states[j][i]),1.0)) << "with i = " << i << " and j = " << j ;
         }
 
-    for (size_t i = 0; i < 10+4+4; ++i)
-        for (size_t j = 0; j < 4; ++j)
+
+    for (size_t i = 0; i < NSTATE+NALGEBRAIC+NCONTROL; ++i)
+        for (size_t j = 0; j < NSTATE; ++j)
         {
-            EXPECT_NEAR(numerical_jacobian_dqa[i][j], solution.jac_dqa[j][i], 2.0e-6*std::max(fabs(solution.jac_dqa[j][i]),1.0)) << "with i = " << i << " and j = " << j ;
+            EXPECT_NEAR(numerical_jacobian_dstates_dt[i][j], 
+                        solution.jacobian_dstates_dt[j][i], 2.0e-6*std::max(fabs(solution.jacobian_dstates_dt[j][i]),1.0)) << "with i = " << i << " and j = " << j ;
+        }
+
+    for (size_t i = 0; i < NSTATE+NALGEBRAIC+NCONTROL; ++i)
+        for (size_t j = 0; j < NALGEBRAIC; ++j)
+        {
+            EXPECT_NEAR(numerical_jacobian_algebraic_equations[i][j], 
+                        solution.jacobian_algebraic_equations[j][i], 2.0e-6*std::max(fabs(solution.jacobian_algebraic_equations[j][i]),1.0)) << "with i = " << i << " and j = " << j ;
         }
 }
 
@@ -518,7 +556,7 @@ TEST_F(limebeer2014f1_test, set_parameter)
 
     std::array<double,10> q0;
     std::array<double,4> qa0;
-    auto u0 = car.get_state_and_control_upper_lower_and_default_values().u_def;
+    auto u0 = car.get_state_and_control_upper_lower_and_default_values().controls_def;
     
     constexpr const size_t n = 500;
 
@@ -548,13 +586,16 @@ TEST_F(limebeer2014f1_test, set_parameter)
         q0 = {kappa_fl_saved[i], kappa_fr_saved[i], kappa_rl_saved[i], kappa_rr_saved[i], u_saved[i], v_saved[i], omega_saved[i],
               time_saved[i], n_saved[i], alpha_saved[i]};
 
-        u0[decltype(car)::Chassis_type::front_axle_type::ISTEERING] = delta_saved[i];
-        u0[decltype(car)::Chassis_type::ITHROTTLE] = throttle_saved[i];
+        u0[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING] = delta_saved[i];
+        u0[decltype(car)::Chassis_type::control_names::THROTTLE] = throttle_saved[i];
 
         qa0 = {Fz_fl_saved[i], Fz_fr_saved[i], Fz_rl_saved[i], Fz_rr_saved[i]};
 
-        auto [dqdt, dqa] = car(q0,qa0,u0,arclength_saved[i]);
-        auto [dqdt_c, dqa_c] = car_correct(q0,qa0,u0,arclength_saved[i]);
+        auto [states, dqdt, dqa] = car(q0,qa0,u0,arclength_saved[i]);
+        auto [states_c, dqdt_c, dqa_c] = car_correct(q0,qa0,u0,arclength_saved[i]);
+
+        for (size_t j = 0; j < states.size(); ++j)
+            EXPECT_NEAR(states[j], states_c[j], 2.0e-15);
 
         for (size_t j = 0; j < dqdt.size(); ++j)
             EXPECT_NEAR(dqdt[j], dqdt_c[j], 2.0e-15);
@@ -657,7 +698,7 @@ TEST_F(limebeer2014f1_test, set_parameter_c_api)
 
     std::array<double,10> q0;
     std::array<double,4> qa0;
-    auto u0 = car.get_state_and_control_upper_lower_and_default_values().u_def;
+    auto u0 = car.get_state_and_control_upper_lower_and_default_values().controls_def;
     
     constexpr const size_t n = 500;
 
@@ -687,13 +728,13 @@ TEST_F(limebeer2014f1_test, set_parameter_c_api)
         q0 = {kappa_fl_saved[i], kappa_fr_saved[i], kappa_rl_saved[i], kappa_rr_saved[i], u_saved[i], v_saved[i], omega_saved[i],
               time_saved[i], n_saved[i], alpha_saved[i]};
 
-        u0[decltype(car_correct)::Chassis_type::front_axle_type::ISTEERING] = delta_saved[i];
-        u0[decltype(car_correct)::Chassis_type::ITHROTTLE] = throttle_saved[i];
+        u0[decltype(car_correct)::Chassis_type::front_axle_type::control_names::STEERING] = delta_saved[i];
+        u0[decltype(car_correct)::Chassis_type::control_names::THROTTLE] = throttle_saved[i];
 
         qa0 = {Fz_fl_saved[i], Fz_fr_saved[i], Fz_rl_saved[i], Fz_rr_saved[i]};
 
-        auto [dqdt, dqa] = car(q0,qa0,u0,arclength_saved[i]);
-        auto [dqdt_c, dqa_c] = car_correct(q0,qa0,u0,arclength_saved[i]);
+        auto [states, dqdt, dqa] = car(q0,qa0,u0,arclength_saved[i]);
+        auto [states_c, dqdt_c, dqa_c] = car_correct(q0,qa0,u0,arclength_saved[i]);
 
         for (size_t j = 0; j < dqdt.size(); ++j)
             EXPECT_NEAR(dqdt[j], dqdt_c[j], 2.0e-15);
@@ -762,10 +803,10 @@ TEST_F(limebeer2014f1_test,propagation_crank_nicolson)
                                                                                Fz_rl_saved[i_start],
                                                                                Fz_rr_saved[i_start]};
 
-    auto u = car.get_state_and_control_upper_lower_and_default_values().u_def;
+    auto u = car.get_state_and_control_upper_lower_and_default_values().controls_def;
 
-    u[decltype(car)::Chassis_type::front_axle_type::ISTEERING] = delta_saved[i_start];
-    u[decltype(car)::Chassis_type::ITHROTTLE] = throttle_saved[i_start];
+    u[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING] = delta_saved[i_start];
+    u[decltype(car)::Chassis_type::control_names::THROTTLE] = throttle_saved[i_start];
 
     std::array<scalar,limebeer2014f1<scalar>::curvilinear_p::NSTATE> q_next = {kappa_fl_saved[i_start + 1],
                                                                                kappa_fr_saved[i_start + 1],
@@ -783,30 +824,30 @@ TEST_F(limebeer2014f1_test,propagation_crank_nicolson)
                                                                                     Fz_rl_saved[i_start + 1],
                                                                                     Fz_rr_saved[i_start + 1]};
 
-    auto u_next = car.get_state_and_control_upper_lower_and_default_values().u_def;
+    auto u_next = car.get_state_and_control_upper_lower_and_default_values().controls_def;
 
-    u_next[decltype(car)::Chassis_type::front_axle_type::ISTEERING] = delta_saved[i_start+1];
-    u_next[decltype(car)::Chassis_type::ITHROTTLE] = throttle_saved[i_start+1];
+    u_next[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING] = delta_saved[i_start+1];
+    u_next[decltype(car)::Chassis_type::control_names::THROTTLE] = throttle_saved[i_start+1];
 
     scalar s = arclength_saved[i_start];
     scalar s_next = arclength_saved[i_start+1];
 
     // Check the scheme on the original point
-    auto [dqdt_ini, dqa_ini] = car_sc(q,qa,u,s);
-    auto [dqdt_fin, dqa_fin] = car_sc(q_next,qa_next,u_next,s_next);
+    auto [states_ini, dqdt_ini, dqa_ini] = car_sc(q,qa,u,s);
+    auto [states_fin, dqdt_fin, dqa_fin] = car_sc(q_next,qa_next,u_next,s_next);
 
     for (size_t i = 0; i < 10; ++i)
-        EXPECT_NEAR(q_next[i], q[i] + 0.5*(s_next-s)*(dqdt_ini[i] + dqdt_fin[i]),1.0e-8);
+        EXPECT_NEAR(states_fin[i], states_ini[i] + 0.5*(s_next-s)*(dqdt_ini[i] + dqdt_fin[i]),1.0e-8) << " with i = " << i;
 
     for (size_t i = 0; i < 4; ++i)
-        EXPECT_NEAR(dqa_ini[i], 0.0, 1.0e-8);
+        EXPECT_NEAR(dqa_ini[i], 0.0, 1.0e-8) << " with i = " << i;
 
     for (size_t i = 0; i < 4; ++i)
-        EXPECT_NEAR(dqa_fin[i], 0.0, 1.0e-8);
+        EXPECT_NEAR(dqa_fin[i], 0.0, 1.0e-8) << " with i = " << i;
 
 
 
-    Crank_nicolson<limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p,10,4,4>::take_step(car, u, u_next, q, qa, s, s_next-s, {});
+    Crank_nicolson<limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p>::take_step(car, u, u_next, q, qa, s, s_next-s, {});
 
 
     for (size_t i = 0; i < 10; ++i)
@@ -868,10 +909,10 @@ TEST_F(limebeer2014f1_test,propagation_crank_nicolson_corner_exit)
                                                                                Fz_rl_saved[i_start],
                                                                                Fz_rr_saved[i_start]};
 
-    auto u = car.get_state_and_control_upper_lower_and_default_values().u_def;
+    auto u = car.get_state_and_control_upper_lower_and_default_values().controls_def;
 
-    u[decltype(car)::Chassis_type::front_axle_type::ISTEERING] = delta_saved[i_start];
-    u[decltype(car)::Chassis_type::ITHROTTLE] = throttle_saved[i_start];
+    u[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING] = delta_saved[i_start];
+    u[decltype(car)::Chassis_type::control_names::THROTTLE] = throttle_saved[i_start];
 
     std::array<scalar,limebeer2014f1<scalar>::curvilinear_p::NSTATE> q_next = {kappa_fl_saved[i_start + 1],
                                                                                kappa_fr_saved[i_start + 1],
@@ -889,20 +930,20 @@ TEST_F(limebeer2014f1_test,propagation_crank_nicolson_corner_exit)
                                                                                     Fz_rl_saved[i_start + 1],
                                                                                     Fz_rr_saved[i_start + 1]};
 
-    auto u_next = car.get_state_and_control_upper_lower_and_default_values().u_def;
+    auto u_next = car.get_state_and_control_upper_lower_and_default_values().controls_def;
 
-    u_next[decltype(car)::Chassis_type::front_axle_type::ISTEERING] = delta_saved[i_start+1];
-    u_next[decltype(car)::Chassis_type::ITHROTTLE] = throttle_saved[i_start+1];
+    u_next[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING] = delta_saved[i_start+1];
+    u_next[decltype(car)::Chassis_type::control_names::THROTTLE] = throttle_saved[i_start+1];
 
     scalar s = arclength_saved[i_start];
     scalar s_next = arclength_saved[i_start+1];
 
     // Check the scheme on the original point
-    auto [dqdt_ini, dqa_ini] = car_sc(q,qa,u,s);
-    auto [dqdt_fin, dqa_fin] = car_sc(q_next,qa_next,u_next,s_next);
+    auto [states_ini, dqdt_ini, dqa_ini] = car_sc(q,qa,u,s);
+    auto [states_fin, dqdt_fin, dqa_fin] = car_sc(q_next,qa_next,u_next,s_next);
 
     for (size_t i = 0; i < 10; ++i)
-        EXPECT_NEAR(q_next[i], q[i] + 0.5*(s_next-s)*(dqdt_ini[i] + dqdt_fin[i]),1.0e-8);
+        EXPECT_NEAR(states_fin[i], states_ini[i] + 0.5*(s_next-s)*(dqdt_ini[i] + dqdt_fin[i]),1.0e-8) << " with i = " << i;
 
     for (size_t i = 0; i < 4; ++i)
         EXPECT_NEAR(dqa_ini[i], 0.0, 1.0e-8);
@@ -910,7 +951,7 @@ TEST_F(limebeer2014f1_test,propagation_crank_nicolson_corner_exit)
     for (size_t i = 0; i < 4; ++i)
         EXPECT_NEAR(dqa_fin[i], 0.0, 1.0e-8);
 
-    Crank_nicolson<limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p,10,4,4>::take_step(car, u, u_next, q, qa, s, s_next-s, {});
+    Crank_nicolson<limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p>::take_step(car, u, u_next, q, qa, s, s_next-s, {});
 
     for (size_t i = 0; i < 10; ++i)
         EXPECT_NEAR(q[i],q_next[i],1.0e-10) << ", with i = " << i;
@@ -919,10 +960,10 @@ TEST_F(limebeer2014f1_test,propagation_crank_nicolson_corner_exit)
         EXPECT_NEAR(qa[i],qa_next[i],1.0e-10) << ", with i = " << i;
 }
 
-#ifdef TEST_LIBFASTESTLAPC
 
 TEST_F(limebeer2014f1_test, get_vehicle_number_of_outputs_c_api)
 {
+#ifdef TEST_LIBFASTESTLAPC
     create_vehicle_from_xml("test", "./database/vehicles/f1/limebeer-2014-f1.xml");
     limebeer2014f1<double>::curvilinear_p car_cpp(database);
 
@@ -931,10 +972,14 @@ TEST_F(limebeer2014f1_test, get_vehicle_number_of_outputs_c_api)
     EXPECT_EQ(car_cpp.get_outputs_map().size(), static_cast<size_t>(n_outputs));
     
     delete_variable("test");
+#else
+GTEST_SKIP();
+#endif
 }
 
 TEST_F(limebeer2014f1_test, get_vehicle_output_variable_names_c_api)
 {
+#ifdef TEST_LIBFASTESTLAPC
     create_vehicle_from_xml("test", "./database/vehicles/f1/limebeer-2014-f1.xml");
     limebeer2014f1<double>::curvilinear_p car_cpp(database);
 
@@ -946,7 +991,6 @@ TEST_F(limebeer2014f1_test, get_vehicle_output_variable_names_c_api)
     constexpr const size_t str_max_len = 60;
 
     char* key_name = new char[str_max_len];
-
     char** state_names = new char*[n_state];
     for (size_t i = 0; i < static_cast<size_t>(n_state); ++i)
         state_names[i] = new char[str_max_len];
@@ -988,9 +1032,11 @@ TEST_F(limebeer2014f1_test, get_vehicle_output_variable_names_c_api)
     delete[] output_names;
     
     delete_variable("test");
+#else
+GTEST_SKIP();
+#endif
 }
 
-#endif
 
 TEST_F(limebeer2014f1_test, parameters_all_used_test)
 {

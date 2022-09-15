@@ -6,6 +6,29 @@
 #include "lion/propagators/rk4.h"
 #include "lion/thirdparty/include/logger.hpp"
 
+static inline vPolynomial construct_ninety_degrees_bend(double L_end = 20.0)
+{
+    // Part 1: 20m straight
+    scalar L1 = 20.0;
+    std::vector<sVector3d> y1 = { {0.0,0.0,0.0}, {10.0, 0.0, 0.0}, {20.0,0.0,0.0} };
+ 
+    // Part 2: 90 degrees bend with 10m radius
+    scalar L2 = 10*pi/2.0;
+    std::vector<sVector3d> y2;
+    const size_t N2 = 10;
+ 
+    const auto xi2 = std::get<0>(gauss_legendre_lobatto_nodes_and_weights(N2));
+
+    for (size_t i = 0; i <= N2; ++i)
+        y2.push_back(sVector3d(20.0+10.0*sin(pi/4.0*(xi2[i]+1.0)),10.0-10.0*cos(pi/4.0*(xi2[i]+1.0)),0.0));
+
+    // Part 3: 20m straight
+    scalar L3 = L_end;
+    std::vector<sVector3d> y3 = { y2.back(), {30.0, 10.0+L_end*0.5, 0.0} , {30.0,10.0+L_end,0.0} };
+ 
+    return {0.0, {L1,L2,L3}, {y1,y2,y3}};
+}
+
 using Front_left_tire_type  = lot2016kart<scalar>::Front_left_tire_type;
 using Front_right_tire_type = lot2016kart<scalar>::Front_left_tire_type;
 using Rear_left_tire_type   = lot2016kart<scalar>::Rear_left_tire_type;
@@ -20,39 +43,37 @@ using Dynamic_model_t       = lot2016kart<scalar>::curvilinear_p;
 
 // Make sure that the enumerators are correct
 // Controls
-static_assert(Front_axle_t::Axle_type::ISTEERING==0);
-static_assert(Rear_axle_t::Axle_type::ITORQUE==1);
+static_assert(Front_axle_t::Axle_type::control_names::STEERING==0);
+static_assert(Rear_axle_t::Axle_type::control_names::TORQUE==1);
 
 // State
-static_assert(Rear_axle_t::IOMEGA_AXLE==0);
-static_assert(Chassis_t::IU==1);
-static_assert(Chassis_t::IV==2);
-static_assert(Chassis_t::IOMEGA==3);
-static_assert(Chassis_t::IZ==4);
-static_assert(Chassis_t::IPHI==5);
-static_assert(Chassis_t::IMU==6);
-static_assert(Chassis_t::IDZ==7);
-static_assert(Chassis_t::IDPHI==8);
-static_assert(Chassis_t::IDMU==9);
-static_assert(Road_t::ITIME==10);
-static_assert(Road_t::IN==11);
-static_assert(Road_t::IALPHA==12);
+static_assert(Rear_axle_t::input_state_names::OMEGA_AXLE==0);
+static_assert(Chassis_t::input_state_names::U==1);
+static_assert(Chassis_t::input_state_names::V==2);
+static_assert(Chassis_t::input_state_names::OMEGA==3);
+static_assert(Chassis_t::input_state_names::Z==4);
+static_assert(Chassis_t::input_state_names::PHI==5);
+static_assert(Chassis_t::input_state_names::MU==6);
+static_assert(Chassis_t::input_state_names::DZDT==7);
+static_assert(Chassis_t::input_state_names::DPHIDT==8);
+static_assert(Chassis_t::input_state_names::DMUDT==9);
+static_assert(Road_t::input_state_names::TIME==10);
+static_assert(Road_t::input_state_names::N==11);
+static_assert(Road_t::input_state_names::ALPHA==12);
 
-// Stateder
-static_assert(Rear_axle_t::IIDOMEGA_AXLE==0);
-static_assert(Chassis_t::IIDU==1);
-static_assert(Chassis_t::IIDV==2);
-static_assert(Chassis_t::IIDOMEGA==3);
-static_assert(Chassis_t::IIDZ==4);
-static_assert(Chassis_t::IIDPHI==5);
-static_assert(Chassis_t::IIDMU==6);
-static_assert(Chassis_t::IID2Z==7);
-static_assert(Chassis_t::IID2PHI==8);
-static_assert(Chassis_t::IID2MU==9);
-static_assert(Road_t::IIDTIME==10);
-static_assert(Road_t::IIDN==11);
-static_assert(Road_t::IIDALPHA==12);
-
+static_assert(Rear_axle_t::state_names::OMEGA_AXLE==0);
+static_assert(Chassis_t::state_names::U==1);
+static_assert(Chassis_t::state_names::V==2);
+static_assert(Chassis_t::state_names::OMEGA==3);
+static_assert(Chassis_t::state_names::Z==4);
+static_assert(Chassis_t::state_names::PHI==5);
+static_assert(Chassis_t::state_names::MU==6);
+static_assert(Chassis_t::state_names::DZDT==7);
+static_assert(Chassis_t::state_names::DPHIDT==8);
+static_assert(Chassis_t::state_names::DMUDT==9);
+static_assert(Road_t::state_names::TIME==10);
+static_assert(Road_t::state_names::N==11);
+static_assert(Road_t::state_names::ALPHA==12);
 
 class Control
 {
@@ -141,9 +162,9 @@ TEST_F(Car_road_curvilinear_test, dqdt_test)
     scalar dndt = (u*sin(alpha) + v*cos(alpha))*dtimedt;
     scalar dalphadt = (omega - (u*cos(alpha)-v*sin(alpha))/(1.0 - 0.1*n)*0.1)*dtimedt;
 
-    EXPECT_NEAR(Value(dqdt[Road_t::IIDTIME]) , Value(dtimedt) , 5.0e-11);
-    EXPECT_NEAR(Value(dqdt[Road_t::IIDN])    , Value(dndt)    , 5.0e-11);
-    EXPECT_NEAR(Value(dqdt[Road_t::IIDALPHA]), Value(dalphadt), 5.0e-11);
+    EXPECT_NEAR(Value(dqdt[Road_t::state_names::TIME]) , Value(dtimedt) , 5.0e-11);
+    EXPECT_NEAR(Value(dqdt[Road_t::state_names::N])    , Value(dndt)    , 5.0e-11);
+    EXPECT_NEAR(Value(dqdt[Road_t::state_names::ALPHA]), Value(dalphadt), 5.0e-11);
 }
 
   

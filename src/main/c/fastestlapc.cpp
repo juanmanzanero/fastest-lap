@@ -413,39 +413,39 @@ double vehicle_get_property_generic(Vehicle_t& vehicle, const double* c_q, const
         return s;
 
     else if ( property_name == "n" )
-        return q[Vehicle_t::Road_type::IN];
+        return q[Vehicle_t::Road_type::input_state_names::N];
 
     else if ( property_name == "alpha" )
-        return q[Vehicle_t::Road_type::IALPHA];
+        return q[Vehicle_t::Road_type::input_state_names::ALPHA];
 
     else if ( property_name == "u" )
-        return q[Vehicle_t::Chassis_type::IU];
+        return q[Vehicle_t::Chassis_type::input_state_names::U];
 
     else if ( property_name == "v" )
-        return q[Vehicle_t::Chassis_type::IV];
+        return q[Vehicle_t::Chassis_type::input_state_names::V];
 
     else if ( property_name == "time" )
-        return q[Vehicle_t::Road_type::ITIME];
+        return q[Vehicle_t::Road_type::input_state_names::TIME];
 
     else if ( property_name == "delta" )
-        return u[Vehicle_t::Chassis_type::Front_axle_type::ISTEERING];
+        return u[Vehicle_t::Chassis_type::Front_axle_type::Axle_type::control_names::STEERING];
 
     else if ( property_name == "psi" )
         return vehicle.get_road().get_psi();
 
     else if ( property_name == "omega" )
-        return q[Vehicle_t::Chassis_type::IOMEGA];
+        return q[Vehicle_t::Chassis_type::input_state_names::OMEGA];
 
     else if ( property_name == "throttle" )
     {
         if constexpr (std::is_same<Vehicle_t, lot2016kart_all>::value)
         {
-            return u[Vehicle_t::Chassis_type::Rear_axle_type::ITORQUE];
+            return u[Vehicle_t::Chassis_type::Rear_axle_type::controls_names::TORQUE];
         }
 
         else if constexpr (std::is_same<Vehicle_t, limebeer2014f1_all>::value)
         {
-            return u[Vehicle_t::Chassis_type::ITHROTTLE];
+            return u[Vehicle_t::Chassis_type::controls_names::THROTTLE];
         }
         else
         {
@@ -462,7 +462,7 @@ double vehicle_get_property_generic(Vehicle_t& vehicle, const double* c_q, const
 
         else if constexpr (std::is_same<Vehicle_t, limebeer2014f1_all>::value)
         {
-            return u[Vehicle_t::Chassis_type::IBRAKE_BIAS];
+            return u[Vehicle_t::Chassis_type::controls_names::BRAKE_BIAS];
         }
         else
         {
@@ -557,7 +557,7 @@ double vehicle_get_property_generic(Vehicle_t& vehicle, const double* c_q, const
     {
         if constexpr (std::is_same<Vehicle_t, limebeer2014f1_all>::value)
         {
-            return qa[Vehicle_t::vehicle_scalar_curvilinear::Chassis_type::IFZFL];
+            return qa[Vehicle_t::vehicle_scalar_curvilinear::Chassis_type::algebraic_state_names::FZFL];
         }
         else 
         {
@@ -569,7 +569,7 @@ double vehicle_get_property_generic(Vehicle_t& vehicle, const double* c_q, const
     {
         if constexpr (std::is_same<Vehicle_t, limebeer2014f1_all>::value)
         {
-            return qa[Vehicle_t::vehicle_scalar_curvilinear::Chassis_type::IFZFR];
+            return qa[Vehicle_t::vehicle_scalar_curvilinear::Chassis_type::algebraic_state_names::FZFR];
         }
         else 
         {
@@ -581,7 +581,7 @@ double vehicle_get_property_generic(Vehicle_t& vehicle, const double* c_q, const
     {
         if constexpr (std::is_same<Vehicle_t, limebeer2014f1_all>::value)
         {
-            return qa[Vehicle_t::vehicle_scalar_curvilinear::Chassis_type::IFZRL];
+            return qa[Vehicle_t::vehicle_scalar_curvilinear::Chassis_type::algebraic_state_names::FZRL];
         }
         else 
         {
@@ -593,7 +593,7 @@ double vehicle_get_property_generic(Vehicle_t& vehicle, const double* c_q, const
     {
         if constexpr (std::is_same<Vehicle_t, limebeer2014f1_all>::value)
         {
-            return qa[Vehicle_t::vehicle_scalar_curvilinear::Chassis_type::IFZRR];
+            return qa[Vehicle_t::vehicle_scalar_curvilinear::Chassis_type::algebraic_state_names::FZRR];
         }
         else 
         {
@@ -1238,7 +1238,7 @@ void compute_propagation(Vehicle_t car, double* c_q, double* c_qa, double* c_u, 
     std::copy_n(c_u_next, Vehicle_t::NCONTROL, u_next.begin());
 
     // (2) Parse options
-    typename Crank_nicolson<Vehicle_t,Vehicle_t::NSTATE,Vehicle_t::NALGEBRAIC,Vehicle_t::NCONTROL>::Options opts;
+    typename Crank_nicolson<decltype(car)>::Options opts;
     if ( strlen(c_options) > 0 )
     {
         std::string options = c_options;
@@ -1252,7 +1252,7 @@ void compute_propagation(Vehicle_t car, double* c_q, double* c_qa, double* c_u, 
     }
 
     // (3) Take step
-    Crank_nicolson<Vehicle_t,Vehicle_t::NSTATE,Vehicle_t::NALGEBRAIC,Vehicle_t::NCONTROL>::take_step(car, u, u_next, q, qa, s, ds, opts);
+    Crank_nicolson<decltype(car)>::take_step(car, u, u_next, q, qa, s, ds, opts);
 
     // (4) Return the variables to the c version
     std::copy_n(q.begin(), Vehicle_t::NSTATE, c_q);
@@ -1291,6 +1291,35 @@ void propagate_vehicle(double* q, double* qa, double* u, const char* c_vehicle_n
         {
             compute_propagation(table_f1_3dof.at(vehicle_name).cartesian_ad, q, qa, u, s, ds, u_next, options);
         }
+    }
+ }
+ CATCH()
+}
+
+template<typename vehicle_t>
+void compute_steady_state(vehicle_t& car, double* input_states, double* algebraic_states, double* controls, double v, double ax, double ay)
+{
+    Steady_state ss(car);
+    auto sol = ss.solve(v,ax,ay);
+
+    std::copy(sol.input_states.cbegin()    , sol.input_states.cend()    , input_states);
+    std::copy(sol.algebraic_states.cbegin(), sol.algebraic_states.cend(), algebraic_states);
+    std::copy(sol.controls.cbegin()        , sol.controls.cend()        , controls);
+}
+
+
+void steady_state(double*input_states, double* algebraic_states, double* controls, const char* c_vehicle_name, double v, double ax, double ay) 
+{
+ try
+ {
+    const std::string vehicle_name(c_vehicle_name);
+    if ( table_kart_6dof.count(vehicle_name) != 0 )
+    {
+        compute_steady_state(table_kart_6dof.at(vehicle_name).cartesian_ad, input_states, algebraic_states, controls, v, ax, ay);
+    }
+    else if ( table_f1_3dof.count(vehicle_name) != 0 )
+    {
+        compute_steady_state(table_f1_3dof.at(vehicle_name).cartesian_ad, input_states, algebraic_states, controls, v, ax, ay);
     }
  }
  CATCH()
@@ -1476,7 +1505,6 @@ struct Optimal_laptime_configuration
                 }
                 else if ( control_type[i_control] == "constant" )
                 {
-                    throw fastest_lap_exception("[ERROR] To be implemented"); 
                 }
                 else if ( control_type[i_control] == "hypermesh" )
                 {
@@ -1559,7 +1587,7 @@ struct Optimal_laptime_configuration
     static std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NCONTROL> get_default_dissipations()
     {
         if constexpr (std::is_same_v<vehicle_t,limebeer2014f1_all>)
-            return {5.0, 8.0e-4, 8.0e-4, 0.0};
+            return {50.0, 20.0*8.0e-4, 20.0*8.0e-4, 0.0};
         else if constexpr (std::is_same_v<vehicle_t,lot2016kart_all>)
             return {1.0e-2, 200*200*1.0e-10};
         else
@@ -1586,7 +1614,7 @@ typename Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>::template C
         }
         else if ( conf.control_type[j] == "constant" )
         {
-            throw fastest_lap_exception("[ERROR] Not implemented yet");
+            control_variables[j] = Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>::create_constant(u_steady_state[j]);
         }
         else if ( conf.control_type[j] == "hypermesh" )
         {
@@ -1637,7 +1665,7 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
     auto ss = Steady_state(car_cart).solve(v,0.0,0.0); 
 
     if constexpr (std::is_same_v<vehicle_t,lot2016kart_all>)
-        ss.u[1] = 0.0;
+        ss.controls[1] = 0.0;
 
     // (5) Compute optimal laptime
 
@@ -1662,9 +1690,9 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
     // (5.2.a) Start from steady-state
     if ( !conf.warm_start )
     {
-        std::vector<std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NSTATE>> q0  = {static_cast<size_t>(n_points),ss.q};
-        std::vector<std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NALGEBRAIC>> qa0 = {static_cast<size_t>(n_points),ss.qa};
-        auto control_variables = construct_control_variables(conf, static_cast<size_t>(n_points), ss.u); 
+        std::vector<std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NSTATE>> q0  = {static_cast<size_t>(n_points),ss.input_states};
+        std::vector<std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NALGEBRAIC>> qa0 = {static_cast<size_t>(n_points),ss.algebraic_states};
+        auto control_variables = construct_control_variables(conf, static_cast<size_t>(n_points), ss.controls); 
 
         if ( conf.set_initial_condition )
         {
@@ -1676,18 +1704,18 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
             {   
                 if ( control_variables[j].optimal_control_type == Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>::FULL_MESH)
                 {
-                    control_variables[j].u.front() = conf.u_start[j];
+                    control_variables[j].controls.front() = conf.u_start[j];
                 }
             }
         }
-        opt_laptime = Optimal_laptime(arclength, conf.is_closed, conf.is_direct, car_curv, q0, qa0, control_variables, opts);
+        opt_laptime = Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>(arclength, conf.is_closed, conf.is_direct, car_curv, q0, qa0, control_variables, opts);
     }
     // (5.2.b) Warm start
     else
     {
-        opt_laptime = Optimal_laptime(get_warm_start<vehicle_t>().s, get_warm_start<vehicle_t>().is_closed, get_warm_start<vehicle_t>().is_direct, 
-                        car_curv, get_warm_start<vehicle_t>().q, 
-                        get_warm_start<vehicle_t>().qa, get_warm_start<vehicle_t>().control_variables, 
+        opt_laptime = Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>(get_warm_start<vehicle_t>().s, get_warm_start<vehicle_t>().is_closed, get_warm_start<vehicle_t>().is_direct,
+                        car_curv, get_warm_start<vehicle_t>().input_states, 
+                        get_warm_start<vehicle_t>().algebraic_states, get_warm_start<vehicle_t>().controls, 
                         get_warm_start<vehicle_t>().optimization_data.zl, get_warm_start<vehicle_t>().optimization_data.zu, 
                         get_warm_start<vehicle_t>().optimization_data.lambda, opts);
     }
@@ -1735,7 +1763,7 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
         {
             for (size_t i = 0; i < car_curv_sc_const.get_parameters().get_number_of_parameters(); ++i)
             {
-                table_scalar.insert({conf.output_variables_prefix + "derivatives/" + "laptime" + "/" + parameter_aliases[i], opt_laptime.dlaptimedp[i]});
+                table_scalar.insert({conf.output_variables_prefix + "derivatives/" + "laptime" + "/" + parameter_aliases[i], opt_laptime.dlaptime_dp[i]});
             }
         }
     }
@@ -1771,8 +1799,8 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
     for (int i = 0; i < n_points; ++i) {
 
         // (6.2.4.1) Update car
-        const auto u_i = opt_laptime.control_variables.control_array_at_s(car_curv,i,s[i]);
-        car_curv_sc(opt_laptime.q[i], opt_laptime.qa[i], u_i, s[i]);
+        const auto controls_i = opt_laptime.controls.control_array_at_s(car_curv,i,s[i]);
+        car_curv_sc(opt_laptime.input_states[i], opt_laptime.algebraic_states[i], controls_i, s[i]);
         const auto outputs_map = car_curv_sc.get_outputs_map();
 
         for (size_t i_var = 0; i_var < v_variables_to_save.size(); ++i_var) {
@@ -1787,21 +1815,21 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
             // (6.2.4.3) Find the variable in the state vector
             const auto q_idx = std::find(q_names.cbegin(), q_names.cend(), variable_name);
             if ( q_idx != q_names.cend() ) {
-                data[i_var][i] = opt_laptime.q[i][std::distance(q_names.cbegin(), q_idx)];
+                data[i_var][i] = opt_laptime.input_states[i][std::distance(q_names.cbegin(), q_idx)];
                 continue;
             }
 
             // (6.2.4.4) Find the variable in the algebraic state vector
             const auto qa_idx = std::find(qa_names.cbegin(), qa_names.cend(), variable_name);
             if ( qa_idx != qa_names.cend() ) {
-                data[i_var][i] = opt_laptime.qa[i][std::distance(qa_names.cbegin(), qa_idx)];
+                data[i_var][i] = opt_laptime.algebraic_states[i][std::distance(qa_names.cbegin(), qa_idx)];
                 continue;
             }
 
             // (6.2.4.5) Find the variable in the controls vector
             const auto u_idx = std::find(u_names.cbegin(), u_names.cend(), variable_name);
             if ( u_idx != u_names.cend() ) {
-                data[i_var][i] = u_i[std::distance(u_names.cbegin(), u_idx)];
+                data[i_var][i] = controls_i[std::distance(u_names.cbegin(), u_idx)];
                 continue;
             }
 
@@ -1824,12 +1852,12 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
             for (int i = 0; i < n_points; ++i) {
                 if ( variable_name == "chassis.velocity.x" ) {
                     for (size_t p = 0; p < car_curv_sc_const.get_parameters().get_number_of_parameters(); ++p) {
-                        ddatadp[p][i] = opt_laptime.dqdp[p][i][vehicle_t::vehicle_scalar_curvilinear::Chassis_type::IU];
+                        ddatadp[p][i] = opt_laptime.dinput_states_dp[p][i][vehicle_t::vehicle_scalar_curvilinear::Chassis_type::input_state_names::U];
                     }
                 }
                 else if ( variable_name == "time" ) {
                     for (size_t p = 0; p < car_curv_sc_const.get_parameters().get_number_of_parameters(); ++p) {
-                        ddatadp[p][i] = opt_laptime.dqdp[p][i][vehicle_t::vehicle_scalar_curvilinear::Road_type::ITIME];
+                        ddatadp[p][i] = opt_laptime.dinput_states_dp[p][i][vehicle_t::vehicle_scalar_curvilinear::Road_type::input_state_names::TIME];
                     }
                 }
             }

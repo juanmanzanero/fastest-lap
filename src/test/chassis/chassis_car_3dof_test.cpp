@@ -21,26 +21,26 @@ class Chassis_car_3dof_test : public ::testing::Test
         std::array<scalar,limebeer2014f1<scalar>::cartesian::NCONTROL> u_in;
         std::array<scalar,limebeer2014f1<scalar>::cartesian::NALGEBRAIC> qa_in;
 
-        q_in[Front_axle_t::IKAPPA_LEFT]  = kappa_fl;
-        q_in[Front_axle_t::IKAPPA_RIGHT] = kappa_fr;
-        q_in[Rear_axle_t::IKAPPA_LEFT]   = kappa_rl;
-        q_in[Rear_axle_t::IKAPPA_RIGHT]  = kappa_rr;
-        q_in[Chassis_t::IU]              = u;
-        q_in[Chassis_t::IV]              = v;
-        q_in[Chassis_t::IOMEGA]          = omega;
-        q_in[Road_t::IX]                 = x;
-        q_in[Road_t::IY]                 = y;
-        q_in[Road_t::IPSI]               = psi;
+        q_in[Front_axle_t::input_state_names::KAPPA_LEFT]  = kappa_fl/tire_fl.get_model().maximum_kappa(-neg_Fz_fl);
+        q_in[Front_axle_t::input_state_names::KAPPA_RIGHT] = kappa_fr/tire_fr.get_model().maximum_kappa(-neg_Fz_fr);
+        q_in[Rear_axle_t::input_state_names::KAPPA_LEFT]   = kappa_rl/tire_rl.get_model().maximum_kappa(-neg_Fz_rl);
+        q_in[Rear_axle_t::input_state_names::KAPPA_RIGHT]  = kappa_rr/tire_rr.get_model().maximum_kappa(-neg_Fz_rr);
+        q_in[Chassis_t::input_state_names::U]              = u;
+        q_in[Chassis_t::input_state_names::V]              = v;
+        q_in[Chassis_t::input_state_names::OMEGA]          = omega;
+        q_in[Road_t::input_state_names::X]                 = x;
+        q_in[Road_t::input_state_names::Y]                 = y;
+        q_in[Road_t::input_state_names::PSI]               = psi;
 
-        u_in[Front_axle_t::ISTEERING] = delta;
-        u_in[Rear_axle_t::IBOOST]     = 0.0;
-        u_in[Chassis_t::ITHROTTLE]    = throttle;
-        u_in[Chassis_t::IBRAKE_BIAS]  = 0.6;
+        u_in[Front_axle_t::control_names::STEERING] = delta;
+        u_in[Rear_axle_t::control_names::BOOST]     = 0.0;
+        u_in[Chassis_t::control_names::THROTTLE]    = throttle;
+        u_in[Chassis_t::control_names::BRAKE_BIAS]  = 0.6;
 
-        qa_in[Chassis_t::IFZFL] = Fz_fl/(9.81*660.0);
-        qa_in[Chassis_t::IFZFR] = Fz_fr/(9.81*660.0);
-        qa_in[Chassis_t::IFZRL] = Fz_rl/(9.81*660.0);
-        qa_in[Chassis_t::IFZRR] = Fz_rr/(9.81*660.0);
+        qa_in[Chassis_t::algebraic_state_names::FZFL] = Fz_fl/(9.81*660.0);
+        qa_in[Chassis_t::algebraic_state_names::FZFR] = Fz_fr/(9.81*660.0);
+        qa_in[Chassis_t::algebraic_state_names::FZRL] = Fz_rl/(9.81*660.0);
+        qa_in[Chassis_t::algebraic_state_names::FZRR] = Fz_rr/(9.81*660.0);
 
         chassis.set_state_and_controls(q_in,qa_in,u_in);
         chassis.update(x,y,psi);
@@ -70,6 +70,7 @@ class Chassis_car_3dof_test : public ::testing::Test
     const scalar u = vel*cos(psi);
     const scalar v = vel*sin(psi);
     const scalar omega = 0.3;
+
 
     const scalar delta = -10.0*DEG;
     const scalar throttle = 0.5;
@@ -173,10 +174,10 @@ TEST_F(Chassis_car_3dof_test, check_set_state)
     EXPECT_DOUBLE_EQ(tire_rl.get_omega(), omega_rl); 
     EXPECT_DOUBLE_EQ(tire_rr.get_omega(), omega_rr); 
 
-    EXPECT_DOUBLE_EQ(chassis.get_negative_normal_force(Chassis_t::IFZFL), neg_Fz_fl);
-    EXPECT_DOUBLE_EQ(chassis.get_negative_normal_force(Chassis_t::IFZFR), neg_Fz_fr);
-    EXPECT_DOUBLE_EQ(chassis.get_negative_normal_force(Chassis_t::IFZRL), neg_Fz_rl);
-    EXPECT_DOUBLE_EQ(chassis.get_negative_normal_force(Chassis_t::IFZRR), neg_Fz_rr);
+    EXPECT_DOUBLE_EQ(chassis.get_negative_normal_force(Chassis_t::algebraic_state_names::FZFL), neg_Fz_fl);
+    EXPECT_DOUBLE_EQ(chassis.get_negative_normal_force(Chassis_t::algebraic_state_names::FZFR), neg_Fz_fr);
+    EXPECT_DOUBLE_EQ(chassis.get_negative_normal_force(Chassis_t::algebraic_state_names::FZRL), neg_Fz_rl);
+    EXPECT_DOUBLE_EQ(chassis.get_negative_normal_force(Chassis_t::algebraic_state_names::FZRR), neg_Fz_rr);
 
     EXPECT_DOUBLE_EQ(tire_fl.get_force()[Z], neg_Fz_fl);
     EXPECT_DOUBLE_EQ(tire_fr.get_force()[Z], neg_Fz_fr);

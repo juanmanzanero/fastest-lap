@@ -1,5 +1,5 @@
-#ifndef __ROAD_CURVILINEAR_H__
-#define __ROAD_CURVILINEAR_H__
+#ifndef ROAD_CURVILINEAR_H
+#define ROAD_CURVILINEAR_H
 
 #include "road.h"
 #include "lion/math/polynomial.h"
@@ -15,12 +15,23 @@ class Road_curvilinear : public Road<Timeseries_t,STATE0,CONTROL0>
     Road_curvilinear() = default;
     Road_curvilinear(const Track_t& track);
 
-    enum State { ITIME = base_type::STATE_END, IN, IALPHA, STATE_END };
-    enum Controls { CONTROL_END = base_type::CONTROL_END };
-    
-    constexpr static size_t IIDTIME  = ITIME;
-    constexpr static size_t IIDN     = IN;
-    constexpr static size_t IIDALPHA = IALPHA;
+    struct input_state_names
+    {
+        enum { TIME = base_type::input_state_names::end, N, ALPHA, end };
+    };
+
+    struct state_names
+    {
+        enum { TIME  = input_state_names::TIME, 
+               N     = input_state_names::N,
+               ALPHA = input_state_names::ALPHA 
+             };
+    };
+
+    struct control_names
+    {
+        enum { end = base_type::control_names::end };
+    };
 
     void change_track(const Track_t& track) { _track = track; }
 
@@ -50,23 +61,28 @@ class Road_curvilinear : public Road<Timeseries_t,STATE0,CONTROL0>
     void update(const Timeseries_t u, const Timeseries_t v, const Timeseries_t omega);
 
     template<size_t N>
-    void get_state_derivative(std::array<Timeseries_t,N>& dqdt) const;
+    void get_state_and_state_derivative(std::array<Timeseries_t,N>& states, std::array<Timeseries_t,N>& dstates_dt) const;
 
     template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_controls(const scalar t, const std::array<Timeseries_t,NSTATE>& q, const std::array<Timeseries_t,NCONTROL>& u);
+    void set_state_and_controls(const scalar t, 
+                                const std::array<Timeseries_t,NSTATE>& input_states, 
+                                const std::array<Timeseries_t,NCONTROL>& controls);
 
     //! Set the state and controls upper, lower, and default values
     template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_control_upper_lower_and_default_values(std::array<scalar,NSTATE>& q_def,
-                                                               std::array<scalar,NSTATE>& q_lb,
-                                                               std::array<scalar,NSTATE>& q_ub,
-                                                               std::array<scalar,NCONTROL>& u_def,
-                                                               std::array<scalar,NCONTROL>& u_lb,
-                                                               std::array<scalar,NCONTROL>& u_ub 
+    void set_state_and_control_upper_lower_and_default_values(std::array<scalar,NSTATE>& input_states_def,
+                                                              std::array<scalar,NSTATE>& input_states_lb,
+                                                              std::array<scalar,NSTATE>& input_states_ub,
+                                                              std::array<scalar,NCONTROL>& controls_def,
+                                                              std::array<scalar,NCONTROL>& controls_lb,
+                                                              std::array<scalar,NCONTROL>& controls_ub
                                                               ) const;
 
     template<size_t NSTATE, size_t NCONTROL>
-    static void set_state_and_control_names(std::string& key_name, std::array<std::string,NSTATE>& q, std::array<std::string,NCONTROL>& u);
+    static void set_state_and_control_names(std::string& key_name, 
+                                            std::array<std::string,NSTATE>& input_state_names, 
+                                            std::array<std::string,NCONTROL>& control_names
+                                           );
 
     void update_track(const scalar t);
 
@@ -97,36 +113,6 @@ class Road_curvilinear : public Road<Timeseries_t,STATE0,CONTROL0>
     Timeseries_t _dalpha;
 };
 
-
-inline vPolynomial construct_ninety_degrees_bend(double L_end = 20.0)
-{
-    // Part 1: 20m straight
-    scalar L1 = 20.0;
-    std::vector<sVector3d> y1 = { {0.0,0.0,0.0}, {10.0, 0.0, 0.0}, {20.0,0.0,0.0} };
- 
-    // Part 2: 90 degrees bend with 10m radius
-    scalar L2 = 10*pi/2.0;
-    std::vector<sVector3d> y2;
-    const size_t N2 = 10;
- 
-    const auto xi2 = std::get<0>(gauss_legendre_lobatto_nodes_and_weights(N2));
-
-    for (size_t i = 0; i <= N2; ++i)
-        y2.push_back(sVector3d(20.0+10.0*sin(pi/4.0*(xi2[i]+1.0)),10.0-10.0*cos(pi/4.0*(xi2[i]+1.0)),0.0));
-
-    // Part 3: 20m straight
-    scalar L3 = L_end;
-    std::vector<sVector3d> y3 = { y2.back(), {30.0, 10.0+L_end*0.5, 0.0} , {30.0,10.0+L_end,0.0} };
- 
-    return {0.0, {L1,L2,L3}, {y1,y2,y3}};
-}
-
-static inline vPolynomial ninety_degrees_bend = construct_ninety_degrees_bend();
-
-
-
-
 #include "road_curvilinear.hpp"
-
 
 #endif

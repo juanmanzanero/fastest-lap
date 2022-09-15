@@ -30,11 +30,11 @@ TEST(Track_by_polynomial_test, evaluation_at_nodes)
     }
 }
 
-#ifdef TEST_LIBFASTESTLAPC
 std::unordered_map<std::string,Track_by_polynomial>& get_table_track();
 
 TEST(Track_by_polynomial_test, create_track_c_api)
 {
+#ifdef TEST_LIBFASTESTLAPC
     set_print_level(0);
     create_track_from_xml("test_track", "./database/tracks/catalunya/catalunya.xml");
     
@@ -99,5 +99,7 @@ TEST(Track_by_polynomial_test, create_track_c_api)
     // Delete
     delete_variable("test_track");
     EXPECT_EQ(get_table_track().count("test_track"), 0);
-}
+#else
+    GTEST_SKIP();
 #endif
+}

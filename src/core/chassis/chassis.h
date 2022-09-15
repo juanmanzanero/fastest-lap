@@ -1,5 +1,5 @@
-#ifndef __CHASSIS_H__
-#define __CHASSIS_H__
+#ifndef CHASSIS_H
+#define CHASSIS_H
 
 #include "lion/math/matrix3x3.h"
 #include "lion/frame/frame.h"
@@ -29,20 +29,32 @@ class Chassis
     typedef RearAxle_t rear_axle_type;
 
     //! State variables: the basic 3 dof - longitudinal/lateral velocity + yaw
-    enum State     
-    { 
-        IU = STATE0,    //! Longitudinal velocity (in road frame) [m/s]
-        IV,             //! Lateral velocity (in road frame) [m/s]
-        IOMEGA,         //! Yaw speed [rad/s]
-        STATE_END    
-    } ;
+    struct input_state_names
+    {
+        enum
+        {
+            U = STATE0,    //! Longitudinal velocity (in road frame) [m/s]
+            V,             //! Lateral velocity (in road frame) [m/s]
+            OMEGA,         //! Yaw speed [rad/s]
+            end
+        };
+    };
+
+    struct state_names
+    {
+        enum
+        {
+            U = input_state_names::U,
+            V = input_state_names::V,
+            OMEGA = input_state_names::OMEGA
+        };
+    };
 
     //! Control variables: none
-    enum Controls  { CONTROL_END  = CONTROL0  } ;
-    
-    constexpr static size_t IIDU = IU;          //! Longitudinal acceleration (in road frame) [m/s2]
-    constexpr static size_t IIDV = IV;          //! Lateral acceleration (in road frame) [m/s2]
-    constexpr static size_t IIDOMEGA = IOMEGA;  //! Yaw acceleration [rad/s2]
+    struct control_names
+    {
+        enum { end = CONTROL0 };
+    };
 
     //! Default constructor
     Chassis() = default;
@@ -76,6 +88,11 @@ class Chassis
 
     //! Fill the corresponding nodes of an xml document
     void fill_xml(Xml_document& doc) const;
+
+    template<size_t NSTATE, size_t NCONTROL>
+    void transform_states_to_input_states(const std::array<Timeseries_t,NSTATE>& states,
+                                          const std::array<Timeseries_t,NCONTROL>& controls,
+                                          std::array<Timeseries_t,NSTATE>& input_states);
 
     //! Set state: longitudinal/lateral velocities and yaw speed
     //! @param[in] u: longitudinal velocity in road frame [m/s]
@@ -165,23 +182,24 @@ class Chassis
     //! Load the time derivative of the state variables computed herein to the dqdt
     //! @param[out] dqdt: the vehicle state vector time derivative
     template<size_t N>
-    void get_state_derivative(std::array<Timeseries_t,N>& dqdt) const;
+    void get_state_and_state_derivative(std::array<Timeseries_t,N>& state, 
+                                        std::array<Timeseries_t, N>& dstate_dt) const;
 
     //! Set the state variables of this class
     //! @param[in] q: the vehicle state vector 
     //! @param[in] u: the vehicle control vector
     template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_controls(const std::array<Timeseries_t,NSTATE>& q, 
-                                const std::array<Timeseries_t,NCONTROL>& u);
+    void set_state_and_controls(const std::array<Timeseries_t,NSTATE>& input_states, 
+                                const std::array<Timeseries_t,NCONTROL>& controls);
 
     //! Set the state and controls upper, lower, and default values
     template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_control_upper_lower_and_default_values(std::array<scalar,NSTATE>& q_def,
-                                                               std::array<scalar,NSTATE>& q_lb,
-                                                               std::array<scalar,NSTATE>& q_ub,
-                                                               std::array<scalar,NCONTROL>& u_def,
-                                                               std::array<scalar,NCONTROL>& u_lb,
-                                                               std::array<scalar,NCONTROL>& u_ub,
+    void set_state_and_control_upper_lower_and_default_values(std::array<scalar,NSTATE>& input_states_def,
+                                                               std::array<scalar,NSTATE>& input_states_lb,
+                                                               std::array<scalar,NSTATE>& input_states_ub,
+                                                               std::array<scalar,NCONTROL>& controls_def,
+                                                               std::array<scalar,NCONTROL>& controls_lb,
+                                                               std::array<scalar,NCONTROL>& controls_ub,
                                                                scalar velocity_x_lb, 
                                                                scalar velocity_x_ub, 
                                                                scalar velocity_y_ub, 
@@ -193,8 +211,8 @@ class Chassis
     //! @param[out] q: the vehicle state names
     //! @param[out] u: the vehicle control names
     template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_control_names(std::array<std::string,NSTATE>& q, 
-                                     std::array<std::string,NCONTROL>& u) const;
+    void set_state_and_control_names(std::array<std::string,NSTATE>& input_states, 
+                                     std::array<std::string,NCONTROL>& controls) const;
 
 
     bool is_ready() const { return _front_axle.is_ready() && _rear_axle.is_ready() && 

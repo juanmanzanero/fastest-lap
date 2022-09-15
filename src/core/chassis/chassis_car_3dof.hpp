@@ -1,5 +1,5 @@
-#ifndef __CHASSIS_CAR_3DOF_HPP__
-#define __CHASSIS_CAR_3DOF_HPP__
+#ifndef CHASSIS_CAR_3DOF_HPP
+#define CHASSIS_CAR_3DOF_HPP
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
 inline Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::Chassis_car_3dof()
@@ -101,6 +101,13 @@ inline void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0
 }
 
 
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
+template<size_t NSTATE, size_t NCONTROL>
+inline void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::transform_states_to_input_states
+    (const std::array<Timeseries_t,NSTATE>& states, const std::array<Timeseries_t,NCONTROL>& controls, std::array<Timeseries_t,NSTATE>& input_states)
+{
+    base_type::transform_states_to_input_states(states, controls, input_states);
+}
 
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
@@ -206,58 +213,64 @@ scalar Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::ge
 // ------- Handle state vector
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
 template<size_t N>
-void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::get_state_derivative(std::array<Timeseries_t,N>& dqdt) const
+void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::get_state_and_state_derivative
+    (std::array<Timeseries_t,N>& state, std::array<Timeseries_t, N>& dstate_dt) const
 {
-    base_type::get_state_derivative(dqdt);
+    base_type::get_state_and_state_derivative(state, dstate_dt);
 }
 
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
 template<size_t NALGEBRAIC_>
-void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::get_algebraic_constraints(std::array<Timeseries_t,NALGEBRAIC_>& dqa) const
+void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::get_algebraic_constraints
+    (std::array<Timeseries_t,NALGEBRAIC_>& algebraic_equations) const
 {
     static_assert(NALGEBRAIC_ == NALGEBRAIC);
 
-    dqa[0] = _Fz_eq/(g0*base_type::get_mass());
-    dqa[1] = _Mx_eq/(g0*base_type::get_mass());
-    dqa[2] = _My_eq/(g0*base_type::get_mass());
-    dqa[3] = _roll_balance_eq/(g0*base_type::get_mass());
+    algebraic_equations[0] = _Fz_eq/(g0*base_type::get_mass());
+    algebraic_equations[1] = _Mx_eq/(g0*base_type::get_mass());
+    algebraic_equations[2] = _My_eq/(g0*base_type::get_mass());
+    algebraic_equations[3] = _roll_balance_eq/(g0*base_type::get_mass());
 }
 
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
 template<size_t NSTATE, size_t NCONTROL>
-void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_state_and_control_names(std::array<std::string,NSTATE>& q, std::array<std::string,NALGEBRAIC>& qa, std::array<std::string,NCONTROL>& u) const
+void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_state_and_control_names
+    (std::array<std::string,NSTATE>& input_states, std::array<std::string,NALGEBRAIC>& algebraic_states, 
+     std::array<std::string,NCONTROL>& controls) const
 {
-    base_type::set_state_and_control_names(q,u);
+    base_type::set_state_and_control_names(input_states, controls);
 
     // State ---
     // (empty)
 
     // Algebraic states ---
-    qa[IFZFL] = base_type::get_name() + ".Fz_fl";
+    algebraic_states[algebraic_state_names::FZFL] = base_type::get_name() + ".Fz_fl";
 
-    qa[IFZFR] = base_type::get_name() + ".Fz_fr";
+    algebraic_states[algebraic_state_names::FZFR] = base_type::get_name() + ".Fz_fr";
 
-    qa[IFZRL] = base_type::get_name() + ".Fz_rl";
+    algebraic_states[algebraic_state_names::FZRL] = base_type::get_name() + ".Fz_rl";
 
-    qa[IFZRR] = base_type::get_name() + ".Fz_rr";
+    algebraic_states[algebraic_state_names::FZRR] = base_type::get_name() + ".Fz_rr";
 
     // Controls ---
 
     // throttle
-    u[ITHROTTLE] = base_type::get_name() + ".throttle";
+    controls[control_names::THROTTLE] = base_type::get_name() + ".throttle";
 
     // brake bias
-    u[IBRAKE_BIAS] = base_type::get_name() + ".brake-bias";
+    controls[control_names::BRAKE_BIAS] = base_type::get_name() + ".brake-bias";
 }
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
 template<size_t NSTATE, size_t NCONTROL>
-void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_state_and_controls(const std::array<Timeseries_t,NSTATE>& q,
-    const std::array<Timeseries_t,NALGEBRAIC>& qa, const std::array<Timeseries_t,NCONTROL>& u)
+void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_state_and_controls
+    (const std::array<Timeseries_t,NSTATE>& input_states,
+     const std::array<Timeseries_t,NALGEBRAIC>& algebraic_states, 
+     const std::array<Timeseries_t,NCONTROL>& controls)
 {
-    base_type::set_state_and_controls(q,u);
+    base_type::set_state_and_controls(input_states,controls);
 
     // State ---
     // (empty)
@@ -265,36 +278,41 @@ void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_
     // Controls ---
 
     // throttle
-    _throttle = u[ITHROTTLE];
+    _throttle = controls[control_names::THROTTLE];
 
     // brake bias
-    _brake_bias = u[IBRAKE_BIAS];
+    _brake_bias = controls[control_names::BRAKE_BIAS];
 
     // Algebraic ---
 
     // Fz_fl
-    _Fz_fl = qa[IFZFL]*g0*base_type::get_mass();
+    _Fz_fl = algebraic_states[algebraic_state_names::FZFL]*g0*base_type::get_mass();
 
     // Fz_fr
-    _Fz_fr = qa[IFZFR]*g0*base_type::get_mass();
+    _Fz_fr = algebraic_states[algebraic_state_names::FZFR]*g0*base_type::get_mass();
 
     // Fz_rl
-    _Fz_rl = qa[IFZRL]*g0*base_type::get_mass();
+    _Fz_rl = algebraic_states[algebraic_state_names::FZRL]*g0*base_type::get_mass();
 
     // Fz_rr
-    _Fz_rr = qa[IFZRR]*g0*base_type::get_mass();
+    _Fz_rr = algebraic_states[algebraic_state_names::FZRR]*g0*base_type::get_mass();
 }
 
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
 template<size_t NSTATE, size_t NCONTROL>
 void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_state_and_control_upper_lower_and_default_values
-    (std::array<scalar, NSTATE>& q_def     , std::array<scalar, NSTATE>& q_lb     , std::array<scalar, NSTATE>& q_ub     ,
-    std::array<scalar , NALGEBRAIC>& qa_def, std::array<scalar, NALGEBRAIC>& qa_lb, std::array<scalar, NALGEBRAIC>& qa_ub,
-    std::array<scalar , NCONTROL>& u_def   , std::array<scalar, NCONTROL>& u_lb   , std::array<scalar, NCONTROL>& u_ub) const
+    (std::array<scalar, NSTATE>& input_states_def, std::array<scalar, NSTATE>& input_states_lb,
+     std::array<scalar, NSTATE>& input_states_ub, std::array<scalar,NALGEBRAIC>& algebraic_states_def,
+     std::array<scalar, NALGEBRAIC>& algebraic_states_lb, std::array<scalar,NALGEBRAIC>& algebraic_states_ub,
+     std::array<scalar, NCONTROL>& controls_def, std::array<scalar, NCONTROL>& controls_lb,
+     std::array<scalar, NCONTROL>& controls_ub) const
 {
     // Call function for the parent class
-    base_type::set_state_and_control_upper_lower_and_default_values(q_def, q_lb, q_ub, u_def, u_lb, u_ub, 50.0*KMH, 380.0*KMH, 50.0*KMH, 10.0);
+    base_type::set_state_and_control_upper_lower_and_default_values
+        (input_states_def, input_states_lb, input_states_ub, 
+         controls_def, controls_lb, controls_ub, 
+         50.0*KMH, 380.0*KMH, 50.0*KMH, 10.0);
 
     // State ---
     // (empty)
@@ -302,36 +320,36 @@ void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_
     // Controls ---
 
     // throttle
-    u_def[ITHROTTLE] = 0.0;
-    u_lb[ITHROTTLE]  = -1.0;
-    u_ub[ITHROTTLE]  = _maximum_throttle;
+    controls_def[control_names::THROTTLE] = 0.0;
+    controls_lb[control_names::THROTTLE]  = -1.0;
+    controls_ub[control_names::THROTTLE]  = _maximum_throttle;
 
     // brake bias
-    u_def[IBRAKE_BIAS] = Value(_brake_bias_0);
-    u_lb[IBRAKE_BIAS]  = 0.0;
-    u_ub[IBRAKE_BIAS]  = 1.0;
+    controls_def[control_names::BRAKE_BIAS] = Value(_brake_bias_0);
+    controls_lb[control_names::BRAKE_BIAS]  = 0.0;
+    controls_ub[control_names::BRAKE_BIAS]  = 1.0;
 
     // Algebraic ---
 
     // Fz_fl
-    qa_def[IFZFL] = 0.25;
-    qa_lb[IFZFL] = -3.0;
-    qa_ub[IFZFL] = -0.01;
+    algebraic_states_def[algebraic_state_names::FZFL] = 0.25;
+    algebraic_states_lb[algebraic_state_names::FZFL] = -3.0;
+    algebraic_states_ub[algebraic_state_names::FZFL] = -0.01;
 
     // Fz_fr
-    qa_def[IFZFR] = 0.25;
-    qa_lb[IFZFR] = -3.0;
-    qa_ub[IFZFR] = -0.01;
+    algebraic_states_def[algebraic_state_names::FZFR] = 0.25;
+    algebraic_states_lb[algebraic_state_names::FZFR] = -3.0;
+    algebraic_states_ub[algebraic_state_names::FZFR] = -0.01;
 
     // Fz_rl
-    qa_def[IFZRL] = 0.25;
-    qa_lb[IFZRL] = -3.0;
-    qa_ub[IFZRL] = -0.01;
+    algebraic_states_def[algebraic_state_names::FZRL] = 0.25;
+    algebraic_states_lb[algebraic_state_names::FZRL] = -3.0;
+    algebraic_states_ub[algebraic_state_names::FZRL] = -0.01;
 
     // Fz_rr
-    qa_def[IFZRR] = 0.25;
-    qa_lb[IFZRR] = -3.0;
-    qa_ub[IFZRR] = -0.01;
+    algebraic_states_def[algebraic_state_names::FZRR] = 0.25;
+    algebraic_states_lb[algebraic_state_names::FZRR] = -3.0;
+    algebraic_states_ub[algebraic_state_names::FZRR] = -0.01;
 }
 
 

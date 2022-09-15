@@ -1,5 +1,5 @@
-#ifndef __DYNAMIC_MODEL_CAR_H__
-#define __DYNAMIC_MODEL_CAR_H__
+#ifndef DYNAMIC_MODEL_CAR_H
+#define DYNAMIC_MODEL_CAR_H
 
 #include <map>
 #include <vector>
@@ -67,50 +67,79 @@ class Dynamic_model_car : public Dynamic_model<Timeseries_t>
     template<typename T>
     void set_parameter(const std::string& parameter, const T value);
 
-    //! The time derivative functor, dqdt = operator()(q,u,t)
+    //! Get the input states for given states
+    std::array<Timeseries_t, _NSTATE> transform_states_to_input_states(const std::array<Timeseries_t, _NSTATE>& states, 
+                                                                       const std::array<Timeseries_t, _NCONTROL>& controls 
+                                                                      ) const;
+
+
+    //! The time derivative functor, (q,dqdt) = operator()(x,u,t)
     //! Only enabled if the dynamic model has no algebraic equations
-    //! @param[in] q: state vector
+    //! @param[in] x: input state vector
     //! @param[in] u: controls vector
     //! @param[in] t: time/arclength
     template<size_t NALG = NALGEBRAIC>
-    std::enable_if_t<NALG==0,std::array<Timeseries_t,_NSTATE>> operator()(const std::array<Timeseries_t,_NSTATE>& q, 
-                                                                          const std::array<Timeseries_t,_NCONTROL>& u,
-                                                                          scalar t);
+    std::enable_if_t<NALG==0,std::array<Timeseries_t,_NSTATE>>
+        operator()(const std::array<Timeseries_t,_NSTATE>& states, 
+                   const std::array<Timeseries_t,_NCONTROL>& controls,
+                   scalar time);
 
-    //! The time derivative functor + algebraic equations: dqdt,dqa = operator()(q,qa,u,t)
-    //! @param[in] q: state vector
-    //! @param[in] qa: constraint variables vector
+    //! The time derivative functor + algebraic equations: (q,dqdt,dqa = operator()(x,qa,u,t)
+    //! @param[in] input_states: input state vector, states = f(input_states)
+    //! @param[in] algebraic_states: states which do not have a time derivative associated
     //! @param[in] u: controls vector
     //! @param[in] t: time/arclength
-    std::pair<std::array<Timeseries_t,_NSTATE>,std::array<Timeseries_t,Chassis_t::NALGEBRAIC>> operator()(const std::array<Timeseries_t,_NSTATE>& q,
-                                                                                                          const std::array<Timeseries_t,NALGEBRAIC>& qa,
-                                                                                                          const std::array<Timeseries_t,_NCONTROL>& u,
-                                                                                                          scalar t);
+    struct Dynamics_equations
+    {
+        std::array<Timeseries_t, _NSTATE> states;
+        std::array<Timeseries_t, _NSTATE> dstates_dt;
+        std::array<Timeseries_t,  NALGEBRAIC> algebraic_equations;
+    };
+
+    Dynamics_equations operator()(const std::array<Timeseries_t,_NSTATE>& input_states,
+                                  const std::array<Timeseries_t,NALGEBRAIC>& algebraic_states,
+                                  const std::array<Timeseries_t,_NCONTROL>& controls,
+                                  scalar time);
 
     //! The time derivative functor + algebraic equations, their Jacobians, and Hessians
-    //! @param[in] q: state vector
+    //! @param[in] x: input state vector
     //! @param[in] qa: constraint variables vector
     //! @param[in] u: controls vector
     //! @param[in] t: time/arclength
     struct Equations
     {
         // Values
-        std::array<scalar,_NSTATE> dqdt;
-        std::array<scalar,NALGEBRAIC> dqa;
+        std::array<scalar, _NSTATE> states;
+        std::array<scalar,_NSTATE> dstates_dt;
+        std::array<scalar,NALGEBRAIC> algebraic_equations;
 
-        // Jacobians: jac[i] represents the Jacobian of the i-th variable
-        std::array<std::array<scalar,_NSTATE+NALGEBRAIC+_NCONTROL>,_NSTATE> jac_dqdt; 
-        std::array<std::array<scalar,_NSTATE+NALGEBRAIC+_NCONTROL>, NALGEBRAIC> jac_dqa;
+        // Jacobians: jac[i] represents the Jacobian of the i-th variable w.r.t. the pack (input_states,algebraic_states,controls)
+        std::array<std::array<scalar,_NSTATE+NALGEBRAIC+_NCONTROL>,_NSTATE> jacobian_states; 
+        std::array<std::array<scalar,_NSTATE+NALGEBRAIC+_NCONTROL>,_NSTATE> jacobian_dstates_dt; 
+        std::array<std::array<scalar,_NSTATE+NALGEBRAIC+_NCONTROL>, NALGEBRAIC> jacobian_algebraic_equations;
 
         // Hessians: hess[i] represents the Hessian of the i-th variable
-        std::array<std::array<std::array<scalar,_NSTATE+NALGEBRAIC+_NCONTROL>,_NSTATE+NALGEBRAIC+_NCONTROL>,_NSTATE> hess_dqdt;     
-        std::array<std::array<std::array<scalar,_NSTATE+NALGEBRAIC+_NCONTROL>,_NSTATE+NALGEBRAIC+_NCONTROL>,NALGEBRAIC> hess_dqa;
+        std::array<std::array<std::array<scalar,_NSTATE+NALGEBRAIC+_NCONTROL>,_NSTATE+NALGEBRAIC+_NCONTROL>,_NSTATE> hessian_states;     
+        std::array<std::array<std::array<scalar,_NSTATE+NALGEBRAIC+_NCONTROL>,_NSTATE+NALGEBRAIC+_NCONTROL>,_NSTATE> hessian_dstates_dt;     
+        std::array<std::array<std::array<scalar,_NSTATE+NALGEBRAIC+_NCONTROL>,_NSTATE+NALGEBRAIC+_NCONTROL>,NALGEBRAIC> hessian_algebraic_equations;
+
+        // State-space equations, col major (A[i + n*j])
+        //
+        //  dqdot = A_qq.dq  + A_qqa.dqa  + B_q.du
+        //      0 = A_qaq.dq + A_qaqa.dqa + B_qa.du 
+        std::array<scalar, _NSTATE*_NSTATE>        A_qq;
+        std::array<scalar, _NSTATE*NALGEBRAIC>     A_qqa;
+        std::array<scalar,  NALGEBRAIC*_NSTATE>    A_qaq;
+        std::array<scalar,  NALGEBRAIC*NALGEBRAIC> A_qaqa;
+
+        std::array<scalar, _NSTATE*_NCONTROL>     B_q;
+        std::array<scalar,  NALGEBRAIC*_NCONTROL> B_qa;
     };
 
-    Equations equations(const std::array<scalar,_NSTATE>& q,
-                        const std::array<scalar,NALGEBRAIC>& qa,
-                        const std::array<scalar,_NCONTROL>& u,
-                        scalar t);
+    Equations equations(const std::array<scalar,_NSTATE>& input_states,
+                        const std::array<scalar,NALGEBRAIC>& algebraic_states,
+                        const std::array<scalar,_NCONTROL>& controls,
+                        scalar time);
 
     std::tuple<std::string,std::array<std::string,_NSTATE>,std::array<std::string,Chassis_t::NALGEBRAIC>,std::array<std::string,_NCONTROL>> 
         get_state_and_control_names() const;
@@ -118,15 +147,15 @@ class Dynamic_model_car : public Dynamic_model<Timeseries_t>
     //! Get state and control upper and lower values
     struct State_and_control_upper_lower_and_default_values
     {
-        std::array<scalar,_NSTATE> q_def;
-        std::array<scalar,_NSTATE> q_lb;
-        std::array<scalar,_NSTATE> q_ub;
-        std::array<scalar,NALGEBRAIC> qa_def;
-        std::array<scalar,NALGEBRAIC> qa_lb;
-        std::array<scalar,NALGEBRAIC> qa_ub;
-        std::array<scalar,_NCONTROL> u_def;
-        std::array<scalar,_NCONTROL> u_lb;
-        std::array<scalar,_NCONTROL> u_ub;
+        std::array<scalar,_NSTATE> input_states_def;
+        std::array<scalar,_NSTATE> input_states_lb;
+        std::array<scalar,_NSTATE> input_states_ub;
+        std::array<scalar,NALGEBRAIC> algebraic_states_def;
+        std::array<scalar,NALGEBRAIC> algebraic_states_lb;
+        std::array<scalar,NALGEBRAIC> algebraic_states_ub;
+        std::array<scalar,_NCONTROL> controls_def;
+        std::array<scalar,_NCONTROL> controls_lb;
+        std::array<scalar,_NCONTROL> controls_ub;
     };
 
     State_and_control_upper_lower_and_default_values get_state_and_control_upper_lower_and_default_values() const;

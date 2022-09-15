@@ -1,5 +1,5 @@
-#ifndef __CHASSIS_HPP__
-#define __CHASSIS_HPP__
+#ifndef CHASSIS_HPP
+#define CHASSIS_HPP
 
 #include "src/core/foundation/fastest_lap_exception.h"
 
@@ -128,6 +128,31 @@ void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::fill_xml(Xml_
     _rear_axle.fill_xml(doc); 
 }
 
+
+
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
+template<size_t NSTATE, size_t NCONTROL>
+inline void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::transform_states_to_input_states
+    (const std::array<Timeseries_t,NSTATE>& states, const std::array<Timeseries_t,NCONTROL>& controls, std::array<Timeseries_t,NSTATE>& input_states)
+{
+    const auto& u     = states[state_names::U];
+    const auto& v     = states[state_names::V];
+    const auto& omega = states[state_names::OMEGA];
+
+    // (1) Update the frames, the tires will want them updated
+    _road_frame.set_origin({0.0,0.0,0.0},{u,v,0.0},false);
+    _road_frame.set_rotation_angle(0,0.0,omega);
+
+    // (2) Transform
+    get_front_axle().transform_states_to_input_states(states, controls, input_states);
+    get_rear_axle().transform_states_to_input_states(states, controls, input_states);
+    
+    // Update input states, just as a placeholder if I ever switch to u=vtot.cos(beta), v=vtot.sin(beta)
+    input_states[input_state_names::U] = u; 
+    input_states[input_state_names::V] = v; 
+}
+
+
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
 void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_state(Timeseries_t u, Timeseries_t v, Timeseries_t omega)
 {
@@ -235,81 +260,90 @@ void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::update(Timese
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
 template<size_t NSTATE, size_t NCONTROL>
-void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_state_and_controls(const std::array<Timeseries_t,NSTATE>& q, const std::array<Timeseries_t,NCONTROL>& u)
+void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_state_and_controls
+    (const std::array<Timeseries_t,NSTATE>& input_states, const std::array<Timeseries_t,NCONTROL>& controls)
 {
-    get_front_axle().set_state_and_controls(q,u);
-    get_rear_axle().set_state_and_controls(q,u);
+    get_front_axle().set_state_and_controls(input_states, controls);
+    get_rear_axle().set_state_and_controls(input_states, controls);
 
     // u
-    _u = q[IU];
+    _u = input_states[input_state_names::U];
 
     // v
-    _v = q[IV];
+    _v = input_states[input_state_names::V];
 
     // oemga
-    _omega = q[IOMEGA];    
+    _omega = input_states[input_state_names::OMEGA];
 }
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
 template<size_t NSTATE, size_t NCONTROL>
-void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_state_and_control_names(std::array<std::string,NSTATE>& q, std::array<std::string,NCONTROL>& u) const 
+void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_state_and_control_names
+    (std::array<std::string,NSTATE>& input_states, std::array<std::string,NCONTROL>& controls) const 
 {
-    _front_axle.set_state_and_control_names(q,u);
-    _rear_axle.set_state_and_control_names(q,u);
+    _front_axle.set_state_and_control_names(input_states,controls);
+    _rear_axle.set_state_and_control_names(input_states,controls);
 
     // u
-    q[IU] = get_name() + ".velocity.x";
+    input_states[input_state_names::U] = get_name() + ".velocity.x";
 
     // v
-    q[IV] = get_name() + ".velocity.y";
+    input_states[input_state_names::V] = get_name() + ".velocity.y";
 
     // oemga
-    q[IOMEGA] = get_name() + ".omega.z"; 
+    input_states[input_state_names::OMEGA] = get_name() + ".omega.z";
 }
 
 
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
 template<size_t N>
-void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::get_state_derivative(std::array<Timeseries_t,N>& dqdt) const
+void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::get_state_and_state_derivative
+    (std::array<Timeseries_t,N>& state, std::array<Timeseries_t, N>& dstate_dt) const
 {
-    get_front_axle().get_state_derivative(dqdt);
-    get_rear_axle().get_state_derivative(dqdt);
+    get_front_axle().get_state_and_state_derivative(state, dstate_dt);
+    get_rear_axle().get_state_and_state_derivative(state, dstate_dt);
 
     // dudt
-    dqdt[IIDU] = _du;
+    state[state_names::U] = _u;
+    dstate_dt[state_names::U] = _du;
 
     // dvdt
-    dqdt[IIDV] = _dv;
+    state[state_names::V] = _v;
+    dstate_dt[state_names::V] = _dv;
 
     // domega
-    dqdt[IIDOMEGA] = _dOmega;
+    state[state_names::OMEGA] = _omega;
+    dstate_dt[state_names::OMEGA] = _dOmega;
 }
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
 template<size_t NSTATE, size_t NCONTROL>
 void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_state_and_control_upper_lower_and_default_values
-    (std::array<scalar, NSTATE>& q_def     , std::array<scalar, NSTATE>& q_lb     , std::array<scalar, NSTATE>& q_ub     ,
-    std::array<scalar , NCONTROL>& u_def   , std::array<scalar, NCONTROL>& u_lb   , std::array<scalar, NCONTROL>& u_ub,
+    (std::array<scalar, NSTATE>& input_states_def, std::array<scalar, NSTATE>& input_states_lb, 
+     std::array<scalar, NSTATE>& input_states_ub, std::array<scalar , NCONTROL>& controls_def, 
+     std::array<scalar, NCONTROL>& controls_lb, std::array<scalar, NCONTROL>& controls_ub,
     scalar velocity_x_lb, scalar velocity_x_ub, scalar velocity_y_ub, scalar omega_ub ) const
 {
-    get_front_axle().set_state_and_control_upper_lower_and_default_values(q_def, q_lb, q_ub, u_def, u_lb, u_ub);
-    get_rear_axle().set_state_and_control_upper_lower_and_default_values(q_def, q_lb, q_ub, u_def, u_lb, u_ub);
+    get_front_axle().set_state_and_control_upper_lower_and_default_values(input_states_def, input_states_lb, input_states_ub,
+        controls_def, controls_lb, controls_ub);
+    get_rear_axle().set_state_and_control_upper_lower_and_default_values(input_states_def, input_states_lb, input_states_ub,
+        controls_def, controls_lb, controls_ub);
 
     // State -----
-    q_def[IU] = velocity_x_lb;
-    q_lb[IU]  = velocity_x_lb;
-    q_ub[IU]  = velocity_x_ub;
+    input_states_def[input_state_names::U] = velocity_x_lb;
+    input_states_lb[input_state_names::U]  = velocity_x_lb;
+    input_states_ub[input_state_names::U]  = velocity_x_ub;
 
     // v
-    q_def[IV] = 0.0;
-    q_lb[IV]  = -velocity_y_ub;
-    q_ub[IV]  =  velocity_y_ub;
+    input_states_def[input_state_names::V] = 0.0;
+    input_states_lb[input_state_names::V]  = -velocity_y_ub;
+    input_states_ub[input_state_names::V]  =  velocity_y_ub;
 
     // oemga
-    q_def[IOMEGA] = 0.0;    
-    q_lb[IOMEGA]  = -omega_ub;
-    q_ub[IOMEGA]  =  omega_ub;
+    input_states_def[input_state_names::OMEGA] = 0.0;
+    input_states_lb[input_state_names::OMEGA]  = -omega_ub;
+    input_states_ub[input_state_names::OMEGA]  =  omega_ub;
 }
 
 #endif

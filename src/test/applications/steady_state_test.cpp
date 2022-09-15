@@ -95,8 +95,8 @@ TEST_F(Steady_state_test, gg_diagram_120)
 
 TEST_F(Steady_state_test, _0g_0g_50kmh)
 {
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_50/zero_g/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_50/zero_g/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_50/zero_g/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_50/zero_g/u").get_value(std::vector<double>());
     double ay_saved = results.get_root_element().get_child("velocity_50/zero_g/ay").get_value(double());
     double ax_saved = results.get_root_element().get_child("velocity_50/zero_g/ax").get_value(double());
 
@@ -107,7 +107,7 @@ TEST_F(Steady_state_test, _0g_0g_50kmh)
     Steady_state ss(car);
     auto solution = ss.solve(v,ax,ay);
 
-    car(solution.q,solution.u,0.0);
+    car(solution.input_states,solution.controls,0.0);
 
     EXPECT_TRUE(solution.solved);
     EXPECT_NEAR(solution.ax, ax_saved, 1.0e-7);
@@ -115,17 +115,17 @@ TEST_F(Steady_state_test, _0g_0g_50kmh)
     
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution.q[i], q_saved[i], 2.0e-07) << "with i = " << i;
+        EXPECT_NEAR(solution.input_states[i], input_states_saved[i], 2.0e-07) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution.u[i], u_saved[i], 2.0e-07) << "with i = " << i;
+        EXPECT_NEAR(solution.controls[i], controls_saved[i], 2.0e-07) << "with i = " << i;
 }
 
 
 TEST_F(Steady_state_test, max_lateral_accel_50kmh)
 {
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_50/max_lat_acc/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_50/max_lat_acc/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_50/max_lat_acc/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_50/max_lat_acc/u").get_value(std::vector<double>());
     double ay_saved = results.get_root_element().get_child("velocity_50/max_lat_acc/ay").get_value(double());
     double ax_saved = results.get_root_element().get_child("velocity_50/max_lat_acc/ax").get_value(double());
 
@@ -134,7 +134,7 @@ TEST_F(Steady_state_test, max_lateral_accel_50kmh)
     Steady_state ss(car);
     auto solution = ss.solve_max_lat_acc(v);
 
-    car(solution.q,solution.u,0.0);
+    car(solution.input_states,solution.controls,0.0);
     
     EXPECT_TRUE(solution.solved);
 
@@ -142,17 +142,17 @@ TEST_F(Steady_state_test, max_lateral_accel_50kmh)
     EXPECT_NEAR(solution.ay, ay_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 TEST_F(Steady_state_test, max_longitudinal_accel_ay2_50kmh)
 {
     double ay = 2.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_50/max_lon_ay_2/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_50/max_lon_ay_2/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_50/max_lon_ay_2/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_50/max_lon_ay_2/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_50/max_lon_ay_2/ax").get_value(double());
 
     const scalar v = 50.0*KMH;
@@ -164,18 +164,18 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay2_50kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
 TEST_F(Steady_state_test, min_longitudinal_accel_ay2_50kmh)
 {
     double ay = 2.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_50/min_lon_ay_2/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_50/min_lon_ay_2/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_50/min_lon_ay_2/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_50/min_lon_ay_2/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_50/min_lon_ay_2/ax").get_value(double());
 
     const scalar v = 50.0*KMH;
@@ -187,10 +187,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay2_50kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -199,8 +199,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay5_50kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 5.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_50/max_lon_ay_5/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_50/max_lon_ay_5/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_50/max_lon_ay_5/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_50/max_lon_ay_5/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_50/max_lon_ay_5/ax").get_value(double());
 
     const scalar v = 50.0*KMH;
@@ -212,10 +212,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay5_50kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -224,8 +224,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay5_50kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 5.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_50/min_lon_ay_5/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_50/min_lon_ay_5/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_50/min_lon_ay_5/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_50/min_lon_ay_5/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_50/min_lon_ay_5/ax").get_value(double());
 
     const scalar v = 50.0*KMH;
@@ -237,10 +237,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay5_50kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -249,8 +249,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay8_50kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 8.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_50/max_lon_ay_8/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_50/max_lon_ay_8/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_50/max_lon_ay_8/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_50/max_lon_ay_8/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_50/max_lon_ay_8/ax").get_value(double());
 
     const scalar v = 50.0*KMH;
@@ -262,10 +262,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay8_50kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -274,8 +274,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay8_50kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 8.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_50/min_lon_ay_8/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_50/min_lon_ay_8/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_50/min_lon_ay_8/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_50/min_lon_ay_8/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_50/min_lon_ay_8/ax").get_value(double());
 
     const scalar v = 50.0*KMH;
@@ -287,10 +287,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay8_50kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -299,8 +299,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay10_50kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 10.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_50/max_lon_ay_10/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_50/max_lon_ay_10/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_50/max_lon_ay_10/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_50/max_lon_ay_10/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_50/max_lon_ay_10/ax").get_value(double());
 
     const scalar v = 50.0*KMH;
@@ -312,10 +312,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay10_50kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -324,8 +324,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay10_50kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 10.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_50/min_lon_ay_10/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_50/min_lon_ay_10/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_50/min_lon_ay_10/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_50/min_lon_ay_10/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_50/min_lon_ay_10/ax").get_value(double());
 
     const scalar v = 50.0*KMH;
@@ -337,10 +337,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay10_50kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -351,8 +351,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay12_50kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 12.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_50/max_lon_ay_12/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_50/max_lon_ay_12/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_50/max_lon_ay_12/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_50/max_lon_ay_12/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_50/max_lon_ay_12/ax").get_value(double());
 
     const scalar v = 50.0*KMH;
@@ -364,10 +364,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay12_50kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -376,8 +376,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay12_50kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 12.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_50/min_lon_ay_12/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_50/min_lon_ay_12/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_50/min_lon_ay_12/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_50/min_lon_ay_12/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_50/min_lon_ay_12/ax").get_value(double());
 
     const scalar v = 50.0*KMH;
@@ -389,10 +389,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay12_50kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -404,8 +404,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay14_50kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 14.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_50/max_lon_ay_14/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_50/max_lon_ay_14/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_50/max_lon_ay_14/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_50/max_lon_ay_14/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_50/max_lon_ay_14/ax").get_value(double());
 
     const scalar v = 50.0*KMH;
@@ -417,10 +417,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay14_50kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -429,8 +429,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay14_50kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 14.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_50/min_lon_ay_14/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_50/min_lon_ay_14/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_50/min_lon_ay_14/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_50/min_lon_ay_14/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_50/min_lon_ay_14/ax").get_value(double());
 
     const scalar v = 50.0*KMH;
@@ -442,10 +442,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay14_50kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -453,8 +453,8 @@ TEST_F(Steady_state_test, _0g_0g_60kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_60/zero_g/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_60/zero_g/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_60/zero_g/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_60/zero_g/u").get_value(std::vector<double>());
     double ay_saved = results.get_root_element().get_child("velocity_60/zero_g/ay").get_value(double());
     double ax_saved = results.get_root_element().get_child("velocity_60/zero_g/ax").get_value(double());
 
@@ -465,7 +465,7 @@ TEST_F(Steady_state_test, _0g_0g_60kmh)
     Steady_state ss(car);
     auto solution = ss.solve(v,ax,ay);
 
-    car(solution.q,solution.u,0.0);
+    car(solution.input_states,solution.controls,0.0);
 
     EXPECT_TRUE(solution.solved);
     EXPECT_NEAR(solution.ax, ax_saved, 1.0e-7);
@@ -473,10 +473,10 @@ TEST_F(Steady_state_test, _0g_0g_60kmh)
     
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution.q[i], q_saved[i], 2.0e-07) << "with i = " << i;
+        EXPECT_NEAR(solution.input_states[i], input_states_saved[i], 2.0e-07) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution.u[i], u_saved[i], 2.0e-07) << "with i = " << i;
+        EXPECT_NEAR(solution.controls[i], controls_saved[i], 2.0e-07) << "with i = " << i;
 }
 
 
@@ -484,8 +484,8 @@ TEST_F(Steady_state_test, max_lateral_accel_60kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_60/max_lat_acc/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_60/max_lat_acc/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_60/max_lat_acc/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_60/max_lat_acc/u").get_value(std::vector<double>());
     double ay_saved = results.get_root_element().get_child("velocity_60/max_lat_acc/ay").get_value(double());
     double ax_saved = results.get_root_element().get_child("velocity_60/max_lat_acc/ax").get_value(double());
 
@@ -494,7 +494,7 @@ TEST_F(Steady_state_test, max_lateral_accel_60kmh)
     Steady_state ss(car);
     auto solution = ss.solve_max_lat_acc(v);
 
-    car(solution.q,solution.u,0.0);
+    car(solution.input_states,solution.controls,0.0);
     
     EXPECT_TRUE(solution.solved);
 
@@ -502,10 +502,10 @@ TEST_F(Steady_state_test, max_lateral_accel_60kmh)
     EXPECT_NEAR(solution.ay, ay_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 TEST_F(Steady_state_test, max_longitudinal_accel_ay2_60kmh)
@@ -513,8 +513,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay2_60kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 2.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_60/max_lon_ay_2/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_60/max_lon_ay_2/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_60/max_lon_ay_2/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_60/max_lon_ay_2/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_60/max_lon_ay_2/ax").get_value(double());
 
     const scalar v = 60.0*KMH;
@@ -526,10 +526,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay2_60kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -538,8 +538,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay2_60kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 2.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_60/min_lon_ay_2/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_60/min_lon_ay_2/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_60/min_lon_ay_2/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_60/min_lon_ay_2/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_60/min_lon_ay_2/ax").get_value(double());
 
     const scalar v = 60.0*KMH;
@@ -551,10 +551,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay2_60kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -563,8 +563,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay5_60kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 5.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_60/max_lon_ay_5/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_60/max_lon_ay_5/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_60/max_lon_ay_5/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_60/max_lon_ay_5/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_60/max_lon_ay_5/ax").get_value(double());
 
     const scalar v = 60.0*KMH;
@@ -576,10 +576,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay5_60kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -588,8 +588,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay5_60kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 5.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_60/min_lon_ay_5/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_60/min_lon_ay_5/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_60/min_lon_ay_5/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_60/min_lon_ay_5/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_60/min_lon_ay_5/ax").get_value(double());
 
     const scalar v = 60.0*KMH;
@@ -601,10 +601,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay5_60kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -613,8 +613,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay8_60kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 8.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_60/max_lon_ay_8/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_60/max_lon_ay_8/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_60/max_lon_ay_8/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_60/max_lon_ay_8/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_60/max_lon_ay_8/ax").get_value(double());
 
     const scalar v = 60.0*KMH;
@@ -626,10 +626,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay8_60kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -638,8 +638,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay8_60kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 8.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_60/min_lon_ay_8/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_60/min_lon_ay_8/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_60/min_lon_ay_8/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_60/min_lon_ay_8/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_60/min_lon_ay_8/ax").get_value(double());
 
     const scalar v = 60.0*KMH;
@@ -651,10 +651,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay8_60kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -663,8 +663,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay10_60kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 10.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_60/max_lon_ay_10/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_60/max_lon_ay_10/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_60/max_lon_ay_10/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_60/max_lon_ay_10/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_60/max_lon_ay_10/ax").get_value(double());
 
     const scalar v = 60.0*KMH;
@@ -676,10 +676,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay10_60kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -688,8 +688,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay10_60kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 10.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_60/min_lon_ay_10/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_60/min_lon_ay_10/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_60/min_lon_ay_10/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_60/min_lon_ay_10/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_60/min_lon_ay_10/ax").get_value(double());
 
     const scalar v = 60.0*KMH;
@@ -701,10 +701,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay10_60kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -715,8 +715,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay12_60kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 12.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_60/max_lon_ay_12/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_60/max_lon_ay_12/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_60/max_lon_ay_12/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_60/max_lon_ay_12/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_60/max_lon_ay_12/ax").get_value(double());
 
     const scalar v = 60.0*KMH;
@@ -728,10 +728,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay12_60kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -740,8 +740,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay12_60kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 12.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_60/min_lon_ay_12/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_60/min_lon_ay_12/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_60/min_lon_ay_12/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_60/min_lon_ay_12/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_60/min_lon_ay_12/ax").get_value(double());
 
     const scalar v = 60.0*KMH;
@@ -753,10 +753,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay12_60kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -768,8 +768,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay14_60kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 14.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_60/max_lon_ay_14/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_60/max_lon_ay_14/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_60/max_lon_ay_14/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_60/max_lon_ay_14/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_60/max_lon_ay_14/ax").get_value(double());
 
     const scalar v = 60.0*KMH;
@@ -781,10 +781,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay14_60kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -793,8 +793,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay14_60kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 14.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_60/min_lon_ay_14/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_60/min_lon_ay_14/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_60/min_lon_ay_14/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_60/min_lon_ay_14/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_60/min_lon_ay_14/ax").get_value(double());
 
     const scalar v = 60.0*KMH;
@@ -806,10 +806,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay14_60kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -817,8 +817,8 @@ TEST_F(Steady_state_test, _0g_0g_70kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_70/zero_g/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_70/zero_g/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_70/zero_g/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_70/zero_g/u").get_value(std::vector<double>());
     double ay_saved = results.get_root_element().get_child("velocity_70/zero_g/ay").get_value(double());
     double ax_saved = results.get_root_element().get_child("velocity_70/zero_g/ax").get_value(double());
 
@@ -829,7 +829,7 @@ TEST_F(Steady_state_test, _0g_0g_70kmh)
     Steady_state ss(car);
     auto solution = ss.solve(v,ax,ay);
 
-    car(solution.q,solution.u,0.0);
+    car(solution.input_states,solution.controls,0.0);
 
     EXPECT_TRUE(solution.solved);
     EXPECT_NEAR(solution.ax, ax_saved, 1.0e-7);
@@ -837,10 +837,10 @@ TEST_F(Steady_state_test, _0g_0g_70kmh)
     
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution.q[i], q_saved[i], 2.0e-07) << "with i = " << i;
+        EXPECT_NEAR(solution.input_states[i], input_states_saved[i], 2.0e-07) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution.u[i], u_saved[i], 2.0e-07) << "with i = " << i;
+        EXPECT_NEAR(solution.controls[i], controls_saved[i], 2.0e-07) << "with i = " << i;
 }
 
 
@@ -848,8 +848,8 @@ TEST_F(Steady_state_test, max_lateral_accel_70kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_70/max_lat_acc/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_70/max_lat_acc/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_70/max_lat_acc/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_70/max_lat_acc/u").get_value(std::vector<double>());
     double ay_saved = results.get_root_element().get_child("velocity_70/max_lat_acc/ay").get_value(double());
     double ax_saved = results.get_root_element().get_child("velocity_70/max_lat_acc/ax").get_value(double());
 
@@ -858,7 +858,7 @@ TEST_F(Steady_state_test, max_lateral_accel_70kmh)
     Steady_state ss(car);
     auto solution = ss.solve_max_lat_acc(v);
 
-    car(solution.q,solution.u,0.0);
+    car(solution.input_states,solution.controls,0.0);
     
     EXPECT_TRUE(solution.solved);
 
@@ -866,10 +866,10 @@ TEST_F(Steady_state_test, max_lateral_accel_70kmh)
     EXPECT_NEAR(solution.ay, ay_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 TEST_F(Steady_state_test, max_longitudinal_accel_ay2_70kmh)
@@ -877,8 +877,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay2_70kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 2.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_70/max_lon_ay_2/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_70/max_lon_ay_2/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_70/max_lon_ay_2/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_70/max_lon_ay_2/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_70/max_lon_ay_2/ax").get_value(double());
 
     const scalar v = 70.0*KMH;
@@ -890,10 +890,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay2_70kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -902,8 +902,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay2_70kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 2.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_70/min_lon_ay_2/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_70/min_lon_ay_2/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_70/min_lon_ay_2/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_70/min_lon_ay_2/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_70/min_lon_ay_2/ax").get_value(double());
 
     const scalar v = 70.0*KMH;
@@ -915,10 +915,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay2_70kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -927,8 +927,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay5_70kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 5.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_70/max_lon_ay_5/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_70/max_lon_ay_5/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_70/max_lon_ay_5/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_70/max_lon_ay_5/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_70/max_lon_ay_5/ax").get_value(double());
 
     const scalar v = 70.0*KMH;
@@ -940,10 +940,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay5_70kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -952,8 +952,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay5_70kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 5.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_70/min_lon_ay_5/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_70/min_lon_ay_5/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_70/min_lon_ay_5/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_70/min_lon_ay_5/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_70/min_lon_ay_5/ax").get_value(double());
 
     const scalar v = 70.0*KMH;
@@ -965,10 +965,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay5_70kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -977,8 +977,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay8_70kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 8.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_70/max_lon_ay_8/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_70/max_lon_ay_8/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_70/max_lon_ay_8/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_70/max_lon_ay_8/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_70/max_lon_ay_8/ax").get_value(double());
 
     const scalar v = 70.0*KMH;
@@ -990,10 +990,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay8_70kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -1002,8 +1002,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay8_70kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 8.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_70/min_lon_ay_8/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_70/min_lon_ay_8/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_70/min_lon_ay_8/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_70/min_lon_ay_8/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_70/min_lon_ay_8/ax").get_value(double());
 
     const scalar v = 70.0*KMH;
@@ -1015,10 +1015,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay8_70kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -1027,8 +1027,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay10_70kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 10.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_70/max_lon_ay_10/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_70/max_lon_ay_10/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_70/max_lon_ay_10/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_70/max_lon_ay_10/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_70/max_lon_ay_10/ax").get_value(double());
 
     const scalar v = 70.0*KMH;
@@ -1040,10 +1040,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay10_70kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -1052,8 +1052,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay10_70kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 10.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_70/min_lon_ay_10/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_70/min_lon_ay_10/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_70/min_lon_ay_10/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_70/min_lon_ay_10/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_70/min_lon_ay_10/ax").get_value(double());
 
     const scalar v = 70.0*KMH;
@@ -1065,10 +1065,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay10_70kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -1079,8 +1079,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay12_70kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 12.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_70/max_lon_ay_12/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_70/max_lon_ay_12/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_70/max_lon_ay_12/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_70/max_lon_ay_12/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_70/max_lon_ay_12/ax").get_value(double());
 
     const scalar v = 70.0*KMH;
@@ -1092,10 +1092,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay12_70kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -1104,8 +1104,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay12_70kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 12.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_70/min_lon_ay_12/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_70/min_lon_ay_12/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_70/min_lon_ay_12/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_70/min_lon_ay_12/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_70/min_lon_ay_12/ax").get_value(double());
 
     const scalar v = 70.0*KMH;
@@ -1117,10 +1117,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay12_70kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -1132,8 +1132,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay14_70kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 14.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_70/max_lon_ay_14/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_70/max_lon_ay_14/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_70/max_lon_ay_14/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_70/max_lon_ay_14/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_70/max_lon_ay_14/ax").get_value(double());
 
     const scalar v = 70.0*KMH;
@@ -1145,10 +1145,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay14_70kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -1157,8 +1157,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay14_70kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 14.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_70/min_lon_ay_14/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_70/min_lon_ay_14/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_70/min_lon_ay_14/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_70/min_lon_ay_14/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_70/min_lon_ay_14/ax").get_value(double());
 
     const scalar v = 70.0*KMH;
@@ -1170,10 +1170,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay14_70kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -1181,8 +1181,8 @@ TEST_F(Steady_state_test, _0g_0g_80kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_80/zero_g/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_80/zero_g/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_80/zero_g/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_80/zero_g/u").get_value(std::vector<double>());
     double ay_saved = results.get_root_element().get_child("velocity_80/zero_g/ay").get_value(double());
     double ax_saved = results.get_root_element().get_child("velocity_80/zero_g/ax").get_value(double());
 
@@ -1193,7 +1193,7 @@ TEST_F(Steady_state_test, _0g_0g_80kmh)
     Steady_state ss(car);
     auto solution = ss.solve(v,ax,ay);
 
-    car(solution.q,solution.u,0.0);
+    car(solution.input_states,solution.controls,0.0);
 
     EXPECT_TRUE(solution.solved);
     EXPECT_NEAR(solution.ax, ax_saved, 1.0e-7);
@@ -1201,10 +1201,10 @@ TEST_F(Steady_state_test, _0g_0g_80kmh)
     
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution.q[i], q_saved[i], 2.0e-07) << "with i = " << i;
+        EXPECT_NEAR(solution.input_states[i], input_states_saved[i], 2.0e-07) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution.u[i], u_saved[i], 2.0e-07) << "with i = " << i;
+        EXPECT_NEAR(solution.controls[i], controls_saved[i], 2.0e-07) << "with i = " << i;
 }
 
 
@@ -1212,8 +1212,8 @@ TEST_F(Steady_state_test, max_lateral_accel_80kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_80/max_lat_acc/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_80/max_lat_acc/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_80/max_lat_acc/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_80/max_lat_acc/u").get_value(std::vector<double>());
     double ay_saved = results.get_root_element().get_child("velocity_80/max_lat_acc/ay").get_value(double());
     double ax_saved = results.get_root_element().get_child("velocity_80/max_lat_acc/ax").get_value(double());
 
@@ -1222,7 +1222,7 @@ TEST_F(Steady_state_test, max_lateral_accel_80kmh)
     Steady_state ss(car);
     auto solution = ss.solve_max_lat_acc(v);
 
-    car(solution.q,solution.u,0.0);
+    car(solution.input_states,solution.controls,0.0);
     
     EXPECT_TRUE(solution.solved);
 
@@ -1230,10 +1230,10 @@ TEST_F(Steady_state_test, max_lateral_accel_80kmh)
     EXPECT_NEAR(solution.ay, ay_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 TEST_F(Steady_state_test, max_longitudinal_accel_ay2_80kmh)
@@ -1241,8 +1241,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay2_80kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 2.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_80/max_lon_ay_2/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_80/max_lon_ay_2/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_80/max_lon_ay_2/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_80/max_lon_ay_2/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_80/max_lon_ay_2/ax").get_value(double());
 
     const scalar v = 80.0*KMH;
@@ -1254,10 +1254,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay2_80kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -1266,8 +1266,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay2_80kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 2.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_80/min_lon_ay_2/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_80/min_lon_ay_2/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_80/min_lon_ay_2/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_80/min_lon_ay_2/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_80/min_lon_ay_2/ax").get_value(double());
 
     const scalar v = 80.0*KMH;
@@ -1279,10 +1279,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay2_80kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -1291,8 +1291,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay5_80kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 5.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_80/max_lon_ay_5/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_80/max_lon_ay_5/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_80/max_lon_ay_5/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_80/max_lon_ay_5/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_80/max_lon_ay_5/ax").get_value(double());
 
     const scalar v = 80.0*KMH;
@@ -1304,10 +1304,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay5_80kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -1316,8 +1316,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay5_80kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 5.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_80/min_lon_ay_5/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_80/min_lon_ay_5/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_80/min_lon_ay_5/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_80/min_lon_ay_5/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_80/min_lon_ay_5/ax").get_value(double());
 
     const scalar v = 80.0*KMH;
@@ -1329,10 +1329,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay5_80kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -1341,8 +1341,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay8_80kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 8.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_80/max_lon_ay_8/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_80/max_lon_ay_8/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_80/max_lon_ay_8/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_80/max_lon_ay_8/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_80/max_lon_ay_8/ax").get_value(double());
 
     const scalar v = 80.0*KMH;
@@ -1354,10 +1354,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay8_80kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -1366,8 +1366,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay8_80kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 8.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_80/min_lon_ay_8/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_80/min_lon_ay_8/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_80/min_lon_ay_8/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_80/min_lon_ay_8/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_80/min_lon_ay_8/ax").get_value(double());
 
     const scalar v = 80.0*KMH;
@@ -1379,10 +1379,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay8_80kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -1391,8 +1391,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay10_80kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 10.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_80/max_lon_ay_10/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_80/max_lon_ay_10/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_80/max_lon_ay_10/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_80/max_lon_ay_10/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_80/max_lon_ay_10/ax").get_value(double());
 
     const scalar v = 80.0*KMH;
@@ -1404,10 +1404,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay10_80kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -1416,8 +1416,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay10_80kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 10.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_80/min_lon_ay_10/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_80/min_lon_ay_10/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_80/min_lon_ay_10/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_80/min_lon_ay_10/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_80/min_lon_ay_10/ax").get_value(double());
 
     const scalar v = 80.0*KMH;
@@ -1429,10 +1429,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay10_80kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -1443,8 +1443,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay12_80kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 12.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_80/max_lon_ay_12/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_80/max_lon_ay_12/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_80/max_lon_ay_12/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_80/max_lon_ay_12/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_80/max_lon_ay_12/ax").get_value(double());
 
     const scalar v = 80.0*KMH;
@@ -1456,10 +1456,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay12_80kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -1468,8 +1468,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay12_80kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 12.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_80/min_lon_ay_12/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_80/min_lon_ay_12/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_80/min_lon_ay_12/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_80/min_lon_ay_12/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_80/min_lon_ay_12/ax").get_value(double());
 
     const scalar v = 80.0*KMH;
@@ -1481,10 +1481,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay12_80kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -1496,8 +1496,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay14_80kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 14.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_80/max_lon_ay_14/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_80/max_lon_ay_14/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_80/max_lon_ay_14/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_80/max_lon_ay_14/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_80/max_lon_ay_14/ax").get_value(double());
 
     const scalar v = 80.0*KMH;
@@ -1509,10 +1509,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay14_80kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -1521,8 +1521,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay14_80kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 14.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_80/min_lon_ay_14/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_80/min_lon_ay_14/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_80/min_lon_ay_14/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_80/min_lon_ay_14/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_80/min_lon_ay_14/ax").get_value(double());
 
     const scalar v = 80.0*KMH;
@@ -1534,10 +1534,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay14_80kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -1545,8 +1545,8 @@ TEST_F(Steady_state_test, _0g_0g_90kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_90/zero_g/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_90/zero_g/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_90/zero_g/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_90/zero_g/u").get_value(std::vector<double>());
     double ay_saved = results.get_root_element().get_child("velocity_90/zero_g/ay").get_value(double());
     double ax_saved = results.get_root_element().get_child("velocity_90/zero_g/ax").get_value(double());
 
@@ -1557,7 +1557,7 @@ TEST_F(Steady_state_test, _0g_0g_90kmh)
     Steady_state ss(car);
     auto solution = ss.solve(v,ax,ay);
 
-    car(solution.q,solution.u,0.0);
+    car(solution.input_states,solution.controls,0.0);
 
     EXPECT_TRUE(solution.solved);
     EXPECT_NEAR(solution.ax, ax_saved, 1.0e-7);
@@ -1565,10 +1565,10 @@ TEST_F(Steady_state_test, _0g_0g_90kmh)
     
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution.q[i], q_saved[i], 2.0e-07) << "with i = " << i;
+        EXPECT_NEAR(solution.input_states[i], input_states_saved[i], 2.0e-07) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution.u[i], u_saved[i], 2.0e-07) << "with i = " << i;
+        EXPECT_NEAR(solution.controls[i], controls_saved[i], 2.0e-07) << "with i = " << i;
 }
 
 
@@ -1576,8 +1576,8 @@ TEST_F(Steady_state_test, max_lateral_accel_90kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_90/max_lat_acc/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_90/max_lat_acc/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_90/max_lat_acc/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_90/max_lat_acc/u").get_value(std::vector<double>());
     double ay_saved = results.get_root_element().get_child("velocity_90/max_lat_acc/ay").get_value(double());
     double ax_saved = results.get_root_element().get_child("velocity_90/max_lat_acc/ax").get_value(double());
 
@@ -1586,7 +1586,7 @@ TEST_F(Steady_state_test, max_lateral_accel_90kmh)
     Steady_state ss(car);
     auto solution = ss.solve_max_lat_acc(v);
 
-    car(solution.q,solution.u,0.0);
+    car(solution.input_states,solution.controls,0.0);
     
     EXPECT_TRUE(solution.solved);
 
@@ -1594,10 +1594,10 @@ TEST_F(Steady_state_test, max_lateral_accel_90kmh)
     EXPECT_NEAR(solution.ay, ay_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 TEST_F(Steady_state_test, max_longitudinal_accel_ay2_90kmh)
@@ -1605,8 +1605,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay2_90kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 2.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_90/max_lon_ay_2/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_90/max_lon_ay_2/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_90/max_lon_ay_2/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_90/max_lon_ay_2/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_90/max_lon_ay_2/ax").get_value(double());
 
     const scalar v = 90.0*KMH;
@@ -1618,10 +1618,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay2_90kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -1630,8 +1630,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay2_90kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 2.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_90/min_lon_ay_2/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_90/min_lon_ay_2/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_90/min_lon_ay_2/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_90/min_lon_ay_2/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_90/min_lon_ay_2/ax").get_value(double());
 
     const scalar v = 90.0*KMH;
@@ -1643,10 +1643,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay2_90kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -1655,8 +1655,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay5_90kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 5.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_90/max_lon_ay_5/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_90/max_lon_ay_5/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_90/max_lon_ay_5/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_90/max_lon_ay_5/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_90/max_lon_ay_5/ax").get_value(double());
 
     const scalar v = 90.0*KMH;
@@ -1668,10 +1668,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay5_90kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -1680,8 +1680,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay5_90kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 5.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_90/min_lon_ay_5/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_90/min_lon_ay_5/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_90/min_lon_ay_5/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_90/min_lon_ay_5/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_90/min_lon_ay_5/ax").get_value(double());
 
     const scalar v = 90.0*KMH;
@@ -1693,10 +1693,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay5_90kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -1705,8 +1705,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay8_90kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 8.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_90/max_lon_ay_8/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_90/max_lon_ay_8/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_90/max_lon_ay_8/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_90/max_lon_ay_8/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_90/max_lon_ay_8/ax").get_value(double());
 
     const scalar v = 90.0*KMH;
@@ -1718,10 +1718,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay8_90kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -1730,8 +1730,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay8_90kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 8.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_90/min_lon_ay_8/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_90/min_lon_ay_8/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_90/min_lon_ay_8/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_90/min_lon_ay_8/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_90/min_lon_ay_8/ax").get_value(double());
 
     const scalar v = 90.0*KMH;
@@ -1743,10 +1743,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay8_90kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -1755,8 +1755,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay10_90kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 10.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_90/max_lon_ay_10/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_90/max_lon_ay_10/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_90/max_lon_ay_10/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_90/max_lon_ay_10/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_90/max_lon_ay_10/ax").get_value(double());
 
     const scalar v = 90.0*KMH;
@@ -1768,10 +1768,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay10_90kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -1780,8 +1780,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay10_90kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 10.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_90/min_lon_ay_10/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_90/min_lon_ay_10/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_90/min_lon_ay_10/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_90/min_lon_ay_10/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_90/min_lon_ay_10/ax").get_value(double());
 
     const scalar v = 90.0*KMH;
@@ -1793,10 +1793,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay10_90kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -1807,8 +1807,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay12_90kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 12.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_90/max_lon_ay_12/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_90/max_lon_ay_12/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_90/max_lon_ay_12/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_90/max_lon_ay_12/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_90/max_lon_ay_12/ax").get_value(double());
 
     const scalar v = 90.0*KMH;
@@ -1820,10 +1820,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay12_90kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -1832,8 +1832,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay12_90kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 12.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_90/min_lon_ay_12/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_90/min_lon_ay_12/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_90/min_lon_ay_12/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_90/min_lon_ay_12/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_90/min_lon_ay_12/ax").get_value(double());
 
     const scalar v = 90.0*KMH;
@@ -1845,10 +1845,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay12_90kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -1860,8 +1860,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay14_90kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 14.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_90/max_lon_ay_14/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_90/max_lon_ay_14/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_90/max_lon_ay_14/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_90/max_lon_ay_14/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_90/max_lon_ay_14/ax").get_value(double());
 
     const scalar v = 90.0*KMH;
@@ -1873,10 +1873,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay14_90kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -1885,8 +1885,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay14_90kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 14.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_90/min_lon_ay_14/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_90/min_lon_ay_14/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_90/min_lon_ay_14/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_90/min_lon_ay_14/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_90/min_lon_ay_14/ax").get_value(double());
 
     const scalar v = 90.0*KMH;
@@ -1898,10 +1898,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay14_90kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -1909,8 +1909,8 @@ TEST_F(Steady_state_test, _0g_0g_100kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_100/zero_g/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_100/zero_g/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_100/zero_g/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_100/zero_g/u").get_value(std::vector<double>());
     double ay_saved = results.get_root_element().get_child("velocity_100/zero_g/ay").get_value(double());
     double ax_saved = results.get_root_element().get_child("velocity_100/zero_g/ax").get_value(double());
 
@@ -1921,7 +1921,7 @@ TEST_F(Steady_state_test, _0g_0g_100kmh)
     Steady_state ss(car);
     auto solution = ss.solve(v,ax,ay);
 
-    car(solution.q,solution.u,0.0);
+    car(solution.input_states,solution.controls,0.0);
 
     EXPECT_TRUE(solution.solved);
     EXPECT_NEAR(solution.ax, ax_saved, 1.0e-7);
@@ -1929,10 +1929,10 @@ TEST_F(Steady_state_test, _0g_0g_100kmh)
     
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution.q[i], q_saved[i], 2.0e-07) << "with i = " << i;
+        EXPECT_NEAR(solution.input_states[i], input_states_saved[i], 2.0e-07) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution.u[i], u_saved[i], 2.0e-07) << "with i = " << i;
+        EXPECT_NEAR(solution.controls[i], controls_saved[i], 2.0e-07) << "with i = " << i;
 }
 
 
@@ -1940,8 +1940,8 @@ TEST_F(Steady_state_test, max_lateral_accel_100kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_100/max_lat_acc/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_100/max_lat_acc/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_100/max_lat_acc/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_100/max_lat_acc/u").get_value(std::vector<double>());
     double ay_saved = results.get_root_element().get_child("velocity_100/max_lat_acc/ay").get_value(double());
     double ax_saved = results.get_root_element().get_child("velocity_100/max_lat_acc/ax").get_value(double());
 
@@ -1950,7 +1950,7 @@ TEST_F(Steady_state_test, max_lateral_accel_100kmh)
     Steady_state ss(car);
     auto solution = ss.solve_max_lat_acc(v);
 
-    car(solution.q,solution.u,0.0);
+    car(solution.input_states,solution.controls,0.0);
     
     EXPECT_TRUE(solution.solved);
 
@@ -1958,10 +1958,10 @@ TEST_F(Steady_state_test, max_lateral_accel_100kmh)
     EXPECT_NEAR(solution.ay, ay_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 TEST_F(Steady_state_test, max_longitudinal_accel_ay2_100kmh)
@@ -1969,8 +1969,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay2_100kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 2.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_100/max_lon_ay_2/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_100/max_lon_ay_2/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_100/max_lon_ay_2/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_100/max_lon_ay_2/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_100/max_lon_ay_2/ax").get_value(double());
 
     const scalar v = 100.0*KMH;
@@ -1982,10 +1982,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay2_100kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -1994,8 +1994,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay2_100kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 2.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_100/min_lon_ay_2/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_100/min_lon_ay_2/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_100/min_lon_ay_2/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_100/min_lon_ay_2/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_100/min_lon_ay_2/ax").get_value(double());
 
     const scalar v = 100.0*KMH;
@@ -2007,10 +2007,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay2_100kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -2019,8 +2019,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay5_100kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 5.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_100/max_lon_ay_5/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_100/max_lon_ay_5/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_100/max_lon_ay_5/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_100/max_lon_ay_5/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_100/max_lon_ay_5/ax").get_value(double());
 
     const scalar v = 100.0*KMH;
@@ -2032,10 +2032,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay5_100kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -2044,8 +2044,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay5_100kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 5.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_100/min_lon_ay_5/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_100/min_lon_ay_5/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_100/min_lon_ay_5/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_100/min_lon_ay_5/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_100/min_lon_ay_5/ax").get_value(double());
 
     const scalar v = 100.0*KMH;
@@ -2057,10 +2057,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay5_100kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -2069,8 +2069,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay8_100kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 8.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_100/max_lon_ay_8/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_100/max_lon_ay_8/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_100/max_lon_ay_8/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_100/max_lon_ay_8/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_100/max_lon_ay_8/ax").get_value(double());
 
     const scalar v = 100.0*KMH;
@@ -2082,10 +2082,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay8_100kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -2094,8 +2094,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay8_100kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 8.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_100/min_lon_ay_8/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_100/min_lon_ay_8/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_100/min_lon_ay_8/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_100/min_lon_ay_8/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_100/min_lon_ay_8/ax").get_value(double());
 
     const scalar v = 100.0*KMH;
@@ -2107,10 +2107,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay8_100kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -2119,8 +2119,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay10_100kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 10.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_100/max_lon_ay_10/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_100/max_lon_ay_10/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_100/max_lon_ay_10/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_100/max_lon_ay_10/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_100/max_lon_ay_10/ax").get_value(double());
 
     const scalar v = 100.0*KMH;
@@ -2132,10 +2132,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay10_100kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -2144,8 +2144,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay10_100kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 10.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_100/min_lon_ay_10/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_100/min_lon_ay_10/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_100/min_lon_ay_10/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_100/min_lon_ay_10/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_100/min_lon_ay_10/ax").get_value(double());
 
     const scalar v = 100.0*KMH;
@@ -2157,10 +2157,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay10_100kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -2171,8 +2171,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay12_100kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 12.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_100/max_lon_ay_12/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_100/max_lon_ay_12/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_100/max_lon_ay_12/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_100/max_lon_ay_12/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_100/max_lon_ay_12/ax").get_value(double());
 
     const scalar v = 100.0*KMH;
@@ -2184,10 +2184,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay12_100kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -2196,8 +2196,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay12_100kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 12.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_100/min_lon_ay_12/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_100/min_lon_ay_12/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_100/min_lon_ay_12/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_100/min_lon_ay_12/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_100/min_lon_ay_12/ax").get_value(double());
 
     const scalar v = 100.0*KMH;
@@ -2209,10 +2209,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay12_100kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -2224,8 +2224,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay14_100kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 14.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_100/max_lon_ay_14/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_100/max_lon_ay_14/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_100/max_lon_ay_14/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_100/max_lon_ay_14/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_100/max_lon_ay_14/ax").get_value(double());
 
     const scalar v = 100.0*KMH;
@@ -2237,10 +2237,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay14_100kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -2249,8 +2249,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay14_100kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 14.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_100/min_lon_ay_14/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_100/min_lon_ay_14/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_100/min_lon_ay_14/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_100/min_lon_ay_14/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_100/min_lon_ay_14/ax").get_value(double());
 
     const scalar v = 100.0*KMH;
@@ -2262,10 +2262,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay14_100kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -2273,8 +2273,8 @@ TEST_F(Steady_state_test, _0g_0g_110kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_110/zero_g/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_110/zero_g/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_110/zero_g/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_110/zero_g/u").get_value(std::vector<double>());
     double ay_saved = results.get_root_element().get_child("velocity_110/zero_g/ay").get_value(double());
     double ax_saved = results.get_root_element().get_child("velocity_110/zero_g/ax").get_value(double());
 
@@ -2285,7 +2285,7 @@ TEST_F(Steady_state_test, _0g_0g_110kmh)
     Steady_state ss(car);
     auto solution = ss.solve(v,ax,ay);
 
-    car(solution.q,solution.u,0.0);
+    car(solution.input_states,solution.controls,0.0);
 
     EXPECT_TRUE(solution.solved);
     EXPECT_NEAR(solution.ax, ax_saved, 1.0e-7);
@@ -2293,10 +2293,10 @@ TEST_F(Steady_state_test, _0g_0g_110kmh)
     
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution.q[i], q_saved[i], 2.0e-07) << "with i = " << i;
+        EXPECT_NEAR(solution.input_states[i], input_states_saved[i], 2.0e-07) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution.u[i], u_saved[i], 2.0e-07) << "with i = " << i;
+        EXPECT_NEAR(solution.controls[i], controls_saved[i], 2.0e-07) << "with i = " << i;
 }
 
 
@@ -2304,8 +2304,8 @@ TEST_F(Steady_state_test, max_lateral_accel_110kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_110/max_lat_acc/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_110/max_lat_acc/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_110/max_lat_acc/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_110/max_lat_acc/u").get_value(std::vector<double>());
     double ay_saved = results.get_root_element().get_child("velocity_110/max_lat_acc/ay").get_value(double());
     double ax_saved = results.get_root_element().get_child("velocity_110/max_lat_acc/ax").get_value(double());
 
@@ -2314,7 +2314,7 @@ TEST_F(Steady_state_test, max_lateral_accel_110kmh)
     Steady_state ss(car);
     auto solution = ss.solve_max_lat_acc(v);
 
-    car(solution.q,solution.u,0.0);
+    car(solution.input_states,solution.controls,0.0);
     
     EXPECT_TRUE(solution.solved);
 
@@ -2322,10 +2322,10 @@ TEST_F(Steady_state_test, max_lateral_accel_110kmh)
     EXPECT_NEAR(solution.ay, ay_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 TEST_F(Steady_state_test, max_longitudinal_accel_ay2_110kmh)
@@ -2333,8 +2333,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay2_110kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 2.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_110/max_lon_ay_2/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_110/max_lon_ay_2/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_110/max_lon_ay_2/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_110/max_lon_ay_2/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_110/max_lon_ay_2/ax").get_value(double());
 
     const scalar v = 110.0*KMH;
@@ -2346,10 +2346,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay2_110kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -2358,8 +2358,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay2_110kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 2.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_110/min_lon_ay_2/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_110/min_lon_ay_2/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_110/min_lon_ay_2/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_110/min_lon_ay_2/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_110/min_lon_ay_2/ax").get_value(double());
 
     const scalar v = 110.0*KMH;
@@ -2371,10 +2371,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay2_110kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -2383,8 +2383,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay5_110kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 5.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_110/max_lon_ay_5/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_110/max_lon_ay_5/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_110/max_lon_ay_5/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_110/max_lon_ay_5/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_110/max_lon_ay_5/ax").get_value(double());
 
     const scalar v = 110.0*KMH;
@@ -2396,10 +2396,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay5_110kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -2408,8 +2408,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay5_110kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 5.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_110/min_lon_ay_5/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_110/min_lon_ay_5/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_110/min_lon_ay_5/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_110/min_lon_ay_5/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_110/min_lon_ay_5/ax").get_value(double());
 
     const scalar v = 110.0*KMH;
@@ -2421,10 +2421,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay5_110kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -2433,8 +2433,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay8_110kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 8.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_110/max_lon_ay_8/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_110/max_lon_ay_8/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_110/max_lon_ay_8/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_110/max_lon_ay_8/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_110/max_lon_ay_8/ax").get_value(double());
 
     const scalar v = 110.0*KMH;
@@ -2446,10 +2446,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay8_110kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -2458,8 +2458,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay8_110kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 8.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_110/min_lon_ay_8/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_110/min_lon_ay_8/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_110/min_lon_ay_8/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_110/min_lon_ay_8/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_110/min_lon_ay_8/ax").get_value(double());
 
     const scalar v = 110.0*KMH;
@@ -2471,10 +2471,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay8_110kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -2483,8 +2483,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay10_110kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 10.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_110/max_lon_ay_10/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_110/max_lon_ay_10/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_110/max_lon_ay_10/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_110/max_lon_ay_10/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_110/max_lon_ay_10/ax").get_value(double());
 
     const scalar v = 110.0*KMH;
@@ -2496,10 +2496,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay10_110kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -2508,8 +2508,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay10_110kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 10.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_110/min_lon_ay_10/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_110/min_lon_ay_10/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_110/min_lon_ay_10/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_110/min_lon_ay_10/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_110/min_lon_ay_10/ax").get_value(double());
 
     const scalar v = 110.0*KMH;
@@ -2521,10 +2521,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay10_110kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -2535,8 +2535,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay12_110kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 12.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_110/max_lon_ay_12/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_110/max_lon_ay_12/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_110/max_lon_ay_12/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_110/max_lon_ay_12/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_110/max_lon_ay_12/ax").get_value(double());
 
     const scalar v = 110.0*KMH;
@@ -2548,10 +2548,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay12_110kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -2560,8 +2560,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay12_110kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 12.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_110/min_lon_ay_12/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_110/min_lon_ay_12/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_110/min_lon_ay_12/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_110/min_lon_ay_12/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_110/min_lon_ay_12/ax").get_value(double());
 
     const scalar v = 110.0*KMH;
@@ -2573,10 +2573,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay12_110kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -2588,8 +2588,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay14_110kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 14.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_110/max_lon_ay_14/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_110/max_lon_ay_14/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_110/max_lon_ay_14/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_110/max_lon_ay_14/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_110/max_lon_ay_14/ax").get_value(double());
 
     const scalar v = 110.0*KMH;
@@ -2601,10 +2601,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay14_110kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -2613,8 +2613,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay14_110kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 14.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_110/min_lon_ay_14/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_110/min_lon_ay_14/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_110/min_lon_ay_14/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_110/min_lon_ay_14/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_110/min_lon_ay_14/ax").get_value(double());
 
     const scalar v = 110.0*KMH;
@@ -2626,10 +2626,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay14_110kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -2637,8 +2637,8 @@ TEST_F(Steady_state_test, _0g_0g_120kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_120/zero_g/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_120/zero_g/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_120/zero_g/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_120/zero_g/u").get_value(std::vector<double>());
     double ay_saved = results.get_root_element().get_child("velocity_120/zero_g/ay").get_value(double());
     double ax_saved = results.get_root_element().get_child("velocity_120/zero_g/ax").get_value(double());
 
@@ -2649,7 +2649,7 @@ TEST_F(Steady_state_test, _0g_0g_120kmh)
     Steady_state ss(car);
     auto solution = ss.solve(v,ax,ay);
 
-    car(solution.q,solution.u,0.0);
+    car(solution.input_states,solution.controls,0.0);
 
     EXPECT_TRUE(solution.solved);
     EXPECT_NEAR(solution.ax, ax_saved, 1.0e-7);
@@ -2657,10 +2657,10 @@ TEST_F(Steady_state_test, _0g_0g_120kmh)
     
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution.q[i], q_saved[i], 2.0e-07) << "with i = " << i;
+        EXPECT_NEAR(solution.input_states[i], input_states_saved[i], 2.0e-07) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution.u[i], u_saved[i], 2.0e-07) << "with i = " << i;
+        EXPECT_NEAR(solution.controls[i], controls_saved[i], 2.0e-07) << "with i = " << i;
 }
 
 
@@ -2668,8 +2668,8 @@ TEST_F(Steady_state_test, max_lateral_accel_120kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_120/max_lat_acc/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_120/max_lat_acc/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_120/max_lat_acc/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_120/max_lat_acc/u").get_value(std::vector<double>());
     double ay_saved = results.get_root_element().get_child("velocity_120/max_lat_acc/ay").get_value(double());
     double ax_saved = results.get_root_element().get_child("velocity_120/max_lat_acc/ax").get_value(double());
 
@@ -2678,7 +2678,7 @@ TEST_F(Steady_state_test, max_lateral_accel_120kmh)
     Steady_state ss(car);
     auto solution = ss.solve_max_lat_acc(v);
 
-    car(solution.q,solution.u,0.0);
+    car(solution.input_states,solution.controls,0.0);
     
     EXPECT_TRUE(solution.solved);
 
@@ -2686,10 +2686,10 @@ TEST_F(Steady_state_test, max_lateral_accel_120kmh)
     EXPECT_NEAR(solution.ay, ay_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 TEST_F(Steady_state_test, max_longitudinal_accel_ay2_120kmh)
@@ -2697,8 +2697,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay2_120kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 2.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_120/max_lon_ay_2/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_120/max_lon_ay_2/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_120/max_lon_ay_2/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_120/max_lon_ay_2/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_120/max_lon_ay_2/ax").get_value(double());
 
     const scalar v = 120.0*KMH;
@@ -2710,10 +2710,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay2_120kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -2722,8 +2722,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay2_120kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 2.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_120/min_lon_ay_2/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_120/min_lon_ay_2/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_120/min_lon_ay_2/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_120/min_lon_ay_2/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_120/min_lon_ay_2/ax").get_value(double());
 
     const scalar v = 120.0*KMH;
@@ -2735,10 +2735,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay2_120kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -2747,8 +2747,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay5_120kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 5.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_120/max_lon_ay_5/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_120/max_lon_ay_5/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_120/max_lon_ay_5/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_120/max_lon_ay_5/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_120/max_lon_ay_5/ax").get_value(double());
 
     const scalar v = 120.0*KMH;
@@ -2760,10 +2760,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay5_120kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -2772,8 +2772,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay5_120kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 5.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_120/min_lon_ay_5/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_120/min_lon_ay_5/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_120/min_lon_ay_5/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_120/min_lon_ay_5/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_120/min_lon_ay_5/ax").get_value(double());
 
     const scalar v = 120.0*KMH;
@@ -2785,10 +2785,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay5_120kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -2797,8 +2797,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay8_120kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 8.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_120/max_lon_ay_8/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_120/max_lon_ay_8/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_120/max_lon_ay_8/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_120/max_lon_ay_8/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_120/max_lon_ay_8/ax").get_value(double());
 
     const scalar v = 120.0*KMH;
@@ -2810,10 +2810,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay8_120kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -2822,8 +2822,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay8_120kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 8.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_120/min_lon_ay_8/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_120/min_lon_ay_8/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_120/min_lon_ay_8/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_120/min_lon_ay_8/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_120/min_lon_ay_8/ax").get_value(double());
 
     const scalar v = 120.0*KMH;
@@ -2835,10 +2835,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay8_120kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -2847,8 +2847,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay10_120kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 10.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_120/max_lon_ay_10/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_120/max_lon_ay_10/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_120/max_lon_ay_10/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_120/max_lon_ay_10/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_120/max_lon_ay_10/ax").get_value(double());
 
     const scalar v = 120.0*KMH;
@@ -2860,10 +2860,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay10_120kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -2872,8 +2872,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay10_120kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 10.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_120/min_lon_ay_10/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_120/min_lon_ay_10/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_120/min_lon_ay_10/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_120/min_lon_ay_10/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_120/min_lon_ay_10/ax").get_value(double());
 
     const scalar v = 120.0*KMH;
@@ -2885,10 +2885,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay10_120kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -2899,8 +2899,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay12_120kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 12.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_120/max_lon_ay_12/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_120/max_lon_ay_12/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_120/max_lon_ay_12/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_120/max_lon_ay_12/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_120/max_lon_ay_12/ax").get_value(double());
 
     const scalar v = 120.0*KMH;
@@ -2912,10 +2912,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay12_120kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -2924,8 +2924,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay12_120kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 12.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_120/min_lon_ay_12/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_120/min_lon_ay_12/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_120/min_lon_ay_12/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_120/min_lon_ay_12/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_120/min_lon_ay_12/ax").get_value(double());
 
     const scalar v = 120.0*KMH;
@@ -2937,10 +2937,10 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay12_120kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -2952,8 +2952,8 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay14_120kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 14.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_120/max_lon_ay_14/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_120/max_lon_ay_14/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_120/max_lon_ay_14/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_120/max_lon_ay_14/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_120/max_lon_ay_14/ax").get_value(double());
 
     const scalar v = 120.0*KMH;
@@ -2965,10 +2965,10 @@ TEST_F(Steady_state_test, max_longitudinal_accel_ay14_120kmh)
     EXPECT_NEAR(solution_max.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_max.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_max.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_max.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
 
@@ -2977,8 +2977,8 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay14_120kmh)
     if ( is_valgrind ) GTEST_SKIP();
 
     double ay = 14.0;
-    std::vector<double> q_saved = results.get_root_element().get_child("velocity_120/min_lon_ay_14/q").get_value(std::vector<double>());
-    std::vector<double> u_saved = results.get_root_element().get_child("velocity_120/min_lon_ay_14/u").get_value(std::vector<double>());
+    std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_120/min_lon_ay_14/q").get_value(std::vector<double>());
+    std::vector<double> controls_saved = results.get_root_element().get_child("velocity_120/min_lon_ay_14/u").get_value(std::vector<double>());
     double ax_saved = results.get_root_element().get_child("velocity_120/min_lon_ay_14/ax").get_value(double());
 
     const scalar v = 120.0*KMH;
@@ -2990,9 +2990,9 @@ TEST_F(Steady_state_test, min_longitudinal_accel_ay14_120kmh)
     EXPECT_NEAR(solution_min.ax, ax_saved, 2.0e-4);
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NSTATE; ++i)
-        EXPECT_NEAR(solution_min.q[i], q_saved[i], 2.0e-4*std::max(1.0,q_saved[i])) << "with i = " << i;
+        EXPECT_NEAR(solution_min.input_states[i], input_states_saved[i], 2.0e-4*std::max(1.0,input_states_saved[i])) << "with i = " << i;
 
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
-        EXPECT_NEAR(solution_min.u[i], u_saved[i], 2.0e-4) << "with i = " << i;
+        EXPECT_NEAR(solution_min.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 

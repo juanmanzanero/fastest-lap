@@ -1,6 +1,5 @@
-#ifndef FASTEST_LAP_CLIB_H__
-#define FASTEST_LAP_CLIB_H__
-
+#ifndef FASTESTLAPC_H
+#define FASTESTLAPC_H
 
 #ifdef _MSC_VER
 #ifdef fastestlapc_EXPORTS
@@ -73,7 +72,7 @@ extern fastestlapc_API void vehicle_type_get_sizes(int* n_state, int* n_algebrai
 
 extern fastestlapc_API void vehicle_type_get_names(char* key_name, char* state_names[], char* algebraic_state_names[], char* control_names[], char* output_names[], const int n_char, const char* vehicle_type_name);
 
-extern fastestlapc_API double vehicle_get_output(const char* vehicle_name, const double* q, const double* qa, const double* u, const double s, const char* property_name);
+extern fastestlapc_API double vehicle_get_output(const char* vehicle_name, const double* input_states, const double* algebraic_states, const double* controls, const double s, const char* property_name);
 
 extern fastestlapc_API void vehicle_save_as_xml(const char* vehicle_name, const char* file_name);
 
@@ -98,7 +97,9 @@ extern fastestlapc_API void vehicle_change_track(const char* c_vehicle, const ch
 
 // Applications --------------------------------------------------------------------------------------------------------
 
-extern fastestlapc_API void propagate_vehicle(double* q, double* qa, double* u, const char* vehicle_name, const char* track_name, double s, double ds, double* u_next, bool use_circuit, const char* options);
+extern fastestlapc_API void steady_state(double*input_states, double* algebraic_states, double* controls, const char* vehicle_name, double v, double ax, double ay);
+
+extern fastestlapc_API void propagate_vehicle(double* input_states, double* algebraic_states, double* controls, const char* vehicle_name, const char* track_name, double s, double ds, double* u_next, bool use_circuit, const char* options);
 
 extern fastestlapc_API void gg_diagram(double* ay, double* ax_max, double* ax_min, const char* vehicle_name, double v, const int n_points);
 
@@ -106,8 +107,7 @@ extern fastestlapc_API void optimal_laptime(const char* c_vehicle, const char* c
 
 extern fastestlapc_API void circuit_preprocessor(const char* options);
 
-//void vehicle_equations(double* dqdt, double* dqa, const char* vehicle_name, double* q, double* qa, double* u, double s);
-
+//void vehicle_equations(double* dqdt, double* dqa, const char* vehicle_name, double* input_states, double* algebraic_states, double* controls, double s);
 
 #ifdef __cplusplus
 }

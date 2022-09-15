@@ -17,10 +17,16 @@ class Tire
     using Timeseries_type = Timeseries_t;
 
     //! Indices of the state variables of this class: none
-    enum State     { STATE_END    = STATE0 } ;
+    struct input_state_names
+    {
+        enum { end = STATE0 };
+    };
 
     //! Indices of the control variables of this class: none
-    enum Controls  { CONTROL_END  = CONTROL0 } ;
+    struct control_names
+    {
+        enum { end = CONTROL0 };
+    };
 
     // Two tire types implemented: NORMAL (both lateral and longitudinal) and ONLY_LATERAL (only lateral)
     enum Type { NORMAL, ONLY_LATERAL };
@@ -78,9 +84,6 @@ class Tire
 
     //! Returns the longitudinal slip [-]
     const Timeseries_t& get_kappa() const { return _kappa; }
-
-    //! Returns the derivative of the longitudinal slip w.r.t. omega
-    const Timeseries_t& get_dkappadomega() const { return _dkappadomega; }
 
     //! Returns the lateral slip [-]
     const Timeseries_t& get_lambda() const { return _lambda; }
@@ -143,9 +146,6 @@ class Tire
     //! Compute the longitudinal slip
     Timeseries_t kappa() const { return (_omega*_R0-_v[0])/_v[0]; } 
 
-    //! Compute the derivative of the longitudinal slip w.r.t. omega
-    Timeseries_t dkappadomega() const { return _R0/_v[0]; }
-
     //! Compute the lateral slip
     Timeseries_t lambda() const { return -_v[1]/_v[0]; }
 
@@ -193,8 +193,6 @@ class Tire
 
     Timeseries_t _kappa = 0.0;  //! [out] Longitudinal slip  ((omega.R0)/v[0] - 1)
     Timeseries_t _lambda = 0.0; //! [out] Sideslip angle = -atan(v[1]/v[0])
-
-    Timeseries_t _dkappadomega = 0.0; //! [out] Derivative of the longitudinal slip w.r.t. omega
 
     Vector3d<Timeseries_t> _F = {0.0, 0.0, 0.0};  //! [out] Tire forces [N]
     Vector3d<Timeseries_t> _T = {0.0, 0.0, 0.0};  //! [out] Tire torques at wheel centre [N.m]

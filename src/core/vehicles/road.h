@@ -9,8 +9,21 @@ class Road
  public:
     using Timeseries_type = Timeseries_t; 
 
-    enum State { STATE_END = STATE0};
-    enum Controls { CONTROL_END = CONTROL0 };
+    struct input_state_names
+    {
+        enum
+        {
+            end = STATE0
+        };
+    };
+
+    struct control_names
+    {
+        enum
+        {
+            end = CONTROL0
+        };
+    };
 
     constexpr const Timeseries_t& get_x() const { return _x; }
 

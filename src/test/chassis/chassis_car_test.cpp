@@ -7,18 +7,18 @@
 
 
 using Front_left_tire_type  = Tire_pacejka_std<scalar,0,0>;
-using Front_right_tire_type = Tire_pacejka_std<scalar,Front_left_tire_type ::STATE_END, Front_left_tire_type ::CONTROL_END>;
-using Rear_left_tire_type   = Tire_pacejka_std<scalar,Front_right_tire_type::STATE_END, Front_right_tire_type::CONTROL_END>;
-using Rear_right_tire_type  = Tire_pacejka_std<scalar,Rear_left_tire_type  ::STATE_END, Rear_left_tire_type  ::CONTROL_END>;
+using Front_right_tire_type = Tire_pacejka_std<scalar,Front_left_tire_type ::input_state_names::end, Front_left_tire_type ::control_names::end>;
+using Rear_left_tire_type   = Tire_pacejka_std<scalar,Front_right_tire_type::input_state_names::end, Front_right_tire_type::control_names::end>;
+using Rear_right_tire_type  = Tire_pacejka_std<scalar,Rear_left_tire_type  ::input_state_names::end, Rear_left_tire_type  ::control_names::end>;
 
-using Front_axle_type = Axle_car_6dof<scalar,Front_left_tire_type,Front_right_tire_type,STEERING_FREE_ROLL,Rear_right_tire_type::STATE_END,Rear_right_tire_type::CONTROL_END>;
-using Rear_axle_type  = Axle_car_6dof<scalar,Rear_left_tire_type,Rear_right_tire_type,POWERED_WITHOUT_DIFFERENTIAL,Front_axle_type::STATE_END,Front_axle_type::CONTROL_END>;
-using Chassis_t = Chassis_car_6dof<scalar,Front_axle_type,Rear_axle_type,Rear_axle_type::STATE_END,Rear_axle_type::CONTROL_END>;
+using Front_axle_type = Axle_car_6dof<scalar,Front_left_tire_type,Front_right_tire_type,STEERING_FREE_ROLL,Rear_right_tire_type::input_state_names::end,Rear_right_tire_type::control_names::end>;
+using Rear_axle_type  = Axle_car_6dof<scalar,Rear_left_tire_type,Rear_right_tire_type,POWERED_WITHOUT_DIFFERENTIAL,Front_axle_type::input_state_names::end,Front_axle_type::control_names::end>;
+using Chassis_t = Chassis_car_6dof<scalar,Front_axle_type,Rear_axle_type,Rear_axle_type::input_state_names::end,Rear_axle_type::control_names::end>;
 
-template class Axle_car_6dof<scalar,Front_left_tire_type,Front_right_tire_type,STEERING_FREE_ROLL,Rear_right_tire_type::STATE_END,Rear_right_tire_type::CONTROL_END>;
-template class Axle_car_6dof<scalar,Rear_left_tire_type,Rear_right_tire_type,POWERED_WITHOUT_DIFFERENTIAL,Front_axle_type::STATE_END,Front_axle_type::CONTROL_END>;
-template class Chassis_car_6dof<scalar,Front_axle_type,Rear_axle_type,Rear_axle_type::STATE_END,Rear_axle_type::CONTROL_END>;
-template class Chassis<scalar,Front_axle_type,Rear_axle_type,Rear_axle_type::STATE_END,Rear_axle_type::CONTROL_END>;
+template class Axle_car_6dof<scalar,Front_left_tire_type,Front_right_tire_type,STEERING_FREE_ROLL,Rear_right_tire_type::input_state_names::end,Rear_right_tire_type::control_names::end>;
+template class Axle_car_6dof<scalar,Rear_left_tire_type,Rear_right_tire_type,POWERED_WITHOUT_DIFFERENTIAL,Front_axle_type::input_state_names::end,Front_axle_type::control_names::end>;
+template class Chassis_car_6dof<scalar,Front_axle_type,Rear_axle_type,Rear_axle_type::input_state_names::end,Rear_axle_type::control_names::end>;
+template class Chassis<scalar,Front_axle_type,Rear_axle_type,Rear_axle_type::input_state_names::end,Rear_axle_type::control_names::end>;
 
   
 class Chassis_test : public ::testing::Test

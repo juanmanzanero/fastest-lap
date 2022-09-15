@@ -1,5 +1,5 @@
-#ifndef __AXLE_CAR_3DOF_H__
-#define __AXLE_CAR_3DOF_H__
+#ifndef AXLE_CAR_3DOF_H
+#define AXLE_CAR_3DOF_H
 
 #include "axle.h"
 #include "src/core/actuators/engine.h"
@@ -33,21 +33,33 @@ template<size_t STATE0, size_t CONTROL0>
 struct POWERED
 {
     //! State variables: kappa of the two wheels
-    enum State     
-    { 
-        IKAPPA_LEFT  = STATE0,     //! Left tire longitudinal slip [-]
-        IKAPPA_RIGHT,              //! Right tire longitudinal slip [-]
-        STATE_END    
-    } ;
+    struct input_state_names
+    {
+        enum
+        {
+            KAPPA_LEFT = STATE0,     //! Left tire longitudinal slip [-]
+            KAPPA_RIGHT,              //! Right tire longitudinal slip [-]
+            end
+        };
+    };
+
+    struct state_names
+    {
+        enum
+        {
+            OMEGA_LEFT = STATE0,
+            OMEGA_RIGHT
+        };
+    };
 
     //! Control variables: boost
-    enum Controls 
-    { 
-        IBOOST = CONTROL0, CONTROL_END
-    } ;
-    
-    constexpr static size_t IIDKAPPA_LEFT  = IKAPPA_LEFT;    //! Left tire longitudinal slip time derivative [1/s]
-    constexpr static size_t IIDKAPPA_RIGHT = IKAPPA_RIGHT;   //! Right tire longitudinal slip time derivative [1/s]
+    struct control_names
+    {
+        enum Controls
+        {
+            BOOST = CONTROL0, end
+        };
+    };
 };
 
 //! State and control variables for Steering with free roll axles
@@ -57,22 +69,34 @@ template<size_t STATE0, size_t CONTROL0>
 struct STEERING
 {
     //! State variables: kappa of the two wheels
-    enum State     
-    { 
-        IKAPPA_LEFT  = STATE0,     //! Left tire longitudinal slip [-]
-        IKAPPA_RIGHT,              //! Right tire longitudinal slip [-]
-        STATE_END    
-    } ;
+    struct input_state_names
+    {
+        enum
+        {
+            KAPPA_LEFT = STATE0,     //! Left tire longitudinal slip [-]
+            KAPPA_RIGHT,              //! Right tire longitudinal slip [-]
+            end
+        };
+    };
+
+    struct state_names
+    {
+        enum
+        {
+            OMEGA_LEFT = STATE0,
+            OMEGA_RIGHT
+        };
+    };
 
     //! Control variables: steering angle
-    enum Controls  
-    { 
-        ISTEERING    = CONTROL0,    //! Steering angle [rad]
-        CONTROL_END  
-    } ;
-
-    constexpr static size_t IIDKAPPA_LEFT  = IKAPPA_LEFT;    //! Left tire longitudinal slip time derivative [1/s]
-    constexpr static size_t IIDKAPPA_RIGHT = IKAPPA_RIGHT;   //! Right tire longitudinal slip time derivative [1/s]
+    struct control_names
+    {
+        enum Controls
+        {
+            STEERING = CONTROL0,    //! Steering angle [rad]
+            end
+        };
+    };
 };
 
 //! Car axle class
@@ -83,8 +107,8 @@ struct STEERING
 //!  @param CONTROL0: index of the first control variable defined here
 template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t> typename Axle_mode, size_t STATE0, size_t CONTROL0>
 class Axle_car_3dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,STATE0,CONTROL0>, 
-                      public Axle_mode<Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,STATE0,CONTROL0>::STATE_END, 
-                                  Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,STATE0,CONTROL0>::CONTROL_END> 
+    public Axle_mode<Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,STATE0,CONTROL0>::input_state_names::end, 
+                                  Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,STATE0,CONTROL0>::control_names::end> 
 {
  public:
 
@@ -92,19 +116,18 @@ class Axle_car_3dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
     using base_type       = Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,STATE0,CONTROL0>;
 
     //! The axle sub type (POWERED_WITHOUT_DIFFERENTIAL/STEERING_FREE_ROLL)
-    using Axle_type       = Axle_mode<STATE0,CONTROL0>;
+    using Axle_type       = Axle_mode<Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,STATE0,CONTROL0>::input_state_names::end,
+                                  Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,STATE0,CONTROL0>::control_names::end>;
+
+    struct state_names : public Axle_type::state_names, base_type::state_names {};
+    struct input_state_names : public Axle_type::input_state_names, base_type::input_state_names {};
+    struct control_names : public Axle_type::control_names, base_type::control_names {};
 
     //! The left tire type
     using Tire_left_type  = Tire_left_t;
 
     //! The right tire type
     using Tire_right_type = Tire_right_t;
-
-    //! Index of the last state variable + 1
-    constexpr static size_t STATE_END    = Axle_type::STATE_END;
-
-    //! Index of the last control variable + 1
-    constexpr static size_t CONTROL_END  = Axle_type::CONTROL_END;
 
     //! The two tires: left and right
     enum Tires : size_t { LEFT, RIGHT };
@@ -132,7 +155,12 @@ class Axle_car_3dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
     template<typename T>
     bool set_parameter(const std::string& parameter, const T value);
 
-    //! Updates the axle: compute dkappa_left and dkappa_right, plus the equivalent force+torque at the axle center
+    template<size_t NSTATE, size_t NCONTROL>
+    void transform_states_to_input_states(const std::array<Timeseries_t,NSTATE>& states,
+                                          const std::array<Timeseries_t,NCONTROL>& controls,
+                                          std::array<Timeseries_t,NSTATE>& input_states);
+
+    //! Updates the axle: compute domega_dt_left and domega_dt_right, plus the equivalent force+torque at the axle center
     //! @param[in] Fz_left: the normal force of the left tire
     //! @param[in] Fz_right: the normal force of the right tire
     //! @param[in] throttle: the throttle/brake percentage in [-1,1]
@@ -146,16 +174,16 @@ class Axle_car_3dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
     const Timeseries_t& get_steering_angle() const { return _delta; }
 
     //! Get the angular speed of the left tire [rad/s]
-    const Timeseries_t& get_kappa_left() const { return _kappa_left; }
+    const Timeseries_t& get_kappa_dimensionless_left() const { return _kappa_dimensionless_left; }
 
     //! Get the angular speed of the right tire [rad/s]
-    const Timeseries_t& get_kappa_right() const { return _kappa_right; }
+    const Timeseries_t& get_kappa_dimensionless_right() const { return _kappa_dimensionless_right; }
 
     //! Get the axle angular acceleration [rad/s2]
-    const Timeseries_t& get_kappa_left_derivative() const { return _dkappa_left; } 
+    const Timeseries_t& get_domega_dt_left() const { return _domega_dt_left; } 
 
     //! Get the axle angular acceleration [rad/s2]
-    const Timeseries_t& get_kappa_right_derivative() const { return _dkappa_right; } 
+    const Timeseries_t& get_domega_dt_right() const { return _domega_dt_right; } 
 
     //! Get the left wheel torque [N.m]
     const Timeseries_t& get_torque_left() const { return _torque_left; }
@@ -189,31 +217,31 @@ class Axle_car_3dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
     //! Load the time derivative of the state variables computed herein to the dqdt
     //! @param[out] dqdt: the vehicle state vector time derivative
     template<size_t N>
-    void get_state_derivative(std::array<Timeseries_t,N>& dqdt) const;
+    void get_state_and_state_derivative(std::array<Timeseries_t,N>& state,std::array<Timeseries_t,N>& dstate_dt) const;
 
     //! Set the state variables of this class
     //! @param[in] q: the vehicle state vector 
     //! @param[in] u: the vehicle control vector
     template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_controls(const std::array<Timeseries_t,NSTATE>& q, 
-                                const std::array<Timeseries_t,NCONTROL>& u);
+    void set_state_and_controls(const std::array<Timeseries_t,NSTATE>& input_states, 
+                                const std::array<Timeseries_t,NCONTROL>& controls);
 
     //! Set the state and controls upper, lower, and default values
     template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_control_upper_lower_and_default_values(std::array<scalar,NSTATE>& q_def,
-                                                               std::array<scalar,NSTATE>& q_lb,
-                                                               std::array<scalar,NSTATE>& q_ub,
-                                                               std::array<scalar,NCONTROL>& u_def,
-                                                               std::array<scalar,NCONTROL>& u_lb,
-                                                               std::array<scalar,NCONTROL>& u_ub 
+    void set_state_and_control_upper_lower_and_default_values(std::array<scalar,NSTATE>& input_states_def,
+                                                               std::array<scalar,NSTATE>& input_states_lb,
+                                                               std::array<scalar,NSTATE>& input_states_ub,
+                                                               std::array<scalar,NCONTROL>& controls_def,
+                                                               std::array<scalar,NCONTROL>& controls_lb,
+                                                               std::array<scalar,NCONTROL>& controls_ub 
                                                               ) const;
 
     //! Get the names of the state and control variables of this class
     //! @param[out] q: the vehicle state names
     //! @param[out] u: the vehicle control names
     template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_control_names(std::array<std::string,NSTATE>& q, 
-                                     std::array<std::string,NCONTROL>& u) const;
+    void set_state_and_control_names(std::array<std::string,NSTATE>& input_states, 
+                                     std::array<std::string,NCONTROL>& controls) const;
 
     bool is_ready() const { return base_type::is_ready() && 
         std::all_of(__used_parameters.begin(), __used_parameters.end(), [](const auto& v) -> auto { return v; }); }
@@ -245,12 +273,12 @@ class Axle_car_3dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
     scalar _throttle_smooth_pos;        //! [c] Coefficient used to smooth throttle/brake
 
     // State Variables
-    Timeseries_t _kappa_left;           //! [in] Angular speed of the left tire [rad/s]
-    Timeseries_t _kappa_right;          //! [in] Angular speed of the right tire [rad/s]
+    Timeseries_t _kappa_dimensionless_left;           //! [in] Angular speed of the left tire [rad/s]
+    Timeseries_t _kappa_dimensionless_right;          //! [in] Angular speed of the right tire [rad/s]
 
     // State variables time derivatives
-    Timeseries_t _dkappa_left;          //! [out] Angular acceleration of the left tire [rad/s2]
-    Timeseries_t _dkappa_right;         //! [out] Angular acceleration of the right tire [rad/s2]
+    Timeseries_t _domega_dt_left;          //! [out] Angular acceleration of the left tire [rad/s2]
+    Timeseries_t _domega_dt_right;         //! [out] Angular acceleration of the right tire [rad/s2]
 
     // Engine/brake torque
     Timeseries_t _torque_left;          //! [out] Torque applied to the left tire
