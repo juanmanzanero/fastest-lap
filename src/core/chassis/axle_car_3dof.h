@@ -47,8 +47,8 @@ struct POWERED
     {
         enum
         {
-            OMEGA_LEFT = STATE0,
-            OMEGA_RIGHT
+            angular_momentum_left = STATE0,
+            angular_momentum_right
         };
     };
 
@@ -83,8 +83,8 @@ struct STEERING
     {
         enum
         {
-            OMEGA_LEFT = STATE0,
-            OMEGA_RIGHT
+            angular_momentum_left = STATE0,
+            angular_momentum_right
         };
     };
 
@@ -160,7 +160,7 @@ class Axle_car_3dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
                                           const std::array<Timeseries_t,NCONTROL>& controls,
                                           std::array<Timeseries_t,NSTATE>& input_states);
 
-    //! Updates the axle: compute domega_dt_left and domega_dt_right, plus the equivalent force+torque at the axle center
+    //! Updates the axle: compute angular_momentum_left and angular_momentum_right, plus the equivalent force+torque at the axle center
     //! @param[in] Fz_left: the normal force of the left tire
     //! @param[in] Fz_right: the normal force of the right tire
     //! @param[in] throttle: the throttle/brake percentage in [-1,1]
@@ -180,10 +180,10 @@ class Axle_car_3dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
     const Timeseries_t& get_kappa_dimensionless_right() const { return _kappa_dimensionless_right; }
 
     //! Get the axle angular acceleration [rad/s2]
-    const Timeseries_t& get_domega_dt_left() const { return _domega_dt_left; } 
+    const Timeseries_t& get_dangular_momentum_dt_left() const { return _dangular_momentum_dt_left; } 
 
     //! Get the axle angular acceleration [rad/s2]
-    const Timeseries_t& get_domega_dt_right() const { return _domega_dt_right; } 
+    const Timeseries_t& get_dangular_momentum_dt_right() const { return _dangular_momentum_dt_right; } 
 
     //! Get the left wheel torque [N.m]
     const Timeseries_t& get_torque_left() const { return _torque_left; }
@@ -217,14 +217,15 @@ class Axle_car_3dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
     //! Load the time derivative of the state variables computed herein to the dqdt
     //! @param[out] dqdt: the vehicle state vector time derivative
     template<size_t N>
-    void get_state_and_state_derivative(std::array<Timeseries_t,N>& state,std::array<Timeseries_t,N>& dstate_dt) const;
+    void get_state_and_state_derivative(std::array<Timeseries_t,N>& state,std::array<Timeseries_t,N>& dstate_dt, const Timeseries_t& mass_kg) const;
 
     //! Set the state variables of this class
     //! @param[in] q: the vehicle state vector 
     //! @param[in] u: the vehicle control vector
     template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_controls(const std::array<Timeseries_t,NSTATE>& input_states, 
-                                const std::array<Timeseries_t,NCONTROL>& controls);
+    void set_state_and_controls(const std::array<Timeseries_t,NSTATE>& input_states,
+                                const std::array<Timeseries_t,NCONTROL>& controls
+                               );
 
     //! Set the state and controls upper, lower, and default values
     template<size_t NSTATE, size_t NCONTROL>
@@ -277,8 +278,8 @@ class Axle_car_3dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
     Timeseries_t _kappa_dimensionless_right;          //! [in] Angular speed of the right tire [rad/s]
 
     // State variables time derivatives
-    Timeseries_t _domega_dt_left;          //! [out] Angular acceleration of the left tire [rad/s2]
-    Timeseries_t _domega_dt_right;         //! [out] Angular acceleration of the right tire [rad/s2]
+    Timeseries_t _dangular_momentum_dt_left;          //! [out] Angular acceleration of the left tire [rad/s2]
+    Timeseries_t _dangular_momentum_dt_right;         //! [out] Angular acceleration of the right tire [rad/s2]
 
     // Engine/brake torque
     Timeseries_t _torque_left;          //! [out] Torque applied to the left tire

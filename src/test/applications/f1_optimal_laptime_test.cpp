@@ -269,6 +269,9 @@ TEST_F(F1_optimal_laptime_test, Catalunya_variable_parameter)
     limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial>::Road_t road(catalunya);
     limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial> car(database, road);
 
+    car.set_parameter("vehicle/front-axle/inertia", 1.00);
+    car.set_parameter("vehicle/rear-axle/inertia", 1.55);
+
     std::vector<std::string> parameter_aliases = {"power-1", "power-2"};
     std::vector<scalar> parameter_values = {735.499, 1000.0}; 
     std::vector<std::pair<scalar,size_t>> parameter_mesh = { {0.0, 0}, {2900.0, 0}, {3100.0,1}, {5000.0,1} };
@@ -319,6 +322,9 @@ TEST_F(F1_optimal_laptime_test, Catalunya_chicane)
     
     limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial>::Road_t road(catalunya);
     limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial> car(database, road);
+
+    car.set_parameter("vehicle/front-axle/inertia", 1.00);
+    car.set_parameter("vehicle/rear-axle/inertia", 1.55);
 
     // Start from the steady-state values at 50km/h-0g    
     const scalar v = 70.0*KMH;
@@ -436,6 +442,9 @@ TEST_F(F1_optimal_laptime_test, Catalunya_chicane_warm_start)
     
     limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial>::Road_t road(catalunya);
     limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial> car(database, road);
+
+    car.set_parameter("vehicle/front-axle/inertia", 1.00);
+    car.set_parameter("vehicle/rear-axle/inertia", 1.55);
 
     // Set initial condtion
     Xml_document opt_saved("data/f1_optimal_laptime_catalunya_adapted.xml", true);
@@ -686,6 +695,9 @@ TEST_F(F1_optimal_laptime_test, Catalunya_chicane_derivative)
     
     limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial>::Road_t road(catalunya);
     limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial> car(database, road);
+
+    car.set_parameter("vehicle/front-axle/inertia", 1.00);
+    car.set_parameter("vehicle/rear-axle/inertia", 1.55);
 
     // Start from the steady-state values at 50km/h-0g    
     const scalar v = 70.0*KMH;
@@ -1027,8 +1039,8 @@ TEST_F(F1_optimal_laptime_test, Catalunya_boost)
     limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial>::Road_t road(catalunya);
     limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial> car(database, road);
 
-    // Engine energy limits require a higher value of the smooth throttle coefficient
-//  car.set_parameter("vehicle/rear-axle/smooth_throttle_coeff", 1.0e-2);
+    car.set_parameter("vehicle/front-axle/inertia", 1.00);
+    car.set_parameter("vehicle/rear-axle/inertia", 1.55);
 
     // Start from the steady-state values at 50km/h-0g    
     const scalar v = 50.0*KMH;

@@ -22,11 +22,11 @@ static_assert(Front_axle_t::input_state_names::KAPPA_RIGHT == 1);
 static_assert(Rear_axle_t::input_state_names::KAPPA_LEFT  == 2);
 static_assert(Rear_axle_t::input_state_names::KAPPA_RIGHT == 3);
 
-static_assert(Front_axle_t::state_names::OMEGA_LEFT  == 0);
-static_assert(Front_axle_t::state_names::OMEGA_RIGHT == 1);
+static_assert(Front_axle_t::state_names::angular_momentum_left  == 0);
+static_assert(Front_axle_t::state_names::angular_momentum_right== 1);
 
-static_assert(Rear_axle_t::state_names::OMEGA_LEFT  == 2);
-static_assert(Rear_axle_t::state_names::OMEGA_RIGHT == 3);
+static_assert(Rear_axle_t::state_names::angular_momentum_left == 2);
+static_assert(Rear_axle_t::state_names::angular_momentum_right == 3);
  
 class Axle_car_3dof_test : public testing::Test
 {
@@ -281,8 +281,8 @@ TEST_F(Axle_car_3dof_test, update_front_axle)
     EXPECT_DOUBLE_EQ(front_axle.get_torque()[2], F_fl_ax[0]*0.73 - F_fr_ax[0]*0.73);
 
     // Check the tires rotational dynamics
-    EXPECT_DOUBLE_EQ(front_axle.get_domega_dt_left(), -0.33*F_fl[0]/1.0);
-    EXPECT_DOUBLE_EQ(front_axle.get_domega_dt_right(), -0.33*F_fr[0]/1.0);
+    EXPECT_DOUBLE_EQ(front_axle.get_dangular_momentum_dt_left(), -0.33*F_fl[0]);
+    EXPECT_DOUBLE_EQ(front_axle.get_dangular_momentum_dt_right(), -0.33*F_fr[0]);
 }
 
 
@@ -348,6 +348,6 @@ TEST_F(Axle_car_3dof_test, update_rear_axle)
     EXPECT_NEAR(rear_axle.get_torque()[2], F_rl[0]*0.73 - F_rr[0]*0.73,2.0e-12);
 
     // Check the tires rotational dynamics
-    EXPECT_DOUBLE_EQ(rear_axle.get_domega_dt_left(), (-10.47*(omega_rl-omega_rr) - 0.33*F_rl[0])/1.55);
-    EXPECT_DOUBLE_EQ(rear_axle.get_domega_dt_right(),( 10.47*(omega_rl-omega_rr) - 0.33*F_rr[0])/1.55);
+    EXPECT_DOUBLE_EQ(rear_axle.get_dangular_momentum_dt_left(), (-10.47*(omega_rl-omega_rr) - 0.33*F_rl[0]));
+    EXPECT_DOUBLE_EQ(rear_axle.get_dangular_momentum_dt_right(),( 10.47*(omega_rl-omega_rr) - 0.33*F_rr[0]));
 }

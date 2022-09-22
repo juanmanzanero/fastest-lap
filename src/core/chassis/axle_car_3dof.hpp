@@ -15,8 +15,8 @@ Axle_car_3dof<Timeseries_t, Tire_left_t, Tire_right_t, Axle_mode, STATE0, CONTRO
   _throttle_smooth_pos(0.0),
   _kappa_dimensionless_left(0.0),
   _kappa_dimensionless_right(0.0),
-  _domega_dt_left(0.0),
-  _domega_dt_right(0.0),
+  _dangular_momentum_dt_left(0.0),
+  _dangular_momentum_dt_right(0.0),
   _torque_left(0.0),
   _torque_right(0.0),
   _throttle(0.0),
@@ -71,8 +71,8 @@ Axle_car_3dof<Timeseries_t, Tire_left_t, Tire_right_t, Axle_mode, STATE0, CONTRO
   _throttle_smooth_pos(0.0),
   _kappa_dimensionless_left(0.0),
   _kappa_dimensionless_right(0.0),
-  _domega_dt_left(0.0),
-  _domega_dt_right(0.0),
+  _dangular_momentum_dt_left(0.0),
+  _dangular_momentum_dt_right(0.0),
   _torque_left(0.0),
   _torque_right(0.0),
   _throttle(0.0),
@@ -258,8 +258,8 @@ void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTRO
     }
 
     // Compute the time derivative of the two kappas
-    _domega_dt_left = (_torque_left  + tire_l.get_longitudinal_torque_at_wheel_center()) / _I;
-    _domega_dt_right = (_torque_right + tire_r.get_longitudinal_torque_at_wheel_center()) / _I;
+    _dangular_momentum_dt_left = (_torque_left  + tire_l.get_longitudinal_torque_at_wheel_center());
+    _dangular_momentum_dt_right = (_torque_right + tire_r.get_longitudinal_torque_at_wheel_center());
 
     // Get the total force and torque by the tires
     const Vector3d<Timeseries_t> F_left = tire_l.get_force_in_parent(); 
@@ -287,17 +287,19 @@ scalar Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONT
 // ------- Handle state vector
 template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t> typename Axle_mode, size_t STATE0, size_t CONTROL0>
 template<size_t N>
-void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::get_state_and_state_derivative(std::array<Timeseries_t,N>& state, std::array<Timeseries_t,N>& dstate_dt) const
+void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::get_state_and_state_derivative(std::array<Timeseries_t,N>& state, std::array<Timeseries_t,N>& dstate_dt, const Timeseries_t& mass_kg) const
 {
     base_type::get_state_and_state_derivative(state, dstate_dt);
 
+    const auto scaling_factor = (_I < 1.0e-10 ? 1.0/mass_kg : 1.0);
+
     // Left tire's kappa
-    state    [state_names::OMEGA_LEFT] = std::get<0>(base_type::_tires).get_omega();
-    dstate_dt[state_names::OMEGA_LEFT] = _domega_dt_left;
+    state    [state_names::angular_momentum_left] = std::get<0>(base_type::_tires).get_omega() * _I * scaling_factor;
+    dstate_dt[state_names::angular_momentum_left] = _dangular_momentum_dt_left * scaling_factor;
 
     // Right tire's omega
-    state    [state_names::OMEGA_RIGHT] = std::get<1>(base_type::_tires).get_omega();
-    dstate_dt[state_names::OMEGA_RIGHT] = _domega_dt_right;
+    state    [state_names::angular_momentum_right] = std::get<1>(base_type::_tires).get_omega() * _I * scaling_factor;
+    dstate_dt[state_names::angular_momentum_right] = _dangular_momentum_dt_right * scaling_factor;
 }
 
 

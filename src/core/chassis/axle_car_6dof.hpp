@@ -245,8 +245,9 @@ scalar Axle_car_6dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONT
 template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t> typename Axle_mode, size_t STATE0, size_t CONTROL0>
 template<size_t N>
 void Axle_car_6dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::get_state_and_state_derivative
-    (std::array<Timeseries_t,N>& state, std::array<Timeseries_t, N>& dstate_dt) const
+    (std::array<Timeseries_t,N>& state, std::array<Timeseries_t, N>& dstate_dt, const Timeseries_t& mass_kg) const
 {
+    (void)mass_kg;
     base_type::get_state_and_state_derivative(state, dstate_dt);
 
     if constexpr (std::is_same<Axle_mode<0,0>,POWERED_WITHOUT_DIFFERENTIAL<0,0>>::value)

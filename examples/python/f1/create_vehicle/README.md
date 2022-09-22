@@ -40,12 +40,12 @@ fastest_lap.create_vehicle_empty(vehicle_manual,"f1-3dof");
 
 ```python
 fastest_lap.vehicle_set_parameter(vehicle_manual,"vehicle/front-axle/track", 1.46);
-fastest_lap.vehicle_set_parameter(vehicle_manual,"vehicle/front-axle/inertia", 1.0);
+fastest_lap.vehicle_set_parameter(vehicle_manual,"vehicle/front-axle/inertia", 0.0);
 fastest_lap.vehicle_set_parameter(vehicle_manual,"vehicle/front-axle/smooth_throttle_coeff", 1.0e-5);
 fastest_lap.vehicle_set_parameter(vehicle_manual,"vehicle/front-axle/brakes/max_torque", 5000.0);
 
 fastest_lap.vehicle_set_parameter(vehicle_manual,"vehicle/rear-axle/track", 1.46);
-fastest_lap.vehicle_set_parameter(vehicle_manual,"vehicle/rear-axle/inertia", 1.55);
+fastest_lap.vehicle_set_parameter(vehicle_manual,"vehicle/rear-axle/inertia", 0.0);
 fastest_lap.vehicle_set_parameter(vehicle_manual,"vehicle/rear-axle/smooth_throttle_coeff", 1.0e-5);
 fastest_lap.vehicle_set_parameter(vehicle_manual,"vehicle/rear-axle/differential_stiffness", 10.47);
 fastest_lap.vehicle_set_parameter(vehicle_manual,"vehicle/rear-axle/brakes/max_torque", 5000.0);

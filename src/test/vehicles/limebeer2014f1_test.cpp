@@ -40,10 +40,10 @@ static_assert(Road_t::input_state_names::Y                 == 8);
 static_assert(Road_t::input_state_names::PSI               == 9);
 static_assert(limebeer2014f1<scalar>::cartesian::NSTATE == 10);
 
-static_assert(Front_axle_t::state_names::OMEGA_LEFT  == 0);
-static_assert(Front_axle_t::state_names::OMEGA_RIGHT == 1);
-static_assert(Rear_axle_t::state_names::OMEGA_LEFT   == 2);
-static_assert(Rear_axle_t::state_names::OMEGA_RIGHT  == 3);
+static_assert(Front_axle_t::state_names::angular_momentum_left  == 0);
+static_assert(Front_axle_t::state_names::angular_momentum_right == 1);
+static_assert(Rear_axle_t::state_names::angular_momentum_left   == 2);
+static_assert(Rear_axle_t::state_names::angular_momentum_right  == 3);
 static_assert(Chassis_t::state_names::U              == 4);
 static_assert(Chassis_t::state_names::V              == 5);
 static_assert(Chassis_t::state_names::OMEGA          == 6);
@@ -80,10 +80,10 @@ TEST_F(limebeer2014f1_test, indexes)
     EXPECT_EQ(Road_t::input_state_names::Y                 , 8);
     EXPECT_EQ(Road_t::input_state_names::PSI               , 9);
 
-    EXPECT_EQ(Front_axle_t::state_names::OMEGA_LEFT  , 0);
-    EXPECT_EQ(Front_axle_t::state_names::OMEGA_RIGHT , 1);
-    EXPECT_EQ(Rear_axle_t::state_names::OMEGA_LEFT   , 2);
-    EXPECT_EQ(Rear_axle_t::state_names::OMEGA_RIGHT  , 3);
+    EXPECT_EQ(Front_axle_t::state_names::angular_momentum_left  , 0);
+    EXPECT_EQ(Front_axle_t::state_names::angular_momentum_right , 1);
+    EXPECT_EQ(Rear_axle_t::state_names::angular_momentum_left   , 2);
+    EXPECT_EQ(Rear_axle_t::state_names::angular_momentum_right  , 3);
     EXPECT_EQ(Chassis_t::state_names::U              , 4);
     EXPECT_EQ(Chassis_t::state_names::V              , 5);
     EXPECT_EQ(Chassis_t::state_names::OMEGA          , 6);
@@ -477,12 +477,12 @@ TEST_F(limebeer2014f1_test, set_parameter)
     limebeer2014f1<scalar>::curvilinear<Track_by_polynomial> car_correct(database, road);
 
     car.set_parameter("vehicle/front-axle/track", 1.46);
-    car.set_parameter("vehicle/front-axle/inertia", 1.0);
+    car.set_parameter("vehicle/front-axle/inertia", 0.0);
     car.set_parameter("vehicle/front-axle/smooth_throttle_coeff", 1.0e-5);
     car.set_parameter("vehicle/front-axle/brakes/max_torque", 5000.0);
 
     car.set_parameter("vehicle/rear-axle/track", 1.46);
-    car.set_parameter("vehicle/rear-axle/inertia", 1.55);
+    car.set_parameter("vehicle/rear-axle/inertia", 0.0);
     car.set_parameter("vehicle/rear-axle/smooth_throttle_coeff", 1.0e-5);
     car.set_parameter("vehicle/rear-axle/differential_stiffness", 10.47);
     car.set_parameter("vehicle/rear-axle/brakes/max_torque", 5000.0);
@@ -624,12 +624,12 @@ TEST_F(limebeer2014f1_test, set_parameter_c_api)
     limebeer2014f1<scalar>::curvilinear<Track_by_polynomial> car_correct(database, road);
 
     vehicle_set_parameter("vehicle_test", "vehicle/front-axle/track", 1.46);
-    vehicle_set_parameter("vehicle_test", "vehicle/front-axle/inertia", 1.0);
+    vehicle_set_parameter("vehicle_test", "vehicle/front-axle/inertia", 0.0);
     vehicle_set_parameter("vehicle_test", "vehicle/front-axle/smooth_throttle_coeff", 1.0e-5);
     vehicle_set_parameter("vehicle_test", "vehicle/front-axle/brakes/max_torque", 5000.0);
 
     vehicle_set_parameter("vehicle_test", "vehicle/rear-axle/track", 1.46);
-    vehicle_set_parameter("vehicle_test", "vehicle/rear-axle/inertia", 1.55);
+    vehicle_set_parameter("vehicle_test", "vehicle/rear-axle/inertia", 0.0);
     vehicle_set_parameter("vehicle_test", "vehicle/rear-axle/smooth_throttle_coeff", 1.0e-5);
     vehicle_set_parameter("vehicle_test", "vehicle/rear-axle/differential_stiffness", 10.47);
     vehicle_set_parameter("vehicle_test", "vehicle/rear-axle/brakes/max_torque", 5000.0);
@@ -763,9 +763,14 @@ TEST_F(limebeer2014f1_test,propagation_crank_nicolson)
     limebeer2014f1<scalar>::curvilinear<Track_by_polynomial>::Road_t road_sc(catalunya);
     limebeer2014f1<scalar>::curvilinear<Track_by_polynomial> car_sc(database, road_sc);
 
+    car_sc.set_parameter("vehicle/front-axle/inertia", 1.00);
+    car_sc.set_parameter("vehicle/rear-axle/inertia", 1.55);
+
+    car.set_parameter("vehicle/front-axle/inertia", 1.00);
+    car.set_parameter("vehicle/rear-axle/inertia", 1.55);
 
     // Get the results from a saved simulation
-    Xml_document opt_saved("data/f1_optimal_laptime_catalunya_discrete.xml", true);
+    Xml_document opt_saved("data/f1_optimal_laptime_catalunya_discrete_with_wheel_inertia.xml", true);
 
     auto arclength_saved = opt_saved.get_element("optimal_laptime/road.arclength").get_value(std::vector<scalar>());
     auto kappa_fl_saved = opt_saved.get_element("optimal_laptime/front-axle.left-tire.kappa").get_value(std::vector<scalar>());
@@ -869,9 +874,14 @@ TEST_F(limebeer2014f1_test,propagation_crank_nicolson_corner_exit)
     limebeer2014f1<scalar>::curvilinear<Track_by_polynomial>::Road_t road_sc(catalunya);
     limebeer2014f1<scalar>::curvilinear<Track_by_polynomial> car_sc(database, road_sc);
 
+    car_sc.set_parameter("vehicle/front-axle/inertia", 1.00);
+    car_sc.set_parameter("vehicle/rear-axle/inertia", 1.55);
+
+    car.set_parameter("vehicle/front-axle/inertia", 1.00);
+    car.set_parameter("vehicle/rear-axle/inertia", 1.55);
 
     // Get the results from a saved simulation
-    Xml_document opt_saved("data/f1_optimal_laptime_catalunya_discrete.xml", true);
+    Xml_document opt_saved("data/f1_optimal_laptime_catalunya_discrete_with_wheel_inertia.xml", true);
 
     auto arclength_saved = opt_saved.get_element("optimal_laptime/road.arclength").get_value(std::vector<scalar>());
     auto kappa_fl_saved = opt_saved.get_element("optimal_laptime/front-axle.left-tire.kappa").get_value(std::vector<scalar>());

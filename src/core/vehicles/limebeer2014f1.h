@@ -167,10 +167,10 @@ class limebeer2014f1
 
             constraints[6] = dstates_dt[Dynamic_model_t::Chassis_type::state_names::OMEGA]/g0;
 
-            constraints[7] = this->get_chassis().get_front_axle().get_domega_dt_left()/(g0*m);
-            constraints[8] = this->get_chassis().get_front_axle().get_domega_dt_right()/(g0*m);
-            constraints[9] = this->get_chassis().get_rear_axle().get_domega_dt_left()/(g0*m);
-            constraints[10] = this->get_chassis().get_rear_axle().get_domega_dt_right()/(g0*m);
+            constraints[7] = this->get_chassis().get_front_axle().get_dangular_momentum_dt_left()/(g0*m);
+            constraints[8] = this->get_chassis().get_front_axle().get_dangular_momentum_dt_right()/(g0*m);
+            constraints[9] = this->get_chassis().get_rear_axle().get_dangular_momentum_dt_left()/(g0*m);
+            constraints[10] = this->get_chassis().get_rear_axle().get_dangular_momentum_dt_right()/(g0*m);
 
             constraints[11] = this->get_chassis().get_front_axle().template get_tire<0>().get_lambda()/lambda_max_fl;
             constraints[12] = this->get_chassis().get_front_axle().template get_tire<1>().get_lambda()/lambda_max_fr;

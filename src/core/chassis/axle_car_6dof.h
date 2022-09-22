@@ -260,7 +260,7 @@ class Axle_car_6dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
     //! Load the time derivative of the state variables computed herein to the dqdt
     //! @param[out] dqdt: the vehicle state vector time derivative
     template<size_t N>
-    void get_state_and_state_derivative(std::array<Timeseries_t,N>& state, std::array<Timeseries_t, N>& dstate_dt) const;
+    void get_state_and_state_derivative(std::array<Timeseries_t,N>& state, std::array<Timeseries_t, N>& dstate_dt, const Timeseries_t& mass_kg) const;
 
     //! Set the state variables of this class
     //! @param[in] q: the vehicle state vector 

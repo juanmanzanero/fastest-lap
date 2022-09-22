@@ -301,8 +301,8 @@ template<size_t N>
 void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::get_state_and_state_derivative
     (std::array<Timeseries_t,N>& state, std::array<Timeseries_t, N>& dstate_dt) const
 {
-    get_front_axle().get_state_and_state_derivative(state, dstate_dt);
-    get_rear_axle().get_state_and_state_derivative(state, dstate_dt);
+    get_front_axle().get_state_and_state_derivative(state, dstate_dt, _m);
+    get_rear_axle().get_state_and_state_derivative(state, dstate_dt, _m);
 
     // dudt
     state[state_names::U] = _u;

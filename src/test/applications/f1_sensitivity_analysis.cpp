@@ -222,6 +222,9 @@ TEST_F(F1_sensitivity_analysis, Catalunya_chicane)
     limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial>::Road_t road(catalunya);
     limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial> car(database, road);
 
+    car.set_parameter("vehicle/front-axle/inertia", 1.00);
+    car.set_parameter("vehicle/rear-axle/inertia", 1.55);
+
     // Set the mass as car parameter
     car.add_parameter("vehicle/chassis/mass", "mass", 660.0);
 
@@ -355,6 +358,9 @@ TEST_F(F1_sensitivity_analysis, Catalunya_discrete)
     limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial>::Road_t road(catalunya);
     limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial> car(database, road);
 
+    car.set_parameter("vehicle/front-axle/inertia", 1.00);
+    car.set_parameter("vehicle/rear-axle/inertia", 1.55);
+
     // Set the mass as car parameter
     car.add_parameter("vehicle/chassis/mass", "mass", 660.0);
 
@@ -393,9 +399,8 @@ TEST_F(F1_sensitivity_analysis, Catalunya_discrete)
     Optimal_laptime<decltype(car)> dopt_laptime(s, true, true, car, opt_laptime.input_states, opt_laptime.algebraic_states, opt_laptime.controls, 
         opt_laptime.optimization_data.zl, opt_laptime.optimization_data.zu, opt_laptime.optimization_data.lambda, opts);
 
-
     // Check the results with a saved simulation
-    Xml_document opt_saved("data/f1_optimal_laptime_catalunya_discrete.xml", true);
+    Xml_document opt_saved("data/f1_optimal_laptime_catalunya_discrete_with_wheel_inertia.xml", true);
 
     check_case(opt_laptime, dopt_laptime, dmass, opt_saved, n, 1.0e-4);
 }
@@ -418,6 +423,9 @@ TEST_F(F1_sensitivity_analysis, Catalunya_discrete_optimization_variables)
     
     limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial>::Road_t road(catalunya);
     limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial> car(database, road);
+
+    car.set_parameter("vehicle/front-axle/inertia", 1.00);
+    car.set_parameter("vehicle/rear-axle/inertia", 1.55);
 
     // Create all the variables
     const scalar differential_stiffness_log = log10(10.47);

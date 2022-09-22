@@ -70,8 +70,3 @@ mplcyberpunk.add_glow_effects()
 ![png](Optimal_laptime_boost_files/Optimal_laptime_boost_6_0.png)
     
 
-
-
-```python
-
-```
