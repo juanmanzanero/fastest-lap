@@ -1,4 +1,4 @@
-function plot_f1(x_rr,y_rr,psi,wb,track,varargin)
+function h_im = plot_f1(x_rr,y_rr,psi,wb,track,varargin)
 
 if ( nargin > 5 )
     skin = varargin{1};
@@ -17,6 +17,13 @@ if ( nargin > 7 )
 else
     FaceAlpha = 1.0;
 end
+
+if (nargin > 8 )
+    scale_factor = varargin{4};
+else
+    scale_factor = 1;
+end
+    
 
 if ( strcmpi(skin,'generic') )
     [im_original,~,alpha_original] = imread('f1_marker.png');
@@ -40,6 +47,18 @@ elseif ( strcmpi(skin, 'ferrari') )
     tire_rl = [1162, 2088];
     tire_fr = [542, 680];
     scale = 2;
+
+elseif strcmpi(skin, 'mercedes')
+    [im_original,~,alpha_original] = imread('mercedes2022.png');
+    im_original = imrotate(im_original, 180);
+    alpha_original = imrotate(alpha_original, 180);
+    
+    tire_rr = [56, 856];
+    tire_rl = [323, 856];
+    tire_fr = [56, 216];
+    
+    scale = 4*scale_factor;
+
 else
     error('Skin name not recognized');
 end
