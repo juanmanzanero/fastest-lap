@@ -162,6 +162,8 @@ class Tire
 
     std::unordered_map<std::string,Timeseries_t> get_outputs_map_self() const
     {
+        // Rotate the force to the absolute frame
+        const auto absolute_force = _frame.get_absolute_rotation_matrix() * get_force();
         return
         {
             {_name + ".position.x", get_position().at(0)},
@@ -175,6 +177,9 @@ class Tire
             {_name + ".force.x", get_force().at(0)},
             {_name + ".force.y", get_force().at(1)},
             {_name + ".force.z", get_force().at(2)}, 
+            {_name + ".force.inertial.x", absolute_force.at(0)},
+            {_name + ".force.inertial.y", absolute_force.at(1)},
+            {_name + ".force.inertial.z", absolute_force.at(2)}, 
             {_name + ".omega", _omega} 
         };
     }

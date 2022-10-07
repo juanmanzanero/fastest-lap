@@ -19,9 +19,6 @@
 #define fastestlapc_API
 #endif
 
-#ifndef __cplusplus
-#include <stdbool.h>
-#endif
 
 
 #ifdef __cplusplus
@@ -99,7 +96,7 @@ extern fastestlapc_API void vehicle_change_track(const char* c_vehicle, const ch
 
 extern fastestlapc_API void steady_state(double*input_states, double* algebraic_states, double* controls, const char* vehicle_name, double v, double ax, double ay);
 
-extern fastestlapc_API void propagate_vehicle(double* input_states, double* algebraic_states, double* controls, const char* vehicle_name, const char* track_name, double s, double ds, double* u_next, bool use_circuit, const char* options);
+extern fastestlapc_API void propagate_vehicle(double* input_states, double* algebraic_states, double* controls, const char* vehicle_name, const char* track_name, double s, double ds, double* u_next, int use_circuit, const char* options);
 
 extern fastestlapc_API void gg_diagram(double* ay, double* ax_max, double* ax_min, const char* vehicle_name, double v, const int n_points);
 
