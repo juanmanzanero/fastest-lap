@@ -164,22 +164,26 @@ class Tire
     {
         // Rotate the force to the absolute frame
         const auto absolute_force = _frame.get_absolute_rotation_matrix() * get_force();
+        const auto car_body_velocity = _frame.get_rotation_matrix()*get_velocity();
         return
         {
-            {_name + ".position.x", get_position().at(0)},
-            {_name + ".position.y", get_position().at(1)},
-            {_name + ".position.z", get_position().at(2)},
-            {_name + ".velocity.x", get_velocity().at(0)},
-            {_name + ".velocity.y", get_velocity().at(1)},
-            {_name + ".velocity.z", get_velocity().at(2)},
+            {_name + ".position.x", get_position().x()},
+            {_name + ".position.y", get_position().y()},
+            {_name + ".position.z", get_position().z()},
+            {_name + ".velocity.x", get_velocity().x()},
+            {_name + ".velocity.y", get_velocity().y()},
+            {_name + ".velocity.z", get_velocity().z()},
+            {_name + ".velocity.car_frame.x", car_body_velocity.x()},
+            {_name + ".velocity.car_frame.y", car_body_velocity.y()},
+            {_name + ".velocity.car_frame.z", car_body_velocity.z()},
             {_name + ".lambda", get_lambda()}, 
             {_name + ".dissipation", get_dissipation()}, 
-            {_name + ".force.x", get_force().at(0)},
-            {_name + ".force.y", get_force().at(1)},
-            {_name + ".force.z", get_force().at(2)}, 
-            {_name + ".force.inertial.x", absolute_force.at(0)},
-            {_name + ".force.inertial.y", absolute_force.at(1)},
-            {_name + ".force.inertial.z", absolute_force.at(2)}, 
+            {_name + ".force.x", get_force().x()},
+            {_name + ".force.y", get_force().y()},
+            {_name + ".force.z", get_force().z()}, 
+            {_name + ".force.inertial.x", absolute_force.x()},
+            {_name + ".force.inertial.y", absolute_force.y()},
+            {_name + ".force.inertial.z", absolute_force.z()}, 
             {_name + ".omega", _omega} 
         };
     }

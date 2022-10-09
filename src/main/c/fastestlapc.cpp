@@ -1080,6 +1080,9 @@ void compute_steady_state(vehicle_t& car, double* input_states, double* algebrai
     Steady_state ss(car);
     auto sol = ss.solve(v,ax,ay);
 
+    if (!sol.solved)
+        throw fastest_lap_exception("[ERROR] compute_steady_state -> steady state not solved");
+
     std::copy(sol.input_states.cbegin()    , sol.input_states.cend()    , input_states);
     std::copy(sol.algebraic_states.cbegin(), sol.algebraic_states.cend(), algebraic_states);
     std::copy(sol.controls.cbegin()        , sol.controls.cend()        , controls);
