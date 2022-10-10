@@ -5,7 +5,7 @@ screen_size = get(0,'ScreenSize');
 h = figure('Position',[0 0 screen_size(3) 1080.0/1920.0*screen_size(3)]);
 hold on;
 % (1) Plot track
-patch([x_left, x_right], [-y_left, -y_right], [13/255, 17/255, 23/255]);
+patch([x_left, x_right], [y_left, y_right], [13/255, 17/255, 23/255]);
 %plot(x_center,-y_center,'--','LineWidth',2,'Color',[1,1,1])
 axis equal
 h.CurrentAxes.Visible = 'off';
@@ -23,18 +23,19 @@ surface([x(max(1,i-1400):i),x(max(1,i-1400):i)],[-y(max(1,i-1400):i),-y(max(1,i-
     'edgecol','interp',...
     'linew',4);
 colormap(cMap)
+ax.CLim = [-1,1];
 
 % (n) Draw car
-x_rr = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'rear_axle.right_tire.x');
-y_rr = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'rear_axle.right_tire.y');
-psi = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'psi');
+x_rr = calllib("libfastestlapc","vehicle_get_output",vehicle,q(:,i),qa(:,i),[u(1,i),0.0,u(2:3,i)'],s(i),'rear-axle.right-tire.position.x');
+y_rr = calllib("libfastestlapc","vehicle_get_output",vehicle,q(:,i),qa(:,i),[u(1,i),0.0,u(2:3,i)'],s(i),'rear-axle.right-tire.position.y');
+psi = calllib("libfastestlapc","vehicle_get_output",vehicle,q(:,i),qa(:,i),[u(1,i),0.0,u(2:3,i)'],s(i),'chassis.attitude.yaw');
 
 plot_f1(x_rr,-y_rr,rad2deg(psi)+180,1.6+1.8, 0.73*2, skin);
 
 % (3) Set camera
 camera_width = 40.0;
 xlim([r_center(1,i)-1.777*camera_width*0.5,r_center(1,i)+1.777*camera_width*0.5])
-ylim([-r_center(2,i)-camera_width*0.5,-r_center(2,i)+camera_width*0.5])
+ylim([r_center(2,i)-camera_width*0.5,r_center(2,i)+camera_width*0.5])
 
 % (n) Dashboard
 ax_dashboard = axes('Position',[0.0 0.4 1.0 0.59]);
@@ -48,11 +49,11 @@ plot_throttle_brake(u(2,i),u(1,i)*20,u(3,i));
 plot_acceleration(q,qa,u,s,i,vehicle);
 
 % (n.3) Tires
-understeer_ind = rad2deg(calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'chassis.understeer_oversteer_indicator'));
+understeer_ind = rad2deg(calllib("libfastestlapc","vehicle_get_output",vehicle,q(:,i),qa(:,i),[u(1,i),0.0,u(2:3,i)'],s(i),'chassis.understeer_oversteer_indicator'));
 plot_tires(q,qa,u,s,i,vehicle,vehicle_data,Fz_max,energy(:,i), understeer_ind, skin);
 
 % (n.4) Track map
-plot_track_map(x_center,-y_center,x(i),-y(i));
+plot_track_map(x_center,y_center,x(i),-y(i));
 
 % (n.5) Telemetry
 plot_telemetry(i,t,q,qa,u)
@@ -131,8 +132,8 @@ a_x = zeros(1,length(i_values));
 a_y = zeros(1,length(i_values));
 
 for i_point = i_start:i
-    a_x(i_point-i_start+1) = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i_point),qa(:,i_point),u(:,i_point),s(i_point),'ax')/9.81;
-    a_y(i_point-i_start+1) = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i_point),qa(:,i_point),u(:,i_point),s(i_point),'ay')/9.81;
+    a_x(i_point-i_start+1) = calllib("libfastestlapc","vehicle_get_output",vehicle,q(:,i_point),qa(:,i_point),[u(1,i_point),0.0,u(2:3,i_point)'],s(i_point),'chassis.acceleration.x')/9.81;
+    a_y(i_point-i_start+1) = calllib("libfastestlapc","vehicle_get_output",vehicle,q(:,i_point),qa(:,i_point),[u(1,i_point),0.0,u(2:3,i_point)'],s(i_point),'chassis.acceleration.y')/9.81;
 end
 
 col = sqrt(a_x.^2 + a_y.^2);  % This is the color, vary with x in this case.
@@ -223,14 +224,14 @@ lambda_max_rl = deg2rad((Fz_rl - ref_load_1)*(vehicle_data.rear_tire.lambda_max_
 lambda_max_rr = deg2rad((Fz_rr - ref_load_1)*(vehicle_data.rear_tire.lambda_max_2  - vehicle_data.rear_tire.lambda_max_1 )/(ref_load_2 - ref_load_1) + vehicle_data.rear_tire.lambda_max_1);
 
 % (5) Get current kappa and lambda
-kappa_fl = q(1,i);
-kappa_fr = q(2,i);
-kappa_rl = q(3,i);
-kappa_rr = q(4,i);
-lambda_fl = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'front_axle.left_tire.lambda');
-lambda_fr = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'front_axle.right_tire.lambda');
-lambda_rl = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'rear_axle.left_tire.lambda');
-lambda_rr = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'rear_axle.right_tire.lambda');
+kappa_fl = calllib("libfastestlapc","vehicle_get_output",vehicle,q(:,i),qa(:,i),[u(1,i),0.0,u(2:3,i)'],s(i),'front-axle.left-tire.true_kappa');
+kappa_fr = calllib("libfastestlapc","vehicle_get_output",vehicle,q(:,i),qa(:,i),[u(1,i),0.0,u(2:3,i)'],s(i),'front-axle.right-tire.true_kappa');
+kappa_rl = calllib("libfastestlapc","vehicle_get_output",vehicle,q(:,i),qa(:,i),[u(1,i),0.0,u(2:3,i)'],s(i),'rear-axle.left-tire.true_kappa');
+kappa_rr = calllib("libfastestlapc","vehicle_get_output",vehicle,q(:,i),qa(:,i),[u(1,i),0.0,u(2:3,i)'],s(i),'rear-axle.right-tire.true_kappa');
+lambda_fl = calllib("libfastestlapc","vehicle_get_output",vehicle,q(:,i),qa(:,i),[u(1,i),0.0,u(2:3,i)'],s(i),'front-axle.left-tire.lambda');
+lambda_fr = calllib("libfastestlapc","vehicle_get_output",vehicle,q(:,i),qa(:,i),[u(1,i),0.0,u(2:3,i)'],s(i),'front-axle.right-tire.lambda');
+lambda_rl = calllib("libfastestlapc","vehicle_get_output",vehicle,q(:,i),qa(:,i),[u(1,i),0.0,u(2:3,i)'],s(i),'rear-axle.left-tire.lambda');
+lambda_rr = calllib("libfastestlapc","vehicle_get_output",vehicle,q(:,i),qa(:,i),[u(1,i),0.0,u(2:3,i)'],s(i),'rear-axle.right-tire.lambda');
 
 % (6) Compute rho
 rho_fl = sqrt((kappa_fl/kappa_max_fl)^2 + (lambda_fl/lambda_max_fl)^2);
@@ -257,27 +258,27 @@ Fref = vehicle_data.chassis.mass*9.81;
 
 
 % (8) Get tire forces
-Fx_fl = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'front_axle.left_tire.Fx');
-Fx_fr = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'front_axle.right_tire.Fx');
-Fx_rl = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'rear_axle.left_tire.Fx');
-Fx_rr = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'rear_axle.right_tire.Fx');
+Fx_fl = calllib("libfastestlapc","vehicle_get_output",vehicle,q(:,i),qa(:,i),[u(1,i),0.0,u(2:3,i)'],s(i),'front-axle.left-tire.force.x');
+Fx_fr = calllib("libfastestlapc","vehicle_get_output",vehicle,q(:,i),qa(:,i),[u(1,i),0.0,u(2:3,i)'],s(i),'front-axle.right-tire.force.x');
+Fx_rl = calllib("libfastestlapc","vehicle_get_output",vehicle,q(:,i),qa(:,i),[u(1,i),0.0,u(2:3,i)'],s(i),'rear-axle.left-tire.force.x');
+Fx_rr = calllib("libfastestlapc","vehicle_get_output",vehicle,q(:,i),qa(:,i),[u(1,i),0.0,u(2:3,i)'],s(i),'rear-axle.right-tire.force.x');
 
-Fy_fl = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'front_axle.left_tire.Fy');
-Fy_fr = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'front_axle.right_tire.Fy');
-Fy_rl = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'rear_axle.left_tire.Fy');
-Fy_rr = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'rear_axle.right_tire.Fy');
+Fy_fl = calllib("libfastestlapc","vehicle_get_output",vehicle,q(:,i),qa(:,i),[u(1,i),0.0,u(2:3,i)'],s(i),'front-axle.left-tire.force.y');
+Fy_fr = calllib("libfastestlapc","vehicle_get_output",vehicle,q(:,i),qa(:,i),[u(1,i),0.0,u(2:3,i)'],s(i),'front-axle.right-tire.force.y');
+Fy_rl = calllib("libfastestlapc","vehicle_get_output",vehicle,q(:,i),qa(:,i),[u(1,i),0.0,u(2:3,i)'],s(i),'rear-axle.left-tire.force.y');
+Fy_rr = calllib("libfastestlapc","vehicle_get_output",vehicle,q(:,i),qa(:,i),[u(1,i),0.0,u(2:3,i)'],s(i),'rear-axle.right-tire.force.y');
 
-assert( abs(-qa(1,i)*mu_x_fl*vehicle_data.chassis.mass*9.81 - Fx_fl) < 1.0e-4*abs(Fx_fl), 'assertion failed');
-assert( abs(-qa(1,i)*mu_y_fl*vehicle_data.chassis.mass*9.81 - Fy_fl) < 1.0e-4*abs(Fy_fl), 'assertion failed' );
+%assert( abs(-qa(1,i)*mu_x_fl*vehicle_data.chassis.mass*9.81 - Fx_fl) < 1.0e-4*abs(Fx_fl), 'assertion failed');
+%assert( abs(-qa(1,i)*mu_y_fl*vehicle_data.chassis.mass*9.81 - Fy_fl) < 1.0e-4*abs(Fy_fl), 'assertion failed' );
 
-assert( abs(-qa(2,i)*mu_x_fr*vehicle_data.chassis.mass*9.81 - Fx_fr) < 1.0e-4*abs(Fx_fr), 'assertion failed' );
-assert( abs(-qa(2,i)*mu_y_fr*vehicle_data.chassis.mass*9.81 - Fy_fr) < 1.0e-4*abs(Fy_fr), 'assertion failed' );
+%assert( abs(-qa(2,i)*mu_x_fr*vehicle_data.chassis.mass*9.81 - Fx_fr) < 1.0e-4*abs(Fx_fr), 'assertion failed' );
+%assert( abs(-qa(2,i)*mu_y_fr*vehicle_data.chassis.mass*9.81 - Fy_fr) < 1.0e-4*abs(Fy_fr), 'assertion failed' );
 
-assert( abs(-qa(3,i)*mu_x_rl*vehicle_data.chassis.mass*9.81 - Fx_rl) < 1.0e-4*abs(Fx_rl), 'assertion failed' );
-assert( abs(-qa(3,i)*mu_y_rl*vehicle_data.chassis.mass*9.81 - Fy_rl) < 1.0e-4*abs(Fy_rl), 'assertion failed' );
+%assert( abs(-qa(3,i)*mu_x_rl*vehicle_data.chassis.mass*9.81 - Fx_rl) < 1.0e-4*abs(Fx_rl), 'assertion failed' );
+%assert( abs(-qa(3,i)*mu_y_rl*vehicle_data.chassis.mass*9.81 - Fy_rl) < 1.0e-4*abs(Fy_rl), 'assertion failed' );
 
-assert( abs(-qa(4,i)*mu_x_rr*vehicle_data.chassis.mass*9.81 - Fx_rr) < 1.0e-4*abs(Fx_rr), 'assertion failed' );
-assert( abs(-qa(4,i)*mu_y_rr*vehicle_data.chassis.mass*9.81 - Fy_rr) < 1.0e-4*abs(Fy_rr), 'assertion failed' );
+%assert( abs(-qa(4,i)*mu_x_rr*vehicle_data.chassis.mass*9.81 - Fx_rr) < 1.0e-4*abs(Fx_rr), 'assertion failed' );
+%assert( abs(-qa(4,i)*mu_y_rr*vehicle_data.chassis.mass*9.81 - Fy_rr) < 1.0e-4*abs(Fy_rr), 'assertion failed' );
 
 % (3) Draw maximum grip ellipses
 delta = u(1,i);
@@ -316,10 +317,10 @@ plot_normal_load_bar(r_rl+[scale*(-qa(3,i))*mu_y_max_rl,0], -qa(3,i), Fz_max)
 plot_normal_load_bar(r_rr+[scale*(-qa(4,i))*mu_y_max_rr,0], -qa(4,i), Fz_max)
 
 % Write tire properties
-dissipation_fl = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'front_axle.left_tire.dissipation');
-dissipation_fr = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'front_axle.right_tire.dissipation');
-dissipation_rl = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'rear_axle.left_tire.dissipation');
-dissipation_rr = calllib("libfastestlapc","get_vehicle_property",vehicle,q(:,i),qa(:,i),u(:,i),s(i),'rear_axle.right_tire.dissipation');
+dissipation_fl = calllib("libfastestlapc","vehicle_get_output",vehicle,q(:,i),qa(:,i),[u(1,i),0.0,u(2:3,i)'],s(i),'front-axle.left-tire.dissipation');
+dissipation_fr = calllib("libfastestlapc","vehicle_get_output",vehicle,q(:,i),qa(:,i),[u(1,i),0.0,u(2:3,i)'],s(i),'front-axle.right-tire.dissipation');
+dissipation_rl = calllib("libfastestlapc","vehicle_get_output",vehicle,q(:,i),qa(:,i),[u(1,i),0.0,u(2:3,i)'],s(i),'rear-axle.left-tire.dissipation');
+dissipation_rr = calllib("libfastestlapc","vehicle_get_output",vehicle,q(:,i),qa(:,i),[u(1,i),0.0,u(2:3,i)'],s(i),'rear-axle.right-tire.dissipation');
 
 write_tire_properties(r_fl-[scale*(-qa(1,i))*mu_y_max_fl,0],true,kappa_fl/(kappa_max_fl*max_rho),lambda_fl/(lambda_max_fl*max_rho),dissipation_fl,energy(1));
 write_tire_properties(r_fr+[scale*(-qa(2,i))*mu_y_max_fr,0],false,kappa_fr/(kappa_max_fr*max_rho),lambda_fr/(lambda_max_fr*max_rho),dissipation_fr,energy(2));

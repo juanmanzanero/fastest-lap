@@ -57,7 +57,16 @@ elseif strcmpi(skin, 'mercedes')
     tire_rl = [323, 856];
     tire_fr = [56, 216];
     
-    scale = 4*scale_factor;
+    scale = 2*scale_factor;
+
+elseif strcmpi(skin, 'alpine')
+    [im_original,~,alpha_original] = imread('alpine2022_marker.png');
+    
+    tire_rr = [173, 1563];
+    tire_rl = [650, 1563];
+    tire_fr = [173, 444];
+    
+    scale = 2*scale_factor;
 
 else
     error('Skin name not recognized');

@@ -177,6 +177,7 @@ class Tire
             {_name + ".velocity.car_frame.y", car_body_velocity.y()},
             {_name + ".velocity.car_frame.z", car_body_velocity.z()},
             {_name + ".lambda", get_lambda()}, 
+            {_name + ".true_kappa", get_kappa()}, 
             {_name + ".dissipation", get_dissipation()}, 
             {_name + ".force.x", get_force().x()},
             {_name + ".force.y", get_force().y()},

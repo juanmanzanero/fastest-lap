@@ -294,6 +294,7 @@ class Chassis
             {get_name() + ".position.x", _road_frame.get_origin().x()},
             {get_name() + ".position.y", _road_frame.get_origin().y()},
             {get_name() + ".attitude.yaw", _road_frame.get_rotation_angles().front()},
+            {get_name() + ".understeer_oversteer_indicator", get_understeer_oversteer_indicator()} 
         };
     }
 
