@@ -92,6 +92,8 @@ extern fastestlapc_API void vehicle_declare_new_variable_parameter(const char* c
 
 extern fastestlapc_API void vehicle_change_track(const char* c_vehicle, const char* c_track);       // [TEST OK]
 
+extern fastestlapc_API void track_set_track_limit_correction(const char* c_track_name, const char* side, const int n_points, const double* s, const double* w_correction);
+
 // Applications --------------------------------------------------------------------------------------------------------
 
 extern fastestlapc_API void steady_state(double*input_states, double* algebraic_states, double* controls, const char* vehicle_name, double v, double ax, double ay);

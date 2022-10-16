@@ -1698,6 +1698,33 @@ void vehicle_change_track(const char* c_vehicle_name, const char* c_track_name)
 }
 
 
+void track_set_track_limit_correction(const char* c_track_name, const char* c_side, const int n_points, const double* c_s, const double* c_w_correction)
+{
+ try
+ {
+    const std::string track_name(c_track_name);
+    const std::string side(c_side);
+
+    auto& track = table_track.at(track_name);
+
+    // Convert arrays to vectors
+    std::vector<double> s(c_s, c_s + n_points);
+    std::vector<double> w_correction(c_w_correction, c_w_correction + n_points);
+
+    // Construct polynomial
+    sPolynomial w_correction_poly(s, w_correction, 1, false);
+
+    if (side == "left")
+        track.set_left_track_limit_correction(w_correction_poly);
+    else if (side == "right")
+        track.set_right_track_limit_correction(w_correction_poly);
+    else
+        throw fastest_lap_exception("[ERROR] track_set_track_limit_correction -> side \"" + side + "\" not recognized. Only 'left' and 'right' are valid options");
+ }
+ CATCH()
+}
+
+
 struct Circuit_preprocessor_configuration
 {
 //  Options:

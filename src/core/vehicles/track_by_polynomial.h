@@ -13,18 +13,22 @@ class Track_by_polynomial
     Track_by_polynomial(Xml_document& doc);
 
     Track_by_polynomial(const vPolynomial& r, const sPolynomial& wl, const sPolynomial& wr) 
-        : _r(r), _dr(_r.derivative()), _d2r(_dr.derivative()), _wl(wl), _wr(wr) {}
+        : _r(r), _dr(_r.derivative()), _d2r(_dr.derivative()), _wl(wl), _wr(wr), _wl_correction(), _wr_correction() {}
 
     Track_by_polynomial(const vPolynomial& r, const vPolynomial& dr, const vPolynomial& d2r, const sPolynomial& wl, const sPolynomial& wr)
-        : _r(r), _dr(dr), _d2r(d2r), _wl(wl), _wr(wr) {}
+        : _r(r), _dr(dr), _d2r(d2r), _wl(wl), _wr(wr), _wl_correction(), _wr_correction() {}
 
     Track_by_polynomial(const Circuit_preprocessor& circuit_preprocessor);
 
     Track_by_polynomial(std::tuple<vPolynomial,sPolynomial,sPolynomial> p) : Track_by_polynomial(std::get<0>(p), std::get<1>(p), std::get<2>(p)) {}
 
-    scalar get_left_track_limit(scalar s) const { return _wl(s); }
+    void set_left_track_limit_correction(const sPolynomial& wl_correction) { _wl_correction = wl_correction;  }
 
-    scalar get_right_track_limit(scalar s) const { return _wr(s); }
+    void set_right_track_limit_correction(const sPolynomial& wr_correction) { _wr_correction = wr_correction;  }
+
+    scalar get_left_track_limit(scalar s) const { return _wl(s) + _wl_correction(s); }
+
+    scalar get_right_track_limit(scalar s) const { return _wr(s) + _wr_correction(s); }
 
     constexpr const scalar& get_total_length() const { return _r.get_right_bound(); } 
 
@@ -51,6 +55,9 @@ class Track_by_polynomial
 
     sPolynomial _wl;    //! Distance to the left track limit
     sPolynomial _wr;    //! Distance to the right track limit
+
+    sPolynomial _wl_correction; //! Apply a correction to the left track limit
+    sPolynomial _wr_correction; //! Apply a correction to the right track limit
 
     Circuit_preprocessor _preprocessor;     //! Save the preprocessor used to compute this track
 
