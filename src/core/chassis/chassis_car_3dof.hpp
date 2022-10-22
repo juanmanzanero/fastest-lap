@@ -322,7 +322,7 @@ void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_
     // throttle
     controls_def[control_names::THROTTLE] = 0.0;
     controls_lb[control_names::THROTTLE]  = -1.0;
-    controls_ub[control_names::THROTTLE]  = _maximum_throttle;
+    controls_ub[control_names::THROTTLE]  =  1.0;
 
     // brake bias
     controls_def[control_names::BRAKE_BIAS] = Value(_brake_bias_0);

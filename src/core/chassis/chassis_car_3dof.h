@@ -233,9 +233,6 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
     Timeseries_t   _roll_balance_coeff; //! [c] Coefficient in [0,1], usually 1/2, such that: Fz_fr − Fz_fl = D(Fz_fr + Fz_rr − Fz_fl − Fz_rl)
     scalar         _Fz_max_ref2;        //! [c] Square of the parasitic smooth positive force when Fz = 0
 
-    // Controllability properties
-    scalar  _maximum_throttle;
-
     // Variables    ----------------------------------------------------------------
 
     // Setteable variables
@@ -277,8 +274,7 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
         { "pressure_center/z", _x_aero.z() },
         { "brake_bias", _brake_bias_0 },
         { "roll_balance_coefficient", _roll_balance_coeff},
-        { "Fz_max_ref2", _Fz_max_ref2 },
-        { "maximum_throttle", _maximum_throttle }
+        { "Fz_max_ref2", _Fz_max_ref2 }
     );  
 
     std::unordered_map<std::string,Timeseries_t> get_outputs_map_self() const

@@ -46,16 +46,16 @@ fastestlapc_API std::unordered_map<std::string,std::vector<scalar>>& get_table_v
 std::string ltrim(const std::string &s) {
     return std::regex_replace(s, std::regex("^\\s+"), std::string(""));
 }
- 
+
 std::string rtrim(const std::string &s) {
     return std::regex_replace(s, std::regex("\\s+$"), std::string(""));
 }
- 
+
 std::string trim(const std::string &s) {
     return ltrim(rtrim(s));
 }
 
-// Persistent warm start 
+// Persistent warm start
 template<typename vehicle_t>
 Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>& get_warm_start()
 {
@@ -74,19 +74,19 @@ Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>& get_warm_start()
 void check_variable_exists_in_tables(const std::string& name)
 {
     if ( table_kart_6dof.count(name) != 0 )
-        throw fastest_lap_exception(std::string("Vehicle of type kart-6dof with name \"") + name + "\" already exists"); 
+        throw fastest_lap_exception(std::string("Vehicle of type kart-6dof with name \"") + name + "\" already exists");
 
     if ( table_f1_3dof.count(name) != 0 )
-        throw fastest_lap_exception(std::string("Vehicle of type f1-3dof with name \"") + name + "\" already exists"); 
+        throw fastest_lap_exception(std::string("Vehicle of type f1-3dof with name \"") + name + "\" already exists");
 
     if ( table_track.count(name) != 0 )
-        throw fastest_lap_exception(std::string("Track with name \"") + name + "\" already exists"); 
+        throw fastest_lap_exception(std::string("Track with name \"") + name + "\" already exists");
 
     if ( table_scalar.count(name) != 0 )
-        throw fastest_lap_exception(std::string("Scalar with name \"") + name + "\" already exists"); 
+        throw fastest_lap_exception(std::string("Scalar with name \"") + name + "\" already exists");
 
     if ( table_vector.count(name) != 0 )
-        throw fastest_lap_exception(std::string("Vector with name \"") + name + "\" already exists"); 
+        throw fastest_lap_exception(std::string("Vector with name \"") + name + "\" already exists");
 }
 
 
@@ -111,7 +111,7 @@ void create_vehicle_from_xml(const char* vehicle_name, const char* database_file
     check_variable_exists_in_tables(s_name);
 
     // Open the database as Xml
-    Xml_document database = { database_file, true }; 
+    Xml_document database = { database_file, true };
 
     // Get vehicle type from the database file
     const std::string vehicle_type = database.get_root_element().get_attribute("type");
@@ -119,7 +119,7 @@ void create_vehicle_from_xml(const char* vehicle_name, const char* database_file
     if ( vehicle_type == "kart-6dof" )
     {
         auto out = table_kart_6dof.insert({s_name,{database}});
-        if (out.second==false) 
+        if (out.second==false)
         {
             throw fastest_lap_exception("The insertion to the map failed");
         }
@@ -128,16 +128,16 @@ void create_vehicle_from_xml(const char* vehicle_name, const char* database_file
     {
         auto out = table_f1_3dof.insert({s_name,{database}});
 
-        if (out.second==false) 
+        if (out.second==false)
         {
             throw fastest_lap_exception("Vehicle already exists");
-        }        
+        }
     }
     else
     {
         throw fastest_lap_exception("Vehicle type not recognized");
     }
- } 
+ }
  CATCH()
 }
 
@@ -159,7 +159,7 @@ void create_vehicle_empty(const char* vehicle_name, const char* vehicle_type_c)
     else if ( vehicle_type == "f1-3dof" )
     {
         auto out = table_f1_3dof.insert({s_name,{}});
-        if (out.second==false) 
+        if (out.second==false)
         {
             throw fastest_lap_exception("The insertion to the map failed");
         }
@@ -168,7 +168,7 @@ void create_vehicle_empty(const char* vehicle_name, const char* vehicle_type_c)
     {
         throw fastest_lap_exception("Vehicle type not recognized");
     }
- } 
+ }
  CATCH()
 }
 
@@ -185,9 +185,9 @@ void create_track_from_xml(const char* name, const char* track_file)
     // (2) Open the track
     // Copy the track name
     const std::string s_track_file = track_file;
- 
+
     // Open the track as Xml
-    Xml_document track_xml = { track_file, true }; 
+    Xml_document track_xml = { track_file, true };
 
     // Read format: only discrete tracks are supported by the C API
     const std::string track_format = track_xml.get_root_element().get_attribute("format");
@@ -350,7 +350,7 @@ std::string print_variable_to_std_string(const std::string& variable_name)
     {
         throw fastest_lap_exception("[ERROR] print_variable_to_std_string -> variable \"" + variable_name + "\" does not exist");
     }
-    
+
     return s_out.str();
 }
 
@@ -369,7 +369,7 @@ void print_variable(const char* c_variable_name)
 
 void print_variable_to_string(char* str_out, const int n_char, const char* c_variable_name)
 {
- try 
+ try
  {
     const std::string variable_name = c_variable_name;
     const std::string s_out = print_variable_to_std_string(variable_name);
@@ -379,7 +379,7 @@ void print_variable_to_string(char* str_out, const int n_char, const char* c_var
         throw fastest_lap_exception("[ERROR] print_variable_to_string -> Buffer size provided was not big enough. Required size is " + std::to_string(s_out.size()) + " vs the provided value of " + std::to_string(n_char));
     }
 
-    strcpy(str_out, s_out.c_str()); 
+    strcpy(str_out, s_out.c_str());
 
     return;
  }
@@ -498,16 +498,16 @@ void track_download_data(double* data, const char* track_name_c, const int n, co
                                     + track_name + "\" is " + std::to_string(n));
     }
 
-    std::vector<std::pair<std::string,const double*>> track_variable_map = { 
+    std::vector<std::pair<std::string,const double*>> track_variable_map = {
         { "arclength", preprocessor.s.data() },
-        { "heading-angle", preprocessor.theta.data() } , 
+        { "heading-angle", preprocessor.theta.data() } ,
         { "curvature", preprocessor.kappa.data() },
         { "distance-left-boundary", preprocessor.nl.data() },
         { "distance-right-boundary", preprocessor.nr.data() } };
 
-     std::vector<std::pair<std::string,const sVector3d*>> track_vector_map = { 
+     std::vector<std::pair<std::string,const sVector3d*>> track_vector_map = {
         { "centerline", preprocessor.r_centerline.data() },
-        { "left", preprocessor.r_left.data() } , 
+        { "left", preprocessor.r_left.data() } ,
         { "right", preprocessor.r_right.data() } };
 
 
@@ -523,7 +523,7 @@ void track_download_data(double* data, const char* track_name_c, const int n, co
             is_found = true;
             for (size_t i = 0; i < preprocessor.n_points; ++i)
                 data[i] = var_data[i];
-    
+
             break;
         }
     }
@@ -538,7 +538,7 @@ void track_download_data(double* data, const char* track_name_c, const int n, co
                 is_found = true;
                 for (size_t i = 0; i < preprocessor.n_points; ++i)
                     data[i] = var_data[i].x();
-        
+
                 break;
             }
             else if ( variable_name == var_name + ".y" )
@@ -546,7 +546,7 @@ void track_download_data(double* data, const char* track_name_c, const int n, co
                 is_found = true;
                 for (size_t i = 0; i < preprocessor.n_points; ++i)
                     data[i] = var_data[i].y();
-        
+
                 break;
             }
         }
@@ -577,7 +577,7 @@ void track_download_data(double* data, const char* track_name_c, const int n, co
 
 double track_download_length(const char* c_track_name)
 {
- try 
+ try
  {
     const std::string track_name = c_track_name;
 
@@ -607,7 +607,7 @@ int download_vector_size(const char* name_c)
         throw fastest_lap_exception(std::string("Variable \"") + name + "\" does not exists in the vector table");
 
     const auto& table_data = item->second;
-    
+
     return table_data.size();
  }
  CATCH()
@@ -632,7 +632,7 @@ void variable_type(char* c_variable_type, const int str_len_max, const char* c_v
 
     else if ( table_scalar.count(name) != 0 )
         type = "scalar";
-    
+
     else if ( table_vector.count(name) != 0 )
         type = "vector";
 
@@ -640,7 +640,7 @@ void variable_type(char* c_variable_type, const int str_len_max, const char* c_v
         throw fastest_lap_exception("[ERROR] variable_type -> variable \"" + name + "\" was not found");
 
     strcpy(c_variable_type, type.c_str());
-    
+
     return;
  }
  CATCH()
@@ -683,7 +683,7 @@ void download_vector(double* data, const int n, const char* name_c)
     const auto& table_data = item->second;
 
     if ( table_data.size() != static_cast<size_t>(n) )
-        throw fastest_lap_exception(std::string("Incorrect input size for variable \"") + name + "\". Input: " 
+        throw fastest_lap_exception(std::string("Incorrect input size for variable \"") + name + "\". Input: "
             + std::to_string(n) + ", should be " + std::to_string(table_data.size()));
 
     // Copy the data into the provided pointer
@@ -764,7 +764,7 @@ void vehicle_type_get_names_generic(char* c_key_name, char* c_state_names[], cha
 
 void vehicle_type_get_names(char* c_key_name, char* c_state_names[], char* c_algebraic_state_names[], char* c_control_names[], char* c_output_names[], const int n_char, const char* c_vehicle_type_name)
 {
- try 
+ try
  {
     const std::string vehicle_type_name = c_vehicle_type_name;
 
@@ -773,7 +773,7 @@ void vehicle_type_get_names(char* c_key_name, char* c_state_names[], char* c_alg
 
     } else if ( vehicle_type_name == "kart-6dof" ) {
         vehicle_type_get_names_generic<lot2016kart_all::vehicle_ad_curvilinear>(c_key_name, c_state_names, c_algebraic_state_names, c_control_names, c_output_names, n_char);
- 
+
     } else {
         throw fastest_lap_exception("[ERROR] vehicle_type_get_size_for_name -> No vehicle type with name \"" + vehicle_type_name + "\" exists. Types are \"f1-3dof\" and \"kart-6dof\"");
 
@@ -806,7 +806,7 @@ void vehicle_get_output_variable_names(char* output_names[], const int n_outputs
     {
         throw fastest_lap_exception("[ERROR] vehicle_get_output_variable_names -> number of outputs provided differs to the map size");
     }
-    
+
     size_t i = 0;
     for (const auto& [key, val] : map)
     {
@@ -860,7 +860,7 @@ void delete_variable(const char* c_variable_name)
     for (auto it = table_kart_6dof.cbegin(); it != table_kart_6dof.cend() ; )
     {
         if (std::regex_match(it->first.c_str(),m,re)) {
-            it = table_kart_6dof.erase(it++);    
+            it = table_kart_6dof.erase(it++);
         } else {
             ++it;
         }
@@ -871,18 +871,18 @@ void delete_variable(const char* c_variable_name)
     for (auto it = table_f1_3dof.cbegin(); it != table_f1_3dof.cend() ; )
     {
         if (std::regex_match(it->first.c_str(),m,re)) {
-            it = table_f1_3dof.erase(it++);    
+            it = table_f1_3dof.erase(it++);
         } else {
             ++it;
         }
     }
 
-    
+
     // (3) Track
     for (auto it = table_track.cbegin(); it != table_track.cend() ; )
     {
         if (std::regex_match(it->first.c_str(),m,re)) {
-            it = table_track.erase(it++);    
+            it = table_track.erase(it++);
         } else {
             ++it;
         }
@@ -893,7 +893,7 @@ void delete_variable(const char* c_variable_name)
     for (auto it = table_scalar.cbegin(); it != table_scalar.cend() ; )
     {
         if (std::regex_match(it->first.c_str(),m,re)) {
-            it = table_scalar.erase(it++);    
+            it = table_scalar.erase(it++);
         } else {
             ++it;
         }
@@ -904,7 +904,7 @@ void delete_variable(const char* c_variable_name)
     for (auto it = table_vector.cbegin(); it != table_vector.cend() ; )
     {
         if (std::regex_match(it->first.c_str(),m,re)) {
-            it = table_vector.erase(it++);    
+            it = table_vector.erase(it++);
         } else {
             ++it;
         }
@@ -949,7 +949,7 @@ void vehicle_declare_new_constant_parameter(const char* c_vehicle_name, const ch
 
 
 void vehicle_declare_new_variable_parameter(const char* c_vehicle_name, const char* c_parameter_path, const char* c_parameter_alias, const int n_parameters, const double* c_parameter_values,
-    const int mesh_size, const int* c_mesh_parameter_indexes, const double* c_mesh_points) 
+    const int mesh_size, const int* c_mesh_parameter_indexes, const double* c_mesh_points)
 {
  try
  {
@@ -1022,7 +1022,7 @@ void compute_propagation(Vehicle_t car, double* c_q, double* c_qa, double* c_u, 
         std::string options = c_options;
         Xml_document doc;
         doc.parse(options);
-    
+
         if ( doc.has_element("options/sigma") )             opts.sigma = doc.get_element("options/sigma").get_value(scalar());
         if ( doc.has_element("options/max_iter") )          opts.max_iter = doc.get_element("options/max_iter").get_value(scalar());
         if ( doc.has_element("options/error_tolerance") )   opts.error_tolerance = doc.get_element("options/error_tolerance").get_value(scalar());
@@ -1089,7 +1089,7 @@ void compute_steady_state(vehicle_t& car, double* input_states, double* algebrai
 }
 
 
-void steady_state(double*input_states, double* algebraic_states, double* controls, const char* c_vehicle_name, double v, double ax, double ay) 
+void steady_state(double*input_states, double* algebraic_states, double* controls, const char* c_vehicle_name, double v, double ax, double ay)
 {
  try
  {
@@ -1143,6 +1143,7 @@ void gg_diagram(double* ay, double* ax_max, double* ax_min, const char* c_vehicl
 template<typename vehicle_t>
 struct Optimal_laptime_configuration
 {
+    using Optimal_laptime_type = Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>;
     // Parse the options in XML format
     // Example:
     //      <options>
@@ -1182,6 +1183,12 @@ struct Optimal_laptime_configuration
     //              </throttle>
     //              <brake-bias optimal_control_type="dont optimize"/>
     //          </control_variables>
+    //          <variable_bounds>
+    //              <variable_name_1>
+    //                  <lower_bound/>
+    //                  <upper_bound/>
+    //              </variable_name_1>
+    //          </variable_bounds>
     //      </options>
     //
     Optimal_laptime_configuration(const char* options)
@@ -1217,7 +1224,7 @@ struct Optimal_laptime_configuration
 
             if ( doc.has_element("options/output_variables/variables") ) {
                 auto variables_node = doc.get_element("options/output_variables/variables");
-    
+
                 variables_to_save = {};
                 for (auto& variable : variables_node.get_children())
                     variables_to_save.push_back(variable.get_name());
@@ -1242,7 +1249,7 @@ struct Optimal_laptime_configuration
         }
 
         if ( doc.has_element("options/steady_state_speed") ) steady_state_speed = doc.get_element("options/initial_speed").get_value(scalar());
-    
+
         if ( doc.has_element("options/closed_simulation") ) is_closed = doc.get_element("options/closed_simulation").get_value(bool());
 
         // If open simulation, provide initial condition
@@ -1298,10 +1305,10 @@ struct Optimal_laptime_configuration
                     if ( variable.has_child("dissipation") ) dissipations[i_control] = variable.get_child("dissipation").get_value(scalar());
                 }
                 else
-                {   
+                {
                     throw fastest_lap_exception("[ERROR] Optimal control type \"" + control_type[i_control] + "\" not recognized");
                 }
-            } 
+            }
 
         }
 
@@ -1310,13 +1317,100 @@ struct Optimal_laptime_configuration
         {
             for (auto& variable : doc.get_element("options/integral_constraints").get_children() )
             {
-                integral_constraints.push_back({variable.get_name(), 
+                integral_constraints.push_back({variable.get_name(),
                                                 variable.get_child("lower_bound").get_value(scalar()),
                                                 variable.get_child("upper_bound").get_value(scalar())});
             }
         }
-    } 
- 
+
+        // Prepare variable bounds
+        if ( doc.has_element("options/variable_bounds") )
+        {
+            for (auto& variable : doc.get_element("options/variable_bounds").get_children() )
+            {
+                // Check sanity: only one or two children must be present named 'lower' and/or 'upper'
+                auto children = variable.get_children();
+
+                if ( children.size() == 1 )
+                {
+                    if ( children.front().get_name() != "lower" && children.front().get_name() != "upper" )
+                    {
+                        throw fastest_lap_exception("[ERROR] Optimal_laptime_configuration -> variable_bounds \""
+                            + variable.get_name() + "\" shall have only children named \"lower\" and/or \"upper\"");
+                    }
+                }
+                else if ( children.size() == 2 )
+                {
+                    if ( (children.front().get_name() != "lower" || children.back().get_name() != "upper") &&
+                         (children.front().get_name() != "upper" || children.back().get_name() != "lower") )
+                    {
+                        throw fastest_lap_exception("[ERROR] Optimal_laptime_configuration -> variable_bounds \""
+                            + variable.get_name() + "\" shall have only children named \"lower\" and/or \"upper\"");
+                    }
+                }
+                else
+                {
+                    throw fastest_lap_exception("[ERROR] Optimal_laptime_configuration -> variable_bounds \""
+                        + variable.get_name() + "\" shall have only children named \"lower\" and/or \"upper\"");
+                }
+
+
+                auto it_variable = std::find(q_names.cbegin(), q_names.cend(), variable.get_name());
+
+                if ( it_variable != q_names.cend() )
+                {
+                    if ( variable.has_child("lower") )
+                    {
+                        input_states_lb.at(std::distance(q_names.cbegin(), it_variable)) = variable.get_child("lower").get_value(scalar());
+                    }
+
+                    if ( variable.has_child("upper") )
+                    {
+                        input_states_ub.at(std::distance(q_names.cbegin(), it_variable)) = variable.get_child("upper").get_value(scalar());
+                    }
+
+                    continue;
+                }
+
+                it_variable = std::find(qa_names.cbegin(), qa_names.cend(), variable.get_name());
+
+                if ( it_variable != qa_names.cend() )
+                {
+                    if ( variable.has_child("lower") )
+                    {
+                        algebraic_states_lb.at(std::distance(qa_names.cbegin(), it_variable)) = variable.get_child("lower").get_value(scalar());
+                    }
+
+                    if ( variable.has_child("upper") )
+                    {
+                        algebraic_states_ub.at(std::distance(qa_names.cbegin(), it_variable)) = variable.get_child("upper").get_value(scalar());
+                    }
+
+                    continue;
+                }
+
+                it_variable = std::find(u_names.cbegin(), u_names.cend(), variable.get_name());
+
+                if ( it_variable != u_names.cend() )
+                {
+                    if ( variable.has_child("lower") )
+                    {
+                        controls_lb.at(std::distance(u_names.cbegin(), it_variable)) = variable.get_child("lower").get_value(scalar());
+                    }
+
+                    if ( variable.has_child("upper") )
+                    {
+                        controls_ub.at(std::distance(u_names.cbegin(), it_variable)) = variable.get_child("upper").get_value(scalar());
+                    }
+
+                    continue;
+                }
+
+                throw fastest_lap_exception("[ERROR] Optimal_laptime_configuration -> variable \"" + variable.get_name() + "\" not found");
+            }
+        }
+    }
+
     bool warm_start                   = false;                  // Use warm start
     bool save_warm_start              = false;                  // Save simulation for warm start
     bool write_xml                    = false;                  // Write output as xml
@@ -1342,10 +1436,18 @@ struct Optimal_laptime_configuration
     std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NALGEBRAIC> qa_start;      // Starting algebraic states (only open simulations)
     std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NCONTROL> u_start;         // Starting controls (only open simulations)
 
+    // Upper and lower bounds
+    decltype(Optimal_laptime_type::Options::input_states_lb) input_states_lb         = typename Optimal_laptime_type::Options{}.input_states_lb;
+    decltype(Optimal_laptime_type::Options::input_states_ub) input_states_ub         = typename Optimal_laptime_type::Options{}.input_states_ub;
+    decltype(Optimal_laptime_type::Options::algebraic_states_lb) algebraic_states_lb = typename Optimal_laptime_type::Options{}.algebraic_states_lb;
+    decltype(Optimal_laptime_type::Options::algebraic_states_ub) algebraic_states_ub = typename Optimal_laptime_type::Options{}.algebraic_states_ub;
+    decltype(Optimal_laptime_type::Options::controls_lb) controls_lb                 = typename Optimal_laptime_type::Options{}.controls_lb;
+    decltype(Optimal_laptime_type::Options::controls_ub) controls_ub                 = typename Optimal_laptime_type::Options{}.controls_ub;
+
 // Helper functions ----------------------------------:-
- 
+
  private:
-    static bool get_default_is_direct() 
+    static bool get_default_is_direct()
     {
         if constexpr (std::is_same_v<vehicle_t,limebeer2014f1_all>)
             return true;
@@ -1354,8 +1456,8 @@ struct Optimal_laptime_configuration
         else
             throw fastest_lap_exception("[ERROR] get_default_control_types() not defined for this vehicle_t");
     }
-    
-    static std::array<std::string,vehicle_t::vehicle_ad_curvilinear::NCONTROL> get_default_control_types() 
+
+    static std::array<std::string,vehicle_t::vehicle_ad_curvilinear::NCONTROL> get_default_control_types()
     {
         if constexpr (std::is_same_v<vehicle_t,limebeer2014f1_all>)
             return {"full-mesh", "dont optimize", "full-mesh", "dont optimize"};
@@ -1364,7 +1466,7 @@ struct Optimal_laptime_configuration
         else
             throw fastest_lap_exception("[ERROR] get_default_control_types() not defined for this vehicle_t");
     }
-    
+
     static std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NCONTROL> get_default_dissipations()
     {
         if constexpr (std::is_same_v<vehicle_t,limebeer2014f1_all>)
@@ -1379,13 +1481,13 @@ struct Optimal_laptime_configuration
 
 template<typename vehicle_t>
 typename Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>::template Control_variables<>
-    construct_control_variables(const Optimal_laptime_configuration<vehicle_t>& conf, 
+    construct_control_variables(const Optimal_laptime_configuration<vehicle_t>& conf,
     const size_t n_points, const std::array<scalar, vehicle_t::vehicle_ad_curvilinear::NCONTROL>& u_steady_state)
 {
-    // (1) Define control variables 
+    // (1) Define control variables
     auto control_variables = typename Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>::template Control_variables<>{};
 
-    // (2) Construct each control variable from the information in the configuration 
+    // (2) Construct each control variable from the information in the configuration
     for (size_t j = 0; j < vehicle_t::vehicle_ad_curvilinear::NCONTROL; ++j)
     {
         if ( conf.control_type[j] == "dont optimize" )
@@ -1410,7 +1512,7 @@ typename Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>::template C
                 control_variables[j] = Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>::create_full_mesh(std::vector<scalar>(n_points,u_steady_state[j]),
                                                                                                     conf.dissipations[j]);
             }
-            else 
+            else
             {
                 control_variables[j] = Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>::create_full_mesh(std::vector<scalar>(n_points,u_steady_state[j]),
                                                                                                     std::vector<scalar>(n_points,0.0),
@@ -1418,10 +1520,10 @@ typename Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>::template C
             }
         }
     }
-    
+
     // (3) Return
     return control_variables;
-} 
+}
 
 
 template<typename vehicle_t>
@@ -1435,15 +1537,15 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
 
     // (2) Process options
     auto conf = Optimal_laptime_configuration<vehicle_t>(options);
-   
+
     // (3) Set the track into the curvilinear car dynamic model
     car_curv.get_road().change_track(track);
     car_curv_sc.get_road().change_track(track);
 
-    // (4) Start from the steady-state values at 0g    
+    // (4) Start from the steady-state values at 0g
     scalar v = conf.steady_state_speed*KMH;
 
-    auto ss = Steady_state(car_cart).solve(v,0.0,0.0); 
+    auto ss = Steady_state(car_cart).solve(v,0.0,0.0);
 
     if constexpr (std::is_same_v<vehicle_t,lot2016kart_all>)
         ss.controls[1] = 0.0;
@@ -1456,24 +1558,30 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
 
     // (5.2) Write options
     typename Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>::Options opts;
-    opts.print_level      = conf.print_level;
-    opts.sigma            = conf.sigma;
-    opts.check_optimality = conf.compute_sensitivity;
+    opts.print_level         = conf.print_level;
+    opts.sigma               = conf.sigma;
+    opts.check_optimality    = conf.compute_sensitivity;
+    opts.input_states_lb     = conf.input_states_lb;
+    opts.input_states_ub     = conf.input_states_ub;
+    opts.algebraic_states_lb = conf.algebraic_states_lb;
+    opts.algebraic_states_ub = conf.algebraic_states_ub;
+    opts.controls_lb         = conf.controls_lb;
+    opts.controls_ub         = conf.controls_ub;
 
     for (auto& integral_constraint : conf.integral_constraints)
     {
-        opts.integral_quantities.push_back({std::get<0>(integral_constraint), 
+        opts.integral_quantities.push_back({std::get<0>(integral_constraint),
                                             std::get<1>(integral_constraint),
                                             std::get<2>(integral_constraint)});
     }
-    
+
 
     // (5.2.a) Start from steady-state
     if ( !conf.warm_start )
     {
         std::vector<std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NSTATE>> q0  = {static_cast<size_t>(n_points),ss.input_states};
         std::vector<std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NALGEBRAIC>> qa0 = {static_cast<size_t>(n_points),ss.algebraic_states};
-        auto control_variables = construct_control_variables(conf, static_cast<size_t>(n_points), ss.controls); 
+        auto control_variables = construct_control_variables(conf, static_cast<size_t>(n_points), ss.controls);
 
         if ( conf.set_initial_condition )
         {
@@ -1482,7 +1590,7 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
 
             // Set only full-mesh variables
             for (size_t j = 0; j < vehicle_t::vehicle_ad_curvilinear::NCONTROL; ++j)
-            {   
+            {
                 if ( control_variables[j].optimal_control_type == Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>::FULL_MESH)
                 {
                     control_variables[j].controls.front() = conf.u_start[j];
@@ -1495,9 +1603,9 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
     else
     {
         opt_laptime = Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>(get_warm_start<vehicle_t>().s, get_warm_start<vehicle_t>().is_closed, get_warm_start<vehicle_t>().is_direct,
-                        car_curv, get_warm_start<vehicle_t>().input_states, 
-                        get_warm_start<vehicle_t>().algebraic_states, get_warm_start<vehicle_t>().controls, 
-                        get_warm_start<vehicle_t>().optimization_data.zl, get_warm_start<vehicle_t>().optimization_data.zu, 
+                        car_curv, get_warm_start<vehicle_t>().input_states,
+                        get_warm_start<vehicle_t>().algebraic_states, get_warm_start<vehicle_t>().controls,
+                        get_warm_start<vehicle_t>().optimization_data.zl, get_warm_start<vehicle_t>().optimization_data.zu,
                         get_warm_start<vehicle_t>().optimization_data.lambda, opts);
     }
 
@@ -1509,10 +1617,10 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
 
     // (6.2) Save outputs
     const auto& car_curv_sc_const = car_curv_sc;
-    const auto parameter_aliases = car_curv_sc_const.get_parameters().get_all_parameters_aliases(); 
+    const auto parameter_aliases = car_curv_sc_const.get_parameters().get_all_parameters_aliases();
 
     // (6.2.1) Distribute variables to save in laptime, integral quantities, and vector variables
-    bool b_save_laptime = false; 
+    bool b_save_laptime = false;
     std::vector<std::string> v_integral_quantities_to_save;
     std::vector<std::string> v_variables_to_save;
 
@@ -1556,7 +1664,7 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
         integral_quantity_name.erase(0, std::string("integral_quantities.").length());
 
         // (6.2.3.2) Look for the variable in the list
-        const auto it = std::find(vehicle_t::vehicle_ad_curvilinear::Integral_quantities::names.cbegin(), 
+        const auto it = std::find(vehicle_t::vehicle_ad_curvilinear::Integral_quantities::names.cbegin(),
                                   vehicle_t::vehicle_ad_curvilinear::Integral_quantities::names.cend(),
                                   integral_quantity_name);
 
@@ -1565,7 +1673,7 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
             std::ostringstream s_out;
             s_out << "[ERROR] Requested integral constraint was not found." << std::endl;
             s_out << "[ERROR] Available options are: " << vehicle_t::vehicle_ad_curvilinear::Integral_quantities::names;
-            throw fastest_lap_exception(s_out.str()); 
+            throw fastest_lap_exception(s_out.str());
         }
 
         // (6.2.3.3) Fill the integral constraint information
@@ -1591,7 +1699,7 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
             if ( variable_name == key_name ) {
                 data[i_var][i] = s[i];
                 continue;
-            }            
+            }
 
             // (6.2.4.3) Find the variable in the state vector
             const auto q_idx = std::find(q_names.cbegin(), q_names.cend(), variable_name);
@@ -1625,11 +1733,11 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
         table_vector.insert({conf.output_variables_prefix + variable_name, data[i_var]});
     }
 
-    // (6.2.5) Save vector variables sensitivity 
+    // (6.2.5) Save vector variables sensitivity
     if ( opts.check_optimality ) {
         for (const auto& variable_name : v_variables_to_save) {
-            std::vector<std::vector<scalar>> ddatadp(car_curv_sc_const.get_parameters().get_number_of_parameters(), std::vector<scalar>(n_points,0.0)); 
-    
+            std::vector<std::vector<scalar>> ddatadp(car_curv_sc_const.get_parameters().get_number_of_parameters(), std::vector<scalar>(n_points,0.0));
+
             for (int i = 0; i < n_points; ++i) {
                 if ( variable_name == "chassis.velocity.x" ) {
                     for (size_t p = 0; p < car_curv_sc_const.get_parameters().get_number_of_parameters(); ++p) {
@@ -1642,7 +1750,7 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
                     }
                 }
             }
-    
+
             for (size_t p = 0; p < car_curv_sc_const.get_parameters().get_number_of_parameters(); ++p) {
                 table_vector.insert({conf.output_variables_prefix + "derivatives/" + variable_name + "/" + parameter_aliases[p], ddatadp[p]});
             }
@@ -1655,7 +1763,7 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
 }
 
 
-void optimal_laptime(const char* c_vehicle_name, const char* c_track_name, const int n_points, const double* s, const char* options) 
+void optimal_laptime(const char* c_vehicle_name, const char* c_track_name, const int n_points, const double* s, const char* options)
 {
  try
  {
@@ -1663,12 +1771,12 @@ void optimal_laptime(const char* c_vehicle_name, const char* c_track_name, const
     const std::string track_name(c_track_name);
     if ( table_kart_6dof.count(vehicle_name) != 0 )
     {
-        compute_optimal_laptime(table_kart_6dof.at(vehicle_name), table_track.at(track_name), 
+        compute_optimal_laptime(table_kart_6dof.at(vehicle_name), table_track.at(track_name),
                                 n_points, s, options);
     }
     else if ( table_f1_3dof.count(vehicle_name) != 0 )
     {
-        compute_optimal_laptime(table_f1_3dof.at(vehicle_name), table_track.at(track_name), 
+        compute_optimal_laptime(table_f1_3dof.at(vehicle_name), table_track.at(track_name),
                                 n_points, s, options);
     }
  }
@@ -1682,7 +1790,7 @@ void vehicle_change_track(const char* c_vehicle_name, const char* c_track_name)
  {
     const std::string vehicle_name(c_vehicle_name);
     const std::string track_name(c_track_name);
-    
+
     if ( table_kart_6dof.count(vehicle_name) != 0 )
     {
         table_kart_6dof.at(vehicle_name).get_curvilinear_ad_car().get_road().change_track(table_track.at(track_name));
@@ -1741,7 +1849,7 @@ struct Circuit_preprocessor_configuration
 //
 //      * Optional inputs:
 //          xml_file_name: name of the XML file to export the track
-//          output_variables/prefix: prefix used to store the output variables in the table         
+//          output_variables/prefix: prefix used to store the output variables in the table
 //          insert_table_name: name used to insert the track itself into the table
     enum Mode { EQUALLY_SPACED, REFINED };
 
@@ -1782,7 +1890,7 @@ struct Circuit_preprocessor_configuration
          case (EQUALLY_SPACED):
             if ( !doc.has_element("options/number_of_elements") ) throw fastest_lap_exception("[ERROR] circuit_preprocessor_validate_options -> missing node options/number_of_element, mandatory in equally-spaced mode");
             n_el = doc.get_element("options/number_of_elements").get_value(int());
-            
+
             break;
 
          // Get arclength distribution if refined
@@ -1791,8 +1899,8 @@ struct Circuit_preprocessor_configuration
             if ( !doc.has_element("options/mesh_refinement/s") ) throw fastest_lap_exception("[ERROR] circuit_preprocessor_validate_options -> missing node options/mesh_refinement/s, mandatory in refined mode");
             if ( !doc.has_element("options/mesh_refinement/ds") ) throw fastest_lap_exception("[ERROR] circuit_preprocessor_validate_options -> missing node options/mesh_refinement/ds, mandatory in refined mode");
 
-            s_distribution = doc.get_element("options/mesh_refinement/s").get_value(std::vector<scalar>()); 
-            ds_distribution = doc.get_element("options/mesh_refinement/ds").get_value(std::vector<scalar>()); 
+            s_distribution = doc.get_element("options/mesh_refinement/s").get_value(std::vector<scalar>());
+            ds_distribution = doc.get_element("options/mesh_refinement/ds").get_value(std::vector<scalar>());
 
             break;
 
@@ -1800,18 +1908,18 @@ struct Circuit_preprocessor_configuration
             throw fastest_lap_exception("[ERROR] circuit_preprocessor_validate_options -> mode was not recognized");
         }
 
-    
+
         if ( doc.has_element("options/optimization") )
         {
             if ( doc.has_element("options/optimization/cost_curvature") ) eps_k = doc.get_element("options/optimization/cost_curvature").get_value(scalar());
-            if ( doc.has_element("options/optimization/cost_track_limits_smoothness") ) 
+            if ( doc.has_element("options/optimization/cost_track_limits_smoothness") )
                 eps_n = doc.get_element("options/optimization/cost_track_limits_smoothness").get_value(scalar());
-            if ( doc.has_element("options/optimization/cost_track_limits_errors") ) 
+            if ( doc.has_element("options/optimization/cost_track_limits_errors") )
                 eps_d = doc.get_element("options/optimization/cost_track_limits_errors").get_value(scalar());
             if ( doc.has_element("options/optimization/cost_curvature") ) eps_c = doc.get_element("options/optimization/cost_curvature").get_value(scalar());
-            if ( doc.has_element("options/optimization/maximum_kappa") )    
+            if ( doc.has_element("options/optimization/maximum_kappa") )
                 maximum_kappa = doc.get_element("options/optimization/maximum_kappa").get_value(scalar());
-            if ( doc.has_element("options/optimization/maximum_dkappa") )    
+            if ( doc.has_element("options/optimization/maximum_dkappa") )
                 maximum_dkappa = doc.get_element("options/optimization/maximum_dkappa").get_value(scalar());
         }
 
@@ -1829,10 +1937,10 @@ struct Circuit_preprocessor_configuration
             output_variables_to_table = true;
             if ( !doc.has_element("options/output_variables/prefix") ) throw fastest_lap_exception("[ERROR] circuit_preprocessor_validate_options -> missing node \"options/output_variables/prefix\", mandatory when output_variables is given");
             output_variables_prefix = doc.get_element("options/output_variables/prefix").get_value();
-        } 
+        }
 
         if ( doc.has_element("options/insert_table_name") )
-        {   
+        {
             save_to_table = true;
             insert_table_name = doc.get_element("options/insert_table_name").get_value();
         }
@@ -1937,7 +2045,7 @@ void circuit_preprocessor(const char* options)
     // (3.2) Save track as XML
     if ( conf.save_as_xml )
     {
-        circuit_preprocessor.xml()->save(conf.xml_file_name); 
+        circuit_preprocessor.xml()->save(conf.xml_file_name);
     }
 
     // (3.3) Save variables to table
@@ -1954,17 +2062,17 @@ void circuit_preprocessor(const char* options)
             throw fastest_lap_exception(std::string("Variable \"") + conf.output_variables_prefix + "centerline/x" + "\" already exists in the vector table");
 
         std::vector<scalar> centerline_x(circuit_preprocessor.s.size());
-        std::transform(circuit_preprocessor.r_centerline.cbegin(), circuit_preprocessor.r_centerline.cend(), centerline_x.begin(), 
+        std::transform(circuit_preprocessor.r_centerline.cbegin(), circuit_preprocessor.r_centerline.cend(), centerline_x.begin(),
             [](const auto& r) -> auto { return r.x(); });
 
         table_vector.insert({conf.output_variables_prefix + "centerline/x", centerline_x});
-        
+
         // (3.3.3) centerline/y
         if ( table_vector.count(conf.output_variables_prefix + "centerline/y") != 0 )
             throw fastest_lap_exception(std::string("Variable \"") + conf.output_variables_prefix + "centerline/y" + "\" already exists in the vector table");
 
         std::vector<scalar> centerline_y(circuit_preprocessor.s.size());
-        std::transform(circuit_preprocessor.r_centerline.cbegin(), circuit_preprocessor.r_centerline.cend(), centerline_y.begin(), 
+        std::transform(circuit_preprocessor.r_centerline.cbegin(), circuit_preprocessor.r_centerline.cend(), centerline_y.begin(),
             [](const auto& r) -> auto { return r.y(); });
 
         table_vector.insert({conf.output_variables_prefix + "centerline/y", centerline_y});
@@ -1974,17 +2082,17 @@ void circuit_preprocessor(const char* options)
             throw fastest_lap_exception(std::string("Variable \"") + conf.output_variables_prefix + "left/x" + "\" already exists in the vector table");
 
         std::vector<scalar> left_x(circuit_preprocessor.s.size());
-        std::transform(circuit_preprocessor.r_left.cbegin(), circuit_preprocessor.r_left.cend(), left_x.begin(), 
+        std::transform(circuit_preprocessor.r_left.cbegin(), circuit_preprocessor.r_left.cend(), left_x.begin(),
             [](const auto& r) -> auto { return r.x(); });
 
         table_vector.insert({conf.output_variables_prefix + "left/x", left_x});
-        
+
         // (3.3.5) left/y
         if ( table_vector.count(conf.output_variables_prefix + "left/y") != 0 )
             throw fastest_lap_exception(std::string("Variable \"") + conf.output_variables_prefix + "left/y" + "\" already exists in the vector table");
 
         std::vector<scalar> left_y(circuit_preprocessor.s.size());
-        std::transform(circuit_preprocessor.r_left.cbegin(), circuit_preprocessor.r_left.cend(), left_y.begin(), 
+        std::transform(circuit_preprocessor.r_left.cbegin(), circuit_preprocessor.r_left.cend(), left_y.begin(),
             [](const auto& r) -> auto { return r.y(); });
 
         table_vector.insert({conf.output_variables_prefix + "left/y", left_y});
@@ -1994,17 +2102,17 @@ void circuit_preprocessor(const char* options)
             throw fastest_lap_exception(std::string("Variable \"") + conf.output_variables_prefix + "right/x" + "\" already exists in the vector table");
 
         std::vector<scalar> right_x(circuit_preprocessor.s.size());
-        std::transform(circuit_preprocessor.r_right.cbegin(), circuit_preprocessor.r_right.cend(), right_x.begin(), 
+        std::transform(circuit_preprocessor.r_right.cbegin(), circuit_preprocessor.r_right.cend(), right_x.begin(),
             [](const auto& r) -> auto { return r.x(); });
 
         table_vector.insert({conf.output_variables_prefix + "right/x", right_x});
-        
+
         // (3.3.7) right/y
         if ( table_vector.count(conf.output_variables_prefix + "right/y") != 0 )
             throw fastest_lap_exception(std::string("Variable \"") + conf.output_variables_prefix + "right/y" + "\" already exists in the vector table");
 
         std::vector<scalar> right_y(circuit_preprocessor.s.size());
-        std::transform(circuit_preprocessor.r_right.cbegin(), circuit_preprocessor.r_right.cend(), right_y.begin(), 
+        std::transform(circuit_preprocessor.r_right.cbegin(), circuit_preprocessor.r_right.cend(), right_y.begin(),
             [](const auto& r) -> auto { return r.y(); });
 
         table_vector.insert({conf.output_variables_prefix + "right/y", right_y});
@@ -2014,17 +2122,17 @@ void circuit_preprocessor(const char* options)
             throw fastest_lap_exception(std::string("Variable \"") + conf.output_variables_prefix + "left_measured/x" + "\" already exists in the vector table");
 
         std::vector<scalar> left_measured_x(circuit_preprocessor.s.size());
-        std::transform(circuit_preprocessor.r_left_measured.cbegin(), circuit_preprocessor.r_left_measured.cend(), left_measured_x.begin(), 
+        std::transform(circuit_preprocessor.r_left_measured.cbegin(), circuit_preprocessor.r_left_measured.cend(), left_measured_x.begin(),
             [](const auto& r) -> auto { return r.x(); });
 
         table_vector.insert({conf.output_variables_prefix + "left_measured/x", left_measured_x});
-        
+
         // (3.3.9) left_measured/y
         if ( table_vector.count(conf.output_variables_prefix + "left_measured/y") != 0 )
             throw fastest_lap_exception(std::string("Variable \"") + conf.output_variables_prefix + "left_measured/y" + "\" already exists in the vector table");
 
         std::vector<scalar> left_measured_y(circuit_preprocessor.s.size());
-        std::transform(circuit_preprocessor.r_left_measured.cbegin(), circuit_preprocessor.r_left_measured.cend(), left_measured_y.begin(), 
+        std::transform(circuit_preprocessor.r_left_measured.cbegin(), circuit_preprocessor.r_left_measured.cend(), left_measured_y.begin(),
             [](const auto& r) -> auto { return r.y(); });
 
         table_vector.insert({conf.output_variables_prefix + "left_measured/y", left_measured_y});
@@ -2034,17 +2142,17 @@ void circuit_preprocessor(const char* options)
             throw fastest_lap_exception(std::string("Variable \"") + conf.output_variables_prefix + "right_measured/x" + "\" already exists in the vector table");
 
         std::vector<scalar> right_measured_x(circuit_preprocessor.s.size());
-        std::transform(circuit_preprocessor.r_right_measured.cbegin(), circuit_preprocessor.r_right_measured.cend(), right_measured_x.begin(), 
+        std::transform(circuit_preprocessor.r_right_measured.cbegin(), circuit_preprocessor.r_right_measured.cend(), right_measured_x.begin(),
             [](const auto& r) -> auto { return r.x(); });
 
         table_vector.insert({conf.output_variables_prefix + "right_measured/x", right_measured_x});
-        
+
         // (3.3.11) right_measured/y
         if ( table_vector.count(conf.output_variables_prefix + "right_measured/y") != 0 )
             throw fastest_lap_exception(std::string("Variable \"") + conf.output_variables_prefix + "right_measured/y" + "\" already exists in the vector table");
 
         std::vector<scalar> right_measured_y(circuit_preprocessor.s.size());
-        std::transform(circuit_preprocessor.r_right_measured.cbegin(), circuit_preprocessor.r_right_measured.cend(), right_measured_y.begin(), 
+        std::transform(circuit_preprocessor.r_right_measured.cbegin(), circuit_preprocessor.r_right_measured.cend(), right_measured_y.begin(),
             [](const auto& r) -> auto { return r.y(); });
 
         table_vector.insert({conf.output_variables_prefix + "right_measured/y", right_measured_y});
@@ -2067,6 +2175,6 @@ void circuit_preprocessor(const char* options)
 
         table_vector.insert({conf.output_variables_prefix + "nr", circuit_preprocessor.nr});
     }
- } 
+ }
  CATCH()
 }

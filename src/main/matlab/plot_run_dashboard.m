@@ -330,7 +330,7 @@ write_tire_properties(r_rr+[scale*(-qa(4,i))*mu_y_max_rr,0],false,kappa_rr/(kapp
 text(-1.2,-0.8,['u=',num2str(q(5,i)*3.6,'%.2f'),'km/h'],'FontName','Courier');
 text(-1.2,-0.95,['v=',num2str(q(6,i)*3.6,'%.2f'),'km/h'],'FontName','Courier');
 text(-1.2,-1.1,['\beta=',num2str(rad2deg(q(6,i)/q(5,i)),'%.1f'),'deg'],'FontName','Courier');
-text(-1.2,-1.25,['\omega=',num2str(rad2deg(q(7,i)),'%.2f'),'rad/s'],'FontName','Courier');
+text(-1.2,-1.25,['\omega=',num2str(rad2deg(q(7,i)),'%.2f'),'deg/s'],'FontName','Courier');
 
 % Write the understeer/oversteer indicator
 

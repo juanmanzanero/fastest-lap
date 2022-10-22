@@ -1,6 +1,11 @@
 #include "lion/thirdparty/include/cppad/ipopt/solve.hpp"
 #include "lion/math/ipopt_cppad_handler.hpp"
 #include "lion/math/sensitivity_analysis.h"
+#include "lion/thirdparty/include/logger.hpp"
+
+
+template <typename T,size_t N>
+std::ostream& operator<<(std::ostream &os, const std::array<T,N>& v);
 
 template<typename Dynamic_model_t>
 inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const std::vector<scalar>& s_, const bool is_closed_, const bool is_direct_,
@@ -368,13 +373,22 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
         size_t k;
     };
 
+    out(2) << "[" << get_current_date_and_time() << "] Optimal laptime computation -> start" << std::endl;
+
     // (1) Get variable bounds and default control variables
-    const auto [__ignore, input_states_lb, input_states_ub,
-               ___ignore, algebraic_states_lb, algebraic_states_ub, 
-              ____ignore, controls_lb, controls_ub] = car.get_state_and_control_upper_lower_and_default_values();
-    (void) __ignore;
-    (void) ___ignore;
-    (void) ____ignore;
+    const auto& input_states_lb     = options.input_states_lb;
+    const auto& input_states_ub     = options.input_states_ub;
+    const auto& algebraic_states_lb = options.algebraic_states_lb;
+    const auto& algebraic_states_ub = options.algebraic_states_ub;
+    const auto& controls_lb         = options.controls_lb;
+    const auto& controls_ub         = options.controls_ub;
+
+    out(2) << "[" << get_current_date_and_time() << "] Optimal laptime computation -> input states lower bound: " << input_states_lb << std::endl;
+    out(2) << "[" << get_current_date_and_time() << "] Optimal laptime computation -> input states upper bound: " << input_states_ub << std::endl;
+    out(2) << "[" << get_current_date_and_time() << "] Optimal laptime computation -> algebraic states lower bound: " << algebraic_states_lb << std::endl;
+    out(2) << "[" << get_current_date_and_time() << "] Optimal laptime computation -> algebraic states upper bound: " << algebraic_states_ub << std::endl;
+    out(2) << "[" << get_current_date_and_time() << "] Optimal laptime computation -> controls lower bound: " << controls_lb << std::endl;
+    out(2) << "[" << get_current_date_and_time() << "] Optimal laptime computation -> controls upper bound: " << controls_ub << std::endl;
 
     // (1) Construct starting vector of control variables
     auto controls_start = controls.control_array_at_s(car, 0, s.front());
@@ -836,12 +850,12 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
     };
 
     // (1) Get variable bounds and default control variables
-    const auto [__ignore, input_states_lb, input_states_ub,
-               ___ignore, algebraic_states_lb, algebraic_states_ub, 
-              ____ignore, controls_lb, controls_ub] = car.get_state_and_control_upper_lower_and_default_values();
-    (void) __ignore;
-    (void) ___ignore;
-    (void) ____ignore;
+    const auto& input_states_lb     = options.input_states_lb;
+    const auto& input_states_ub     = options.input_states_ub;
+    const auto& algebraic_states_lb = options.algebraic_states_lb;
+    const auto& algebraic_states_ub = options.algebraic_states_ub;
+    const auto& controls_lb         = options.controls_lb;
+    const auto& controls_ub         = options.controls_ub;
 
     const auto [dcontrols_dt_lb, dcontrols_dt_ub] = car.optimal_laptime_derivative_control_bounds();
 

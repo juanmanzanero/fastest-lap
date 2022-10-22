@@ -35,6 +35,12 @@ class Optimal_laptime
         scalar constraints_viol_tolerance = 1.0e-10;
         scalar acceptable_tolerance       = 1.0e-8;
         std::vector<Integral_quantity_conf> integral_quantities = {};
+        std::array<scalar,Dynamic_model_t::NSTATE> input_states_lb = Dynamic_model_t{}.get_state_and_control_upper_lower_and_default_values().input_states_lb;
+        std::array<scalar,Dynamic_model_t::NSTATE> input_states_ub = Dynamic_model_t{}.get_state_and_control_upper_lower_and_default_values().input_states_ub;
+        std::array<scalar,Dynamic_model_t::NALGEBRAIC> algebraic_states_lb = Dynamic_model_t{}.get_state_and_control_upper_lower_and_default_values().algebraic_states_lb;
+        std::array<scalar,Dynamic_model_t::NALGEBRAIC> algebraic_states_ub = Dynamic_model_t{}.get_state_and_control_upper_lower_and_default_values().algebraic_states_ub;
+        std::array<scalar,Dynamic_model_t::NCONTROL> controls_lb = Dynamic_model_t{}.get_state_and_control_upper_lower_and_default_values().controls_lb;
+        std::array<scalar,Dynamic_model_t::NCONTROL> controls_ub = Dynamic_model_t{}.get_state_and_control_upper_lower_and_default_values().controls_ub;
     };
 
     //! Helper classes to encapsulate control variables ---------------------------------------------:-

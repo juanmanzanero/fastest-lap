@@ -211,7 +211,6 @@ TEST_F(limebeer2014f1_test, is_not_ready)
     car.set_parameter("vehicle/chassis/brake_bias", 0.6);
     car.set_parameter("vehicle/chassis/roll_balance_coefficient", 0.5);
     car.set_parameter("vehicle/chassis/Fz_max_ref2", 1.0);
-    car.set_parameter("vehicle/chassis/maximum_throttle", 1.0);
     
     car.set_parameter("vehicle/front-tire/radius",0.330); 
     car.set_parameter("vehicle/front-tire/radial-stiffness",0.0);
@@ -518,7 +517,6 @@ TEST_F(limebeer2014f1_test, set_parameter)
     car.set_parameter("vehicle/chassis/brake_bias", 0.6);
     car.set_parameter("vehicle/chassis/roll_balance_coefficient", 0.5);
     car.set_parameter("vehicle/chassis/Fz_max_ref2", 1.0);
-    car.set_parameter("vehicle/chassis/maximum_throttle", 1.0);
     
     car.set_parameter("vehicle/front-tire/radius",0.330); 
     car.set_parameter("vehicle/front-tire/radial-stiffness",0.0);
