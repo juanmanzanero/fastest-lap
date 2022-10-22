@@ -136,7 +136,10 @@ TEST_F(Optimal_laptime_test, maximum_acceleration)
         = Optimal_laptime<decltype(car)>::create_full_mesh(std::vector<scalar>(n+1,ss.controls[decltype(car)::Chassis_type::rear_axle_type::control_names::TORQUE]), 4.0e-5);
 
     // Compute optimal laptime 
-    Optimal_laptime<decltype(car)> opt_laptime(s, false, true, car, {n+1,ss.input_states}, {n+1,ss.algebraic_states}, control_variables, {});
+    auto opts = Optimal_laptime<decltype(car)>::Options{};
+    opts.controls_lb[1] = -200.0;
+    opts.controls_ub[1] =  200.0;
+    Optimal_laptime<decltype(car)> opt_laptime(s, false, true, car, {n+1,ss.input_states}, {n+1,ss.algebraic_states}, control_variables, opts);
 
     // Perform tests ------------------------------------:-
 
@@ -208,7 +211,10 @@ TEST_F(Optimal_laptime_test, Ovaltrack_open)
     control_variables[decltype(car)::Chassis_type::rear_axle_type::control_names::TORQUE] 
         = Optimal_laptime<decltype(car)>::create_full_mesh(std::vector<scalar>(n+1,ss.controls[decltype(car)::Chassis_type::rear_axle_type::control_names::TORQUE]), 2.0e-7);
 
-    Optimal_laptime<decltype(car)> opt_laptime(s, false, true, car, {n+1,ss.input_states}, {n+1,ss.algebraic_states}, control_variables, {});
+    auto opts = Optimal_laptime<decltype(car)>::Options{};
+    opts.controls_lb[1] = -200.0;
+    opts.controls_ub[1] =  200.0;
+    Optimal_laptime<decltype(car)> opt_laptime(s, false, true, car, {n+1,ss.input_states}, {n+1,ss.algebraic_states}, control_variables, opts);
 
     std::vector<scalar> delta_saved = results.get_root_element().get_child("ovaltrack_open/delta").get_value(std::vector<scalar>());
     std::vector<scalar> T_saved = results.get_root_element().get_child("ovaltrack_open/T").get_value(std::vector<scalar>());
@@ -261,7 +267,10 @@ TEST_F(Optimal_laptime_test, Ovaltrack_closed)
     control_variables[decltype(car)::Chassis_type::rear_axle_type::control_names::TORQUE] 
         = Optimal_laptime<decltype(car)>::create_full_mesh(std::vector<scalar>(n,ss.controls[decltype(car)::Chassis_type::rear_axle_type::control_names::TORQUE]), 2.0e-7);
 
-    Optimal_laptime<decltype(car)> opt_laptime(s, true, true, car, {n,ss.input_states}, {n,ss.algebraic_states}, control_variables, {});
+    auto opts = Optimal_laptime<decltype(car)>::Options{};
+    opts.controls_lb[1] = -200.0;
+    opts.controls_ub[1] =  200.0;
+    Optimal_laptime<decltype(car)> opt_laptime(s, true, true, car, {n,ss.input_states}, {n,ss.algebraic_states}, control_variables, opts);
 
     std::vector<scalar> delta_saved = results.get_root_element().get_child("ovaltrack_closed/delta").get_value(std::vector<scalar>());
     std::vector<scalar> T_saved = results.get_root_element().get_child("ovaltrack_closed/T").get_value(std::vector<scalar>());
@@ -318,7 +327,10 @@ TEST_F(Optimal_laptime_test, Ovaltrack_derivative)
                                                            std::vector<scalar>(n,0.0),
                                                            2.0e-9);
 
-    Optimal_laptime<decltype(car)> opt_laptime(s, true, false, car, {n,ss.input_states}, {n,ss.algebraic_states}, control_variables, {});
+    auto opts = Optimal_laptime<decltype(car)>::Options{};
+    opts.controls_lb[1] = -200.0;
+    opts.controls_ub[1] =  200.0;
+    Optimal_laptime<decltype(car)> opt_laptime(s, true, false, car, {n,ss.input_states}, {n,ss.algebraic_states}, control_variables, opts);
 
     // Check the results with a saved simulation
     Xml_document opt_saved("data/ovaltrack_derivative.xml", true);
@@ -442,7 +454,10 @@ TEST_F(Optimal_laptime_test, Catalunya_direct)
                                                            8.0e-6);
 
 
-    Optimal_laptime<decltype(car)> opt_laptime(s, true, true, car, {n,ss.input_states}, {n,ss.algebraic_states}, control_variables, {});
+    auto opts = Optimal_laptime<decltype(car)>::Options{};
+    opts.controls_lb[1] = -200.0;
+    opts.controls_ub[1] =  200.0;
+    Optimal_laptime<decltype(car)> opt_laptime(s, true, true, car, {n,ss.input_states}, {n,ss.algebraic_states}, control_variables, opts);
 
     std::vector<scalar> delta_saved = results.get_root_element().get_child("catalunya/delta").get_value(std::vector<scalar>());
     std::vector<scalar> T_saved = results.get_root_element().get_child("catalunya/T").get_value(std::vector<scalar>());
@@ -506,7 +521,10 @@ TEST_F(Optimal_laptime_test, Catalunya_derivative)
                                                            std::vector<scalar>(n,0.0),
                                                            1.0e-10);
 
-    Optimal_laptime<decltype(car)> opt_laptime(s, true, false, car, {n,ss.input_states}, {n,ss.algebraic_states}, control_variables, {});
+    auto opts = Optimal_laptime<decltype(car)>::Options{};
+    opts.controls_lb[1] = -200.0;
+    opts.controls_ub[1] =  200.0;
+    Optimal_laptime<decltype(car)> opt_laptime(s, true, false, car, {n,ss.input_states}, {n,ss.algebraic_states}, control_variables, opts);
 
     opt_laptime.xml();
 

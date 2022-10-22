@@ -321,19 +321,9 @@ void Axle_car_6dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTRO
         input_states_lb[input_state_names::OMEGA_AXLE]  = 10.0*KMH/0.139;
         input_states_ub[input_state_names::OMEGA_AXLE]  = 200.0*KMH/0.139;
 
-        if ( !_engine.direct_torque() )
-        {
-            controls_def[control_names::TORQUE] = 0.0;
-            controls_lb[control_names::TORQUE]  = -1.0;
-            controls_ub[control_names::TORQUE]  = 1.0;    
-        }
-        else
-        {
-            controls_def[control_names::TORQUE] = 0.0;
-            controls_lb[control_names::TORQUE]  = -200.0;
-            controls_ub[control_names::TORQUE]  =  200.0;
-        }
-
+        controls_def[control_names::TORQUE] = 0.0;
+        controls_lb[control_names::TORQUE]  = -1.0;
+        controls_ub[control_names::TORQUE]  = 1.0;    
     }
     
     if constexpr (std::is_same_v<Axle_mode<0,0>,STEERING_FREE_ROLL<0,0>>)
