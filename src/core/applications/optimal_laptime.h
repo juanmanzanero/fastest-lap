@@ -6,6 +6,7 @@
 #include "src/core/vehicles/track_by_arcs.h"
 #include "src/core/vehicles/road_curvilinear.h"
 #include "src/core/foundation/fastest_lap_exception.h"
+#include "src/core/foundation/model_parameter.h"
 
 template<typename Dynamic_model_t>
 class Optimal_laptime
@@ -41,6 +42,8 @@ class Optimal_laptime
         std::array<scalar,Dynamic_model_t::NALGEBRAIC> algebraic_states_ub = Dynamic_model_t{}.get_state_and_control_upper_lower_and_default_values().algebraic_states_ub;
         std::array<scalar,Dynamic_model_t::NCONTROL> controls_lb = Dynamic_model_t{}.get_state_and_control_upper_lower_and_default_values().controls_lb;
         std::array<scalar,Dynamic_model_t::NCONTROL> controls_ub = Dynamic_model_t{}.get_state_and_control_upper_lower_and_default_values().controls_ub;
+
+        Model_parameters<Timeseries_t> optimization_parameters = {};
     };
 
     //! Helper classes to encapsulate control variables ---------------------------------------------:-
