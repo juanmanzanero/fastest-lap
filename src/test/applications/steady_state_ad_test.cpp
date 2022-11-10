@@ -5,16 +5,16 @@
 
 extern bool is_valgrind;
 
-class Steady_state_ad_test : public ::testing::Test
+class Steady_state_ad_test_kart_kart : public ::testing::Test
 {
  protected:
-    Steady_state_ad_test() { car.get_chassis().get_rear_axle().enable_direct_torque(); }
+    Steady_state_ad_test_kart_kart() { car.get_chassis().get_rear_axle().enable_direct_torque(); }
     Xml_document database = {"./database/vehicles/kart/roberto-lot-kart-2016.xml", true};
     Xml_document results  = {"./data/steady_state.xml", true};
     lot2016kart<CppAD::AD<scalar>>::cartesian car = { database };
 };
 
-TEST_F(Steady_state_ad_test, gg_diagram_50)
+TEST_F(Steady_state_ad_test_kart_kart, gg_diagram_50)
 {
     constexpr size_t n = 10;
     const scalar v = 50.0*KMH;
@@ -28,7 +28,7 @@ TEST_F(Steady_state_ad_test, gg_diagram_50)
     }
 }
 
-TEST_F(Steady_state_ad_test, gg_diagram_60)
+TEST_F(Steady_state_ad_test_kart_kart, gg_diagram_60)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -45,7 +45,7 @@ TEST_F(Steady_state_ad_test, gg_diagram_60)
 
 }
 
-TEST_F(Steady_state_ad_test, gg_diagram_70)
+TEST_F(Steady_state_ad_test_kart_kart, gg_diagram_70)
 {
     if ( is_valgrind ) GTEST_SKIP();
     constexpr size_t n = 50;
@@ -61,7 +61,7 @@ TEST_F(Steady_state_ad_test, gg_diagram_70)
 
 }
 
-TEST_F(Steady_state_ad_test, gg_diagram_80)
+TEST_F(Steady_state_ad_test_kart_kart, gg_diagram_80)
 {
     if ( is_valgrind ) GTEST_SKIP();
     constexpr size_t n = 80;
@@ -77,7 +77,7 @@ TEST_F(Steady_state_ad_test, gg_diagram_80)
 
 }
 
-TEST_F(Steady_state_ad_test, gg_diagram_90)
+TEST_F(Steady_state_ad_test_kart_kart, gg_diagram_90)
 {
     if ( is_valgrind ) GTEST_SKIP();
     constexpr size_t n = 110;
@@ -93,7 +93,7 @@ TEST_F(Steady_state_ad_test, gg_diagram_90)
 
 }
 
-TEST_F(Steady_state_ad_test, gg_diagram_100)
+TEST_F(Steady_state_ad_test_kart_kart, gg_diagram_100)
 {
     if ( is_valgrind ) GTEST_SKIP();
     constexpr size_t n = 150;
@@ -109,7 +109,7 @@ TEST_F(Steady_state_ad_test, gg_diagram_100)
 
 }
 
-TEST_F(Steady_state_ad_test, gg_diagram_110)
+TEST_F(Steady_state_ad_test_kart_kart, gg_diagram_110)
 {
     if ( is_valgrind ) GTEST_SKIP();
     constexpr size_t n = 180;
@@ -125,7 +125,7 @@ TEST_F(Steady_state_ad_test, gg_diagram_110)
 
 }
 
-TEST_F(Steady_state_ad_test, gg_diagram_120)
+TEST_F(Steady_state_ad_test_kart_kart, gg_diagram_120)
 {
     if ( is_valgrind ) GTEST_SKIP();
     constexpr size_t n = 200;
@@ -142,7 +142,7 @@ TEST_F(Steady_state_ad_test, gg_diagram_120)
 }
 
 
-TEST_F(Steady_state_ad_test, _0g_0g_50kmh)
+TEST_F(Steady_state_ad_test_kart_kart, _0g_0g_50kmh)
 {
     std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_50/zero_g/q").get_value(std::vector<double>());
     std::vector<double> controls_saved = results.get_root_element().get_child("velocity_50/zero_g/u").get_value(std::vector<double>());
@@ -171,7 +171,7 @@ TEST_F(Steady_state_ad_test, _0g_0g_50kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, max_lateral_accel_50kmh)
+TEST_F(Steady_state_ad_test_kart_kart, max_lateral_accel_50kmh)
 {
     std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_50/max_lat_acc/q").get_value(std::vector<double>());
     std::vector<double> controls_saved = results.get_root_element().get_child("velocity_50/max_lat_acc/u").get_value(std::vector<double>());
@@ -197,7 +197,7 @@ TEST_F(Steady_state_ad_test, max_lateral_accel_50kmh)
         EXPECT_NEAR(solution.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay2_50kmh)
+TEST_F(Steady_state_ad_test_kart_kart, max_longitudinal_accel_ay2_50kmh)
 {
     double ay = 2.0;
     std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_50/max_lon_ay_2/q").get_value(std::vector<double>());
@@ -220,7 +220,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay2_50kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay2_50kmh)
+TEST_F(Steady_state_ad_test_kart_kart, min_longitudinal_accel_ay2_50kmh)
 {
     double ay = 2.0;
     std::vector<double> input_states_saved = results.get_root_element().get_child("velocity_50/min_lon_ay_2/q").get_value(std::vector<double>());
@@ -243,7 +243,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay2_50kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay5_50kmh)
+TEST_F(Steady_state_ad_test_kart_kart, max_longitudinal_accel_ay5_50kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -268,7 +268,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay5_50kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay5_50kmh)
+TEST_F(Steady_state_ad_test_kart_kart, min_longitudinal_accel_ay5_50kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -293,7 +293,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay5_50kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay8_50kmh)
+TEST_F(Steady_state_ad_test_kart_kart, max_longitudinal_accel_ay8_50kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -318,7 +318,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay8_50kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay8_50kmh)
+TEST_F(Steady_state_ad_test_kart_kart, min_longitudinal_accel_ay8_50kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -343,7 +343,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay8_50kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay10_50kmh)
+TEST_F(Steady_state_ad_test_kart_kart, max_longitudinal_accel_ay10_50kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -368,7 +368,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay10_50kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay10_50kmh)
+TEST_F(Steady_state_ad_test_kart_kart, min_longitudinal_accel_ay10_50kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -395,7 +395,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay10_50kmh)
 
 
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay12_50kmh)
+TEST_F(Steady_state_ad_test_kart_kart, max_longitudinal_accel_ay12_50kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -420,7 +420,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay12_50kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay12_50kmh)
+TEST_F(Steady_state_ad_test_kart_kart, min_longitudinal_accel_ay12_50kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -448,7 +448,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay12_50kmh)
 
 
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay14_50kmh)
+TEST_F(Steady_state_ad_test_kart_kart, max_longitudinal_accel_ay14_50kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -473,7 +473,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay14_50kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay14_50kmh)
+TEST_F(Steady_state_ad_test_kart_kart, min_longitudinal_accel_ay14_50kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -498,7 +498,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay14_50kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, _0g_0g_60kmh)
+TEST_F(Steady_state_ad_test_kart_kart, _0g_0g_60kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -529,7 +529,7 @@ TEST_F(Steady_state_ad_test, _0g_0g_60kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, max_lateral_accel_60kmh)
+TEST_F(Steady_state_ad_test_kart_kart, max_lateral_accel_60kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -557,7 +557,7 @@ TEST_F(Steady_state_ad_test, max_lateral_accel_60kmh)
         EXPECT_NEAR(solution.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay2_60kmh)
+TEST_F(Steady_state_ad_test_kart_kart, max_longitudinal_accel_ay2_60kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -582,7 +582,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay2_60kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay2_60kmh)
+TEST_F(Steady_state_ad_test_kart_kart, min_longitudinal_accel_ay2_60kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -607,7 +607,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay2_60kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay5_60kmh)
+TEST_F(Steady_state_ad_test_kart_kart, max_longitudinal_accel_ay5_60kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -632,7 +632,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay5_60kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay5_60kmh)
+TEST_F(Steady_state_ad_test_kart_kart, min_longitudinal_accel_ay5_60kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -657,7 +657,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay5_60kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay8_60kmh)
+TEST_F(Steady_state_ad_test_kart_kart, max_longitudinal_accel_ay8_60kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -682,7 +682,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay8_60kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay8_60kmh)
+TEST_F(Steady_state_ad_test_kart_kart, min_longitudinal_accel_ay8_60kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -707,7 +707,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay8_60kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay10_60kmh)
+TEST_F(Steady_state_ad_test_kart_kart, max_longitudinal_accel_ay10_60kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -732,7 +732,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay10_60kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay10_60kmh)
+TEST_F(Steady_state_ad_test_kart_kart, min_longitudinal_accel_ay10_60kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -759,7 +759,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay10_60kmh)
 
 
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay12_60kmh)
+TEST_F(Steady_state_ad_test_kart, max_longitudinal_accel_ay12_60kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -784,7 +784,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay12_60kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay12_60kmh)
+TEST_F(Steady_state_ad_test_kart, min_longitudinal_accel_ay12_60kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -812,7 +812,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay12_60kmh)
 
 
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay14_60kmh)
+TEST_F(Steady_state_ad_test_kart, max_longitudinal_accel_ay14_60kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -837,7 +837,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay14_60kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay14_60kmh)
+TEST_F(Steady_state_ad_test_kart, min_longitudinal_accel_ay14_60kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -862,7 +862,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay14_60kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, _0g_0g_70kmh)
+TEST_F(Steady_state_ad_test_kart, _0g_0g_70kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -893,7 +893,7 @@ TEST_F(Steady_state_ad_test, _0g_0g_70kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, max_lateral_accel_70kmh)
+TEST_F(Steady_state_ad_test_kart, max_lateral_accel_70kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -921,7 +921,7 @@ TEST_F(Steady_state_ad_test, max_lateral_accel_70kmh)
         EXPECT_NEAR(solution.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay2_70kmh)
+TEST_F(Steady_state_ad_test_kart, max_longitudinal_accel_ay2_70kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -946,7 +946,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay2_70kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay2_70kmh)
+TEST_F(Steady_state_ad_test_kart, min_longitudinal_accel_ay2_70kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -971,7 +971,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay2_70kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay5_70kmh)
+TEST_F(Steady_state_ad_test_kart, max_longitudinal_accel_ay5_70kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -996,7 +996,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay5_70kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay5_70kmh)
+TEST_F(Steady_state_ad_test_kart, min_longitudinal_accel_ay5_70kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -1021,7 +1021,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay5_70kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay8_70kmh)
+TEST_F(Steady_state_ad_test_kart, max_longitudinal_accel_ay8_70kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -1046,7 +1046,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay8_70kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay8_70kmh)
+TEST_F(Steady_state_ad_test_kart, min_longitudinal_accel_ay8_70kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -1071,7 +1071,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay8_70kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay10_70kmh)
+TEST_F(Steady_state_ad_test_kart, max_longitudinal_accel_ay10_70kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -1096,7 +1096,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay10_70kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay10_70kmh)
+TEST_F(Steady_state_ad_test_kart, min_longitudinal_accel_ay10_70kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -1123,7 +1123,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay10_70kmh)
 
 
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay12_70kmh)
+TEST_F(Steady_state_ad_test_kart, max_longitudinal_accel_ay12_70kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -1148,7 +1148,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay12_70kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay12_70kmh)
+TEST_F(Steady_state_ad_test_kart, min_longitudinal_accel_ay12_70kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -1176,7 +1176,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay12_70kmh)
 
 
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay14_70kmh)
+TEST_F(Steady_state_ad_test_kart, max_longitudinal_accel_ay14_70kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -1201,7 +1201,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay14_70kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay14_70kmh)
+TEST_F(Steady_state_ad_test_kart, min_longitudinal_accel_ay14_70kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -1226,7 +1226,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay14_70kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, _0g_0g_80kmh)
+TEST_F(Steady_state_ad_test_kart, _0g_0g_80kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -1257,7 +1257,7 @@ TEST_F(Steady_state_ad_test, _0g_0g_80kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, max_lateral_accel_80kmh)
+TEST_F(Steady_state_ad_test_kart, max_lateral_accel_80kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -1285,7 +1285,7 @@ TEST_F(Steady_state_ad_test, max_lateral_accel_80kmh)
         EXPECT_NEAR(solution.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay2_80kmh)
+TEST_F(Steady_state_ad_test_kart, max_longitudinal_accel_ay2_80kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -1310,7 +1310,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay2_80kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay2_80kmh)
+TEST_F(Steady_state_ad_test_kart, min_longitudinal_accel_ay2_80kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -1335,7 +1335,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay2_80kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay5_80kmh)
+TEST_F(Steady_state_ad_test_kart, max_longitudinal_accel_ay5_80kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -1360,7 +1360,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay5_80kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay5_80kmh)
+TEST_F(Steady_state_ad_test_kart, min_longitudinal_accel_ay5_80kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -1385,7 +1385,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay5_80kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay8_80kmh)
+TEST_F(Steady_state_ad_test_kart, max_longitudinal_accel_ay8_80kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -1410,7 +1410,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay8_80kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay8_80kmh)
+TEST_F(Steady_state_ad_test_kart, min_longitudinal_accel_ay8_80kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -1435,7 +1435,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay8_80kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay10_80kmh)
+TEST_F(Steady_state_ad_test_kart, max_longitudinal_accel_ay10_80kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -1460,7 +1460,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay10_80kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay10_80kmh)
+TEST_F(Steady_state_ad_test_kart, min_longitudinal_accel_ay10_80kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -1487,7 +1487,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay10_80kmh)
 
 
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay12_80kmh)
+TEST_F(Steady_state_ad_test_kart, max_longitudinal_accel_ay12_80kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -1512,7 +1512,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay12_80kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay12_80kmh)
+TEST_F(Steady_state_ad_test_kart, min_longitudinal_accel_ay12_80kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -1540,7 +1540,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay12_80kmh)
 
 
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay14_80kmh)
+TEST_F(Steady_state_ad_test_kart, max_longitudinal_accel_ay14_80kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -1565,7 +1565,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay14_80kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay14_80kmh)
+TEST_F(Steady_state_ad_test_kart, min_longitudinal_accel_ay14_80kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -1590,7 +1590,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay14_80kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, _0g_0g_90kmh)
+TEST_F(Steady_state_ad_test_kart, _0g_0g_90kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -1621,7 +1621,7 @@ TEST_F(Steady_state_ad_test, _0g_0g_90kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, max_lateral_accel_90kmh)
+TEST_F(Steady_state_ad_test_kart, max_lateral_accel_90kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -1649,7 +1649,7 @@ TEST_F(Steady_state_ad_test, max_lateral_accel_90kmh)
         EXPECT_NEAR(solution.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay2_90kmh)
+TEST_F(Steady_state_ad_test_kart, max_longitudinal_accel_ay2_90kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -1674,7 +1674,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay2_90kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay2_90kmh)
+TEST_F(Steady_state_ad_test_kart, min_longitudinal_accel_ay2_90kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -1699,7 +1699,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay2_90kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay5_90kmh)
+TEST_F(Steady_state_ad_test_kart, max_longitudinal_accel_ay5_90kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -1724,7 +1724,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay5_90kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay5_90kmh)
+TEST_F(Steady_state_ad_test_kart, min_longitudinal_accel_ay5_90kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -1749,7 +1749,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay5_90kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay8_90kmh)
+TEST_F(Steady_state_ad_test_kart, max_longitudinal_accel_ay8_90kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -1774,7 +1774,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay8_90kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay8_90kmh)
+TEST_F(Steady_state_ad_test_kart, min_longitudinal_accel_ay8_90kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -1799,7 +1799,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay8_90kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay10_90kmh)
+TEST_F(Steady_state_ad_test_kart, max_longitudinal_accel_ay10_90kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -1824,7 +1824,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay10_90kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay10_90kmh)
+TEST_F(Steady_state_ad_test_kart, min_longitudinal_accel_ay10_90kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -1851,7 +1851,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay10_90kmh)
 
 
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay12_90kmh)
+TEST_F(Steady_state_ad_test_kart, max_longitudinal_accel_ay12_90kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -1876,7 +1876,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay12_90kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay12_90kmh)
+TEST_F(Steady_state_ad_test_kart, min_longitudinal_accel_ay12_90kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -1904,7 +1904,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay12_90kmh)
 
 
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay14_90kmh)
+TEST_F(Steady_state_ad_test_kart, max_longitudinal_accel_ay14_90kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -1929,7 +1929,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay14_90kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay14_90kmh)
+TEST_F(Steady_state_ad_test_kart, min_longitudinal_accel_ay14_90kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -1954,7 +1954,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay14_90kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, _0g_0g_100kmh)
+TEST_F(Steady_state_ad_test_kart, _0g_0g_100kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -1985,7 +1985,7 @@ TEST_F(Steady_state_ad_test, _0g_0g_100kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, max_lateral_accel_100kmh)
+TEST_F(Steady_state_ad_test_kart, max_lateral_accel_100kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -2013,7 +2013,7 @@ TEST_F(Steady_state_ad_test, max_lateral_accel_100kmh)
         EXPECT_NEAR(solution.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay2_100kmh)
+TEST_F(Steady_state_ad_test_kart, max_longitudinal_accel_ay2_100kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -2038,7 +2038,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay2_100kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay2_100kmh)
+TEST_F(Steady_state_ad_test_kart, min_longitudinal_accel_ay2_100kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -2063,7 +2063,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay2_100kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay5_100kmh)
+TEST_F(Steady_state_ad_test_kart, max_longitudinal_accel_ay5_100kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -2088,7 +2088,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay5_100kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay5_100kmh)
+TEST_F(Steady_state_ad_test_kart, min_longitudinal_accel_ay5_100kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -2113,7 +2113,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay5_100kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay8_100kmh)
+TEST_F(Steady_state_ad_test_kart, max_longitudinal_accel_ay8_100kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -2138,7 +2138,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay8_100kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay8_100kmh)
+TEST_F(Steady_state_ad_test_kart, min_longitudinal_accel_ay8_100kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -2163,7 +2163,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay8_100kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay10_100kmh)
+TEST_F(Steady_state_ad_test_kart, max_longitudinal_accel_ay10_100kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -2188,7 +2188,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay10_100kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay10_100kmh)
+TEST_F(Steady_state_ad_test_kart, min_longitudinal_accel_ay10_100kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -2215,7 +2215,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay10_100kmh)
 
 
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay12_100kmh)
+TEST_F(Steady_state_ad_test_kart, max_longitudinal_accel_ay12_100kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -2240,7 +2240,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay12_100kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay12_100kmh)
+TEST_F(Steady_state_ad_test_kart, min_longitudinal_accel_ay12_100kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -2268,7 +2268,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay12_100kmh)
 
 
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay14_100kmh)
+TEST_F(Steady_state_ad_test_kart, max_longitudinal_accel_ay14_100kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -2293,7 +2293,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay14_100kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay14_100kmh)
+TEST_F(Steady_state_ad_test_kart, min_longitudinal_accel_ay14_100kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -2318,7 +2318,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay14_100kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, _0g_0g_110kmh)
+TEST_F(Steady_state_ad_test_kart, _0g_0g_110kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -2349,7 +2349,7 @@ TEST_F(Steady_state_ad_test, _0g_0g_110kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, max_lateral_accel_110kmh)
+TEST_F(Steady_state_ad_test_kart, max_lateral_accel_110kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -2377,7 +2377,7 @@ TEST_F(Steady_state_ad_test, max_lateral_accel_110kmh)
         EXPECT_NEAR(solution.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay2_110kmh)
+TEST_F(Steady_state_ad_test_kart, max_longitudinal_accel_ay2_110kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -2402,7 +2402,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay2_110kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay2_110kmh)
+TEST_F(Steady_state_ad_test_kart, min_longitudinal_accel_ay2_110kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -2427,7 +2427,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay2_110kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay5_110kmh)
+TEST_F(Steady_state_ad_test_kart, max_longitudinal_accel_ay5_110kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -2452,7 +2452,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay5_110kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay5_110kmh)
+TEST_F(Steady_state_ad_test_kart, min_longitudinal_accel_ay5_110kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -2477,7 +2477,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay5_110kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay8_110kmh)
+TEST_F(Steady_state_ad_test_kart, max_longitudinal_accel_ay8_110kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -2502,7 +2502,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay8_110kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay8_110kmh)
+TEST_F(Steady_state_ad_test_kart, min_longitudinal_accel_ay8_110kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -2527,7 +2527,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay8_110kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay10_110kmh)
+TEST_F(Steady_state_ad_test_kart, max_longitudinal_accel_ay10_110kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -2552,7 +2552,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay10_110kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay10_110kmh)
+TEST_F(Steady_state_ad_test_kart, min_longitudinal_accel_ay10_110kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -2579,7 +2579,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay10_110kmh)
 
 
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay12_110kmh)
+TEST_F(Steady_state_ad_test_kart, max_longitudinal_accel_ay12_110kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -2604,7 +2604,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay12_110kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay12_110kmh)
+TEST_F(Steady_state_ad_test_kart, min_longitudinal_accel_ay12_110kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -2632,7 +2632,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay12_110kmh)
 
 
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay14_110kmh)
+TEST_F(Steady_state_ad_test_kart, max_longitudinal_accel_ay14_110kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -2657,7 +2657,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay14_110kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay14_110kmh)
+TEST_F(Steady_state_ad_test_kart, min_longitudinal_accel_ay14_110kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -2682,7 +2682,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay14_110kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, _0g_0g_120kmh)
+TEST_F(Steady_state_ad_test_kart, _0g_0g_120kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -2713,7 +2713,7 @@ TEST_F(Steady_state_ad_test, _0g_0g_120kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, max_lateral_accel_120kmh)
+TEST_F(Steady_state_ad_test_kart, max_lateral_accel_120kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -2741,7 +2741,7 @@ TEST_F(Steady_state_ad_test, max_lateral_accel_120kmh)
         EXPECT_NEAR(solution.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 }
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay2_120kmh)
+TEST_F(Steady_state_ad_test_kart, max_longitudinal_accel_ay2_120kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -2766,7 +2766,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay2_120kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay2_120kmh)
+TEST_F(Steady_state_ad_test_kart, min_longitudinal_accel_ay2_120kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -2791,7 +2791,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay2_120kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay5_120kmh)
+TEST_F(Steady_state_ad_test_kart, max_longitudinal_accel_ay5_120kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -2816,7 +2816,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay5_120kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay5_120kmh)
+TEST_F(Steady_state_ad_test_kart, min_longitudinal_accel_ay5_120kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -2841,7 +2841,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay5_120kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay8_120kmh)
+TEST_F(Steady_state_ad_test_kart, max_longitudinal_accel_ay8_120kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -2866,7 +2866,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay8_120kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay8_120kmh)
+TEST_F(Steady_state_ad_test_kart, min_longitudinal_accel_ay8_120kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -2891,7 +2891,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay8_120kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay10_120kmh)
+TEST_F(Steady_state_ad_test_kart, max_longitudinal_accel_ay10_120kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -2916,7 +2916,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay10_120kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay10_120kmh)
+TEST_F(Steady_state_ad_test_kart, min_longitudinal_accel_ay10_120kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -2943,7 +2943,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay10_120kmh)
 
 
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay12_120kmh)
+TEST_F(Steady_state_ad_test_kart, max_longitudinal_accel_ay12_120kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -2968,7 +2968,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay12_120kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay12_120kmh)
+TEST_F(Steady_state_ad_test_kart, min_longitudinal_accel_ay12_120kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -2996,7 +2996,7 @@ TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay12_120kmh)
 
 
 
-TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay14_120kmh)
+TEST_F(Steady_state_ad_test_kart, max_longitudinal_accel_ay14_120kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
@@ -3021,7 +3021,7 @@ TEST_F(Steady_state_ad_test, max_longitudinal_accel_ay14_120kmh)
 }
 
 
-TEST_F(Steady_state_ad_test, min_longitudinal_accel_ay14_120kmh)
+TEST_F(Steady_state_ad_test_kart, min_longitudinal_accel_ay14_120kmh)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
