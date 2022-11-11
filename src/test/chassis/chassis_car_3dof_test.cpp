@@ -283,8 +283,6 @@ TEST_F(Chassis_car_3dof_test, aerodynamic_force_wind)
     // Compute aero velocity
     const auto aero_velocity_x = - u + wind_velocity_x_body;
     const auto aero_velocity_y = - v + wind_velocity_y_body;
-    const scalar F_lift = 0.5*1.2*u*u*1.5*3.0;
-    const scalar Fx_drag = -0.5*1.2*sqrt(u*u+v*v)*u*1.5*0.9;
 
     // Compute aero forces
     const auto drag_x = 0.5 * 1.2 * sqrt(aero_velocity_x * aero_velocity_x + aero_velocity_y * aero_velocity_y) * aero_velocity_x * 1.5 * 0.9;

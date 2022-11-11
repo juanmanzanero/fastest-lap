@@ -23,15 +23,13 @@ static void check_optimal_laptime(const Optimal_laptime<Dynamic_model_t>& opt_la
 
     Optimal_laptime<Dynamic_model_t> opt_laptime_saved(opt_saved);
 
-    const auto new_reference_file = std::regex_replace(opt_saved.get_file_name(), std::regex("data\\/"), "new-references/");
-    std::ifstream fin( new_reference_file );
+//  const auto new_reference_file = std::regex_replace(opt_saved.get_file_name(), std::regex("data\\/"), "new-references/");
+//  std::ifstream fin( new_reference_file );
  
-    if( fin.fail() )
-    {
-        opt_laptime.xml()->save(new_reference_file);
-    }
-
-
+//  if( fin.fail() )
+//  {
+//      opt_laptime.xml()->save(new_reference_file);
+//  }
 
     EXPECT_NEAR(opt_laptime.laptime, opt_saved.get_element("optimal_laptime/laptime").get_value(scalar()), 5.0e-5);
 

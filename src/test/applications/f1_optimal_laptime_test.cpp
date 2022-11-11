@@ -665,10 +665,10 @@ TEST_F(F1_optimal_laptime_test, Melbourne_direct)
     auto control_variables = Optimal_laptime<decltype(car)>::Control_variables<>{};
 
     control_variables[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING] 
-        = Optimal_laptime<decltype(car)>::create_full_mesh(std::vector<scalar>(n,ss.controls[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING]), 5.0);
+        = Optimal_laptime<decltype(car)>::create_full_mesh(std::vector<scalar>(n,ss.controls[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING]), 50.0);
 
     control_variables[decltype(car)::Chassis_type::control_names::THROTTLE] 
-        = Optimal_laptime<decltype(car)>::create_full_mesh(std::vector<scalar>(n,ss.controls[decltype(car)::Chassis_type::control_names::THROTTLE]), 8.0e-4);
+        = Optimal_laptime<decltype(car)>::create_full_mesh(std::vector<scalar>(n,ss.controls[decltype(car)::Chassis_type::control_names::THROTTLE]), 20*8.0e-4);
 
     control_variables[decltype(car)::Chassis_type::control_names::BRAKE_BIAS] 
         = Optimal_laptime<decltype(car)>::create_dont_optimize();
