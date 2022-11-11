@@ -104,11 +104,12 @@ class Chassis_car_3dof_test : public ::testing::Test
 
     // Compute aerodynamic forces
     const scalar F_lift = 0.5*1.2*u*u*1.5*3.0;
-    const scalar F_drag = -0.5*1.2*u*u*1.5*0.9;
+    const scalar Fx_drag = -0.5*1.2*sqrt(u*u+v*v)*u*1.5*0.9;
+    const scalar Fy_drag = -0.5*1.2*sqrt(u*u+v*v)*v*1.5*0.9;
 
     // Compute total forces
-    const scalar Fx = cos(delta)*(F_fr[0]+F_fl[0])-sin(delta)*(F_fr[1]+F_fl[1]) + F_rr[0] + F_rl[0] + F_drag;
-    const scalar Fy = cos(delta)*(F_fr[1]+F_fl[1])+sin(delta)*(F_fr[0]+F_fl[0]) + F_rr[1] + F_rl[1];
+    const scalar Fx = cos(delta)*(F_fr[0]+F_fl[0])-sin(delta)*(F_fr[1]+F_fl[1]) + F_rr[0] + F_rl[0] + Fx_drag;
+    const scalar Fy = cos(delta)*(F_fr[1]+F_fl[1])+sin(delta)*(F_fr[0]+F_fl[0]) + F_rr[1] + F_rl[1] + Fy_drag;
 };
 
 
@@ -238,7 +239,7 @@ TEST_F(Chassis_car_3dof_test, euler_equations)
     std::array<scalar,4> dqa;
     chassis.get_algebraic_constraints(dqa);
 
-    const scalar domega = (1.8*(cos(delta)*(F_fr[1]+F_fl[1])+sin(delta)*(F_fr[0]+F_fl[0])) + 0.73*(sin(delta)*F_fr[1]-cos(delta)*F_fr[0]) - 0.73*F_rr[0] + 0.73*(cos(delta)*F_fl[0] - sin(delta)*F_fl[1]) + 0.73*F_rl[0] - 1.6*(F_rr[1]+F_rl[1]))/450.0;
+    const scalar domega = (-0.1*Fy_drag + 1.8*(cos(delta)*(F_fr[1]+F_fl[1])+sin(delta)*(F_fr[0]+F_fl[0])) + 0.73*(sin(delta)*F_fr[1]-cos(delta)*F_fr[0]) - 0.73*F_rr[0] + 0.73*(cos(delta)*F_fl[0] - sin(delta)*F_fl[1]) + 0.73*F_rl[0] - 1.6*(F_rr[1]+F_rl[1]))/450.0;
 
     EXPECT_NEAR(dqa[1]*9.81*660.0, 0.73*(neg_Fz_rl-neg_Fz_rr)+0.73*(neg_Fz_fl-neg_Fz_fr) + 0.3*Fy, 2.0e-11); 
     EXPECT_NEAR(dqa[2]*9.81*660.0, 1.6*(neg_Fz_rr+neg_Fz_rl)-1.8*(neg_Fz_fr+neg_Fz_fl)+ 0.3*Fx + 0.1*F_lift, 2.0e-11);
@@ -252,4 +253,60 @@ TEST_F(Chassis_car_3dof_test, suspension_compliance_equation)
     chassis.get_algebraic_constraints(dqa);
 
     EXPECT_NEAR(dqa[3]*9.81*660.0, Fz_fr - Fz_fl - 0.5*(Fz_fr + Fz_rr - Fz_fl - Fz_rl), 2.0e-11);
+}
+
+
+TEST_F(Chassis_car_3dof_test, aerodynamic_force_air_in_calm)
+{
+    EXPECT_NEAR(Fx_drag, chassis.get_aerodynamic_force().drag.x(), 2.0e-11);
+    EXPECT_NEAR(Fy_drag, chassis.get_aerodynamic_force().drag.y(), 2.0e-11);
+    EXPECT_NEAR(0.0,     chassis.get_aerodynamic_force().drag.z(), 2.0e-11);
+    EXPECT_NEAR(0.0,     chassis.get_aerodynamic_force().lift.x(), 2.0e-11);
+    EXPECT_NEAR(0.0,     chassis.get_aerodynamic_force().lift.y(), 2.0e-11);
+    EXPECT_NEAR(F_lift,  chassis.get_aerodynamic_force().lift.z(), 2.0e-11);
+}
+
+
+TEST_F(Chassis_car_3dof_test, aerodynamic_force_wind)
+{
+    const double northward_wind = 50.0 * KMH;
+    const double eastward_wind  = 30.0 * KMH;
+
+    // Set wind
+    chassis.set_parameter("vehicle/chassis/aerodynamics/wind_velocity/northward", northward_wind);
+    chassis.set_parameter("vehicle/chassis/aerodynamics/wind_velocity/eastward",  eastward_wind);
+
+    // Compute wind velocity in body axes
+    const auto wind_velocity_x_body = eastward_wind * cos(psi) - northward_wind * sin(psi);
+    const auto wind_velocity_y_body = -northward_wind * cos(psi) - eastward_wind * sin(psi);
+
+    // Compute aero velocity
+    const auto aero_velocity_x = - u + wind_velocity_x_body;
+    const auto aero_velocity_y = - v + wind_velocity_y_body;
+    const scalar F_lift = 0.5*1.2*u*u*1.5*3.0;
+    const scalar Fx_drag = -0.5*1.2*sqrt(u*u+v*v)*u*1.5*0.9;
+
+    // Compute aero forces
+    const auto drag_x = 0.5 * 1.2 * sqrt(aero_velocity_x * aero_velocity_x + aero_velocity_y * aero_velocity_y) * aero_velocity_x * 1.5 * 0.9;
+    const auto drag_y = 0.5 * 1.2 * sqrt(aero_velocity_x * aero_velocity_x + aero_velocity_y * aero_velocity_y) * aero_velocity_y * 1.5 * 0.9;
+    const auto lift = 0.5 * 1.2 * aero_velocity_x * aero_velocity_x * 1.5 * 3.0;
+
+    // Get aerodynamic forces
+    const auto aero_forces = chassis.get_aerodynamic_force();
+
+    EXPECT_NEAR(wind_velocity_x_body, aero_forces.wind_velocity_body.x(), 2.0e-11);
+    EXPECT_NEAR(wind_velocity_y_body, aero_forces.wind_velocity_body.y(), 2.0e-11);
+    EXPECT_NEAR(0.0,                  aero_forces.wind_velocity_body.z(), 2.0e-11);
+
+    EXPECT_NEAR(aero_velocity_x, aero_forces.aerodynamic_velocity.x(), 2.0e-11);
+    EXPECT_NEAR(aero_velocity_y, aero_forces.aerodynamic_velocity.y(), 2.0e-11);
+    EXPECT_NEAR(0.0,             aero_forces.aerodynamic_velocity.z(), 2.0e-11);
+
+    EXPECT_NEAR(drag_x, aero_forces.drag.x(), 2.0e-11);
+    EXPECT_NEAR(drag_y, aero_forces.drag.y(), 2.0e-11);
+    EXPECT_NEAR(0.0,    aero_forces.drag.z(), 2.0e-11);
+
+    EXPECT_NEAR(0.0,    aero_forces.lift.x(), 2.0e-11);
+    EXPECT_NEAR(0.0,    aero_forces.lift.y(), 2.0e-11);
+    EXPECT_NEAR(lift,   aero_forces.lift.z(), 2.0e-11);
 }

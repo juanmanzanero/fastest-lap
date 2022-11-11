@@ -136,10 +136,10 @@ class Dynamic_model_car : public Dynamic_model<Timeseries_t>
         std::array<scalar,  NALGEBRAIC*_NCONTROL> B_qa;
     };
 
-    Equations equations(const std::array<scalar,_NSTATE>& input_states,
+    auto equations(const std::array<scalar,_NSTATE>& input_states,
                         const std::array<scalar,NALGEBRAIC>& algebraic_states,
                         const std::array<scalar,_NCONTROL>& controls,
-                        scalar time);
+                        scalar time) -> Equations;
 
     std::tuple<std::string,std::array<std::string,_NSTATE>,std::array<std::string,Chassis_t::NALGEBRAIC>,std::array<std::string,_NCONTROL>> 
         get_state_and_control_names() const;

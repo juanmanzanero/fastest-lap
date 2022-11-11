@@ -43,6 +43,8 @@ inline Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::Chassis(con
   _cd(other._cd),
   _cl(other._cl),
   _A(other._A),
+  _northward_wind(other._northward_wind),
+  _eastward_wind(other._eastward_wind),
   _front_axle(other._front_axle),
   _rear_axle(other._rear_axle),
   __used_parameters(other.__used_parameters),
@@ -64,16 +66,18 @@ template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_
 inline Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>& Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::operator=(const Chassis& other)
 {
     _inertial_frame = Frame<Timeseries_t>();
-    _road_frame    = other._road_frame;
-    _chassis_frame = other._chassis_frame;
-    _front_axle    = other._front_axle;
-    _rear_axle     = other._rear_axle;
-    _m             = other._m;
-    _I             = other._I;
-    _rho           = other._rho;
-    _cd            = other._cd; 
-    _cl            = other._cl; 
-    _A             = other._A;  
+    _road_frame     = other._road_frame;
+    _chassis_frame  = other._chassis_frame;
+    _front_axle     = other._front_axle;
+    _rear_axle      = other._rear_axle;
+    _m              = other._m;
+    _I              = other._I;
+    _rho            = other._rho;
+    _cd             = other._cd; 
+    _cl             = other._cl; 
+    _A              = other._A;  
+    _northward_wind = other._northward_wind;
+    _eastward_wind  = other._eastward_wind;
 
     _road_frame.set_parent(_inertial_frame);
 
@@ -97,7 +101,20 @@ void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_parameter
     if ( parameter.find("vehicle/chassis/") == 0 )
     {
         // Find the parameter in the database
-        const auto found = ::set_parameter(get_parameters(), __used_parameters, parameter, "vehicle/chassis/", value); 
+        auto found = ::set_parameter(get_parameters(), __used_parameters, parameter, "vehicle/chassis/", value); 
+
+        // If not found, look for it in the class extra parameters
+        if (!found)
+        {
+            const auto extra_parameters_map = get_extra_parameters_map();
+            const auto it_extra_parameter = extra_parameters_map.find(parameter);
+
+            if (it_extra_parameter != extra_parameters_map.cend())
+            {
+                *(it_extra_parameter->second) = value;
+                found = true;
+            }
+        }
 
         // If not found, throw an exception
         if ( !found )
@@ -191,11 +208,30 @@ inline Timeseries_t Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>
 
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
-inline Vector3d<Timeseries_t> Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::get_aerodynamic_force() const
+inline auto Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::get_aerodynamic_force() const -> Aerodynamic_forces
 {
-    const Vector3d<Timeseries_t> vel = _road_frame.get_absolute_velocity_in_body();
+    // (1) Get car's velocity in body frame
+    const Vector3d<Timeseries_t> car_velocity = _road_frame.get_absolute_velocity_in_body();
 
-    return { -0.5*_rho*_cd*_A*vel[X]*vel[X], 0.0, 0.5*_rho*_cl*_A*vel[X]*vel[X] };
+    // (2) Get wind velocity in body frame: the minus sign accounts for the Z
+    const Vector3d<Timeseries_t> wind_velocity_absolute = { _eastward_wind, -_northward_wind, 0.0 };
+    const Vector3d<Timeseries_t> wind_velocity          = transpose(_road_frame.get_absolute_rotation_matrix()) * wind_velocity_absolute;
+
+    // (3) Get aerodynamic velocity in body frame
+    const Vector3d<Timeseries_t> aerodynamic_velocity    = -car_velocity + wind_velocity;
+    const Timeseries_t aerodynamic_velocity_norm_squared = aerodynamic_velocity.x() * aerodynamic_velocity.x() + aerodynamic_velocity.y() * aerodynamic_velocity.y();
+    const Timeseries_t aerodynamic_velocity_norm         = sqrt(aerodynamic_velocity_norm_squared);
+
+    const Vector3d<Timeseries_t> drag_force = 0.5 * _rho * _cd * _A * aerodynamic_velocity * aerodynamic_velocity_norm;
+    const Vector3d<Timeseries_t> lift_force = { 0.0, 0.0, 0.5 * _rho * _cl * _A * aerodynamic_velocity.x()*aerodynamic_velocity.x()};
+
+    return Aerodynamic_forces
+    {
+        .lift = lift_force,
+        .drag = drag_force,
+        .wind_velocity_body = wind_velocity,
+        .aerodynamic_velocity   = aerodynamic_velocity
+    };
 }
 
 

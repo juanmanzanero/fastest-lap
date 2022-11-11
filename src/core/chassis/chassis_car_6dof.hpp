@@ -129,8 +129,9 @@ inline void Chassis_car_6dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0
                     + T_rear + cross(x_rear, F_rear);
 
     // Aerodynamic drag
-    const Vector3d<Timeseries_t> F_aero = base_type::get_aerodynamic_force();
-    base_type::_F += F_aero; 
+    const auto aerodynamic_forces = base_type::get_aerodynamic_force();
+    const auto F_aero = aerodynamic_forces.lift + aerodynamic_forces.drag;
+    base_type::_F += F_aero;
     base_type::_T += cross(base_type::get_chassis_frame().get_origin(), F_aero);
 
     // Add the external forces

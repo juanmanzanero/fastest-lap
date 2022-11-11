@@ -959,7 +959,9 @@ TEST_F(limebeer2014f1_test,propagation_crank_nicolson_corner_exit)
     for (size_t i = 0; i < 4; ++i)
         EXPECT_NEAR(dqa_fin[i], 0.0, 1.0e-8);
 
-    Crank_nicolson<limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p>::take_step(car, u, u_next, q, qa, s, s_next-s, {});
+    auto opts = Crank_nicolson<limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p>::Options{};
+    opts.relaxation_factor = 1.0e-1;
+    Crank_nicolson<limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p>::take_step(car, u, u_next, q, qa, s, s_next-s, opts);
 
     for (size_t i = 0; i < 10; ++i)
         EXPECT_NEAR(q[i],q_next[i],1.0e-10) << ", with i = " << i;

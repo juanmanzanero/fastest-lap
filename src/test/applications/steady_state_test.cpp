@@ -50,7 +50,7 @@ struct Steady_state_test_kart_new_reference
     bool save;
 };
 
-static bool save_xml = false;
+static bool save_xml = true;
 static Steady_state_test_kart_new_reference new_reference(save_xml);
 
 
@@ -214,9 +214,9 @@ TEST_F(Steady_state_test_kart, max_longitudinal_accel_ay2_50kmh)
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
         EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 
-    new_reference.doc.add_element("steady_state_test_kart/velocity_50/max_lon_ay/q").set_value(vec2str(solution_max.input_states));
-    new_reference.doc.add_element("steady_state_test_kart/velocity_50/max_lon_ay/u").set_value(vec2str(solution_max.controls));
-    new_reference.doc.add_element("steady_state_test_kart/velocity_50/max_lon_ay/ax").set_value(vec2str(solution_max.ax));
+    new_reference.doc.add_element("steady_state_test_kart/velocity_50/max_lon_ay_2/q").set_value(vec2str(solution_max.input_states));
+    new_reference.doc.add_element("steady_state_test_kart/velocity_50/max_lon_ay_2/u").set_value(vec2str(solution_max.controls));
+    new_reference.doc.add_element("steady_state_test_kart/velocity_50/max_lon_ay_2/ax").set_value(vec2str(solution_max.ax));
 }
 
 
@@ -629,9 +629,9 @@ TEST_F(Steady_state_test_kart, max_longitudinal_accel_ay2_60kmh)
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
         EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 
-    new_reference.doc.add_element("steady_state_test_kart/velocity_60/max_lon_ay/q").set_value(vec2str(solution_max.input_states));
-    new_reference.doc.add_element("steady_state_test_kart/velocity_60/max_lon_ay/u").set_value(vec2str(solution_max.controls));
-    new_reference.doc.add_element("steady_state_test_kart/velocity_60/max_lon_ay/ax").set_value(vec2str(solution_max.ax));
+    new_reference.doc.add_element("steady_state_test_kart/velocity_60/max_lon_ay_2/q").set_value(vec2str(solution_max.input_states));
+    new_reference.doc.add_element("steady_state_test_kart/velocity_60/max_lon_ay_2/u").set_value(vec2str(solution_max.controls));
+    new_reference.doc.add_element("steady_state_test_kart/velocity_60/max_lon_ay_2/ax").set_value(vec2str(solution_max.ax));
 }
 
 
@@ -1044,9 +1044,9 @@ TEST_F(Steady_state_test_kart, max_longitudinal_accel_ay2_70kmh)
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
         EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 
-    new_reference.doc.add_element("steady_state_test_kart/velocity_70/max_lon_ay/q").set_value(vec2str(solution_max.input_states));
-    new_reference.doc.add_element("steady_state_test_kart/velocity_70/max_lon_ay/u").set_value(vec2str(solution_max.controls));
-    new_reference.doc.add_element("steady_state_test_kart/velocity_70/max_lon_ay/ax").set_value(vec2str(solution_max.ax));
+    new_reference.doc.add_element("steady_state_test_kart/velocity_70/max_lon_ay_2/q").set_value(vec2str(solution_max.input_states));
+    new_reference.doc.add_element("steady_state_test_kart/velocity_70/max_lon_ay_2/u").set_value(vec2str(solution_max.controls));
+    new_reference.doc.add_element("steady_state_test_kart/velocity_70/max_lon_ay_2/ax").set_value(vec2str(solution_max.ax));
 }
 
 
@@ -1459,9 +1459,9 @@ TEST_F(Steady_state_test_kart, max_longitudinal_accel_ay2_80kmh)
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
         EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 
-    new_reference.doc.add_element("steady_state_test_kart/velocity_80/max_lon_ay/q").set_value(vec2str(solution_max.input_states));
-    new_reference.doc.add_element("steady_state_test_kart/velocity_80/max_lon_ay/u").set_value(vec2str(solution_max.controls));
-    new_reference.doc.add_element("steady_state_test_kart/velocity_80/max_lon_ay/ax").set_value(vec2str(solution_max.ax));
+    new_reference.doc.add_element("steady_state_test_kart/velocity_80/max_lon_ay_2/q").set_value(vec2str(solution_max.input_states));
+    new_reference.doc.add_element("steady_state_test_kart/velocity_80/max_lon_ay_2/u").set_value(vec2str(solution_max.controls));
+    new_reference.doc.add_element("steady_state_test_kart/velocity_80/max_lon_ay_2/ax").set_value(vec2str(solution_max.ax));
 }
 
 
@@ -1874,9 +1874,9 @@ TEST_F(Steady_state_test_kart, max_longitudinal_accel_ay2_90kmh)
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
         EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 
-    new_reference.doc.add_element("steady_state_test_kart/velocity_90/max_lon_ay/q").set_value(vec2str(solution_max.input_states));
-    new_reference.doc.add_element("steady_state_test_kart/velocity_90/max_lon_ay/u").set_value(vec2str(solution_max.controls));
-    new_reference.doc.add_element("steady_state_test_kart/velocity_90/max_lon_ay/ax").set_value(vec2str(solution_max.ax));
+    new_reference.doc.add_element("steady_state_test_kart/velocity_90/max_lon_ay_2/q").set_value(vec2str(solution_max.input_states));
+    new_reference.doc.add_element("steady_state_test_kart/velocity_90/max_lon_ay_2/u").set_value(vec2str(solution_max.controls));
+    new_reference.doc.add_element("steady_state_test_kart/velocity_90/max_lon_ay_2/ax").set_value(vec2str(solution_max.ax));
 }
 
 
@@ -2289,9 +2289,9 @@ TEST_F(Steady_state_test_kart, max_longitudinal_accel_ay2_100kmh)
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
         EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 
-    new_reference.doc.add_element("steady_state_test_kart/velocity_100/max_lon_ay/q").set_value(vec2str(solution_max.input_states));
-    new_reference.doc.add_element("steady_state_test_kart/velocity_100/max_lon_ay/u").set_value(vec2str(solution_max.controls));
-    new_reference.doc.add_element("steady_state_test_kart/velocity_100/max_lon_ay/ax").set_value(vec2str(solution_max.ax));
+    new_reference.doc.add_element("steady_state_test_kart/velocity_100/max_lon_ay_2/q").set_value(vec2str(solution_max.input_states));
+    new_reference.doc.add_element("steady_state_test_kart/velocity_100/max_lon_ay_2/u").set_value(vec2str(solution_max.controls));
+    new_reference.doc.add_element("steady_state_test_kart/velocity_100/max_lon_ay_2/ax").set_value(vec2str(solution_max.ax));
 }
 
 
@@ -2704,9 +2704,9 @@ TEST_F(Steady_state_test_kart, max_longitudinal_accel_ay2_110kmh)
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
         EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 
-    new_reference.doc.add_element("steady_state_test_kart/velocity_110/max_lon_ay/q").set_value(vec2str(solution_max.input_states));
-    new_reference.doc.add_element("steady_state_test_kart/velocity_110/max_lon_ay/u").set_value(vec2str(solution_max.controls));
-    new_reference.doc.add_element("steady_state_test_kart/velocity_110/max_lon_ay/ax").set_value(vec2str(solution_max.ax));
+    new_reference.doc.add_element("steady_state_test_kart/velocity_110/max_lon_ay_2/q").set_value(vec2str(solution_max.input_states));
+    new_reference.doc.add_element("steady_state_test_kart/velocity_110/max_lon_ay_2/u").set_value(vec2str(solution_max.controls));
+    new_reference.doc.add_element("steady_state_test_kart/velocity_110/max_lon_ay_2/ax").set_value(vec2str(solution_max.ax));
 }
 
 
@@ -3119,9 +3119,9 @@ TEST_F(Steady_state_test_kart, max_longitudinal_accel_ay2_120kmh)
     for (size_t i = 0; i < lot2016kart<scalar>::cartesian::NCONTROL; ++i)
         EXPECT_NEAR(solution_max.controls[i], controls_saved[i], 2.0e-4) << "with i = " << i;
 
-    new_reference.doc.add_element("steady_state_test_kart/velocity_120/max_lon_ay/q").set_value(vec2str(solution_max.input_states));
-    new_reference.doc.add_element("steady_state_test_kart/velocity_120/max_lon_ay/u").set_value(vec2str(solution_max.controls));
-    new_reference.doc.add_element("steady_state_test_kart/velocity_120/max_lon_ay/ax").set_value(vec2str(solution_max.ax));
+    new_reference.doc.add_element("steady_state_test_kart/velocity_120/max_lon_ay_2/q").set_value(vec2str(solution_max.input_states));
+    new_reference.doc.add_element("steady_state_test_kart/velocity_120/max_lon_ay_2/u").set_value(vec2str(solution_max.controls));
+    new_reference.doc.add_element("steady_state_test_kart/velocity_120/max_lon_ay_2/ax").set_value(vec2str(solution_max.ax));
 }
 
 

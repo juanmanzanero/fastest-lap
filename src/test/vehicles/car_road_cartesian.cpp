@@ -768,10 +768,11 @@ TEST_F(Car_road_cartesian_test, total_force)
     const scalar Fy = F_rl[Y] + F_rr[Y] + (F_fl[Y]+F_fr[Y])*cos(delta);
     const scalar Fz = car.get_chassis().get_mass()*g0 + F_fl[Z] + F_fr[Z] + F_rl[Z] + F_rr[Z];
 
-    const scalar Fx_aero = 0.5*Lot2016kart_parameters.at("chassis/rho_air")*Lot2016kart_parameters.at("chassis/CdA")*u*u;
+    const scalar Fx_aero = 0.5*Lot2016kart_parameters.at("chassis/rho_air")*Lot2016kart_parameters.at("chassis/CdA")*u*sqrt(u*u + v*v);
+    const scalar Fy_aero = 0.5*Lot2016kart_parameters.at("chassis/rho_air")*Lot2016kart_parameters.at("chassis/CdA")*v*sqrt(u*u + v*v);
 
     EXPECT_DOUBLE_EQ(Value(car.get_chassis().get_force().at(X)), Value(Fx-Fx_aero));
-    EXPECT_DOUBLE_EQ(Value(car.get_chassis().get_force().at(Y)), Value(Fy));
+    EXPECT_DOUBLE_EQ(Value(car.get_chassis().get_force().at(Y)), Value(Fy-Fy_aero));
     EXPECT_DOUBLE_EQ(Value(car.get_chassis().get_force().at(Z)), Value(Fz));
 
     EXPECT_TRUE(Value(F_fl[Z]) <= 0.0);
@@ -803,9 +804,11 @@ TEST_F(Car_road_cartesian_test, total_torque)
     const sVector3d& F_rl = tire_rl.get_force();
     const sVector3d& F_rr = tire_rr.get_force();
     
+    const scalar Fx_aero = -0.5 * rho * u * sqrt(u * u + v * v) * CdA;
+    const scalar Fy_aero = -0.5 * rho * v * sqrt(u * u + v * v) * CdA;
     // Torques as written in Lot 2016
-    const scalar Tx = - tf*(F_fl[Z] - F_fr[Z]) - tr*(F_rl[Z] - F_rr[Z]);
-    const scalar Ty = - a*(F_fr[Z] + F_fl[Z]) + b*(F_rr[Z] + F_rl[Z]) - 0.5*rho*u*u*CdA*(z-h);
+    const scalar Tx = - tf*(F_fl[Z] - F_fr[Z]) - tr*(F_rl[Z] - F_rr[Z]) - Fy_aero*(z-h);
+    const scalar Ty = - a*(F_fr[Z] + F_fl[Z]) + b*(F_rr[Z] + F_rl[Z]) + Fx_aero*(z-h);
     const scalar Tz = a*(F_fl[Y]+F_fr[Y])*cos(delta) - b*(F_rl[Y]+F_rr[Y])
                           +tf*(F_fr[Y]-F_fl[Y])*sin(delta) + tr*(F_rl[X] - F_rr[X]);
 

@@ -1372,35 +1372,35 @@ struct Optimal_laptime_configuration
                     continue;
                 }
 
-                it_variable = std::find(qa_names.cbegin(), qa_names.cend(), variable.get_name());
+                auto it_qa = std::find(qa_names.cbegin(), qa_names.cend(), variable.get_name());
 
-                if ( it_variable != qa_names.cend() )
+                if ( it_qa != qa_names.cend() )
                 {
                     if ( variable.has_child("lower") )
                     {
-                        algebraic_states_lb.at(std::distance(qa_names.cbegin(), it_variable)) = variable.get_child("lower").get_value(scalar());
+                        algebraic_states_lb.at(std::distance(qa_names.cbegin(), it_qa)) = variable.get_child("lower").get_value(scalar());
                     }
 
                     if ( variable.has_child("upper") )
                     {
-                        algebraic_states_ub.at(std::distance(qa_names.cbegin(), it_variable)) = variable.get_child("upper").get_value(scalar());
+                        algebraic_states_ub.at(std::distance(qa_names.cbegin(), it_qa)) = variable.get_child("upper").get_value(scalar());
                     }
 
                     continue;
                 }
 
-                it_variable = std::find(u_names.cbegin(), u_names.cend(), variable.get_name());
+                auto it_u = std::find(u_names.cbegin(), u_names.cend(), variable.get_name());
 
-                if ( it_variable != u_names.cend() )
+                if ( it_u != u_names.cend() )
                 {
                     if ( variable.has_child("lower") )
                     {
-                        controls_lb.at(std::distance(u_names.cbegin(), it_variable)) = variable.get_child("lower").get_value(scalar());
+                        controls_lb.at(std::distance(u_names.cbegin(), it_u)) = variable.get_child("lower").get_value(scalar());
                     }
 
                     if ( variable.has_child("upper") )
                     {
-                        controls_ub.at(std::distance(u_names.cbegin(), it_variable)) = variable.get_child("upper").get_value(scalar());
+                        controls_ub.at(std::distance(u_names.cbegin(), it_u)) = variable.get_child("upper").get_value(scalar());
                     }
 
                     continue;
@@ -1916,8 +1916,8 @@ struct Circuit_preprocessor_configuration
                 eps_n = doc.get_element("options/optimization/cost_track_limits_smoothness").get_value(scalar());
             if ( doc.has_element("options/optimization/cost_track_limits_errors") )
                 eps_d = doc.get_element("options/optimization/cost_track_limits_errors").get_value(scalar());
-            if ( doc.has_element("options/optimization/cost_curvature") ) eps_c = doc.get_element("options/optimization/cost_curvature").get_value(scalar());
-            if ( doc.has_element("options/optimization/maximum_kappa") )
+            if ( doc.has_element("options/optimization/cost_centerline") ) eps_c = doc.get_element("options/optimization/cost_centerline").get_value(scalar());
+            if ( doc.has_element("options/optimization/maximum_kappa") )    
                 maximum_kappa = doc.get_element("options/optimization/maximum_kappa").get_value(scalar());
             if ( doc.has_element("options/optimization/maximum_dkappa") )
                 maximum_dkappa = doc.get_element("options/optimization/maximum_dkappa").get_value(scalar());

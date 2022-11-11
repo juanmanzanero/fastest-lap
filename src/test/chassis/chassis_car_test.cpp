@@ -711,10 +711,11 @@ TEST_F(Chassis_test, total_force)
     const scalar Fy = F_rl[Y] + F_rr[Y] + (F_fl[Y]+F_fr[Y])*cos(delta);
     const scalar Fz = chassis.get_mass()*g0 + F_fl[Z] + F_fr[Z] + F_rl[Z] + F_rr[Z];
 
-    const scalar Fx_aero = 0.5*chassis_parameters.at("rho_air")*chassis_parameters.at("CdA")*u*u;
+    const scalar Fx_aero = 0.5*chassis_parameters.at("rho_air")*chassis_parameters.at("CdA")*sqrt(u*u+v*v)*u;
+    const scalar Fy_aero = 0.5*chassis_parameters.at("rho_air")*chassis_parameters.at("CdA")*sqrt(u*u+v*v)*v;
 
     EXPECT_DOUBLE_EQ(chassis.get_force().at(X), Fx-Fx_aero);
-    EXPECT_DOUBLE_EQ(chassis.get_force().at(Y), Fy);
+    EXPECT_DOUBLE_EQ(chassis.get_force().at(Y), Fy-Fy_aero);
     EXPECT_DOUBLE_EQ(chassis.get_force().at(Z), Fz);
 
     EXPECT_EQ(F_fl[Z] <= 0.0, true);
@@ -747,8 +748,8 @@ TEST_F(Chassis_test, total_torque)
     const sVector3d& F_rr = tire_rr.get_force();
     
     // Torques as written in Lot 2016
-    const scalar Tx = - tf*(F_fl[Z] - F_fr[Z]) - tr*(F_rl[Z] - F_rr[Z]);
-    const scalar Ty = - a*(F_fr[Z] + F_fl[Z]) + b*(F_rr[Z] + F_rl[Z]) - 0.5*rho*CdA*u*u*(z-h);
+    const scalar Tx = - tf*(F_fl[Z] - F_fr[Z]) - tr*(F_rl[Z] - F_rr[Z]) + 0.5*rho*CdA*sqrt(u*u+v*v)*v*(z-h);
+    const scalar Ty = - a*(F_fr[Z] + F_fl[Z]) + b*(F_rr[Z] + F_rl[Z]) - 0.5*rho*CdA*sqrt(u*u+v*v)*u*(z-h);
     const scalar Tz = a*(F_fl[Y]+F_fr[Y])*cos(delta) - b*(F_rl[Y]+F_rr[Y])
                           +tf*(F_fr[Y]-F_fl[Y])*sin(delta) + tr*(F_rl[X] - F_rr[X]);
 

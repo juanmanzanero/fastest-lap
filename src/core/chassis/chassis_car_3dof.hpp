@@ -130,7 +130,8 @@ inline void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0
     
     Frame<Timeseries_t>& road_frame = base_type::get_road_frame();
 
-    const Vector3d<Timeseries_t> F_aero = base_type::get_aerodynamic_force();
+    const auto aerodynamic_forces = base_type::get_aerodynamic_force();
+    const Vector3d<Timeseries_t> F_aero = aerodynamic_forces.lift + aerodynamic_forces.drag;
 
     // Compute vertical loads
     /*

@@ -1586,6 +1586,7 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_direct<isClosed>::compute(FG_di
         }
     }
 
+
     // (3.2) Load the rest of the points
     constexpr const size_t offset = (isClosed ? 0 : 1);
 

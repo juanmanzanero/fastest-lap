@@ -157,7 +157,15 @@ class Chassis
     constexpr const Vector3d<Timeseries_t>& get_torque() const { return _T; }
 
     //! Get the aerodynamic force [N]
-    Vector3d<Timeseries_t> get_aerodynamic_force() const; 
+    struct Aerodynamic_forces
+    {
+        Vector3d<Timeseries_t> lift;
+        Vector3d<Timeseries_t> drag;
+        Vector3d<Timeseries_t> wind_velocity_body;
+        Vector3d<Timeseries_t> aerodynamic_velocity;
+    };
+
+    auto get_aerodynamic_force() const -> Aerodynamic_forces; 
 
     //! Get understeer(<0) or oversteer(>0) indicator
     Timeseries_t get_understeer_oversteer_indicator() const;
@@ -244,19 +252,21 @@ class Chassis
 
     Frame<Timeseries_t> _inertial_frame; //! The inertial frame
     Frame<Timeseries_t> _road_frame;     //! Frame<Timeseries_t> with center on the road projection of the CoG, 
-                           //! aligned with the chassis
+                                         //! aligned with the chassis
     Frame<Timeseries_t> _chassis_frame;  //! Frame<Timeseries_t> with center on the CoG and parallel axes to the road frame
 
     // Mass properties
     Timeseries_t _m;     //! [c] chassis mass [kg]
-    sMatrix3x3 _I; //! [c] chassis inertia matrix [kg.m2]
+    sMatrix3x3 _I;       //! [c] chassis inertia matrix [kg.m2]
 
     // Aerodynamic properties
-    scalar _rho;   //! [c] air density [kg/m3]
-    Timeseries_t _cd;    //! [c] drag coefficient [-]      
-    Timeseries_t _cl;    //! [c] lift coefficient [-]      
-    scalar _A;     //! [c] frontal area [m2]
-    
+    scalar _rho;                           //! [c] air density [kg/m3]
+    Timeseries_t _cd;                      //! [c] drag coefficient [-]      
+    Timeseries_t _cl;                      //! [c] lift coefficient [-]      
+    scalar _A;                             //! [c] frontal area [m2]
+    Timeseries_t _northward_wind = 0.0;    //! [c] northward wind velocity [m/s]
+    Timeseries_t _eastward_wind  = 0.0;    //! [c] eastward wind velocity [m/s]
+
     FrontAxle_t _front_axle; //! Front axle
     RearAxle_t  _rear_axle;  //! Rear axle
 
@@ -277,6 +287,15 @@ class Chassis
         { "aerodynamics/area", _A }
     ); 
 
+    std::unordered_map<std::string, Timeseries_t*> get_extra_parameters_map()
+    {
+        return
+        {
+            {"vehicle/chassis/aerodynamics/wind_velocity/northward", &_northward_wind},
+            {"vehicle/chassis/aerodynamics/wind_velocity/eastward", &_eastward_wind}
+        };
+    }
+
 
     std::unordered_map<std::string,Timeseries_t> get_outputs_map_self() const
     {
@@ -295,9 +314,17 @@ class Chassis
             {get_name() + ".position.y", _road_frame.get_origin().y()},
             {get_name() + ".attitude.yaw", _road_frame.get_rotation_angles().front()},
             {get_name() + ".understeer_oversteer_indicator", get_understeer_oversteer_indicator()},
-            {get_name() + ".aerodynamics.cd", _cd}
+            {get_name() + ".aerodynamics.cd", _cd},
+            {get_name() + ".aerodynamics.lift", get_aerodynamic_force().lift.z()},
+            {get_name() + ".aerodynamics.drag", norm(get_aerodynamic_force().drag)},
+            {get_name() + ".aerodynamics.drag.x", get_aerodynamic_force().drag.x()},
+            {get_name() + ".aerodynamics.drag.y", get_aerodynamic_force().drag.y()},
+            {get_name() + ".aerodynamics.wind_velocity_body.x", get_aerodynamic_force().wind_velocity_body.x()},
+            {get_name() + ".aerodynamics.wind_velocity_body.y", get_aerodynamic_force().wind_velocity_body.y()},
+            {get_name() + ".aerodynamics.aerodynamic_velocity.x", get_aerodynamic_force().aerodynamic_velocity.x()},
+            {get_name() + ".aerodynamics.aerodynamic_velocity.y", get_aerodynamic_force().aerodynamic_velocity.y()}
         };
-    }
+    };
 
  protected:
 

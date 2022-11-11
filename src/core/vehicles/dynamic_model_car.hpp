@@ -92,10 +92,9 @@ typename Dynamic_model_car<Timeseries_t,Chassis_t,RoadModel_t,_NSTATE,_NCONTROL>
 
 
 template<typename Timeseries_t, typename Chassis_t, typename RoadModel_t, size_t _NSTATE, size_t _NCONTROL>
-typename Dynamic_model_car<Timeseries_t,Chassis_t,RoadModel_t,_NSTATE,_NCONTROL>::Equations 
-Dynamic_model_car<Timeseries_t, Chassis_t, RoadModel_t, _NSTATE, _NCONTROL>::equations
+auto Dynamic_model_car<Timeseries_t, Chassis_t, RoadModel_t, _NSTATE, _NCONTROL>::equations
 (const std::array<scalar, _NSTATE>& input_states, const std::array<scalar, NALGEBRAIC>& algebraic_states,
-    const std::array<scalar, _NCONTROL>& controls, scalar time)
+    const std::array<scalar, _NCONTROL>& controls, scalar time) -> Equations
 {
     // (1) Put the states into a single vector, which will be declared as independent variables
     constexpr const size_t n_total = _NSTATE + NALGEBRAIC + _NCONTROL;

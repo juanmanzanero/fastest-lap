@@ -22,13 +22,13 @@ static void check_optimal_laptime(const Optimal_laptime<Dynamic_model_t>& opt_la
     // Cover also the constructor from Xml_document
     Optimal_laptime<Dynamic_model_t> opt_laptime_saved(opt_saved);
 
-//    const auto new_reference_file = std::regex_replace(opt_saved.get_file_name(), std::regex("data\\/"), "new-references/");
-//    std::ifstream fin( new_reference_file );
-// 
-//    if( fin.fail() )
-//    {
-//        opt_laptime.xml()->save(new_reference_file);
-//    }
+//  const auto new_reference_file = std::regex_replace(opt_saved.get_file_name(), std::regex("data\\/"), "new-references/");
+//  std::ifstream fin( new_reference_file );
+ 
+//  if( fin.fail() )
+//  {
+//      opt_laptime.xml()->save(new_reference_file);
+//  }
 
     EXPECT_TRUE(opt_laptime.iter_count < static_cast<size_t>(opt_saved.get_element("optimal_laptime/optimization_data/number_of_iterations").get_value(int()) + 5)) << "New iter: " << opt_laptime.iter_count << ", saved iters: " << opt_saved.get_element("optimal_laptime/optimization_data/number_of_iterations").get_value(int());
 
@@ -721,13 +721,13 @@ TEST_F(F1_optimal_laptime_test, Catalunya_chicane_derivative)
     control_variables[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING]
         = Optimal_laptime<decltype(car)>::create_full_mesh(std::vector<scalar>(n,ss.controls[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING]),
                                                            std::vector<scalar>(n,0.0),
-                                                           1.0e-1); 
+                                                           2.0e-1); 
 
     // throttle: optimize in the full mesh
     control_variables[decltype(car)::Chassis_type::control_names::THROTTLE]
         = Optimal_laptime<decltype(car)>::create_full_mesh(std::vector<scalar>(n,ss.controls[decltype(car)::Chassis_type::control_names::THROTTLE]),
                                                            std::vector<scalar>(n,0.0),
-                                                           1.0e-5); 
+                                                           2.0e-5); 
 
     // brake bias: don't optimize
     control_variables[decltype(car)::Chassis_type::control_names::BRAKE_BIAS]
@@ -756,7 +756,7 @@ TEST_F(F1_optimal_laptime_test, Catalunya_chicane_derivative)
     Xml_document opt_saved("data/f1_optimal_laptime_catalunya_chicane_derivative.xml", true);
 
     // Check the results with a saved simulation
-    check_optimal_laptime(opt_laptime, opt_saved, n, 1.0e-6);
+    check_optimal_laptime(opt_laptime, opt_saved, n, 1.0e-4);
 }
 
 

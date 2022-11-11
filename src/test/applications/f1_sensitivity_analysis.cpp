@@ -100,7 +100,7 @@ inline static void check_derivatives(const Optimal_laptime<Dynamic_model_t>& opt
     {
         EXPECT_NEAR(opt_laptime.dcontrols_dp.front()[limebeer2014f1<scalar>::Chassis_t::Front_axle_type::control_names::STEERING].controls[i], 
                     (dopt_laptime.controls[limebeer2014f1<scalar>::Chassis_t::Front_axle_type::control_names::STEERING].controls[i] 
-                      - opt_laptime.controls[limebeer2014f1<scalar>::Chassis_t::Front_axle_type::control_names::STEERING].controls[i])/dpar, 6.0e-5);
+                      - opt_laptime.controls[limebeer2014f1<scalar>::Chassis_t::Front_axle_type::control_names::STEERING].controls[i])/dpar, 7.0e-5);
     }
 
     // throttle
@@ -108,7 +108,7 @@ inline static void check_derivatives(const Optimal_laptime<Dynamic_model_t>& opt
     {
         EXPECT_NEAR(opt_laptime.dcontrols_dp.front()[limebeer2014f1<scalar>::Chassis_t::control_names::THROTTLE].controls[i], 
                     (dopt_laptime.controls[limebeer2014f1<scalar>::Chassis_t::control_names::THROTTLE].controls[i] 
-                      - opt_laptime.controls[limebeer2014f1<scalar>::Chassis_t::control_names::THROTTLE].controls[i])/dpar, 1.0e-6);
+                      - opt_laptime.controls[limebeer2014f1<scalar>::Chassis_t::control_names::THROTTLE].controls[i])/dpar, 2.0e-6);
     }
 
     // Fz_fl
@@ -400,6 +400,7 @@ TEST_F(F1_sensitivity_analysis, Catalunya_discrete)
         opt_laptime.optimization_data.zl, opt_laptime.optimization_data.zu, opt_laptime.optimization_data.lambda, opts);
 
     // Check the results with a saved simulation
+    opt_laptime.xml()->save("f1_optimal_laptime_catalunya_discrete_with_wheel_inertia.xml");
     Xml_document opt_saved("data/f1_optimal_laptime_catalunya_discrete_with_wheel_inertia.xml", true);
 
     check_case(opt_laptime, dopt_laptime, dmass, opt_saved, n, 1.0e-4);
