@@ -256,14 +256,14 @@ class Chassis
     Frame<Timeseries_t> _chassis_frame;  //! Frame<Timeseries_t> with center on the CoG and parallel axes to the road frame
 
     // Mass properties
-    Timeseries_t _m;     //! [c] chassis mass [kg]
-    sMatrix3x3 _I;       //! [c] chassis inertia matrix [kg.m2]
+    Timeseries_t _m = 0.0;   //! [c] chassis mass [kg]
+    sMatrix3x3 _I = {};      //! [c] chassis inertia matrix [kg.m2]
 
     // Aerodynamic properties
-    scalar _rho;                           //! [c] air density [kg/m3]
-    Timeseries_t _cd;                      //! [c] drag coefficient [-]      
-    Timeseries_t _cl;                      //! [c] lift coefficient [-]      
-    scalar _A;                             //! [c] frontal area [m2]
+    scalar _rho = 0.0;                     //! [c] air density [kg/m3]
+    Timeseries_t _cd = 0.0;                //! [c] drag coefficient [-]      
+    Timeseries_t _cl = 0.0;                //! [c] lift coefficient [-]      
+    scalar _A = 0.0;                       //! [c] frontal area [m2]
     Timeseries_t _northward_wind = 0.0;    //! [c] northward wind velocity [m/s]
     Timeseries_t _eastward_wind  = 0.0;    //! [c] eastward wind velocity [m/s]
 

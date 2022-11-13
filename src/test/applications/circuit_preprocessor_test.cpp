@@ -3,101 +3,14 @@
 
 extern bool is_valgrind;
 
-/*
-TEST(Circuit_preprocessor_test, miami_2000)
-{
-    #ifndef NDEBUG
-          GTEST_SKIP();
-    #endif
-
-    if ( is_valgrind ) GTEST_SKIP();
-
-    Xml_document coord_left_kml("./database/tracks/miami/miami_left.kml", true);
-    Xml_document coord_right_kml("./database/tracks/miami/miami_right.kml", true);
-    
-    Circuit_preprocessor::Options opts;
-    opts.print_level = 5;
-    opts.eps_c *= 5.0;
-    Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, opts, 2000);
-
-    circuit.xml()->save("miami_2000.xml");
-
-    Xml_document solution_saved("./database/tracks/miami/miami_1000.xml", true);
-
-    const std::vector<scalar> s     = solution_saved.get_element("circuit/data/arclength").get_value(std::vector<scalar>());
-    const std::vector<scalar> x     = solution_saved.get_element("circuit/data/centerline/x").get_value(std::vector<scalar>());
-    const std::vector<scalar> y     = solution_saved.get_element("circuit/data/centerline/y").get_value(std::vector<scalar>());
-    const std::vector<scalar> theta = solution_saved.get_element("circuit/data/theta").get_value(std::vector<scalar>());
-    const std::vector<scalar> kappa = solution_saved.get_element("circuit/data/kappa").get_value(std::vector<scalar>());
-    const std::vector<scalar> nl    = solution_saved.get_element("circuit/data/nl").get_value(std::vector<scalar>());
-    const std::vector<scalar> nr    = solution_saved.get_element("circuit/data/nr").get_value(std::vector<scalar>());
-    const std::vector<scalar> dkappa = solution_saved.get_element("circuit/data/dkappa").get_value(std::vector<scalar>());
-    const std::vector<scalar> dnl    = solution_saved.get_element("circuit/data/dnl").get_value(std::vector<scalar>());
-    const std::vector<scalar> dnr    = solution_saved.get_element("circuit/data/dnr").get_value(std::vector<scalar>());
-
-    EXPECT_EQ(circuit.n_points,700);
-    EXPECT_EQ(circuit.r_centerline.size(),700);
-    EXPECT_EQ(circuit.theta.size(),700);
-    EXPECT_EQ(circuit.kappa.size(),700);
-    EXPECT_EQ(circuit.nl.size(),700);
-    EXPECT_EQ(circuit.nr.size(),700);
-    EXPECT_EQ(circuit.dkappa.size(),700);
-    EXPECT_EQ(circuit.dnl.size(),700);
-    EXPECT_EQ(circuit.dnr.size(),700);
-
-    // compare centerline
-    for (size_t i = 0; i < circuit.n_points; ++i)
-    {
-        EXPECT_NEAR(circuit.r_centerline[i].x(), x[i]     , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.r_centerline[i].y(), y[i]     , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.theta[i]           , theta[i] , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.kappa[i]           , kappa[i] , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.nl[i]              , nl[i]    , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.nr[i]              , nr[i]    , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.dkappa[i]          , dkappa[i], 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.dnl[i]             , dnl[i]   , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.dnr[i]             , dnr[i]   , 1.0e-8) << " with i = " << i;
-    }
-
-    for (size_t i = 0; i < circuit.n_points-1; ++i)
-    {
-        EXPECT_NEAR(circuit.r_centerline[i+1].x()-circuit.r_centerline[i].x(), 
-                    (circuit.s[i+1]-circuit.s[i])*0.5*(cos(circuit.theta[i])+cos(circuit.theta[i+1])), 1.0e-7);
-        EXPECT_NEAR(circuit.r_centerline[i+1].y()-circuit.r_centerline[i].y(), 
-                    (circuit.s[i+1]-circuit.s[i])*0.5*(sin(circuit.theta[i])+sin(circuit.theta[i+1])), 1.0e-7);
-    }
-
-
-
-    // Check that the reference coordinates are recovered
-    std::vector<scalar> coord_left  = coord_left_kml.get_element("kml/Document/Placemark/LineString/coordinates").get_value(std::vector<scalar>());
-    std::vector<scalar> coord_right = coord_right_kml.get_element("kml/Document/Placemark/LineString/coordinates").get_value(std::vector<scalar>());
-
-    EXPECT_EQ(circuit.r_left_measured.size()*3, coord_left.size());
-    EXPECT_EQ(circuit.r_right_measured.size()*3, coord_right.size());
-
-    scalar theta0 = coord_right[0];
-    scalar phi0 = coord_right[1];
-
-    for (size_t i = 0; i < circuit.r_left_measured.size(); ++i)
-    {
-        scalar lon = coord_left[3*i];
-        scalar lat = coord_left[3*i+1];
-    
-        EXPECT_DOUBLE_EQ(lon, circuit.r_left_measured[i].x()/(circuit.R_earth*cos(phi0*DEG))*RAD + theta0);
-        EXPECT_DOUBLE_EQ(lat, circuit.r_left_measured[i].y()/(circuit.R_earth)*RAD + phi0);
-    }
-}
-*/
-
-
-
 TEST(Circuit_preprocessor_test, museo_closed)
 {
     Xml_document coord_left_kml("./data/Museo_short_left.kml", true);
     Xml_document coord_right_kml("./data/Museo_short_right.kml", true);
 
     Circuit_preprocessor::Options options;
+
+    options.with_elevation = false;
 
     options.eps_k *= 0.001;
     options.eps_n *= 0.001;
@@ -139,12 +52,12 @@ TEST(Circuit_preprocessor_test, museo_closed)
     for (size_t i = 0; i < circuit.n_points; ++i)
     {
         EXPECT_NEAR(circuit.r_centerline[i].x(), x[i]     , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.r_centerline[i].y(), y[i]     , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.theta[i]           , theta[i] , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.kappa[i]           , kappa[i] , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.r_centerline[i].y(), -y[i]     , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.theta[i]           , -theta[i] , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.kappa[i]           , -kappa[i] , 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.nl[i]              , nl[i]    , 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.nr[i]              , nr[i]    , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.dkappa[i]          , dkappa[i], 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.dkappa[i]          , -dkappa[i], 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.dnl[i]             , dnl[i]   , 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.dnr[i]             , dnr[i]   , 1.0e-8) << " with i = " << i;
     }
@@ -180,7 +93,7 @@ TEST(Circuit_preprocessor_test, museo_closed)
         scalar lat = coord_left[3*i+1];
     
         EXPECT_DOUBLE_EQ(lon, circuit.r_left_measured[i].x()/(circuit.R_earth*cos(phi0*DEG))*RAD + theta0);
-        EXPECT_DOUBLE_EQ(lat, circuit.r_left_measured[i].y()/(circuit.R_earth)*RAD + phi0);
+        EXPECT_DOUBLE_EQ(lat, -circuit.r_left_measured[i].y()/(circuit.R_earth)*RAD + phi0);
     }
 }
 
@@ -193,7 +106,10 @@ TEST(Circuit_preprocessor_test, catalunya_chicane)
     Circuit_preprocessor::Coordinates start = {2.261, 41.57455};
     Circuit_preprocessor::Coordinates finish = {2.26325, 41.57385};
     
-    Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, {}, start, finish, 20);
+    auto options = Circuit_preprocessor::Options{};
+    options.with_elevation = false;
+    
+    Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, options, start, finish, 20);
 
     circuit.xml();
 
@@ -224,12 +140,12 @@ TEST(Circuit_preprocessor_test, catalunya_chicane)
     for (size_t i = 0; i < circuit.n_points; ++i)
     {
         EXPECT_NEAR(circuit.r_centerline[i].x(), x[i]     , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.r_centerline[i].y(), y[i]     , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.theta[i]           , theta[i] , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.kappa[i]           , kappa[i] , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.r_centerline[i].y(), -y[i]     , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.theta[i]           , -theta[i] , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.kappa[i]           , -kappa[i] , 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.nl[i]              , nl[i]    , 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.nr[i]              , nr[i]    , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.dkappa[i]          , dkappa[i], 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.dkappa[i]          , -dkappa[i], 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.dnl[i]             , dnl[i]   , 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.dnr[i]             , dnr[i]   , 1.0e-8) << " with i = " << i;
     }
@@ -264,6 +180,7 @@ TEST(Circuit_preprocessor_test, melbourne_700)
     Xml_document coord_right_kml("./database/tracks/melbourne/melbourne_right.kml", true);
     
     Circuit_preprocessor::Options opts;
+    opts.with_elevation = false;
     Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, opts, 700);
 
     circuit.xml();
@@ -295,12 +212,12 @@ TEST(Circuit_preprocessor_test, melbourne_700)
     for (size_t i = 0; i < circuit.n_points; ++i)
     {
         EXPECT_NEAR(circuit.r_centerline[i].x(), x[i]     , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.r_centerline[i].y(), y[i]     , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.theta[i]           , theta[i] , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.kappa[i]           , kappa[i] , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.r_centerline[i].y(),-y[i]     , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.theta[i]           ,-theta[i] , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.kappa[i]           ,-kappa[i] , 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.nl[i]              , nl[i]    , 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.nr[i]              , nr[i]    , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.dkappa[i]          , dkappa[i], 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.dkappa[i]          ,-dkappa[i], 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.dnl[i]             , dnl[i]   , 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.dnr[i]             , dnr[i]   , 1.0e-8) << " with i = " << i;
     }
@@ -336,7 +253,7 @@ TEST(Circuit_preprocessor_test, melbourne_700)
         scalar lat = coord_left[3*i+1];
     
         EXPECT_DOUBLE_EQ(lon, circuit.r_left_measured[i].x()/(circuit.R_earth*cos(phi0*DEG))*RAD + theta0);
-        EXPECT_DOUBLE_EQ(lat, circuit.r_left_measured[i].y()/(circuit.R_earth)*RAD + phi0);
+        EXPECT_DOUBLE_EQ(lat,-circuit.r_left_measured[i].y()/(circuit.R_earth)*RAD + phi0);
     }
 }
 
@@ -357,6 +274,7 @@ TEST(Circuit_preprocessor_test, melbourne_adapted)
     std::vector<scalar> ds_bkp = {14.0000000000000000,      14.0000000000000000,       6.0000000000000000,       6.0000000000000000,      14.0000000000000000,      14.0000000000000000,       6.0000000000000000,       6.0000000000000000,      14.0000000000000000,      14.0000000000000000,       6.0000000000000000,       6.0000000000000000,      14.0000000000000000,      14.0000000000000000,       6.0000000000000000,       6.0000000000000000,      14.0000000000000000,      14.0000000000000000,       6.0000000000000000,       6.0000000000000000,      14.0000000000000000,      14.0000000000000000,       6.0000000000000000,       6.0000000000000000,      14.0000000000000000};
     
     Circuit_preprocessor::Options opts;
+    opts.with_elevation = false;
     Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, opts, s_bkp, ds_bkp);
 
     circuit.xml();
@@ -388,12 +306,12 @@ TEST(Circuit_preprocessor_test, melbourne_adapted)
     for (size_t i = 0; i < circuit.n_points; ++i)
     {
         EXPECT_NEAR(circuit.r_centerline[i].x(), x[i]     , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.r_centerline[i].y(), y[i]     , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.theta[i]           , theta[i] , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.kappa[i]           , kappa[i] , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.r_centerline[i].y(),-y[i]     , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.theta[i]           ,-theta[i] , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.kappa[i]           ,-kappa[i] , 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.nl[i]              , nl[i]    , 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.nr[i]              , nr[i]    , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.dkappa[i]          , dkappa[i], 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.dkappa[i]          ,-dkappa[i], 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.dnl[i]             , dnl[i]   , 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.dnr[i]             , dnr[i]   , 1.0e-8) << " with i = " << i;
     }
@@ -428,7 +346,7 @@ TEST(Circuit_preprocessor_test, melbourne_adapted)
         scalar lat = coord_left[3*i+1];
     
         EXPECT_DOUBLE_EQ(lon, circuit.r_left_measured[i].x()/(circuit.R_earth*cos(phi0*DEG))*RAD + theta0);
-        EXPECT_DOUBLE_EQ(lat, circuit.r_left_measured[i].y()/(circuit.R_earth)*RAD + phi0);
+        EXPECT_DOUBLE_EQ(lat,-circuit.r_left_measured[i].y()/(circuit.R_earth)*RAD + phi0);
     }
 }
 
@@ -444,7 +362,9 @@ TEST(Circuit_preprocessor_test, catalunya_500)
     Xml_document coord_left_kml("./database/tracks/catalunya/catalunya_left.kml", true);
     Xml_document coord_right_kml("./database/tracks/catalunya/catalunya_right.kml", true);
     
-    Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, {}, 500);
+    auto options = Circuit_preprocessor::Options{};
+    options.with_elevation = false;
+    Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, options, 500);
 
     circuit.xml();
 
@@ -475,12 +395,12 @@ TEST(Circuit_preprocessor_test, catalunya_500)
     for (size_t i = 0; i < circuit.n_points; ++i)
     {
         EXPECT_NEAR(circuit.r_centerline[i].x(), x[i]     , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.r_centerline[i].y(), y[i]     , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.theta[i]           , theta[i] , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.kappa[i]           , kappa[i] , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.r_centerline[i].y(),-y[i]     , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.theta[i]           ,-theta[i] , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.kappa[i]           ,-kappa[i] , 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.nl[i]              , nl[i]    , 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.nr[i]              , nr[i]    , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.dkappa[i]          , dkappa[i], 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.dkappa[i]          ,-dkappa[i], 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.dnl[i]             , dnl[i]   , 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.dnr[i]             , dnr[i]   , 1.0e-8) << " with i = " << i;
     }
@@ -516,7 +436,7 @@ TEST(Circuit_preprocessor_test, catalunya_500)
         scalar lat = coord_left[3*i+1];
     
         EXPECT_DOUBLE_EQ(lon, circuit.r_left_measured[i].x()/(circuit.R_earth*cos(phi0*DEG))*RAD + theta0);
-        EXPECT_DOUBLE_EQ(lat, circuit.r_left_measured[i].y()/(circuit.R_earth)*RAD + phi0);
+        EXPECT_DOUBLE_EQ(lat,-circuit.r_left_measured[i].y()/(circuit.R_earth)*RAD + phi0);
     }
 }
 
@@ -543,7 +463,10 @@ TEST(Circuit_preprocessor_test, catalunya_adapted_by_coords)
       {{2.263173649148178,41.57388038009333}, 10.0} 
     };
 
-    Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, {}, ds_breakpoints);
+    auto options = Circuit_preprocessor::Options{};
+    options.with_elevation = false;
+
+    Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, options, ds_breakpoints);
 
     circuit.xml();
 
@@ -574,12 +497,12 @@ TEST(Circuit_preprocessor_test, catalunya_adapted_by_coords)
     for (size_t i = 0; i < circuit.n_points; ++i)
     {
         EXPECT_NEAR(circuit.r_centerline[i].x(), x[i]     , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.r_centerline[i].y(), y[i]     , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.theta[i]           , theta[i] , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.kappa[i]           , kappa[i] , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.r_centerline[i].y(),-y[i]     , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.theta[i]           ,-theta[i] , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.kappa[i]           ,-kappa[i] , 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.nl[i]              , nl[i]    , 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.nr[i]              , nr[i]    , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.dkappa[i]          , dkappa[i], 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.dkappa[i]          ,-dkappa[i], 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.dnl[i]             , dnl[i]   , 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.dnr[i]             , dnr[i]   , 1.0e-8) << " with i = " << i;
     }
@@ -615,7 +538,7 @@ TEST(Circuit_preprocessor_test, catalunya_adapted_by_coords)
         scalar lat = coord_left[3*i+1];
     
         EXPECT_DOUBLE_EQ(lon, circuit.r_left_measured[i].x()/(circuit.R_earth*cos(phi0*DEG))*RAD + theta0);
-        EXPECT_DOUBLE_EQ(lat, circuit.r_left_measured[i].y()/(circuit.R_earth)*RAD + phi0);
+        EXPECT_DOUBLE_EQ(lat,-circuit.r_left_measured[i].y()/(circuit.R_earth)*RAD + phi0);
     }
 }
 
@@ -653,8 +576,10 @@ TEST(Circuit_preprocessor_test, catalunya_adapted_by_ds_distribution)
             ds_distr[i] = 2.5;
     }
 
+    auto options = Circuit_preprocessor::Options{};
+    options.with_elevation = false;
 
-    Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, {}, s_distr, ds_distr);
+    Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, options, s_distr, ds_distr);
 
     circuit.xml();
 
@@ -685,12 +610,12 @@ TEST(Circuit_preprocessor_test, catalunya_adapted_by_ds_distribution)
     for (size_t i = 0; i < circuit.n_points; ++i)
     {
         EXPECT_NEAR(circuit.r_centerline[i].x(), x[i]     , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.r_centerline[i].y(), y[i]     , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.theta[i]           , theta[i] , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.kappa[i]           , kappa[i] , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.r_centerline[i].y(),-y[i]     , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.theta[i]           ,-theta[i] , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.kappa[i]           ,-kappa[i] , 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.nl[i]              , nl[i]    , 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.nr[i]              , nr[i]    , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.dkappa[i]          , dkappa[i], 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.dkappa[i]          ,-dkappa[i], 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.dnl[i]             , dnl[i]   , 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.dnr[i]             , dnr[i]   , 1.0e-8) << " with i = " << i;
     }
@@ -725,7 +650,7 @@ TEST(Circuit_preprocessor_test, catalunya_adapted_by_ds_distribution)
         scalar lat = coord_left[3*i+1];
     
         EXPECT_DOUBLE_EQ(lon, circuit.r_left_measured[i].x()/(circuit.R_earth*cos(phi0*DEG))*RAD + theta0);
-        EXPECT_DOUBLE_EQ(lat, circuit.r_left_measured[i].y()/(circuit.R_earth)*RAD + phi0);
+        EXPECT_DOUBLE_EQ(lat,-circuit.r_left_measured[i].y()/(circuit.R_earth)*RAD + phi0);
     }
 
 
@@ -754,6 +679,8 @@ TEST(Circuit_preprocessor_test, vendrell)
     options.maximum_kappa = 4.0;
     options.maximum_dkappa = 4.0;
     options.maximum_dn = 2.0;
+
+    options.with_elevation = false;
     
     Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, options, 500);
 
@@ -787,12 +714,12 @@ TEST(Circuit_preprocessor_test, vendrell)
     for (size_t i = 0; i < circuit.n_points; ++i)
     {
         EXPECT_NEAR(circuit.r_centerline[i].x(), x[i]     , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.r_centerline[i].y(), y[i]     , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.theta[i]           , theta[i] , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.kappa[i]           , kappa[i] , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.r_centerline[i].y(),-y[i]     , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.theta[i]           ,-theta[i] , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.kappa[i]           ,-kappa[i] , 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.nl[i]              , nl[i]    , 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.nr[i]              , nr[i]    , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.dkappa[i]          , dkappa[i], 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.dkappa[i]          ,-dkappa[i], 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.dnl[i]             , dnl[i]   , 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.dnr[i]             , dnr[i]   , 1.0e-8) << " with i = " << i;
     }
@@ -828,7 +755,7 @@ TEST(Circuit_preprocessor_test, vendrell)
         scalar lat = coord_left[3*i+1];
     
         EXPECT_DOUBLE_EQ(lon, circuit.r_left_measured[i].x()/(circuit.R_earth*cos(phi0*DEG))*RAD + theta0);
-        EXPECT_DOUBLE_EQ(lat, circuit.r_left_measured[i].y()/(circuit.R_earth)*RAD + phi0);
+        EXPECT_DOUBLE_EQ(lat,-circuit.r_left_measured[i].y()/(circuit.R_earth)*RAD + phi0);
     }
 }
 
@@ -848,6 +775,8 @@ TEST(Circuit_preprocessor_test, imola_adapted)
     std::vector<scalar> ds_bkp = { 8.0,    8.0,    6.0,    6.0,    8.0,    8.0,    4.0,    4.0,    8.0,  8.0};
     
     Circuit_preprocessor::Options opts;
+    opts.with_elevation = false;
+
     Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, opts, s_bkp, ds_bkp);
 
     circuit.xml();
@@ -879,12 +808,12 @@ TEST(Circuit_preprocessor_test, imola_adapted)
     for (size_t i = 0; i < circuit.n_points; ++i)
     {
         EXPECT_NEAR(circuit.r_centerline[i].x(), x[i]     , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.r_centerline[i].y(), y[i]     , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.theta[i]           , theta[i] , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.kappa[i]           , kappa[i] , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.r_centerline[i].y(),-y[i]     , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.theta[i]           ,-theta[i] , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.kappa[i]           ,-kappa[i] , 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.nl[i]              , nl[i]    , 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.nr[i]              , nr[i]    , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.dkappa[i]          , dkappa[i], 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.dkappa[i]          ,-dkappa[i], 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.dnl[i]             , dnl[i]   , 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.dnr[i]             , dnr[i]   , 1.0e-8) << " with i = " << i;
     }
@@ -920,24 +849,24 @@ TEST(Circuit_preprocessor_test, imola_adapted)
         scalar lat = coord_left[3*i+1];
     
         EXPECT_DOUBLE_EQ(lon, circuit.r_left_measured[i].x()/(circuit.R_earth*cos(phi0*DEG))*RAD + theta0);
-        EXPECT_DOUBLE_EQ(lat, circuit.r_left_measured[i].y()/(circuit.R_earth)*RAD + phi0);
+        EXPECT_DOUBLE_EQ(lat,-circuit.r_left_measured[i].y()/(circuit.R_earth)*RAD + phi0);
     }
 }
 
 TEST(Circuit_preprocessor_test, catalunya_2022_adapted)
 {
-    #ifndef NDEBUG
-        GTEST_SKIP();
-    #endif
+#ifndef NDEBUG
+    GTEST_SKIP();
+#endif
 
-    if ( is_valgrind ) GTEST_SKIP();
+    if (is_valgrind) GTEST_SKIP();
 
     Xml_document coord_left_kml("./database/tracks/catalunya_2022/catalunya_2022_left.kml", true);
     Xml_document coord_right_kml("./database/tracks/catalunya_2022/catalunya_2022_right.kml", true);
 
-    std::vector<scalar> s_distr = {0.0};
+    std::vector<scalar> s_distr = { 0.0 };
 
-    while (s_distr.back() < 5000.0 )
+    while (s_distr.back() < 5000.0)
         s_distr.push_back(s_distr.back() + 4.5);
 
     std::vector<scalar> ds_distr(s_distr.size());
@@ -957,8 +886,9 @@ TEST(Circuit_preprocessor_test, catalunya_2022_adapted)
             ds_distr[i] = 2.5;
     }
 
-
-    Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, {}, s_distr, ds_distr);
+    auto options = Circuit_preprocessor::Options{};
+    options.with_elevation = false;
+    Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, options, s_distr, ds_distr);
 
     circuit.xml();
 
@@ -989,12 +919,12 @@ TEST(Circuit_preprocessor_test, catalunya_2022_adapted)
     for (size_t i = 0; i < circuit.n_points; ++i)
     {
         EXPECT_NEAR(circuit.r_centerline[i].x(), x[i]     , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.r_centerline[i].y(), y[i]     , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.theta[i]           , theta[i] , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.kappa[i]           , kappa[i] , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.r_centerline[i].y(),-y[i]     , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.theta[i]           ,-theta[i] , 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.kappa[i]           ,-kappa[i] , 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.nl[i]              , nl[i]    , 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.nr[i]              , nr[i]    , 1.0e-8) << " with i = " << i;
-        EXPECT_NEAR(circuit.dkappa[i]          , dkappa[i], 1.0e-8) << " with i = " << i;
+        EXPECT_NEAR(circuit.dkappa[i]          ,-dkappa[i], 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.dnl[i]             , dnl[i]   , 1.0e-8) << " with i = " << i;
         EXPECT_NEAR(circuit.dnr[i]             , dnr[i]   , 1.0e-8) << " with i = " << i;
     }
@@ -1029,6 +959,26 @@ TEST(Circuit_preprocessor_test, catalunya_2022_adapted)
         scalar lat = coord_left[3*i+1];
     
         EXPECT_DOUBLE_EQ(lon, circuit.r_left_measured[i].x()/(circuit.R_earth*cos(phi0*DEG))*RAD + theta0);
-        EXPECT_DOUBLE_EQ(lat, circuit.r_left_measured[i].y()/(circuit.R_earth)*RAD + phi0);
+        EXPECT_DOUBLE_EQ(lat,-circuit.r_left_measured[i].y()/(circuit.R_earth)*RAD + phi0);
     }
 }
+
+
+/*
+TEST(Circuit_preprocessor_test, catalunya_2022)
+{
+    #ifndef NDEBUG
+        GTEST_SKIP();
+    #endif
+
+    if ( is_valgrind ) GTEST_SKIP();
+
+    Xml_document coord_left_kml("./database/tracks/catalunya_2022/catalunya_2022_left.kml", true);
+    Xml_document coord_right_kml("./database/tracks/catalunya_2022/catalunya_2022_right.kml", true);
+
+    auto options = Circuit_preprocessor::Options{};
+    options.print_level = 5;
+    options.with_elevation = true;
+    Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, options, 500);
+}
+*/

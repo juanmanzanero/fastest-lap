@@ -3,6 +3,7 @@
 
 #include "lion/foundation/utils.hpp"
 #include "lion/math/polynomial.h"
+#include "lion/math/vector3d.h"
 #include "lion/math/matrix_extensions.h"
 #include "lion/math/ipopt_cppad_handler.hpp"
 #include "src/core/foundation/fastest_lap_exception.h"
@@ -11,8 +12,20 @@ inline std::pair<std::vector<Circuit_preprocessor::Coordinates>,std::vector<Circ
     Circuit_preprocessor::read_kml(Xml_document& coord_left_kml, Xml_document& coord_right_kml)
 {
     // Get child with data for the left boundary 
-    const std::vector<scalar> coord_left_raw  = coord_left_kml.get_element("kml/Document/Placemark/LineString/coordinates").get_value(std::vector<scalar>());
-    const std::vector<scalar> coord_right_raw = coord_right_kml.get_element("kml/Document/Placemark/LineString/coordinates").get_value(std::vector<scalar>());
+    std::vector<scalar> coord_left_raw, coord_right_raw;
+    if (coord_left_kml.has_element("kml/Document/Placemark"))
+        coord_left_raw = coord_left_kml.get_element("kml/Document/Placemark/LineString/coordinates").get_value(std::vector<scalar>());
+    else if (coord_left_kml.has_element("kml/Document/Folder/Placemark"))
+        coord_left_raw = coord_left_kml.get_element("kml/Document/Folder/Placemark/LineString/coordinates").get_value(std::vector<scalar>());
+    else
+        throw fastest_lap_exception("[ERROR] Circuit_preprocessor::read_kml -> KML format was not properly parsed");
+
+    if (coord_right_kml.has_element("kml/Document/Placemark"))
+        coord_right_raw = coord_right_kml.get_element("kml/Document/Placemark/LineString/coordinates").get_value(std::vector<scalar>());
+    else if (coord_right_kml.has_element("kml/Document/Folder/Placemark"))
+        coord_right_raw = coord_right_kml.get_element("kml/Document/Folder/Placemark/LineString/coordinates").get_value(std::vector<scalar>());
+    else
+        throw fastest_lap_exception("[ERROR] Circuit_preprocessor::read_kml -> KML format was not properly parsed");
 
     if ( coord_left_raw.size() % 3 != 0 )
         throw fastest_lap_exception("Error processing google-earth placemark: size must be multiple of 3");
@@ -23,14 +36,25 @@ inline std::pair<std::vector<Circuit_preprocessor::Coordinates>,std::vector<Circ
     const size_t n_left = coord_left_raw.size()/3;
     std::vector<Coordinates> coord_left(n_left);
 
-    for (size_t i = 0; i < n_left; ++i)
-        coord_left[i] = {coord_left_raw[3*i],coord_left_raw[3*i+1]};
-
     const size_t n_right = coord_right_raw.size()/3;
     std::vector<Coordinates> coord_right(n_right);
 
-    for (size_t i = 0; i < n_right; ++i)
-        coord_right[i] = {coord_right_raw[3*i],coord_right_raw[3*i+1]};
+    if (options.with_elevation)
+    {
+        for (size_t i = 0; i < n_left; ++i)
+            coord_left[i] = { coord_left_raw[3 * i], coord_left_raw[3 * i + 1], coord_left_raw[3*i + 2]};
+
+        for (size_t i = 0; i < n_right; ++i)
+            coord_right[i] = { coord_right_raw[3 * i], coord_right_raw[3 * i + 1], coord_right_raw[3*i + 2]};
+    }
+    else
+    {
+        for (size_t i = 0; i < n_left; ++i)
+            coord_left[i] = { coord_left_raw[3 * i], coord_left_raw[3 * i + 1], 0.0 };
+
+        for (size_t i = 0; i < n_right; ++i)
+            coord_right[i] = { coord_right_raw[3 * i], coord_right_raw[3 * i + 1], 0.0 };
+    }
 
     return {coord_left, coord_right};
 }
@@ -162,72 +186,161 @@ inline void Circuit_preprocessor::transform_coordinates(const std::vector<Coordi
     x0   = theta0*R_earth*cos(phi_ref);
     y0   = phi0*R_earth;
 
-    // (2) Transform coordinates to cartesian (x,y)
+    // (2) Transform coordinates to cartesian (x,y,z) -> Flip y and z
     r_left_measured = std::vector<sVector3d>(coord_left.size(),{0.0,0.0,0.0});
     for (size_t i = 0; i < coord_left.size(); ++i)
-        r_left_measured[i] = sVector3d((coord_left[i].longitude*DEG-theta0)*R_earth*cos(phi_ref), (coord_left[i].latitude*DEG-phi0)*R_earth, 0.0);
+        r_left_measured[i] = sVector3d((coord_left[i].longitude*DEG-theta0)*R_earth*cos(phi_ref), - (coord_left[i].latitude*DEG-phi0)*R_earth, - coord_left[i].altitude);
 
     r_right_measured = std::vector<sVector3d>(coord_right.size(),{0.0,0.0,0.0});
     for (size_t i = 0; i < coord_right.size(); ++i)
-        r_right_measured[i] = sVector3d((coord_right[i].longitude*DEG-theta0)*R_earth*cos(phi_ref), (coord_right[i].latitude*DEG-phi0)*R_earth, 0.0);
+        r_right_measured[i] = sVector3d((coord_right[i].longitude*DEG-theta0)*R_earth*cos(phi_ref), - (coord_right[i].latitude*DEG-phi0)*R_earth, - coord_right[i].altitude);
 }
 
 
-template<bool closed>
-inline void Circuit_preprocessor::compute(const std::vector<scalar>& s_center, const std::vector<sVector3d>& r_center, const scalar track_length_estimate)
+template<bool closed, typename computation_type>
+inline void Circuit_preprocessor::compute(const std::vector<scalar>& s_center, const std::vector<sVector3d>& r_center, 
+    const std::vector<sVector3d>& r_center_to_right, const scalar track_length_estimate)
 {
+    using fg_type       = FG<closed, computation_type>;
+    using state_names   = typename fg_type::state_names;
+    using control_names = typename fg_type::control_names;
+
     // (1) Compute the initial condition via finite differences
     std::vector<scalar> x_init(n_points,0.0);
     std::vector<scalar> y_init(n_points,0.0);
+    std::vector<scalar> z_init(n_points,0.0);
     std::vector<scalar> theta_init(n_points,0.0);
+    std::vector<scalar> mu_init(n_points,0.0);
+    std::vector<scalar> phi_init(n_points,0.0);
     std::vector<scalar> kappa_init(n_points,0.0);
+    std::vector<scalar> mu_dot_init(n_points,0.0);
+    std::vector<scalar> phi_dot_init(n_points,0.0);
     std::vector<scalar> nl_init(n_points,0.0);
     std::vector<scalar> nr_init(n_points,0.0);
+
     std::vector<scalar> dkappa_init(n_points,0.0);
+    std::vector<scalar> dmu_dot_init(n_points,0.0);
+    std::vector<scalar> dphi_dot_init(n_points,0.0);
     std::vector<scalar> dnl_init(n_points,0.0);
     std::vector<scalar> dnr_init(n_points,0.0);
 
-    // x and y
+    std::vector<sVector3d> tangent_dir_init(n_points, {0.0,0.0,0.0});
+    std::vector<sVector3d> normal_dir_init(n_points, {0.0,0.0,0.0});
+    std::vector<sVector3d> bi_normal_dir_init(n_points, {0.0,0.0,0.0});
+
+    // (1.1) Extract coordinates
     for (size_t i = 0; i < n_points; ++i)
     {
         x_init[i] = r_center[i][0];
         y_init[i] = r_center[i][1];
+
+        if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
+            z_init[i] = r_center[i][2];
     }
 
-    // theta
-    theta_init[0] = atan2(y_init[1]-y_init[0],x_init[1]-x_init[0]);
-    for (size_t i = 1; i < n_points-1; ++i)
-        theta_init[i] = theta_init[i-1] + wrap_to_pi(atan2(y_init[i+1]-y_init[i],x_init[i+1]-x_init[i])-theta_init[i-1]);
-    
+    if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
+    {
+        // (1.2) Compute Frenet frame
+
+        // (1.2.1) Tangent vector
+        std::transform(r_center.cbegin(), r_center.cend() - 1, r_center.cbegin() + 1, tangent_dir_init.begin(), [](const auto& r0, const auto& r1) { return (r1 - r0).normalize(); });
+
+        if (closed)
+            tangent_dir_init.back() = (r_center.front() - r_center.back()).normalize();
+        else
+            tangent_dir_init.back() = tangent_dir_init[n_elements - 1];
+
+        // (1.2.2) Bi-normal vector
+        std::transform(tangent_dir_init.cbegin(), tangent_dir_init.cend(), r_center_to_right.cbegin(), bi_normal_dir_init.begin(), [](const auto& t, const auto& n) { return cross(t, n).normalize(); });
+
+        // (1.2.3) Normal vector
+        std::transform(tangent_dir_init.cbegin(), tangent_dir_init.cend(), bi_normal_dir_init.cbegin(), normal_dir_init.begin(), [](const auto& t, const auto& b) { return cross(b, t).normalize(); });
+
+        // (1.3) Compute Euler angles
+        for (size_t i = 0; i < n_points; ++i)
+        {
+            const auto [theta, mu, phi] = rotmat2ea(transpose(Matrix3x3(tangent_dir_init[i], normal_dir_init[i], bi_normal_dir_init[i])));
+
+            theta_init[i] = theta;
+            mu_init[i] = mu;
+            phi_init[i] = phi;
+        }
+    }
+    else
+    {
+        static_assert(std::is_same_v<computation_type, flat_computation_names>);
+
+        // theta
+        for (size_t i = 0; i < n_points-1; ++i)
+            theta_init[i] = atan2(y_init[i+1]-y_init[i],x_init[i+1]-x_init[i]);
+        
+        if constexpr (closed)
+            theta_init[n_elements-1] = atan2(y_init[0]-y_init[n_elements-1],x_init[0]-x_init[n_elements-1]);
+
+        else
+            theta_init[n_elements] = theta_init[n_elements-1];
+    }
+
+    // (1.3.1) Make sure that theta is continuous
+    for (size_t i = 1; i < n_points; ++i)
+        theta_init[i] = theta_init[i - 1] + wrap_to_pi(theta_init[i] - theta_init[i - 1]);
+
+    // (1.4) Compute track direction
+    if constexpr (closed)
+        direction = ( theta_init[n_elements-1] > theta_init[0] ? COUNTERCLOCKWISE : CLOCKWISE );
+
+    // (1.5) Compute euler angles derivatives
+    for (size_t i = 0; i < n_points - 1; ++i)
+    {
+        kappa_init[i] = (theta_init[i + 1] - theta_init[i]) / (s_center[i + 1] - s_center[i]);
+
+        if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
+        {
+            mu_dot_init[i] = (mu_init[i + 1] - mu_init[i]) / (s_center[i + 1] - s_center[i]);
+            phi_dot_init[i] = (phi_init[i + 1] - phi_init[i]) / (s_center[i + 1] - s_center[i]);
+        }
+    }
+
     if (closed)
     {
-        theta_init[n_elements-1] = theta_init[n_elements-2] + wrap_to_pi(atan2(y_init[0]-y_init[n_elements-1],x_init[0]-x_init[n_elements-1])-theta_init[n_elements-2]);
-    
-        // compute the circuit direction (clockwise/counter clockwise)
-        direction = ( theta_init[n_elements-1] > theta_init[0] ? COUNTERCLOCKWISE : CLOCKWISE );
+        kappa_init[n_elements - 1] = (theta_init[0] + 2.0 * pi * direction - theta_init[n_elements - 1]) / norm(r_center.front() - r_center.back());
+
+        if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
+        {
+            mu_dot_init[n_elements - 1] = (mu_init[0] - mu_init[n_elements - 1]) / norm(r_center.front() - r_center.back());
+            phi_dot_init[n_elements - 1] = (phi_init[0] - phi_init[n_elements - 1]) / norm(r_center.front() - r_center.back());
+        }
     }
     else
-        theta_init[n_elements] = theta_init[n_elements-1];
+    {
+        kappa_init[n_elements] = kappa_init[n_elements - 1];
 
-
-    // kappa
-    for (size_t i = 0; i < n_points-1; ++i)
-        kappa_init[i] = (theta_init[i+1]-theta_init[i])/(s_center[i+1]-s_center[i]);
-
-    if (closed)
-        kappa_init[n_elements-1] = (theta_init[0] + 2.0*pi*direction - theta_init[n_elements-1])/norm(r_center.front() - r_center.back());
-    else
-        kappa_init[n_elements] = kappa_init[n_elements-1];
+        if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
+        {
+            mu_dot_init[n_elements] = mu_dot_init[n_elements - 1];
+            phi_dot_init[n_elements] = phi_dot_init[n_elements - 1];
+        }
+    }
 
     // nl and nr
-    std::array<size_t,2> i_l = {0,0};
-    std::array<size_t,2> i_r = {0,0};
-    for (size_t i = 0; i < n_points; ++i)
+    if constexpr (std::is_same_v<computation_type, flat_computation_names>)
     {
-        std::tie(std::ignore,nl_init[i],i_l) = find_closest_point<scalar>(r_left_measured, r_center[i], closed, min(i_l[0],i_l[1]), options.maximum_distance_find);
-        std::tie(std::ignore,nr_init[i],i_r) = find_closest_point<scalar>(r_right_measured, r_center[i], closed, min(i_r[0],i_r[1]), options.maximum_distance_find);
-        nl_init[i] = sqrt(nl_init[i]);
-        nr_init[i] = sqrt(nr_init[i]);
+        // nl and nr
+        std::array<size_t,2> i_l = {0,0};
+        std::array<size_t,2> i_r = {0,0};
+        for (size_t i = 0; i < n_points; ++i)
+        {
+            std::tie(std::ignore,nl_init[i],i_l) = find_closest_point<scalar>(r_left_measured, r_center[i], closed, min(i_l[0],i_l[1]), options.maximum_distance_find);
+            std::tie(std::ignore,nr_init[i],i_r) = find_closest_point<scalar>(r_right_measured, r_center[i], closed, min(i_r[0],i_r[1]), options.maximum_distance_find);
+            nl_init[i] = sqrt(nl_init[i]);
+            nr_init[i] = sqrt(nr_init[i]);
+        }
+    }
+    else
+    {
+        static_assert(std::is_same_v<computation_type, elevation_computation_names>);
+        std::transform(r_center_to_right.cbegin(), r_center_to_right.cend(), nl_init.begin(), [](const auto& n_vector) { return norm(n_vector); });
+        nr_init = nl_init;
     }
 
     // dkappa, dnl, and dnr
@@ -236,6 +349,12 @@ inline void Circuit_preprocessor::compute(const std::vector<scalar>& s_center, c
         dkappa_init[i] = (kappa_init[i+1]-kappa_init[i])/(s_center[i+1]-s_center[i]);
         dnl_init[i] = (nl_init[i+1]-nl_init[i])/(s_center[i+1]-s_center[i]);
         dnr_init[i] = (nr_init[i+1]-nr_init[i])/(s_center[i+1]-s_center[i]);
+
+        if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
+        {
+            dmu_dot_init[i] = (mu_dot_init[i + 1] - mu_dot_init[i]) / (s_center[i + 1] - s_center[i]);
+            dphi_dot_init[i] = (phi_dot_init[i + 1] - phi_dot_init[i]) / (s_center[i + 1] - s_center[i]);
+        }
     }
 
     if (closed)
@@ -243,12 +362,24 @@ inline void Circuit_preprocessor::compute(const std::vector<scalar>& s_center, c
         dkappa_init[n_elements-1] = (kappa_init[0] - kappa_init[n_elements-1])/norm(r_center.front()-r_center.back());
         dnl_init[n_elements-1] = (nl_init[0] - nl_init[n_elements-1])/norm(r_center.front()-r_center.back());
         dnr_init[n_elements-1] = (nr_init[0] - nr_init[n_elements-1])/norm(r_center.front()-r_center.back());
+
+        if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
+        {
+            dmu_dot_init[n_elements - 1] = (mu_dot_init[0] - mu_dot_init[n_elements - 1]) / norm(r_center.front() - r_center.back());
+            dphi_dot_init[n_elements - 1] = (phi_dot_init[0] - phi_dot_init[n_elements - 1]) / norm(r_center.front() - r_center.back());
+        }
     }
     else
     {
         dkappa_init[n_elements] = dkappa_init[n_elements-1];
         dnl_init[n_elements] = dnl_init[n_elements-1];
         dnr_init[n_elements] = dnr_init[n_elements-1];
+
+        if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
+        {
+            dmu_dot_init[n_elements] = dmu_dot_init[n_elements - 1];
+            dphi_dot_init[n_elements] = dphi_dot_init[n_elements - 1];
+        }
     }
 
     // compute the ds candidate
@@ -261,7 +392,7 @@ inline void Circuit_preprocessor::compute(const std::vector<scalar>& s_center, c
         element_ds[n_elements-1] = track_length_estimate - s_center.back();
 
     // (2) Create the FG object
-    FG<closed> fg(n_elements, n_points, element_ds, r_left_measured, r_right_measured, r_center, direction, options);
+    fg_type fg(n_elements, n_points, element_ds, r_left_measured, r_right_measured, r_center, direction, options);
 
     // load them into an x vector
     std::vector<scalar> x(fg.get_n_variables());
@@ -277,31 +408,106 @@ inline void Circuit_preprocessor::compute(const std::vector<scalar>& s_center, c
     {
         x[k++] = x_init[i];
         x[k++] = y_init[i];
+
+        if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
+            x[k++] = z_init[i];
+
         x[k++] = theta_init[i];
+
+        if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
+        {
+            x[k++] = mu_init[i];
+            x[k++] = phi_init[i];
+        }
+
         x[k++] = kappa_init[i];
+
+        if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
+        {
+            x[k++] = mu_dot_init[i];
+            x[k++] = phi_dot_init[i];
+        }
+
         x[k++] = nl_init[i];
         x[k++] = nr_init[i];
         x[k++] = dkappa_init[i];
+
+        if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
+        {
+            x[k++] = dmu_dot_init[i];
+            x[k++] = dphi_dot_init[i];
+        }
+
         x[k++] = dnl_init[i];
         x[k++] = dnr_init[i];
 
         x_lb[k_lb++] = x_init[i]-100.0;
         x_lb[k_lb++] = y_init[i]-100.0;
+
+        if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
+            x_lb[k_lb++] = z_init[i] - 10.0;
+
         x_lb[k_lb++] = theta_init[i]-30.0*DEG;
+
+        if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
+        {
+            x_lb[k_lb++] = mu_init[i] - 10.0 * DEG;
+            x_lb[k_lb++] = phi_init[i] - 10.0 * DEG;
+        }
+
         x_lb[k_lb++] = -options.maximum_kappa;
+
+        if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
+        {
+            x_lb[k_lb++] = -options.maximum_kappa;
+            x_lb[k_lb++] = -options.maximum_kappa;
+        }
+
         x_lb[k_lb++] = 1.0;
         x_lb[k_lb++] = 1.0;
         x_lb[k_lb++] = -options.maximum_dkappa;
+
+        if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
+        {
+            x_lb[k_lb++] = -options.maximum_dkappa;
+            x_lb[k_lb++] = -options.maximum_dkappa;
+        }
+
         x_lb[k_lb++] = -options.maximum_dn;
         x_lb[k_lb++] = -options.maximum_dn;
 
         x_ub[k_ub++] = x_init[i]+100.0;
         x_ub[k_ub++] = y_init[i]+100.0;
+
+        if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
+            x_ub[k_ub++] = z_init[i]+10.0;
+
         x_ub[k_ub++] = theta_init[i]+30.0*DEG;
+
+        if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
+        {
+            x_ub[k_ub++] = mu_init[i] + 10.0 * DEG;
+            x_ub[k_ub++] = phi_init[i] + 10.0 * DEG;
+        }
+
         x_ub[k_ub++] = options.maximum_kappa;
+
+        if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
+        {
+            x_ub[k_ub++] = options.maximum_kappa;
+            x_ub[k_ub++] = options.maximum_kappa;
+        }
+
         x_ub[k_ub++] = nl_init[i]+nr_init[i];
         x_ub[k_ub++] = nl_init[i]+nr_init[i];
         x_ub[k_ub++] = options.maximum_dkappa;
+
+        if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
+        {
+            x_ub[k_ub++] = options.maximum_dkappa;
+            x_ub[k_ub++] = options.maximum_dkappa;
+        }
+
         x_ub[k_ub++] = options.maximum_dn;
         x_ub[k_ub++] = options.maximum_dn;
     }
@@ -335,29 +541,23 @@ inline void Circuit_preprocessor::compute(const std::vector<scalar>& s_center, c
 
     // Load the solution
     s            = std::vector<scalar>(n_points,0.0);
-    r_left       = std::vector<sVector3d>(n_points);
-    r_right      = std::vector<sVector3d>(n_points);
-    r_centerline = std::vector<sVector3d>(n_points);
-    theta        = std::vector<scalar>(n_points);
-    kappa        = std::vector<scalar>(n_points);
-    nl           = std::vector<scalar>(n_points);
-    nr           = std::vector<scalar>(n_points);
-    dkappa       = std::vector<scalar>(n_points);
-    dnl          = std::vector<scalar>(n_points);
-    dnr          = std::vector<scalar>(n_points);
+    r_left       = std::vector<sVector3d>(n_points, { 0.0, 0.0, 0.0 });
+    r_right      = std::vector<sVector3d>(n_points, { 0.0, 0.0, 0.0 });
+    r_centerline = std::vector<sVector3d>(n_points, { 0.0, 0.0, 0.0 });
+    theta        = std::vector<scalar>(n_points, 0.0);
+    mu           = std::vector<scalar>(n_points, 0.0);
+    phi          = std::vector<scalar>(n_points, 0.0);
+    kappa        = std::vector<scalar>(n_points, 0.0);
+    mu_dot       = std::vector<scalar>(n_points, 0.0);
+    phi_dot      = std::vector<scalar>(n_points, 0.0);
+    nl           = std::vector<scalar>(n_points, 0.0);
+    nr           = std::vector<scalar>(n_points, 0.0);
+    dkappa       = std::vector<scalar>(n_points, 0.0);
+    dmu_dot      = std::vector<scalar>(n_points, 0.0);
+    dphi_dot     = std::vector<scalar>(n_points, 0.0);
+    dnl          = std::vector<scalar>(n_points, 0.0);
+    dnr          = std::vector<scalar>(n_points, 0.0);
 
-    const auto& IX        = FG<closed>::IX;
-    const auto& IY        = FG<closed>::IY;
-    const auto& ITHETA    = FG<closed>::ITHETA;
-    const auto& IKAPPA    = FG<closed>::IKAPPA;
-    const auto& INL       = FG<closed>::INL;
-    const auto& INR       = FG<closed>::INR;
-    const auto& NSTATE    = FG<closed>::NSTATE;
-    const auto& IDKAPPA   = FG<closed>::IDKAPPA;
-    const auto& IDNL      = FG<closed>::IDNL;
-    const auto& IDNR      = FG<closed>::IDNR;
-    const auto& NCONTROLS = FG<closed>::NCONTROLS;
-    
     for (size_t i = 1; i < n_points; ++i)
         s[i] = s[i-1] + element_ds[i-1]*result.x[0];
 
@@ -365,34 +565,35 @@ inline void Circuit_preprocessor::compute(const std::vector<scalar>& s_center, c
     
     for (size_t i = 0; i < n_points; ++i)
     {
+        std::array<scalar, state_names::end> states;
+        std::array<scalar, control_names::end> controls;
+
+        std::copy_n(result.x.cbegin() + 1 + (state_names::end + control_names::end) * i, state_names::end, states.begin());
+        std::copy_n(result.x.cbegin() + 1 + (state_names::end + control_names::end) * i + state_names::end, control_names::end, controls.begin());
+
         // Get indexes
-        const size_t ix      = 1  + (NSTATE + NCONTROLS)*i          + IX;
-        const size_t iy      = 1  + (NSTATE + NCONTROLS)*i          + IY;
-        const size_t itheta  = 1  + (NSTATE + NCONTROLS)*i          + ITHETA;
-        const size_t ikappa  = 1  + (NSTATE + NCONTROLS)*i          + IKAPPA;
-        const size_t inl     = 1  + (NSTATE + NCONTROLS)*i          + INL;
-        const size_t inr     = 1  + (NSTATE + NCONTROLS)*i          + INR;
-        const size_t idkappa = 1  + (NSTATE + NCONTROLS)*i + NSTATE + IDKAPPA;
-        const size_t idnl    = 1  + (NSTATE + NCONTROLS)*i + NSTATE + IDNL;
-        const size_t idnr    = 1  + (NSTATE + NCONTROLS)*i + NSTATE + IDNR;
+        r_left[i]  = fg_type::get_coordinates(states, -states[state_names::nl]);
+        r_right[i] = fg_type::get_coordinates(states, states[state_names::nr]);
+        r_centerline[i] = fg_type::get_coordinates(states, 0.0);
 
-        r_left[i] = sVector3d(result.x[ix] - sin(result.x[itheta])*result.x[inl],
-                              result.x[iy] + cos(result.x[itheta])*result.x[inl],
-                              0.0);
-        r_right[i] = sVector3d(result.x[ix] + sin(result.x[itheta])*result.x[inr],
-                               result.x[iy] - cos(result.x[itheta])*result.x[inr],
-                               0.0); 
-        r_centerline[i] = sVector3d(result.x[ix], result.x[iy], 0.0);
+        theta[i]  = states[state_names::theta];
+        kappa[i]  = states[state_names::kappa];
+        nl[i]     = states[state_names::nl];
+        nr[i]     = states[state_names::nr];
+        dkappa[i] = controls[control_names::dkappa];
+        dnl[i]    = controls[control_names::dnl];
+        dnr[i]    = controls[control_names::dnr];
 
-        theta[i]  = result.x[itheta];
-        kappa[i]  = result.x[ikappa];
-        nl[i]     = result.x[inl];
-        nr[i]     = result.x[inr];
-        dkappa[i] = result.x[idkappa];
-        dnl[i]    = result.x[idnl];
-        dnr[i]    = result.x[idnr];
+        if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
+        {
+            mu[i]       = states[state_names::mu];
+            phi[i]      = states[state_names::phi];
+            mu_dot[i]   = states[state_names::mu_dot];
+            phi_dot[i]  = states[state_names::phi_dot];
+            dmu_dot[i]  = controls[control_names::dmu_dot];
+            dphi_dot[i] = controls[control_names::dphi_dot];
+        }
     }
-
 
     // Compute the errors
     left_boundary_max_error   = sqrt(std::get<1>(find_closest_point<scalar>(r_left_measured,r_left.front(), closed, 0, 1.0e18)));
@@ -402,8 +603,8 @@ inline void Circuit_preprocessor::compute(const std::vector<scalar>& s_center, c
 
     scalar prev_left_error  = left_boundary_max_error;
     scalar prev_right_error = right_boundary_max_error;
-    i_l = {0,0};
-    i_r = {0,0};
+    std::array<size_t,2> i_l = {0,0};
+    std::array<size_t,2> i_r = {0,0};
 
     for (size_t i = 1; i < n_points; ++i)
     {
@@ -444,6 +645,7 @@ inline void Circuit_preprocessor::compute(const std::vector<scalar>& s_center, c
     left_boundary_L2_error = sqrt(left_boundary_L2_error/track_length);
     right_boundary_L2_error = sqrt(right_boundary_L2_error/track_length);
 }
+
 
 inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
 {
@@ -497,8 +699,8 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
 
     // Add the GPS coordinates conversion used
     auto gps_param = root.add_child("GPS_parameters");
-    gps_param.add_comment(" x = earth_radius.cos(reference_latitude).(longitude - origin_longitude) ");
-    gps_param.add_comment(" y = earth_radius.(latitude - origin_latitude) ");
+    gps_param.add_comment(" x =  earth_radius.cos(reference_latitude).(longitude - origin_longitude) ");
+    gps_param.add_comment(" y = -earth_radius.(latitude - origin_latitude) ");
 
     s_out << theta0*RAD;
     gps_param.add_child("origin_longitude").set_value(s_out.str()).set_attribute("units","deg");
@@ -674,9 +876,9 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
 }
 
 template<bool closed>
-inline std::tuple<std::vector<scalar>, std::vector<sVector3d>, scalar> Circuit_preprocessor::compute_averaged_centerline
+inline auto Circuit_preprocessor::compute_averaged_centerline
     (std::vector<sVector3d> r_left, std::vector<sVector3d> r_right, const size_t n_elements, const size_t n_points,
-     const Options& options)
+     const Options& options) -> Centerline
 {
     // (2) If closed, add the first point as last point to close the track (needed to construct a polynomial version)
     if constexpr (closed)
@@ -708,8 +910,12 @@ inline std::tuple<std::vector<scalar>, std::vector<sVector3d>, scalar> Circuit_p
 
     // (6) Compute the centerline estimation, and close it
     std::vector<sVector3d> r_center = 0.5*(r_left_equispaced + r_right_equispaced);
+    std::vector<sVector3d> r_center_to_right = 0.5 * (r_right_equispaced - r_left_equispaced);
     if constexpr (closed)
+    {
         r_center.push_back(r_center.front());
+        r_center_to_right.push_back(r_center_to_right.front());
+    }
 
     std::vector<scalar> s_center(n_elements+1);
 
@@ -720,24 +926,27 @@ inline std::tuple<std::vector<scalar>, std::vector<sVector3d>, scalar> Circuit_p
 
     // (6) Transform the centerline to equally-spaced points
     std::vector<scalar> s_center_equispaced = linspace(0.0,s_center.back(),n_elements+1);
-    Polynomial<sVector3d> track_center(s_center, r_center, 1); 
-    std::vector<sVector3d> r_center_equispaced(n_points);
+    Polynomial<sVector3d> r_center_polynomial(s_center, r_center, 1), n_right_polynomial(s_center, r_center_to_right, 1);
+    std::vector<sVector3d> r_center_equispaced(n_points), n_right_equispaced(n_points);
 
     for (size_t i = 0; i < n_points; ++i)
-        r_center_equispaced[i] = track_center(s_center_equispaced[i]);
+    {
+        r_center_equispaced[i] = r_center_polynomial(s_center_equispaced[i]);
+        n_right_equispaced[i] = n_right_polynomial(s_center_equispaced[i]);
+    }
 
     // (7) Remove the closing point from the arc-length (so that it has the same dimension as r_center_equispaced, n_elements)
     if constexpr (closed)
         s_center_equispaced.pop_back();
 
-    return {s_center_equispaced, r_center_equispaced, track_length_estimate};
+    return Centerline { .s = s_center_equispaced, .r_center = r_center_equispaced, .r_center_to_right = n_right_equispaced, .track_length = track_length_estimate };
 }
 
 
 template<bool closed>
-std::tuple<std::vector<scalar>, std::vector<sVector3d>, scalar> Circuit_preprocessor::compute_averaged_centerline
+inline auto Circuit_preprocessor::compute_averaged_centerline
     (std::vector<sVector3d> r_left, std::vector<sVector3d> r_right, const std::vector<std::pair<sVector3d,scalar>>& ds_breakpoints, 
-     const Options& options)
+     const Options& options) -> Centerline
 {
     // (2) If closed, add the first point as last point to close the track (needed to construct a polynomial version)
     if constexpr (closed)
@@ -846,14 +1055,14 @@ std::tuple<std::vector<scalar>, std::vector<sVector3d>, scalar> Circuit_preproce
         r_center_mesh.pop_back();
     }
 
-    return {s_center_mesh, r_center_mesh, track_length_estimate};
+    return Centerline { .s = s_center_mesh, .r_center = r_center_mesh, .r_center_to_right = {}, .track_length = track_length_estimate };
 }
 
 
 template<bool closed>
-std::tuple<std::vector<scalar>, std::vector<sVector3d>, scalar> Circuit_preprocessor::compute_averaged_centerline
+inline auto Circuit_preprocessor::compute_averaged_centerline
     (std::vector<sVector3d> r_left, std::vector<sVector3d> r_right, const std::vector<scalar>& s_distribution, const std::vector<scalar>& ds_distribution,
-     const Options& options)
+     const Options& options) -> Centerline
 {
     // (1) Construct a polynomial with the ds = f(s)
     sPolynomial f_ds(s_distribution,ds_distribution,1,false);
@@ -864,6 +1073,7 @@ std::tuple<std::vector<scalar>, std::vector<sVector3d>, scalar> Circuit_preproce
 
     // (3) Compute the approximated arclength
     std::vector<scalar> s_right(r_right.size());
+
 
     for (size_t i = 1; i < r_right.size(); ++i)
         s_right[i] = s_right[i-1] + norm(r_right[i]-r_right[i-1]);
@@ -965,7 +1175,7 @@ std::tuple<std::vector<scalar>, std::vector<sVector3d>, scalar> Circuit_preproce
         r_center_mesh.pop_back();
     }
 
-    return {s_center_mesh, r_center_mesh, track_length_estimate};
+    return Centerline { .s = s_center_mesh, .r_center = r_center_mesh, .r_center_to_right = {}, .track_length = track_length_estimate };
 }
 
 
@@ -1034,8 +1244,8 @@ inline std::pair<std::vector<Circuit_preprocessor::Coordinates>, std::vector<Cir
 }
 
 
-template<bool closed>
-void Circuit_preprocessor::FG<closed>::operator()(ADvector& fg, const ADvector& x)
+template<bool closed, typename computation_type>
+void Circuit_preprocessor::FG<closed, computation_type>::operator()(ADvector& fg, const ADvector& x)
 {
     assert(x.size() == _n_variables);
     assert(fg.size() == (1 + _n_constraints));
@@ -1050,11 +1260,11 @@ void Circuit_preprocessor::FG<closed>::operator()(ADvector& fg, const ADvector& 
     for (size_t i = 0; i < _n_points; ++i)
     {
         // Load state 
-        for (size_t j = 0; j < NSTATE; ++j)
+        for (size_t j = 0; j < state_names::end; ++j)
             _q[i][j] = x[k++];
 
         // Load control
-        for (size_t j = 0; j < NCONTROLS; ++j)
+        for (size_t j = 0; j < control_names::end; ++j)
             _u[i][j] = x[k++];
     }
 
@@ -1068,36 +1278,44 @@ void Circuit_preprocessor::FG<closed>::operator()(ADvector& fg, const ADvector& 
     _dqds[0] = equations(_q[0],_u[0]);
     std::array<size_t,2> i_left = {0,0}, i_right = {0,0}, i_center = {0,0};
 
-    std::tie(std::ignore,_dist2_left[0],i_left) = find_closest_point<CppAD::AD<scalar>>(_r_left, Vector3d<CppAD::AD<scalar>>  (_q[0][IX] - sin(_q[0][ITHETA])*_q[0][INL], _q[0][IY] + cos(_q[0][ITHETA])*_q[0][INL], 0.0), true, 0, options.maximum_distance_find);
-    std::tie(std::ignore,_dist2_right[0],i_right)  = find_closest_point<CppAD::AD<scalar>>(_r_right, Vector3d<CppAD::AD<scalar>> (_q[0][IX] + sin(_q[0][ITHETA])*_q[0][INR], _q[0][IY] - cos(_q[0][ITHETA])*_q[0][INR], 0.0), true, 0, options.maximum_distance_find);
-    std::tie(std::ignore,_dist2_center[0],i_center) = find_closest_point<CppAD::AD<scalar>>(_r_center, Vector3d<CppAD::AD<scalar>>(_q[0][IX], _q[0][IY], 0.0), true, 0, options.maximum_distance_find);
+    const Vector3d<CppAD::AD<scalar>> r_left_0   = get_coordinates(_q[0], -_q[0][state_names::nl]);
+    const Vector3d<CppAD::AD<scalar>> r_right_0  = get_coordinates(_q[0], _q[0][state_names::nr]);
+    const Vector3d<CppAD::AD<scalar>> r_center_0 = get_coordinates(_q[0], 0.0);
+
+    std::tie(std::ignore, _dist2_left[0], i_left)     = find_closest_point<CppAD::AD<scalar>>(_r_left, r_left_0, true, 0, options.maximum_distance_find);
+    std::tie(std::ignore, _dist2_right[0], i_right)   = find_closest_point<CppAD::AD<scalar>>(_r_right, r_right_0, true, 0, options.maximum_distance_find);
+    std::tie(std::ignore, _dist2_center[0], i_center) = find_closest_point<CppAD::AD<scalar>>(_r_center, r_center_0, true, 0, options.maximum_distance_find);
 
     // (5) Compute the equations for the i-th node, and append the scheme equations for the i-th element
     k = 1;  // Reset the counter
     for (size_t i = 1; i < _n_points; ++i)
     {
         _dqds[i] = equations(_q[i],_u[i]);
-        std::tie(std::ignore,_dist2_left[i],i_left) = find_closest_point<CppAD::AD<scalar>>(_r_left, 
-            Vector3d<CppAD::AD<scalar>>  (_q[i][IX] - sin(_q[i][ITHETA])*_q[i][INL], _q[i][IY] + cos(_q[i][ITHETA])*_q[i][INL], 0.0), 
-            true, min(i_left[0],i_left[1]), options.maximum_distance_find);
-        std::tie(std::ignore,_dist2_right[i],i_right) = find_closest_point<CppAD::AD<scalar>>(_r_right, 
-            Vector3d<CppAD::AD<scalar>> (_q[i][IX] + sin(_q[i][ITHETA])*_q[i][INR], _q[i][IY] - cos(_q[i][ITHETA])*_q[i][INR], 0.0), 
-            true, min(i_right[0],i_right[1]), options.maximum_distance_find);
-        std::tie(std::ignore,_dist2_center[i],i_center) = find_closest_point<CppAD::AD<scalar>>(_r_center, 
-            Vector3d<CppAD::AD<scalar>>(_q[i][IX], _q[i][IY], 0.0), 
-            true, min(i_center[0],i_center[1]), options.maximum_distance_find);
+        const Vector3d<CppAD::AD<scalar>> r_left_i   = get_coordinates(_q[i], -_q[i][state_names::nl]);
+        const Vector3d<CppAD::AD<scalar>> r_right_i  = get_coordinates(_q[i], _q[i][state_names::nr]);
+        const Vector3d<CppAD::AD<scalar>> r_center_i = get_coordinates(_q[i], 0.0);
+
+        std::tie(std::ignore,_dist2_left[i],i_left) = find_closest_point<CppAD::AD<scalar>>(_r_left, r_left_i, true, min(i_left[0],i_left[1]), options.maximum_distance_find);
+        std::tie(std::ignore,_dist2_right[i],i_right) = find_closest_point<CppAD::AD<scalar>>(_r_right, r_right_i, true, min(i_right[0],i_right[1]), options.maximum_distance_find);
+        std::tie(std::ignore,_dist2_center[i],i_center) = find_closest_point<CppAD::AD<scalar>>(_r_center, r_center_i, true, min(i_center[0],i_center[1]), options.maximum_distance_find);
 
         // Fitness function: minimize the square of the distance to the boundaries and centerline, and control powers
         const auto ds = ds_factor*_ds[i-1];
         fg[0] += 0.5*ds*options.eps_d*(_dist2_left[i] + _dist2_left[i-1]);
         fg[0] += 0.5*ds*options.eps_d*(_dist2_right[i]  + _dist2_right[i-1]  );
         fg[0] += 0.5*ds*options.eps_c*(_dist2_center[i] + _dist2_center[i-1] );
-        fg[0] += 0.5*ds*options.eps_k*(_u[i][IDKAPPA]*_u[i][IDKAPPA] + _u[i-1][IDKAPPA]*_u[i-1][IDKAPPA]);
-        fg[0] += 0.5*ds*options.eps_n*(_u[i][IDNL]*_u[i][IDNL] + _u[i-1][IDNL]*_u[i-1][IDNL]);
-        fg[0] += 0.5*ds*options.eps_n*(_u[i][IDNR]*_u[i][IDNR] + _u[i-1][IDNR]*_u[i-1][IDNR]);
+        fg[0] += 0.5*ds*options.eps_k*(_u[i][control_names::dkappa]*_u[i][control_names::dkappa] + _u[i-1][control_names::dkappa]*_u[i-1][control_names::dkappa]);
+        fg[0] += 0.5*ds*options.eps_n*(_u[i][control_names::dnl]*_u[i][control_names::dnl] + _u[i-1][control_names::dnl]*_u[i-1][control_names::dnl]);
+        fg[0] += 0.5*ds*options.eps_n*(_u[i][control_names::dnr]*_u[i][control_names::dnr] + _u[i-1][control_names::dnr]*_u[i-1][control_names::dnr]);
+
+        if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
+        {
+            fg[0] += 0.5*ds*options.eps_mu*(_u[i][control_names::dmu_dot]*_u[i][control_names::dmu_dot] + _u[i-1][control_names::dmu_dot]*_u[i-1][control_names::dmu_dot]);
+            fg[0] += 0.5*ds*options.eps_phi*(_u[i][control_names::dphi_dot]*_u[i][control_names::dphi_dot] + _u[i-1][control_names::dphi_dot]*_u[i-1][control_names::dphi_dot]);
+        }
 
         // Equality constraints:  q^{i} = q^{i-1} + 0.5.ds.[dqds^{i} + dqds^{i-1}]
-        for (size_t j = 0; j < NSTATE; ++j)
+        for (size_t j = 0; j < state_names::end; ++j)
             fg[k++] = _q[i][j] - _q[i-1][j] - 0.5*ds*(_dqds[i-1][j] + _dqds[i][j]);
     }
 
@@ -1110,26 +1328,27 @@ void Circuit_preprocessor::FG<closed>::operator()(ADvector& fg, const ADvector& 
         fg[0] += 0.5*ds*options.eps_d*(_dist2_left[0]    + _dist2_left[_n_elements-1] );
         fg[0] += 0.5*ds*options.eps_d*(_dist2_right[0]   + _dist2_right[_n_elements-1]  );
         fg[0] += 0.5*ds*options.eps_c*(_dist2_center[0]  + _dist2_center[_n_elements-1]);
-        fg[0] += 0.5*ds*options.eps_k*(_u[0][IDKAPPA]*_u[0][IDKAPPA] + _u[_n_elements-1][IDKAPPA]*_u[_n_elements-1][IDKAPPA]);
-        fg[0] += 0.5*ds*options.eps_n*(_u[0][IDNL]*_u[0][IDNL] + _u[_n_elements-1][IDNL]*_u[_n_elements-1][IDNL]);
-        fg[0] += 0.5*ds*options.eps_n*(_u[0][IDNR]*_u[0][IDNR] + _u[_n_elements-1][IDNR]*_u[_n_elements-1][IDNR]);
+        fg[0] += 0.5*ds*options.eps_k*(_u[0][control_names::dkappa]*_u[0][control_names::dkappa] + _u[_n_elements-1][control_names::dkappa]*_u[_n_elements-1][control_names::dkappa]);
+        fg[0] += 0.5*ds*options.eps_n*(_u[0][control_names::dnl]*_u[0][control_names::dnl] + _u[_n_elements-1][control_names::dnl]*_u[_n_elements-1][control_names::dnl]);
+        fg[0] += 0.5*ds*options.eps_n*(_u[0][control_names::dnr]*_u[0][control_names::dnr] + _u[_n_elements-1][control_names::dnr]*_u[_n_elements-1][control_names::dnr]);
     
         // Equality constraints:  q^{i} = q^{i-1} + 0.5.ds.[dqds^{i} + dqds^{i-1}]
         // except for theta, where q^{i} = q^{i-1} + 0.5.ds.[dqds^{i} + dqds^{i-1}] - 2.pi
-        for (size_t j = 0; j < NSTATE; ++j)
-            fg[k++] = _q[0][j] - _q[_n_elements-1][j] - 0.5*ds*(_dqds[_n_elements-1][j] + _dqds[0][j]) + (j==ITHETA ? 2.0*pi*_direction : 0.0);
+        for (size_t j = 0; j < state_names::end; ++j)
+            fg[k++] = _q[0][j] - _q[_n_elements-1][j] - 0.5*ds*(_dqds[_n_elements-1][j] + _dqds[0][j]) + (j==state_names::theta ? 2.0*pi*_direction : 0.0);
     }
 
     // (7) Add a last constraint: the first point should be in the start line
     const sVector3d p = _r_left.front() - _r_right.front();
-    fg[k++] = cross(p,Vector3d<CppAD::AD<scalar>>(_q.front()[IX], _q.front()[IY], 0.0)-_r_right.front()).z()/dot(p,p);
+    const Vector3d<CppAD::AD<scalar>> first_point_coordinates = get_coordinates(_q.front(), 0.0);
+    fg[k++] = cross(p,first_point_coordinates - _r_right.front()).z()/dot(p,p);
 
     if constexpr (!closed)
     {
         // If track is open, the last point should be in the finish line
         const sVector3d p = _r_left.back() - _r_right.back();
-        fg[k++] = cross(p,Vector3d<CppAD::AD<scalar>>(_q.back()[IX], _q.back()[IY], 0.0)-_r_right.back()).z()/dot(p,p);
-        
+        const Vector3d<CppAD::AD<scalar>> last_point_coordinates = get_coordinates(_q.back(), 0.0);
+        fg[k++] = cross(p,last_point_coordinates - _r_right.back()).z()/dot(p,p);
     }
 
     assert(k == FG::_n_constraints+1);
