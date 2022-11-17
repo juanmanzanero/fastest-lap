@@ -176,10 +176,13 @@ class Circuit_preprocessor
 
         // (4) Perform the optimization
         if (opts.with_elevation)
-            compute<false,elevation_computation_names>(s_center, r_center, r_center_to_right, track_length_estimate);
-
+        {
+            compute<false, elevation_computation_names>(s_center, r_center, r_center_to_right, track_length_estimate);
+        }
         else
-            compute<false,flat_computation_names>(s_center, r_center, r_center_to_right, track_length_estimate);
+        {
+            compute<false, flat_computation_names>(s_center, r_center, r_center_to_right, track_length_estimate);
+        }
     }
 
     // Inputs ------------------------------------:-

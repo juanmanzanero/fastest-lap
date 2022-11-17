@@ -43,7 +43,7 @@ class Chassis_car_3dof_test : public ::testing::Test
         qa_in[Chassis_t::algebraic_state_names::FZRR] = Fz_rr/(9.81*660.0);
 
         chassis.set_state_and_controls(q_in,qa_in,u_in);
-        chassis.update(x,y,psi);
+        chassis.update({ x,y,0 }, { psi,0,0 }, 0.0, { 0,0,0 }, 0.0, 0.0);
     }
 
     // Database containing the model parameters from the reference

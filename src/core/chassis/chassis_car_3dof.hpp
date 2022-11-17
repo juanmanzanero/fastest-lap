@@ -112,21 +112,23 @@ inline void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
 inline void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::set_state
- (Timeseries_t u, Timeseries_t v, Timeseries_t omega)
+ (const Timeseries_t& u, const Timeseries_t& v, const Timeseries_t& omega)
 {
     base_type::set_state(u,v,omega);
 }
 
 
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
-inline void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::update
-    (Timeseries_t x, Timeseries_t y, Timeseries_t psi)
+inline void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0>::update(const Vector3d<Timeseries_t>& ground_position_vector_m, 
+    const Euler_angles<scalar>& road_euler_angles_rad, const Timeseries_t& track_heading_angle_rad, 
+    const Euler_angles<Timeseries_t>& road_euler_angles_dot_radps, const Timeseries_t& track_heading_angle_dot_radps,
+    const Timeseries_t& ground_velocity_z_body_mps)
 {
     // Update base_type
-    base_type::update(x,y,psi);
+    base_type::update(ground_position_vector_m.x(), ground_position_vector_m.y(), road_euler_angles_rad.yaw() + track_heading_angle_rad);
 
     FrontAxle_t& front_axle = base_type::get_front_axle();
-    RearAxle_t& rear_axle = base_type::get_rear_axle();
+    RearAxle_t& rear_axle   = base_type::get_rear_axle();
     
     Frame<Timeseries_t>& road_frame = base_type::get_road_frame();
 

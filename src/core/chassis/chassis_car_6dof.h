@@ -3,6 +3,7 @@
 
 #include "chassis.h"
 #include <array>
+#include "lion/math/euler_angles.h"
 
 //!     Car chassis model with two small pitch and roll rotations
 //!     ---------------------------------------------------------
@@ -112,7 +113,14 @@ class Chassis_car_6dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
     //! @param[in] x: x-coordinate of the road frame [m]
     //! @param[in] y: y-coordinate of the road frame [m]
     //! @param[in] psi: yaw angle of the road frame [rad]
-    void update(Timeseries_t x, Timeseries_t y, Timeseries_t psi);
+    void update(const Vector3d<Timeseries_t>& ground_position_vector_m,
+                const Euler_angles<scalar>& road_euler_angles_rad,
+                const Timeseries_t& track_heading_angle_rad,
+                const Euler_angles<Timeseries_t>& road_euler_angles_dot_radps,
+                const Timeseries_t& track_heading_angle_dot_radps,
+                const Timeseries_t& ground_velocity_z_body_mps);
+
+
 
     //! Set the chassis state variables from direct values
     //      --- Set by the parent class ---

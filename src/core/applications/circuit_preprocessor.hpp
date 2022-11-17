@@ -1007,8 +1007,12 @@ inline auto Circuit_preprocessor::compute_averaged_centerline
 
     // (6) Compute the centerline estimation, and close it
     std::vector<sVector3d> r_center = 0.5*(r_left_mesh + r_right_mesh);
+    std::vector<sVector3d> r_center_to_right = 0.5 * (r_right_mesh - r_left_mesh);
     if constexpr (closed)
+    {
         r_center.push_back(r_center.front());
+        r_center_to_right.push_back(r_center_to_right.front());
+    }
 
     std::vector<scalar> s_center(n_elements+1);
 
@@ -1017,8 +1021,10 @@ inline auto Circuit_preprocessor::compute_averaged_centerline
 
     // (6) Transform the centerline to mesh points
     Polynomial<sVector3d> track_center(s_center, r_center, 1); 
+    Polynomial<sVector3d> r_center_to_right_poly(s_center, r_center_to_right, 1);
     std::vector<scalar> s_center_mesh = {0.0, ds_breakpoints.front().second};
     std::vector<sVector3d> r_center_mesh = { track_center(s_center_mesh[0]), track_center(s_center_mesh[1]) };
+    std::vector<sVector3d> r_center_to_right_mesh = { r_center_to_right_poly(s_center_mesh[0]), r_center_to_right_poly(s_center_mesh[1]) };
 
     ds_prev = ds_breakpoints.front().second;
     while ( s_center_mesh.back() < s_center.back() )
@@ -1033,6 +1039,7 @@ inline auto Circuit_preprocessor::compute_averaged_centerline
 
         s_center_mesh.push_back(s_center_mesh.back() + ds);
         r_center_mesh.push_back(track_center(min(s_center_mesh.back(),s_center.back())));
+        r_center_to_right_mesh.push_back(r_center_to_right_poly(min(s_center_mesh.back(),s_center.back())));
 
         ds_prev = ds;
     }
@@ -1044,6 +1051,7 @@ inline auto Circuit_preprocessor::compute_averaged_centerline
     {
         s_center_mesh[s_center_mesh.size()-6+i] = s_center_mesh[s_center_mesh.size()-7] + (i+1)*ds;
         r_center_mesh[s_center_mesh.size()-6+i] = track_center(s_center_mesh[s_center_mesh.size()-6+i]);
+        r_center_to_right_mesh[s_center_mesh.size()-6+i] = r_center_to_right_poly(s_center_mesh[s_center_mesh.size()-6+i]);
     }
 
     const scalar track_length_estimate = s_center_mesh.back();
@@ -1053,9 +1061,10 @@ inline auto Circuit_preprocessor::compute_averaged_centerline
     {
         s_center_mesh.pop_back();
         r_center_mesh.pop_back();
+        r_center_to_right_mesh.pop_back();
     }
 
-    return Centerline { .s = s_center_mesh, .r_center = r_center_mesh, .r_center_to_right = {}, .track_length = track_length_estimate };
+    return Centerline { .s = s_center_mesh, .r_center = r_center_mesh, .r_center_to_right = r_center_to_right_mesh, .track_length = track_length_estimate };
 }
 
 
@@ -1127,8 +1136,12 @@ inline auto Circuit_preprocessor::compute_averaged_centerline
 
     // (6) Compute the centerline estimation, and close it
     std::vector<sVector3d> r_center = 0.5*(r_left_mesh + r_right_mesh);
+    std::vector<sVector3d> r_center_to_right = 0.5*(r_right_mesh - r_left_mesh);
     if constexpr (closed)
+    {
         r_center.push_back(r_center.front());
+        r_center_to_right.push_back(r_center_to_right.front());
+    }
 
     std::vector<scalar> s_center(n_elements+1);
 
@@ -1137,8 +1150,10 @@ inline auto Circuit_preprocessor::compute_averaged_centerline
 
     // (6) Transform the centerline to mesh points
     Polynomial<sVector3d> track_center(s_center, r_center, 1); 
+    Polynomial<sVector3d> r_center_to_right_poly(s_center, r_center_to_right, 1); 
     std::vector<scalar> s_center_mesh = {0.0};
     std::vector<sVector3d> r_center_mesh = {track_center(s_center_mesh[0])};
+    std::vector<sVector3d> r_center_to_right_mesh = {r_center_to_right_poly(s_center_mesh[0])};
 
     ds_prev = f_ds(0.0);
     while ( s_center_mesh.back() < s_center.back() )
@@ -1153,6 +1168,7 @@ inline auto Circuit_preprocessor::compute_averaged_centerline
 
         s_center_mesh.push_back(s_center_mesh.back() + ds);
         r_center_mesh.push_back(track_center(min(s_center_mesh.back(),s_center.back())));
+        r_center_to_right_mesh.push_back(r_center_to_right_poly(min(s_center_mesh.back(),s_center.back())));
 
         ds_prev = ds;
     }
@@ -1164,6 +1180,7 @@ inline auto Circuit_preprocessor::compute_averaged_centerline
     {
         s_center_mesh[s_center_mesh.size()-6+i] = s_center_mesh[s_center_mesh.size()-7] + (i+1)*ds;
         r_center_mesh[s_center_mesh.size()-6+i] = track_center(s_center_mesh[s_center_mesh.size()-6+i]);
+        r_center_to_right_mesh[s_center_mesh.size()-6+i] = r_center_to_right_poly(s_center_mesh[s_center_mesh.size()-6+i]);
     }
 
     const scalar track_length_estimate = s_center_mesh.back();
@@ -1173,9 +1190,10 @@ inline auto Circuit_preprocessor::compute_averaged_centerline
     {
         s_center_mesh.pop_back();
         r_center_mesh.pop_back();
+        r_center_to_right_mesh.pop_back();
     }
 
-    return Centerline { .s = s_center_mesh, .r_center = r_center_mesh, .r_center_to_right = {}, .track_length = track_length_estimate };
+    return Centerline { .s = s_center_mesh, .r_center = r_center_mesh, .r_center_to_right = r_center_to_right_mesh, .track_length = track_length_estimate };
 }
 
 

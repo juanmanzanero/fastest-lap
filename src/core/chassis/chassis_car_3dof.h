@@ -2,6 +2,7 @@
 #define CHASSIS_CAR_3DOF_H
 
 #include "src/core/foundation/fastest_lap_exception.h"
+#include "lion/math/euler_angles.h"
 #include "chassis.h"
 #include <array>
 #include <vector>
@@ -107,14 +108,19 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
     //! @param[in] x: x-coordinate of the road frame [m]
     //! @param[in] y: y-coordinate of the road frame [m]
     //! @param[in] psi: yaw angle of the road frame [rad]
-    void update(Timeseries_t x, Timeseries_t y, Timeseries_t psi);
+    void update(const Vector3d<Timeseries_t>& ground_position_vector_m,
+                const Euler_angles<scalar>& road_euler_angles_rad,
+                const Timeseries_t& track_heading_angle_rad,
+                const Euler_angles<Timeseries_t>& road_euler_angles_dot_radps,
+                const Timeseries_t& track_heading_angle_dot_radps,
+                const Timeseries_t& ground_velocity_z_body_mps);
 
     //! Set the chassis state variables from direct values
     //      --- Set by the parent class ---
     //! @param[in] u: road frame x-velocity (in road frame) [m/s]
     //! @param[in] v: road frame y-velocity (in road frame) [m/s]
     //! @param[in] omega: road frame yaw speed [rad/s]
-    void set_state(Timeseries_t u, Timeseries_t v, Timeseries_t omega); 
+    void set_state(const Timeseries_t& u, const Timeseries_t& v, const Timeseries_t& omega); 
 
     //! Get the CoM position in road frame
     Vector3d<Timeseries_t> get_com_position() const { return _x_com; }

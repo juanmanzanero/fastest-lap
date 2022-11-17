@@ -113,6 +113,14 @@ class Road_curvilinear : public Road<Timeseries_t,STATE0,CONTROL0>
     Timeseries_t _dalpha;
 };
 
+template<typename Timeseries_t,typename Track_t,size_t STATE0, size_t CONTROL0>
+struct road_is_curvilinear<Road_curvilinear<Timeseries_t, Track_t, STATE0, CONTROL0>>
+{
+    const static inline bool value = true;
+};
+
+
+
 #include "road_curvilinear.hpp"
 
 #endif

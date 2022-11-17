@@ -43,4 +43,12 @@ class Road
     Timeseries_t _psi;
 };
 
+template<typename T>
+struct road_is_curvilinear
+{
+    const static inline bool value = false;
+};
+
+
+
 #endif

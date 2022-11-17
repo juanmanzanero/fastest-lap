@@ -30,7 +30,7 @@ class Chassis_test : public ::testing::Test
         chassis.get_front_axle().set_steering_angle(delta);
         chassis.get_rear_axle().set_torque_and_omega(T,omega_axle);
         chassis.set_state(u,v,omega,z,dz,mu,dmu,phi,dphi);
-        chassis.update(x,y,psi);
+        chassis.update({ x,y,0 }, { psi,0,0 }, 0.0, { 0,0,0 },0.0, 0);
     }
 
     const scalar x = 2.0;

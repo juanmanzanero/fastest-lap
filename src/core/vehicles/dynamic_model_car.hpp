@@ -2,7 +2,7 @@
 #define DYNAMIC_MODEL_CAR_HPP
 
 #include "lion/math/matrix_extensions.h"
-
+#include "lion/math/euler_angles.h"
 
 template<typename Timeseries_t, typename Chassis_t, typename RoadModel_t, size_t _NSTATE, size_t _NCONTROL>
 std::array<Timeseries_t, _NSTATE> Dynamic_model_car<Timeseries_t,Chassis_t,RoadModel_t,_NSTATE,_NCONTROL>::transform_states_to_input_states
@@ -72,8 +72,31 @@ typename Dynamic_model_car<Timeseries_t,Chassis_t,RoadModel_t,_NSTATE,_NCONTROL>
     _road.set_state_and_controls(time,input_states,controls);
 
     // (4) Update
+
+    // (4.1) Update road frenet frame: velocities are borrowed from the car
     _road.update(_chassis.get_u(), _chassis.get_v(), _chassis.get_omega());
-    _chassis.update(_road.get_x(), _road.get_y(), _road.get_psi());
+
+    // (4.2) Update the car dynamic model: position are borrowed from the road
+    Vector3d<Timeseries_t>     ground_position_vector_m = { _road.get_x(), _road.get_y(), 0.0 };
+    Euler_angles<scalar>       road_euler_angles_rad;
+    Timeseries_t               track_heading_angle_rad;
+    
+    if constexpr (road_is_curvilinear<decltype(_road)>::value)
+    {
+        road_euler_angles_rad   = { _road.get_heading_angle(), 0.0, 0.0 };
+        track_heading_angle_rad = _road.get_alpha();
+    }
+    else
+    {
+        road_euler_angles_rad = { 0.0, 0.0, 0.0};
+        track_heading_angle_rad = _road.get_psi();
+    }
+
+    Euler_angles<Timeseries_t> track_euler_angles_dot_radps{ 0.0, 0.0, 0.0 };
+    const Timeseries_t         track_heading_angle_dot_radps = 0.0;
+    Timeseries_t               ground_velocity_z_mps = 0.0;
+
+    _chassis.update(ground_position_vector_m, road_euler_angles_rad, track_heading_angle_rad, track_euler_angles_dot_radps, track_heading_angle_dot_radps, ground_velocity_z_mps);
 
     // (5) Get state and state time derivative
     _chassis.get_state_and_state_derivative(states,dstates_dt);
