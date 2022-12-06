@@ -154,7 +154,7 @@ class Axle_car_6dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
 
 
     template<size_t NSTATE, size_t NCONTROL>
-    void transform_states_to_input_states(const std::array<Timeseries_t,NSTATE>& states,
+    void transform_states_to_inputs(const std::array<Timeseries_t,NSTATE>& states,
                                           const std::array<Timeseries_t,NCONTROL>& controls,
                                           std::array<Timeseries_t,NSTATE>& input_states) {}
 

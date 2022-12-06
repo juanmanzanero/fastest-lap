@@ -5,8 +5,8 @@
 #include "lion/thirdparty/include/logger.hpp"
 #include "src/core/foundation/fastest_lap_exception.h"
 
-template<typename Timeseries_t, size_t STATE0, size_t CONTROL0>
-inline Tire<Timeseries_t,STATE0,CONTROL0>::Tire(const std::string& name, Xml_document& database, 
+template<typename Timeseries_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
+inline Tire<Timeseries_t,state_start,algebraic_state_start,control_start>::Tire(const std::string& name, Xml_document& database, 
                   const std::string& path)
 : _name(name),
   _path(path),
@@ -25,9 +25,9 @@ inline Tire<Timeseries_t,STATE0,CONTROL0>::Tire(const std::string& name, Xml_doc
 }
 
 
-template<typename Timeseries_t, size_t STATE0, size_t CONTROL0>
+template<typename Timeseries_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
 template<typename T>
-void Tire<Timeseries_t,STATE0,CONTROL0>::set_parameter(const std::string& parameter, const T value)
+void Tire<Timeseries_t,state_start,algebraic_state_start,control_start>::set_parameter(const std::string& parameter, const T value)
 {
     if ( parameter.find(_path) == 0 )
     {
@@ -41,8 +41,8 @@ void Tire<Timeseries_t,STATE0,CONTROL0>::set_parameter(const std::string& parame
 }
 
 
-template<typename Timeseries_t, size_t STATE0, size_t CONTROL0>
-inline void Tire<Timeseries_t,STATE0,CONTROL0>::update(const Vector3d<Timeseries_t>& x0, const Vector3d<Timeseries_t>& v0, Timeseries_t omega)
+template<typename Timeseries_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
+inline void Tire<Timeseries_t,state_start,algebraic_state_start,control_start>::update(const Vector3d<Timeseries_t>& x0, const Vector3d<Timeseries_t>& v0, Timeseries_t omega)
 {
 
     // Set inputs ---
@@ -52,8 +52,8 @@ inline void Tire<Timeseries_t,STATE0,CONTROL0>::update(const Vector3d<Timeseries
 }
 
 
-template<typename Timeseries_t, size_t STATE0, size_t CONTROL0>
-inline void Tire<Timeseries_t,STATE0,CONTROL0>::update(Timeseries_t omega)
+template<typename Timeseries_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
+inline void Tire<Timeseries_t,state_start,algebraic_state_start,control_start>::update(Timeseries_t omega)
 {
     _omega = omega;
 
@@ -74,8 +74,9 @@ inline void Tire<Timeseries_t,STATE0,CONTROL0>::update(Timeseries_t omega)
     _lambda = lambda();
 }
 
-template<typename Timeseries_t, size_t STATE0, size_t CONTROL0>
-inline void Tire<Timeseries_t,STATE0,CONTROL0>::update_from_kappa(Timeseries_t kappa)
+
+template<typename Timeseries_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
+inline void Tire<Timeseries_t,state_start,algebraic_state_start,control_start>::update_from_kappa(Timeseries_t kappa)
 {
     _kappa = kappa;
 
@@ -96,8 +97,9 @@ inline void Tire<Timeseries_t,STATE0,CONTROL0>::update_from_kappa(Timeseries_t k
     _omega = (1.0+kappa)*_v[0]/_R0;
 }
 
-template<typename Timeseries_t, size_t STATE0, size_t CONTROL0>
-inline std::ostream& Tire<Timeseries_t,STATE0,CONTROL0>::print(std::ostream& os) const
+
+template<typename Timeseries_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
+inline std::ostream& Tire<Timeseries_t,state_start,algebraic_state_start,control_start>::print(std::ostream& os) const
 {
     os << "Tire \"" << _name << "\"" << std::endl;    
     os << "======" << std::string(_name.length()+1, '=') << std::endl;

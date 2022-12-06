@@ -31,7 +31,7 @@ std::array<Timeseries_t,Dynamic_model_powered_axle<Timeseries_t,Axle_t,STATE0,CO
         const std::array<Timeseries_t,Dynamic_model_powered_axle<Timeseries_t,Axle_t,STATE0,CONTROL0>::NSTATE>& states, 
         const std::array<Timeseries_t,Dynamic_model_powered_axle<Timeseries_t,Axle_t,STATE0,CONTROL0>::NCONTROL>& controls, Timeseries_t t)
 {
-    const auto input_states = transform_states_to_input_states(states, controls);
+    const auto input_states = transform_states_to_inputs(states, controls);
 
     // (1) Set state and controls
     _axle.set_state_and_controls(input_states, controls);

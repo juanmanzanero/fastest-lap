@@ -1,46 +1,61 @@
-#ifndef __ROAD_H__
-#define __ROAD_H__
+#ifndef ROAD_H
+#define ROAD_H
 
 #include "lion/foundation/types.h"
 
-template<typename Timeseries_t, size_t STATE0, size_t CONTROL0>
+//!
+//! A basic road class with the minimum functionality.
+//!
+template<typename Timeseries_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
 class Road
 {
  public:
     using Timeseries_type = Timeseries_t; 
 
-    struct input_state_names
+    struct input_names
     {
-        enum
-        {
-            end = STATE0
-        };
+        enum { end = state_start + algebraic_state_start };
+    };
+
+    struct state_names
+    {
+        enum { end = state_start };
+    };
+
+    struct algebraic_state_names
+    {
+        enum { end = algebraic_state_start };
     };
 
     struct control_names
     {
-        enum
-        {
-            end = CONTROL0
-        };
+        enum { end = state_start };
     };
 
-    constexpr const Timeseries_t& get_x() const { return _x; }
+    //! Return the dtime/ds (delta-time / delta-arclength) derivative.
+    constexpr const auto& get_dtimeds() const { return _dtimeds; } 
 
-    constexpr const Timeseries_t& get_y() const { return _y; }
+    constexpr const auto& get_position() const { return _position; }
 
-    constexpr const Timeseries_t& get_psi() const { return _psi; }
+    constexpr const auto& get_psi() const { return _psi; }
 
-    constexpr const Timeseries_t& get_dtimedt() const { return _dtimedt; } 
+    constexpr const auto& get_ground_vertical_velocity() const { return _ground_vertical_velocity; }
 
  protected:
+    //! Non-const version of get_dtimeds for the children to access
+    auto& get_dtimeds() { return _dtimeds; }
 
-    Timeseries_t _dtimedt = 1.0;
+    auto& get_position() { return _position; }
 
-    // The road contains the 3 dof of the movement
-    Timeseries_t _x;
-    Timeseries_t _y;
-    Timeseries_t _psi;
+    auto& get_psi() { return _psi; }
+
+    auto& get_ground_vertical_velocity() { return _ground_vertical_velocity; }
+
+ private:
+    Timeseries_t           _dtimeds = 1.0;
+    Vector3d<Timeseries_t> _position;
+    Timeseries_t           _psi;
+    Timeseries_t           _ground_vertical_velocity = 0.0;
 };
 
 template<typename T>
@@ -48,7 +63,5 @@ struct road_is_curvilinear
 {
     const static inline bool value = false;
 };
-
-
 
 #endif

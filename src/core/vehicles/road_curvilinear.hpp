@@ -1,135 +1,136 @@
 #ifndef ROAD_CURVILINEAR_HPP
 #define ROAD_CURVILINEAR_HPP
 
-template<typename Timeseries_t,typename Track_t,size_t STATE0, size_t CONTROL0>
-inline Road_curvilinear<Timeseries_t,Track_t,STATE0,CONTROL0>::Road_curvilinear(const Track_t& track)
-: _track(track),
-  _n(0.0)
-{}
-
-
-template<typename Timeseries_t,typename Track_t,size_t STATE0, size_t CONTROL0>
-void Road_curvilinear<Timeseries_t,Track_t,STATE0,CONTROL0>::update(const Timeseries_t u, const Timeseries_t v, const Timeseries_t omega)
+template<typename Timeseries_t,typename Track_t,size_t state_start, size_t algebraic_state_start, size_t control_start>
+void Road_curvilinear<Timeseries_t,Track_t,state_start,algebraic_state_start,control_start>::update(const Timeseries_t& velocity_x_body, const Timeseries_t& velocity_y_body, const Timeseries_t& yaw_rate)
 {
-    const Timeseries_t dtimeds = (1.0 - _n*_k)/(u*cos(_alpha) - v*sin(_alpha));
+    auto& dtime_ds = base_type::get_dtimeds();
+    // Compute dtime/ds
+    dtime_ds = (1.0 - _lateral_displacement_mps * _curvature.z()) / (velocity_x_body * cos(_track_heading_angle_rad) - velocity_y_body * sin(_track_heading_angle_rad));
 
-    base_type::_dtimedt = dtimeds*_drnorm;
+    // Compute lateral displacement time derivative
+    _lateral_displacement_dot_mps = velocity_x_body*sin(_track_heading_angle_rad) + velocity_y_body*cos(_track_heading_angle_rad);
 
-    // dtimedtime
-    _dtime = 1.0;
+    // Compute track heading angle time derivative
+    _track_heading_angle_dot_radps = yaw_rate - _curvature.z() / dtime_ds;
 
-    // dndtime
-    _dn = u*sin(_alpha) + v*cos(_alpha);
-
-    // dalphadtime
-    _dalpha = omega - _k/dtimeds;
+    // Assign the position, heading angle, and ground vertical velocity to the base type
+    base_type::get_position()                 = _position + _lateral_displacement_mps * _normal_vector;
+    base_type::get_psi()                      = _track_heading_angle_rad + _theta;
+    base_type::get_ground_vertical_velocity() = _lateral_displacement_mps * _curvature.x() / dtime_ds();
 }
 
 
-template<typename Timeseries_t,typename Track_t,size_t STATE0, size_t CONTROL0>
-template<size_t N>
-void Road_curvilinear<Timeseries_t,Track_t,STATE0,CONTROL0>::get_state_and_state_derivative
-    (std::array<Timeseries_t, N>& states, std::array<Timeseries_t,N>& dstates_dt) const
+template<typename Timeseries_t,typename Track_t,size_t state_start, size_t algebraic_state_start, size_t control_start>
+template<size_t number_of_states, size_t number_of_algebraic_states>
+void Road_curvilinear<Timeseries_t,Track_t,state_start,algebraic_state_start,control_start>::get_state_and_state_derivative
+    (std::array<Timeseries_t, number_of_states>& states, std::array<Timeseries_t,number_of_states>& dstates_dt, std::array<Timeseries_t, number_of_algebraic_states>& algebraic_equations) const
 {
     // dtimedt
-    states    [state_names::TIME] = _time;
-    dstates_dt[state_names::TIME] = _dtime;
+    states    [state_names::time] = _time;
+    dstates_dt[state_names::time] = 1.0;        // Time derivative of t -> 1
 
     // dndtime
-    states    [state_names::N] = _n;
-    dstates_dt[state_names::N] = _dn;
+    states    [state_names::lateral_displacement] = _lateral_displacement_mps;
+    dstates_dt[state_names::lateral_displacement] = _lateral_displacement_dot_mps;
 
     // dalphadtime
-    states   [state_names::ALPHA] = _alpha;
-    dstates_dt[state_names::ALPHA] = _dalpha;
+    states    [state_names::track_heading_angle] = _track_heading_angle_rad;
+    dstates_dt[state_names::track_heading_angle] = _track_heading_angle_dot_radps;
 }
 
 
-template<typename Timeseries_t,typename Track_t,size_t STATE0, size_t CONTROL0>
+template<typename Timeseries_t,typename Track_t,size_t state_start, size_t algebraic_state_start, size_t control_start>
 template<size_t NSTATE, size_t NCONTROL>
-void Road_curvilinear<Timeseries_t,Track_t,STATE0,CONTROL0>::set_state_and_controls
-    (const scalar t, const std::array<Timeseries_t,NSTATE>& input_states, const std::array<Timeseries_t,NCONTROL>& controls)
+void Road_curvilinear<Timeseries_t,Track_t,state_start,algebraic_state_start,control_start>::set_state_and_controls
+    (const scalar t, const std::array<Timeseries_t,NSTATE>& inputs, const std::array<Timeseries_t,NCONTROL>& controls)
 {
     update_track(t);
 
     // time
-    _time = input_states[input_state_names::TIME];
+    _time = inputs[input_names::time];
 
     // n 
-    _n = input_states[input_state_names::N];
+    _lateral_displacement_mps = inputs[input_names::lateral_displacement];
 
     // alpha
-    _alpha = input_states[input_state_names::ALPHA];
+    _track_heading_angle_rad = inputs[input_names::track_heading_angle];
 
-    // Compute x,y and psi from the track
-    
-    // Frenet frame (tan,nor,bi)
-    base_type::_x   = _r[X] + _n*_nor[X];
-    base_type::_y   = _r[Y] + _n*_nor[Y];
-    base_type::_psi = _alpha + _theta;
 }
 
-template<typename Timeseries_t,typename Track_t,size_t STATE0, size_t CONTROL0>
+template<typename Timeseries_t,typename Track_t,size_t state_start, size_t algebraic_state_start, size_t control_start>
 template<size_t NSTATE, size_t NCONTROL>
-void Road_curvilinear<Timeseries_t,Track_t,STATE0,CONTROL0>::set_state_and_control_upper_lower_and_default_values
-    (std::array<scalar, NSTATE>& input_states_def, std::array<scalar, NSTATE>& input_states_lb, 
-     std::array<scalar, NSTATE>& input_states_ub, std::array<scalar , NCONTROL>& controls_def, 
+void Road_curvilinear<Timeseries_t,Track_t,state_start,algebraic_state_start,control_start>::set_state_and_control_upper_lower_and_default_values
+    (std::array<scalar, NSTATE>& inputs_def, std::array<scalar, NSTATE>& inputs_lb, 
+     std::array<scalar, NSTATE>& inputs_ub, std::array<scalar , NCONTROL>& controls_def, 
      std::array<scalar, NCONTROL>& controls_lb, std::array<scalar, NCONTROL>& controls_ub) const
 {
     // time
-    input_states_def[input_state_names::TIME] = 0.0;
-    input_states_lb [input_state_names::TIME] = 0.0;
-    input_states_ub [input_state_names::TIME] = std::numeric_limits<scalar>::max();
+    inputs_def[input_names::time] = 0.0;
+    inputs_lb [input_names::time] = 0.0;
+    inputs_ub [input_names::time] = std::numeric_limits<scalar>::max();
 
     // n
-    input_states_def[input_state_names::N] = 0.0;
-    input_states_lb [input_state_names::N] = std::numeric_limits<scalar>::lowest();
-    input_states_ub [input_state_names::N] = std::numeric_limits<scalar>::max();
+    inputs_def[input_names::lateral_displacement] = 0.0;
+    inputs_lb [input_names::lateral_displacement] = std::numeric_limits<scalar>::lowest();
+    inputs_ub [input_names::lateral_displacement] = std::numeric_limits<scalar>::max();
 
     // alpha
-    input_states_def[input_state_names::ALPHA] = 0.0;
-    input_states_lb [input_state_names::ALPHA] = -45.0*DEG;
-    input_states_ub [input_state_names::ALPHA] =  45.0*DEG;
+    inputs_def[input_names::track_heading_angle] = 0.0;
+    inputs_lb [input_names::track_heading_angle] = -45.0*DEG;
+    inputs_ub [input_names::track_heading_angle] =  45.0*DEG;
 }
 
 
-template<typename Timeseries_t,typename Track_t,size_t STATE0, size_t CONTROL0>
+template<typename Timeseries_t,typename Track_t,size_t state_start, size_t algebraic_state_start, size_t control_start>
 template<size_t NSTATE, size_t NCONTROL>
-void Road_curvilinear<Timeseries_t,Track_t,STATE0,CONTROL0>::set_state_and_control_names
-    (std::string& key_name, std::array<std::string,NSTATE>& input_states, std::array<std::string,NCONTROL>& controls) 
+void Road_curvilinear<Timeseries_t,Track_t,state_start,algebraic_state_start,control_start>::set_state_and_control_names
+    (std::string& key_name, std::array<std::string,NSTATE>& inputs, std::array<std::string,NCONTROL>& controls) 
 {
     key_name = "road.arclength";
 
     // time
-    input_states[input_state_names::TIME]  = "time";
+    inputs[input_names::time]  = "time";
 
     // n
-    input_states[input_state_names::N]     = "road.lateral-displacement";
+    inputs[input_names::lateral_displacement]     = "road.lateral-displacement";
 
     // alpha
-    input_states[input_state_names::ALPHA] = "road.track-heading-angle";
+    inputs[input_names::track_heading_angle] = "road.track-heading-angle";
 }
 
 
-template<typename Timeseries_t,typename Track_t,size_t STATE0, size_t CONTROL0>
-inline void Road_curvilinear<Timeseries_t,Track_t,STATE0,CONTROL0>::update_track(const scalar t) 
+template<typename Timeseries_t,typename Track_t,size_t state_start, size_t algebraic_state_start, size_t control_start>
+inline void Road_curvilinear<Timeseries_t,Track_t,state_start,algebraic_state_start,control_start>::update_track(const scalar t) 
 {
-    // Position and two derivatives
-    std::tie(_r,_dr,_d2r) = _track(t);
+    // Get the Frenet frame at the desired point
+    const auto frenet_frame = _track(t);
 
-    // Norm of position and derivatives
-    _rnorm = _r.norm();
-    _drnorm = _dr.norm();
+    // Get position
+    _position = frenet_frame.position;
 
-    // Frenet frame
-    _tan = _dr/_drnorm;
-    _nor = sVector3d(-_tan[Y],_tan[X],0.0);
-    _bi  = cross(_tan,_nor);
+    // Get Euler angles
+    _theta = frenet_frame.euler_angles.yaw();
+    _mu = frenet_frame.euler_angles.pitch();
+    _phi = frenet_frame.euler_angles.roll();
 
-    // Road heading angle
-    _theta = atan2(_tan[Y],_tan[X]);
+    // Get Euler angles derivative
+    _dtheta_ds = frenet_frame.deuler_angles_ds.yaw();
+    _dmu_ds    = frenet_frame.deuler_angles_ds.pitch();
+    _dphi_ds   = frenet_frame.deuler_angles_ds.roll();
 
-    // Curvature
-    _k = curvature(_dr,_d2r,_drnorm);
+    // Get Frenet frame
+    _tangent_vector = { cos(_theta) * cos(_mu), sin(_theta) * cos(_mu), -sin(_mu) };
+
+    _normal_vector = { cos(_theta) * sin(_mu) * sin(_phi) - sin(_theta) * cos(_phi),
+                       sin(_theta) * sin(_mu) * sin(_phi) + cos(_theta) * cos(_phi),
+                       cos(_mu) * sin(_phi) };
+
+    _binormal_vector = { cos(_theta) * sin(_mu) * cos(_phi) + sin(_theta) * sin(_phi),
+                        sin(_theta) * sin(_mu) * cos(_phi) - cos(_theta) * sin(_phi),
+                        cos(_mu) * cos(_phi) };
+
+    // Get curvature
+    _curvature = curvature(frenet_frame.euler_angles, frenet_frame.deuler_angles_ds);
 }
 #endif

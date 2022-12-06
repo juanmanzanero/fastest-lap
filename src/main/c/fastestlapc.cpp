@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <regex>
 
-#include "src/core/vehicles/lot2016kart.h"
+//#include "src/core/vehicles/lot2016kart.h"
 #include "src/core/vehicles/limebeer2014f1.h"
 #include "src/core/applications/steady_state.h"
 #include "src/core/applications/optimal_laptime.h"
@@ -26,6 +26,8 @@ catch(lion_exception& ex) \
     std::cout << "[C++ exception] -> " << ex.what() << std::endl; \
     throw ex; \
  }
+
+using lot2016kart_all = limebeer2014f1_all;
 
 // Tables
 std::unordered_map<std::string,lot2016kart_all>     table_kart_6dof;
@@ -1746,7 +1748,7 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
                 }
                 else if ( variable_name == "time" ) {
                     for (size_t p = 0; p < car_curv_sc_const.get_parameters().get_number_of_parameters(); ++p) {
-                        ddatadp[p][i] = opt_laptime.dinput_states_dp[p][i][vehicle_t::vehicle_scalar_curvilinear::Road_type::input_state_names::TIME];
+                        ddatadp[p][i] = opt_laptime.dinput_states_dp[p][i][vehicle_t::vehicle_scalar_curvilinear::Road_type::input_state_names::time];
                     }
                 }
             }

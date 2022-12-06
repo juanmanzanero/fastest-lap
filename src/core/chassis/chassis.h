@@ -14,9 +14,9 @@
 //! This class stores and provides interface with the front and rear axles
 //!  @param FrontAxle_t: type of the front axle
 //!  @param RearAxle_t: type of the rear axle
-//!  @param STATE0: index of the first state variable defined here
-//!  @param CONTROL0: index of the first control variable defined here
-template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
+//!  @param state_start: index of the first state variable defined here
+//!  @param control_start: index of the first control variable defined here
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
 class Chassis
 {
  public:
@@ -28,33 +28,41 @@ class Chassis
     //! Type of the rear axle
     typedef RearAxle_t rear_axle_type;
 
-    //! State variables: the basic 3 dof - longitudinal/lateral velocity + yaw
-    struct input_state_names
+    struct input_names
     {
         enum
         {
-            U = STATE0,    //! Longitudinal velocity (in road frame) [m/s]
-            V,             //! Lateral velocity (in road frame) [m/s]
-            OMEGA,         //! Yaw speed [rad/s]
+            velocity_x_mps = state_start + algebraic_state_start,    //! Longitudinal velocity (in road frame) [m/s]
+            velocity_y_mps,                                    //! Lateral velocity (in road frame) [m/s]
+            yaw_rate_radps,                                    //! Yaw rate [rad/s]
             end
         };
     };
 
+    //! State variables: the basic 3 dof - longitudinal/lateral velocity + yaw
     struct state_names
     {
         enum
         {
-            U = input_state_names::U,
-            V = input_state_names::V,
-            OMEGA = input_state_names::OMEGA
+            velocity_x_mps = state_start,
+            velocity_y_mps,
+            yaw_rate_radps,
+            end
         };
+    };
+
+    struct algebraic_state_names
+    {
+        enum { end = algebraic_state_start };
     };
 
     //! Control variables: none
     struct control_names
     {
-        enum { end = CONTROL0 };
+        enum { end = control_start };
     };
+
+    static_assert(input_names::end == state_names::end + algebraic_state_names::end);
 
     //! Default constructor
     Chassis() = default;
@@ -82,6 +90,17 @@ class Chassis
     //! Copy assignment
     Chassis& operator=(const Chassis& other);
 
+    //! Perform an update of the class: move the road frame to the new position
+    //! @param[in] x: x-position of the road frame [m]
+    //! @param[in] y: y-position of the road frame [m]
+    //! @param[in] psi: yaw angle of the road frame [rad]
+    void update(const Vector3d<Timeseries_t>& ground_position_vector_m,
+                const Euler_angles<scalar>& road_euler_angles_rad,
+                const Timeseries_t& track_heading_angle_rad,
+                const Euler_angles<Timeseries_t>& road_euler_angles_dot_radps,
+                const Timeseries_t& track_heading_angle_dot_radps,
+                const Timeseries_t& ground_velocity_z_body_mps);
+
     //! Modifyer to set a parameter
     template<typename T>
     void set_parameter(const std::string& parameter, const T value);
@@ -89,10 +108,10 @@ class Chassis
     //! Fill the corresponding nodes of an xml document
     void fill_xml(Xml_document& doc) const;
 
-    template<size_t NSTATE, size_t NCONTROL>
-    void transform_states_to_input_states(const std::array<Timeseries_t,NSTATE>& states,
-                                          const std::array<Timeseries_t,NCONTROL>& controls,
-                                          std::array<Timeseries_t,NSTATE>& input_states);
+    template<size_t number_of_inputs, size_t number_of_controls>
+    void transform_states_to_inputs(const std::array<Timeseries_t,number_of_inputs>& states,
+                                          const std::array<Timeseries_t,number_of_controls>& controls,
+                                          std::array<Timeseries_t,number_of_inputs>& input_states);
 
     //! Set state: longitudinal/lateral velocities and yaw speed
     //! @param[in] u: longitudinal velocity in road frame [m/s]
@@ -101,16 +120,10 @@ class Chassis
     void set_state(Timeseries_t u, Timeseries_t v, Timeseries_t omega);
 
     //! Get the longitudinal velocity [m/s]
-    const Timeseries_t& get_u() const { return _u; }
-
-    //! Get the longitudinal acceleration in chassis frame [m/s2]
-    const Timeseries_t& get_du() const { return _du; }
+    const Timeseries_t& get_u() const { return velocity_x_mps; }
 
     //! Get the lateral velocity [m/s]
-    const Timeseries_t& get_v() const { return _v; }
-
-    //! Get the lateral acceleration in chassis frame [m/s2]
-    const Timeseries_t& get_dv() const { return _dv; }
+    const Timeseries_t& get_v() const { return velocity_y_mps; }
 
     //! Get the longitudinal acceleration [m/s2]
     Timeseries_t get_longitudinal_acceleration() const;
@@ -119,16 +132,16 @@ class Chassis
     Timeseries_t get_lateral_acceleration() const;
 
     //! Get the yaw speed [rad/s]
-    const Timeseries_t& get_omega() const { return _omega; }
+    const Timeseries_t& get_omega() const { return _omega_z_radps; }
 
     //! Get the yaw acceleration [rad/s2]
-    const Timeseries_t& get_domega() const { return _dOmega; }
+    const Timeseries_t& get_domega() const { return _omega_z_dot_radps2; }
 
     //! Get the chassis mass [kg]
-    constexpr const Timeseries_t& get_mass() const { return _m; } 
+    constexpr const Timeseries_t& get_mass() const { return _mass_kg; } 
 
     //! Get the chassis inertia matrix [kg.m2]
-    constexpr const sMatrix3x3& get_inertia() const { return _I; }
+    constexpr const sMatrix3x3& get_inertia() const { return _I_kgm2; }
 
     //! Get the front axle
     constexpr const FrontAxle_t& get_front_axle() const { return _front_axle; }
@@ -140,21 +153,21 @@ class Chassis
 
     //! Get a reference to the inertial frame
     constexpr const Frame<Timeseries_t>& get_inertial_frame() const { return _inertial_frame; }
-    constexpr       Frame<Timeseries_t>& get_inertial_frame()       { return _inertial_frame; }
 
     //! Get a reference to the road frame
     constexpr const Frame<Timeseries_t>& get_road_frame() const { return _road_frame; }
-    constexpr       Frame<Timeseries_t>& get_road_frame()       { return _road_frame; }
 
     //! Get a reference to the chassis frame
     constexpr const Frame<Timeseries_t>& get_chassis_frame() const { return _chassis_frame; }
-    constexpr       Frame<Timeseries_t>& get_chassis_frame()       { return _chassis_frame; }
 
     //! Get the total force acting on the chassis CoM [N]
-    constexpr const Vector3d<Timeseries_t>& get_force() const { return _F; }
+    constexpr const Vector3d<Timeseries_t>& get_force() const { return _total_force_N; }
 
     //! Get the total torque acting on the chassis CoM [Nm]
-    constexpr const Vector3d<Timeseries_t>& get_torque() const { return _T; }
+    constexpr const Vector3d<Timeseries_t>& get_torque() const { return _total_torque_Nm; }
+
+    //! Compute the gravity force
+    const Vector3d<Timeseries_t>& get_gravity_force() const;
 
     //! Get the aerodynamic force [N]
     struct Aerodynamic_forces
@@ -173,41 +186,28 @@ class Chassis
     //! Get the drag coefficient
     const Timeseries_t& get_drag_coefficient() const { return _cd; }
 
-    //! Add an additional external force
-    //! @param[in] F: force to be added [N]
-    constexpr void set_external_force(const Vector3d<Timeseries_t>& F) { _Fext = F; } 
-
-    //! Add an additional external torque
-    //! @param[in] T: torque to be added [Nm]
-    constexpr void set_external_torque(const Vector3d<Timeseries_t>& T) { _Text = T; } 
-
-    //! Perform an update of the class: move the road frame to the new position
-    //! @param[in] x: x-position of the road frame [m]
-    //! @param[in] y: y-position of the road frame [m]
-    //! @param[in] psi: yaw angle of the road frame [rad]
-    void update(Timeseries_t x, Timeseries_t y, Timeseries_t psi);
-
     //! Load the time derivative of the state variables computed herein to the dqdt
     //! @param[out] dqdt: the vehicle state vector time derivative
-    template<size_t N>
-    void get_state_and_state_derivative(std::array<Timeseries_t,N>& state, 
-                                        std::array<Timeseries_t, N>& dstate_dt) const;
+    template<size_t number_of_states, size_t number_of_algebraic_states>
+    void get_state_and_state_derivative(std::array<Timeseries_t,number_of_states>& state, 
+                                        std::array<Timeseries_t, number_of_states>& dstate_dt,
+                                        std::array<Timeseries_t, number_of_algebraic_states>& algebraic_equations) const;
 
     //! Set the state variables of this class
     //! @param[in] q: the vehicle state vector 
     //! @param[in] u: the vehicle control vector
-    template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_controls(const std::array<Timeseries_t,NSTATE>& input_states, 
-                                const std::array<Timeseries_t,NCONTROL>& controls);
+    template<size_t number_of_inputs, size_t number_of_controls>
+    void set_state_and_controls(const std::array<Timeseries_t,number_of_inputs>& input_states, 
+                                const std::array<Timeseries_t,number_of_controls>& controls);
 
     //! Set the state and controls upper, lower, and default values
-    template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_control_upper_lower_and_default_values(std::array<scalar,NSTATE>& input_states_def,
-                                                               std::array<scalar,NSTATE>& input_states_lb,
-                                                               std::array<scalar,NSTATE>& input_states_ub,
-                                                               std::array<scalar,NCONTROL>& controls_def,
-                                                               std::array<scalar,NCONTROL>& controls_lb,
-                                                               std::array<scalar,NCONTROL>& controls_ub,
+    template<size_t number_of_inputs, size_t number_of_controls>
+    void set_state_and_control_upper_lower_and_default_values(std::array<scalar,number_of_inputs>& input_states_def,
+                                                               std::array<scalar,number_of_inputs>& input_states_lb,
+                                                               std::array<scalar,number_of_inputs>& input_states_ub,
+                                                               std::array<scalar,number_of_controls>& controls_def,
+                                                               std::array<scalar,number_of_controls>& controls_lb,
+                                                               std::array<scalar,number_of_controls>& controls_ub,
                                                                scalar velocity_x_lb, 
                                                                scalar velocity_x_ub, 
                                                                scalar velocity_y_ub, 
@@ -218,9 +218,9 @@ class Chassis
     //! Get the names of the state and control varaibles of this class
     //! @param[out] q: the vehicle state names
     //! @param[out] u: the vehicle control names
-    template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_control_names(std::array<std::string,NSTATE>& input_states, 
-                                     std::array<std::string,NCONTROL>& controls) const;
+    template<size_t number_of_inputs, size_t number_of_controls>
+    void set_state_and_control_names(std::array<std::string,number_of_inputs>& input_states, 
+                                     std::array<std::string,number_of_controls>& controls) const;
 
 
     bool is_ready() const { return _front_axle.is_ready() && _rear_axle.is_ready() && 
@@ -244,43 +244,17 @@ class Chassis
     }
 
  private:
-
-    // Road frame velocities
-    Timeseries_t _u = 0.0;         //! [in] Longitudinal velocity (in road frame) [m/s]
-    Timeseries_t _v = 0.0;         //! [in] Lateral velocity (in road frame) [m/s]
-    Timeseries_t _omega = 0.0;     //! [in] Yaw speed [rad/s]
-
-    Frame<Timeseries_t> _inertial_frame; //! The inertial frame
-    Frame<Timeseries_t> _road_frame;     //! Frame<Timeseries_t> with center on the road projection of the CoG, 
-                                         //! aligned with the chassis
-    Frame<Timeseries_t> _chassis_frame;  //! Frame<Timeseries_t> with center on the CoG and parallel axes to the road frame
-
-    // Mass properties
-    Timeseries_t _m = 0.0;   //! [c] chassis mass [kg]
-    sMatrix3x3 _I = {};      //! [c] chassis inertia matrix [kg.m2]
-
-    // Aerodynamic properties
-    scalar _rho = 0.0;                     //! [c] air density [kg/m3]
-    Timeseries_t _cd = 0.0;                //! [c] drag coefficient [-]      
-    Timeseries_t _cl = 0.0;                //! [c] lift coefficient [-]      
-    scalar _A = 0.0;                       //! [c] frontal area [m2]
-    Timeseries_t _northward_wind = 0.0;    //! [c] northward wind velocity [m/s]
-    Timeseries_t _eastward_wind  = 0.0;    //! [c] eastward wind velocity [m/s]
-
-    FrontAxle_t _front_axle; //! Front axle
-    RearAxle_t  _rear_axle;  //! Rear axle
-
     DECLARE_PARAMS(
-        { "mass", _m },
-        { "inertia/Ixx", _I.xx() },
-        { "inertia/Ixy", _I.xy() },
-        { "inertia/Ixz", _I.xz() },
-        { "inertia/Iyx", _I.yx() },
-        { "inertia/Iyy", _I.yy() },
-        { "inertia/Iyz", _I.yz() },
-        { "inertia/Izx", _I.zx() },
-        { "inertia/Izy", _I.zy() },
-        { "inertia/Izz", _I.zz() },
+        { "mass", _mass_kg },
+        { "inertia/Ixx", _I_kgm2.xx() },
+        { "inertia/Ixy", _I_kgm2.xy() },
+        { "inertia/Ixz", _I_kgm2.xz() },
+        { "inertia/Iyx", _I_kgm2.yx() },
+        { "inertia/Iyy", _I_kgm2.yy() },
+        { "inertia/Iyz", _I_kgm2.yz() },
+        { "inertia/Izx", _I_kgm2.zx() },
+        { "inertia/Izy", _I_kgm2.zy() },
+        { "inertia/Izz", _I_kgm2.zz() },
         { "aerodynamics/rho", _rho },
         { "aerodynamics/cd", _cd },
         { "aerodynamics/cl", _cl },
@@ -303,13 +277,13 @@ class Chassis
         {
             {get_name() + ".acceleration.x", get_longitudinal_acceleration()},
             {get_name() + ".acceleration.y", get_lateral_acceleration()},
-            {get_name() + ".force.x", _F.x()},
-            {get_name() + ".force.y", _F.y()},
-            {get_name() + ".force.z", _F.z()},
-            {get_name() + ".torque.x", _T.x()},
-            {get_name() + ".torque.y", _T.y()},
-            {get_name() + ".torque.z", _T.z()},
-            {get_name() + ".acceleration.yaw", _dOmega},
+            {get_name() + ".force.x", _total_force_N.x()},
+            {get_name() + ".force.y", _total_force_N.y()},
+            {get_name() + ".force.z", _total_force_N.z()},
+            {get_name() + ".torque.x", _total_torque_Nm.x()},
+            {get_name() + ".torque.y", _total_torque_Nm.y()},
+            {get_name() + ".torque.z", _total_torque_Nm.z()},
+            {get_name() + ".acceleration.yaw", _omega_z_dot_radps2},
             {get_name() + ".position.x", _road_frame.get_origin().x()},
             {get_name() + ".position.y", _road_frame.get_origin().y()},
             {get_name() + ".attitude.yaw", _road_frame.get_rotation_angles().front()},
@@ -326,23 +300,56 @@ class Chassis
         };
     };
 
+
+    // Road frame velocities
+    Timeseries_t velocity_x_mps = 0.0;         //! [in] Longitudinal velocity of the road CoM shadow (in road frame) [m/s]
+    Timeseries_t velocity_y_mps = 0.0;         //! [in] Lateral velocity of the road CoM shadow (in road frame) [m/s]
+
+    Timeseries_t _com_velocity_x_mps = 0.0; //! [out] Longitudinal velocity of the center of mass [m/s]
+    Timeseries_t _com_velocity_y_mps = 0.0; //! [out] Lateral velocity of the center of mass [m/s]
+
+    Timeseries_t _omega_z_radps = 0.0;     //! [in] Yaw speed [rad/s]
+
+    Frame<Timeseries_t> _inertial_frame; //! The inertial frame
+    Frame<Timeseries_t> _road_frame;     //! Frame<Timeseries_t> with center on the road projection of the CoG, 
+                                         //! aligned with the chassis
+    Frame<Timeseries_t> _chassis_frame;  //! Frame<Timeseries_t> with center on the CoG and parallel axes to the road frame
+
+    // Mass properties
+    Timeseries_t _mass_kg = 0.0;   //! [c] chassis mass [kg]
+    sMatrix3x3 _I_kgm2 = {};      //! [c] chassis inertia matrix [kg.m2]
+
+    // Aerodynamic properties
+    scalar _rho      = 0.0;                //! [c] air density [kg/m3]
+    Timeseries_t _cd = 0.0;                //! [c] drag coefficient [-]      
+    Timeseries_t _cl = 0.0;                //! [c] lift coefficient [-]      
+    scalar _A        = 0.0;                //! [c] frontal area [m2]
+    Timeseries_t _northward_wind = 0.0;    //! [c] northward wind velocity [m/s]
+    Timeseries_t _eastward_wind  = 0.0;    //! [c] eastward wind velocity [m/s]
+
+    FrontAxle_t _front_axle; //! Front axle
+    RearAxle_t  _rear_axle;  //! Rear axle
+
  protected:
 
+    // Non-const version of getters
+    constexpr Frame<Timeseries_t>& get_inertial_frame() { return _inertial_frame; }
+    constexpr Frame<Timeseries_t>& get_road_frame()     { return _road_frame; }
+    constexpr Frame<Timeseries_t>& get_chassis_frame()  { return _chassis_frame; }
 
     // Longitudinal dynamics
-    Timeseries_t _du = 0.0;    //! [out] Longitudinal acceleration [m/s2]
+    Timeseries_t _com_velocity_x_dot_mps2 = 0.0;    //! [out] Longitudinal acceleration [m/s2]
     
     // Lateral dynamics
-    Timeseries_t _dv = 0.0;    //! [out] Lateral acceleration [m/s2]
+    Timeseries_t _com_velocity_y_dot_mps2 = 0.0;    //! [out] Lateral acceleration [m/s2]
 
     // Attitude: yaw
-    Timeseries_t _dOmega = 0.0; //! [out] Yaw acceleration [rad/s2]
+    Timeseries_t _omega_z_dot_radps2 = 0.0; //! [out] Yaw acceleration [rad/s2]
 
-    Vector3d<Timeseries_t> _F; //! [out] Total forces at road frame
-    Vector3d<Timeseries_t> _T; //! [out] Total torque at road frame
+    Vector3d<Timeseries_t> _total_force_N;   //! [out] Total forces at road frame
+    Vector3d<Timeseries_t> _total_torque_Nm; //! [out] Total torque at road frame
 
-    Vector3d<Timeseries_t> _Fext = Vector3d<Timeseries_t>(0.0); //! [in] An external force [N]
-    Vector3d<Timeseries_t> _Text = Vector3d<Timeseries_t>(0.0); //! [in] An external torque [Nm]
+
 };
 
 #include "chassis.hpp"

@@ -3,11 +3,11 @@
 
 #include "src/core/foundation/fastest_lap_exception.h"
 
-template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t> typename Axle_mode, size_t STATE0, size_t CONTROL0>
-Axle_car_3dof<Timeseries_t, Tire_left_t, Tire_right_t, Axle_mode, STATE0, CONTROL0>::Axle_car_3dof(const std::string& name,
+template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t,size_t> typename Axle_mode, size_t state_start, size_t algebraic_state_start, size_t control_start>
+Axle_car_3dof<Timeseries_t, Tire_left_t, Tire_right_t, Axle_mode, state_start,algebraic_state_start,control_start>::Axle_car_3dof(const std::string& name,
     const Tire_left_t& tire_l, const Tire_right_t& tire_r,
     const std::string& path)
-: Axle<Timeseries_t, std::tuple<Tire_left_t, Tire_right_t>, STATE0, CONTROL0>(name, { tire_l, tire_r }),
+: Axle<Timeseries_t, std::tuple<Tire_left_t, Tire_right_t>, state_start,algebraic_state_start,control_start>(name, { tire_l, tire_r }),
   _track(0.0),
   _y_tire({ 0.0,0.0 }),
   _I(0.0),
@@ -43,27 +43,27 @@ Axle_car_3dof<Timeseries_t, Tire_left_t, Tire_right_t, Axle_mode, STATE0, CONTRO
     else if constexpr ( std::is_same<Axle_mode<0,0>, STEERING<0,0>>::value )
     {
         // Prepare the tires frames to have one rotation (the steering)
-        if ( std::get<LEFT>(Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,STATE0,CONTROL0>::_tires).get_frame().get_rotation_angles().size() != 0 )
+        if ( std::get<LEFT>(Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,state_start,algebraic_state_start,control_start>::_tires).get_frame().get_rotation_angles().size() != 0 )
             throw fastest_lap_exception("Left tire frame must have zero rotations");
 
-        if ( std::get<RIGHT>(Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,STATE0,CONTROL0>::_tires).get_frame().get_rotation_angles().size() != 0 )
+        if ( std::get<RIGHT>(Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,state_start,algebraic_state_start,control_start>::_tires).get_frame().get_rotation_angles().size() != 0 )
             throw fastest_lap_exception("Right tire frame must have zero rotations");
 
         std::get<LEFT>(base_type::_tires).get_frame().add_rotation(0.0, 0.0, Z);
         std::get<RIGHT>(base_type::_tires).get_frame().add_rotation(0.0, 0.0, Z);
     }
 
-    std::get<LEFT>(base_type::_tires).get_frame().set_origin(get_tire_position(LEFT), get_tire_velocity(LEFT));
-    std::get<RIGHT>(base_type::_tires).get_frame().set_origin(get_tire_position(RIGHT), get_tire_velocity(RIGHT));
+    std::get<LEFT>(base_type::_tires).get_frame().set_origin(get_tire_position(LEFT), get_tire_velocity(LEFT), Frame<Timeseries_t>::Frame_velocity_types::parent_frame);
+    std::get<RIGHT>(base_type::_tires).get_frame().set_origin(get_tire_position(RIGHT), get_tire_velocity(RIGHT), Frame<Timeseries_t>::Frame_velocity_types::parent_frame);
 }
 
 
-template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t> typename Axle_mode, size_t STATE0, size_t CONTROL0>
-Axle_car_3dof<Timeseries_t, Tire_left_t, Tire_right_t, Axle_mode, STATE0, CONTROL0>::Axle_car_3dof(const std::string& name,
+template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t,size_t> typename Axle_mode, size_t state_start, size_t algebraic_state_start, size_t control_start>
+Axle_car_3dof<Timeseries_t, Tire_left_t, Tire_right_t, Axle_mode, state_start,algebraic_state_start,control_start>::Axle_car_3dof(const std::string& name,
     const Tire_left_t& tire_l, const Tire_right_t& tire_r,
     Xml_document& database,
     const std::string& path)
-: Axle<Timeseries_t, std::tuple<Tire_left_t, Tire_right_t>, STATE0, CONTROL0>(name, { tire_l, tire_r }),
+: Axle<Timeseries_t, std::tuple<Tire_left_t, Tire_right_t>, state_start,algebraic_state_start,control_start>(name, { tire_l, tire_r }),
   _track(0.0),
   _y_tire({ 0.0,0.0 }),
   _I(0.0),
@@ -100,10 +100,10 @@ Axle_car_3dof<Timeseries_t, Tire_left_t, Tire_right_t, Axle_mode, STATE0, CONTRO
     else if constexpr ( std::is_same<Axle_mode<0,0>, STEERING<0,0>>::value )
     {
         // Prepare the tires frames to have one rotation (the steering)
-        if ( std::get<LEFT>(Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,STATE0,CONTROL0>::_tires).get_frame().get_rotation_angles().size() != 0 )
+        if ( std::get<LEFT>(Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,state_start,algebraic_state_start,control_start>::_tires).get_frame().get_rotation_angles().size() != 0 )
             throw fastest_lap_exception("Left tire frame must have zero rotations");
 
-        if ( std::get<RIGHT>(Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,STATE0,CONTROL0>::_tires).get_frame().get_rotation_angles().size() != 0 )
+        if ( std::get<RIGHT>(Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,state_start,algebraic_state_start,control_start>::_tires).get_frame().get_rotation_angles().size() != 0 )
             throw fastest_lap_exception("Right tire frame must have zero rotations");
 
         std::get<LEFT>(base_type::_tires).get_frame().add_rotation(0.0, 0.0, Z);
@@ -115,9 +115,9 @@ Axle_car_3dof<Timeseries_t, Tire_left_t, Tire_right_t, Axle_mode, STATE0, CONTRO
 }
 
 
-template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t> typename Axle_mode, size_t STATE0, size_t CONTROL0>
+template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t,size_t> typename Axle_mode, size_t state_start, size_t algebraic_state_start, size_t control_start>
 template<typename T>
-inline bool Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::set_parameter(const std::string& parameter, const T value)
+inline bool Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,state_start,algebraic_state_start,control_start>::set_parameter(const std::string& parameter, const T value)
 {
     bool found = false;
     // Check if the parameter goes to this object
@@ -174,8 +174,8 @@ inline bool Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0
 }
 
 
-template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t> typename Axle_mode, size_t STATE0, size_t CONTROL0>
-inline void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::fill_xml(Xml_document& doc) const
+template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t,size_t> typename Axle_mode, size_t state_start, size_t algebraic_state_start, size_t control_start>
+inline void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,state_start,algebraic_state_start,control_start>::fill_xml(Xml_document& doc) const
 {
     // Write the parameters of the base class
     base_type::fill_xml(doc);
@@ -195,10 +195,10 @@ inline void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0
 }
 
 
-template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t> typename Axle_mode, size_t STATE0, size_t CONTROL0>
-template<size_t NSTATE, size_t NCONTROL>
-void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::transform_states_to_input_states
-    (const std::array<Timeseries_t,NSTATE>& states, const std::array<Timeseries_t,NCONTROL>& controls, std::array<Timeseries_t,NSTATE>& input_states)
+template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t,size_t> typename Axle_mode, size_t state_start, size_t algebraic_state_start, size_t control_start>
+template<size_t number_of_inputs, size_t number_of_controls>
+void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,state_start,algebraic_state_start,control_start>::transform_states_to_inputs
+    (const std::array<Timeseries_t,number_of_inputs>& states, const std::array<Timeseries_t,number_of_controls>& controls, std::array<Timeseries_t,number_of_inputs>& inputs)
 {
     // Rotate the tires frame
     if constexpr (std::is_same<Axle_mode<0,0>,STEERING<0,0>>::value)
@@ -212,12 +212,11 @@ void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTRO
     }
 
     // Placeholder to compute kappa from omega when ready
-
 }
 
 
-template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t> typename Axle_mode, size_t STATE0, size_t CONTROL0>
-void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::update
+template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t,size_t> typename Axle_mode, size_t state_start, size_t algebraic_state_start, size_t control_start>
+void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,state_start,algebraic_state_start,control_start>::update
     (Timeseries_t Fz_left, Timeseries_t Fz_right, Timeseries_t throttle, Timeseries_t brake_bias)
 {
     // Create aliases
@@ -275,8 +274,8 @@ void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTRO
 }
 
 
-template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t> typename Axle_mode, size_t STATE0, size_t CONTROL0>
-scalar Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::get_parameter(const std::string& parameter_name) const
+template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t,size_t> typename Axle_mode, size_t state_start, size_t algebraic_state_start, size_t control_start>
+scalar Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,state_start,algebraic_state_start,control_start>::get_parameter(const std::string& parameter_name) const
 {
     if (parameter_name == "track") return _track; 
 
@@ -285,11 +284,12 @@ scalar Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONT
 
 
 // ------- Handle state vector
-template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t> typename Axle_mode, size_t STATE0, size_t CONTROL0>
-template<size_t N>
-void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::get_state_and_state_derivative(std::array<Timeseries_t,N>& state, std::array<Timeseries_t,N>& dstate_dt, const Timeseries_t& mass_kg) const
+template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t,size_t> typename Axle_mode, size_t state_start, size_t algebraic_state_start, size_t control_start>
+template<size_t number_of_states, size_t number_of_algebraic_states>
+void Axle_car_3dof<Timeseries_t, Tire_left_t, Tire_right_t, Axle_mode, state_start, algebraic_state_start, control_start>::get_state_and_state_derivative
+(std::array<Timeseries_t, number_of_states>& state, std::array<Timeseries_t, number_of_states>& dstate_dt, std::array<Timeseries_t,number_of_algebraic_states>& algebraic_equations, const Timeseries_t& mass_kg) const
 {
-    base_type::get_state_and_state_derivative(state, dstate_dt);
+    base_type::get_state_and_state_derivative(state, dstate_dt, algebraic_equations);
 
     const auto scaling_factor = (_I < 1.0e-10 ? 1.0/mass_kg : 1.0);
 
@@ -303,18 +303,18 @@ void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTRO
 }
 
 
-template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t> typename Axle_mode, size_t STATE0, size_t CONTROL0>
-template<size_t NSTATE, size_t NCONTROL>
-void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::set_state_and_control_names
-     (std::array<std::string,NSTATE>& input_states, std::array<std::string,NCONTROL>& controls) const
+template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t,size_t> typename Axle_mode, size_t state_start, size_t algebraic_state_start, size_t control_start>
+template<size_t number_of_inputs, size_t number_of_controls>
+void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,state_start,algebraic_state_start,control_start>::set_state_and_control_names
+     (std::array<std::string,number_of_inputs>& inputs, std::array<std::string,number_of_controls>& controls) const
 {
-    base_type::set_state_and_control_names(input_states, controls);
+    base_type::set_state_and_control_names(inputs, controls);
 
     // kappa left
-    input_states[input_state_names::KAPPA_LEFT] = base_type::_name + ".left-tire.kappa";
+    inputs[input_names::KAPPA_LEFT] = base_type::_name + ".left-tire.kappa";
 
     // kappa right
-    input_states[input_state_names::KAPPA_RIGHT] = base_type::_name + ".right-tire.kappa";
+    inputs[input_names::KAPPA_RIGHT] = base_type::_name + ".right-tire.kappa";
 
     if constexpr (std::is_same<Axle_mode<0,0>,STEERING<0,0>>::value)
     {
@@ -325,23 +325,23 @@ void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTRO
     if constexpr (std::is_same<Axle_mode<0,0>,POWERED<0,0>>::value) 
     {
         // boost
-        controls[control_names::BOOST] = base_type::_name + ".boost";
+        controls[control_names::boost] = base_type::_name + ".boost";
     }
 }
 
 
-template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t> typename Axle_mode, size_t STATE0, size_t CONTROL0>
-template<size_t NSTATE, size_t NCONTROL>
-void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::set_state_and_controls
-    (const std::array<Timeseries_t,NSTATE>& input_states, const std::array<Timeseries_t,NCONTROL>& controls) 
+template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t,size_t> typename Axle_mode, size_t state_start, size_t algebraic_state_start, size_t control_start>
+template<size_t number_of_inputs, size_t number_of_controls>
+void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,state_start,algebraic_state_start,control_start>::set_state_and_controls
+    (const std::array<Timeseries_t,number_of_inputs>& inputs, const std::array<Timeseries_t,number_of_controls>& controls) 
 {
-    base_type::set_state_and_controls(input_states, controls);
+    base_type::set_state_and_controls(inputs, controls);
 
     // kappa left
-    _kappa_dimensionless_left  = input_states[input_state_names::KAPPA_LEFT];
+    _kappa_dimensionless_left  = inputs[input_names::KAPPA_LEFT];
 
     // kappa right
-    _kappa_dimensionless_right  = input_states[input_state_names::KAPPA_RIGHT];
+    _kappa_dimensionless_right  = inputs[input_names::KAPPA_RIGHT];
 
     if constexpr (std::is_same<Axle_mode<0,0>,STEERING<0,0>>::value)
     {
@@ -356,30 +356,30 @@ void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTRO
 
     if constexpr (std::is_same<Axle_mode<0,0>,POWERED<0,0>>::value) 
     {
-        _boost = controls[control_names::BOOST];
+        _boost = controls[control_names::boost];
     }
 }
 
 
-template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t> typename Axle_mode, size_t STATE0, size_t CONTROL0>
-template<size_t NSTATE, size_t NCONTROL>
-void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTROL0>::set_state_and_control_upper_lower_and_default_values
-    (std::array<scalar, NSTATE>& input_states_def     , std::array<scalar, NSTATE>& input_states_lb     , std::array<scalar, NSTATE>& input_states_ub     ,
-    std::array<scalar , NCONTROL>& controls_def   , std::array<scalar, NCONTROL>& controls_lb   , std::array<scalar, NCONTROL>& controls_ub) const
+template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t,size_t> typename Axle_mode, size_t state_start, size_t algebraic_state_start, size_t control_start>
+template<size_t number_of_inputs, size_t number_of_controls>
+void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,state_start,algebraic_state_start,control_start>::set_state_and_control_upper_lower_and_default_values
+    (std::array<scalar, number_of_inputs>& inputs_def     , std::array<scalar, number_of_inputs>& inputs_lb     , std::array<scalar, number_of_inputs>& inputs_ub     ,
+    std::array<scalar , number_of_controls>& controls_def   , std::array<scalar, number_of_controls>& controls_lb   , std::array<scalar, number_of_controls>& controls_ub) const
 {
-    base_type::set_state_and_control_upper_lower_and_default_values(input_states_def,input_states_lb,input_states_ub,controls_def,controls_lb,controls_ub);
+    base_type::set_state_and_control_upper_lower_and_default_values(inputs_def,inputs_lb,inputs_ub,controls_def,controls_lb,controls_ub);
 
     // State ------------
     
     // Kappa left
-    input_states_def[input_state_names::KAPPA_LEFT] = 0.0;
-    input_states_lb[input_state_names::KAPPA_LEFT]  = -1.0;
-    input_states_ub[input_state_names::KAPPA_LEFT]  =  1.0;
+    inputs_def[input_names::KAPPA_LEFT] = 0.0;
+    inputs_lb[input_names::KAPPA_LEFT]  = -1.0;
+    inputs_ub[input_names::KAPPA_LEFT]  =  1.0;
 
     // Kappa right
-    input_states_def[input_state_names::KAPPA_RIGHT] = 0.0;
-    input_states_lb[input_state_names::KAPPA_RIGHT]  = -1.0;
-    input_states_ub[input_state_names::KAPPA_RIGHT]  =  1.0;
+    inputs_def[input_names::KAPPA_RIGHT] = 0.0;
+    inputs_lb[input_names::KAPPA_RIGHT]  = -1.0;
+    inputs_ub[input_names::KAPPA_RIGHT]  =  1.0;
 
     if constexpr (std::is_same_v<Axle_mode<0,0>,STEERING<0,0>>)
     {
@@ -390,9 +390,9 @@ void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,STATE0,CONTRO
 
     if constexpr (std::is_same<Axle_mode<0,0>,POWERED<0,0>>::value) 
     {
-        controls_def[control_names::BOOST] = 0.0;
-        controls_lb[control_names::BOOST] = 0.0;
-        controls_ub[control_names::BOOST] = 1.0;
+        controls_def[control_names::boost] = 0.0;
+        controls_lb[control_names::boost] = 0.0;
+        controls_ub[control_names::boost] = 1.0;
     }
 }
 

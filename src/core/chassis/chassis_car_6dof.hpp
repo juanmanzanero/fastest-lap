@@ -135,11 +135,6 @@ inline void Chassis_car_6dof<Timeseries_t,FrontAxle_t,RearAxle_t,STATE0,CONTROL0
     base_type::_F += F_aero;
     base_type::_T += cross(base_type::get_chassis_frame().get_origin(), F_aero);
 
-    // Add the external forces
-    base_type::_F += base_type::_Fext;
-
-    base_type::_T += base_type::_Text;
-
     // Newton equations
     const Vector3d<Timeseries_t> dvdt = -Newton_lhs() + base_type::_F/m;
 
