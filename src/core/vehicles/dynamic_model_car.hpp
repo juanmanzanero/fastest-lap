@@ -5,9 +5,8 @@
 #include "lion/math/euler_angles.h"
 
 template<typename Timeseries_t, typename Chassis_t, typename RoadModel_t>
-template<size_t NALG>
 inline auto Dynamic_model_car<Timeseries_t,Chassis_t,RoadModel_t>::transform_states_to_inputs(const std::array<Timeseries_t, number_of_states>& states, 
-    const std::array<Timeseries_t, number_of_controls>& controls ) const -> std::enable_if_t<NALG==0,std::array<Timeseries_t,number_of_inputs>>
+    const std::array<Timeseries_t, number_of_controls>& controls ) const -> std::array<Timeseries_t,number_of_inputs>
 {
     static_assert(number_of_states == number_of_inputs);
     // (1) Define inputs
@@ -21,14 +20,13 @@ inline auto Dynamic_model_car<Timeseries_t,Chassis_t,RoadModel_t>::transform_sta
 }
 
 template<typename Timeseries_t, typename Chassis_t, typename RoadModel_t>
-template<size_t NALG>
-inline auto Dynamic_model_car<Timeseries_t,Chassis_t,RoadModel_t>::operator()
-    (const std::array<Timeseries_t,number_of_states>& states, const std::array<Timeseries_t,number_of_controls>& controls, scalar time) -> std::enable_if_t<NALG==0, std::array<Timeseries_t,number_of_states>> 
+inline auto Dynamic_model_car<Timeseries_t,Chassis_t,RoadModel_t>::ode
+    (const std::array<Timeseries_t,number_of_states>& states, const std::array<Timeseries_t,number_of_controls>& controls, scalar time) -> std::array<Timeseries_t,number_of_states>
 {
 	static_assert(number_of_states == number_of_inputs);
 	
     const auto inputs = transform_states_to_inputs(states, controls);
-    return (*this)(inputs,{},controls,time).dstates_dt;
+    return (*this)(inputs,controls,time).dstates_dt;
 }
 
 
@@ -59,7 +57,6 @@ inline auto Dynamic_model_car<Timeseries_t,Chassis_t,RoadModel_t>::operator()
 
     auto& states              = dynamics_equations.states;
     auto& dstates_dt          = dynamics_equations.dstates_dt;
-    auto& algebraic_equations = dynamics_equations.algebraic_equations;
 
     // (2) Set the variable parameters
     for (auto const& parameter : base_type::get_parameters() )
@@ -72,7 +69,7 @@ inline auto Dynamic_model_car<Timeseries_t,Chassis_t,RoadModel_t>::operator()
     // (4) Update
 
     // (4.1) Update road frenet frame: velocities are borrowed from the car
-    _road.update(_chassis.get_u(), _chassis.get_v(), _chassis.get_omega());
+    _road.update(_chassis.get_u(), _chassis.get_v(), _chassis.get_yaw_rate_radps());
 
     // (4.2) Update the car dynamic model: position are borrowed from the road
     const Vector3d<Timeseries_t>     ground_position_vector_m = std::as_const(_road).get_position();
@@ -94,18 +91,18 @@ inline auto Dynamic_model_car<Timeseries_t,Chassis_t,RoadModel_t>::operator()
         track_euler_angles_rad        = { 0.0, 0.0, 0.0 };
         track_euler_angles_dot_radps  = { 0.0, 0.0, 0.0 };
         track_heading_angle_rad       = std::as_const(_road).get_psi();
-        track_heading_angle_dot_radps = _chassis.get_omega();
+        track_heading_angle_dot_radps = _chassis.get_yaw_rate_radps();
     }
 
     _chassis.update(ground_position_vector_m, track_euler_angles_rad, track_heading_angle_rad, track_euler_angles_dot_radps, track_heading_angle_dot_radps, ground_velocity_z_mps);
 
     // (5) Get state and state time derivative
-    _chassis.get_state_and_state_derivative(states,dstates_dt,algebraic_equations);
-    _road.get_state_and_state_derivative(states,dstates_dt,algebraic_equations);
+    _chassis.get_state_and_state_derivative(states,dstates_dt);
+    _road.get_state_and_state_derivative(states,dstates_dt);
 
     // (6) Scale the temporal parameter to curvilinear if needed
     for (auto it = dstates_dt.begin(); it != dstates_dt.end(); ++it)
-        (*it) *= _road.get_dtimedt();
+        (*it) *= std::as_const(_road).get_dtimeds();
 
     return dynamics_equations;
 }
@@ -136,12 +133,10 @@ auto Dynamic_model_car<Timeseries_t, Chassis_t, RoadModel_t>::equations
     auto dynamic_equations = (*this)(inputs_ad, controls_ad, 0.0);
     const auto& state_ad = dynamic_equations.states;
     const auto& dstates_dt_ad = dynamic_equations.dstates_dt;
-    const auto& algebraic_equations_ad = dynamic_equations.algebraic_equations;
 
-    // (5) Concatenate [states, dstates_dt, algebraic_equations]
+    // (5) Concatenate [states, dstates_dt]
     std::vector<CppAD::AD<double>> outputs_all_ad(state_ad.cbegin(), state_ad.cend());
     outputs_all_ad.insert(outputs_all_ad.end(), dstates_dt_ad.cbegin(), dstates_dt_ad.cend());
-    outputs_all_ad.insert(outputs_all_ad.end(), algebraic_equations_ad.cbegin(), algebraic_equations_ad.cend());
 
     // (6) Create the AD functions and stop the recording
     CppAD::ADFun<double> f;
@@ -156,9 +151,9 @@ auto Dynamic_model_car<Timeseries_t, Chassis_t, RoadModel_t>::equations
     auto outputs_all = f.Forward(0, inputs_all);
     auto jacobian_outputs_all = f.Jacobian(inputs_all);
     
-    std::vector<std::vector<double>> hessian_outputs_all(2*number_of_states + number_of_algebraic_states);
+    std::vector<std::vector<double>> hessian_outputs_all(2*number_of_states);
 
-    for (size_t i_output = 0; i_output < 2*number_of_states + number_of_algebraic_states; ++i_output)
+    for (size_t i_output = 0; i_output < 2*number_of_states; ++i_output)
         hessian_outputs_all[i_output] = f.Hessian(inputs_all,i_output);
 
     // (9) Fill the solution struct
@@ -167,7 +162,6 @@ auto Dynamic_model_car<Timeseries_t, Chassis_t, RoadModel_t>::equations
     // (9.1) Solution
     std::copy_n(outputs_all.cbegin()                       , number_of_states, solution.states.begin());
     std::copy_n(outputs_all.cbegin() + number_of_states    , number_of_states, solution.dstates_dt.begin());
-    std::copy  (outputs_all.cbegin() + 2 * number_of_states, outputs_all.cend(), solution.algebraic_equations.begin());
 
     // (9.2) Jacobians
     for (size_t i = 0; i < number_of_states; ++i)
@@ -179,10 +173,6 @@ auto Dynamic_model_car<Timeseries_t, Chassis_t, RoadModel_t>::equations
         for (size_t j = 0; j < n_total; ++j)
             // The CppAD jacobian is sorted row major, [dy1/dx1, ..., dy1/dxn, dy2/dx1, ..., dy2/dxn, ...]
             solution.jacobian_dstates_dt[i][j] = jacobian_outputs_all[j + n_total*(i+number_of_states)];
-
-    for (size_t i = 0; i < number_of_algebraic_states; ++i)
-        for (size_t j = 0; j < n_total; ++j)
-            solution.jacobian_algebraic_equations[i][j] = jacobian_outputs_all[j + n_total*(i+2*number_of_states)];
 
     // (9.3) Hessians
     for (size_t var = 0; var < number_of_states; ++var)
@@ -207,16 +197,6 @@ auto Dynamic_model_car<Timeseries_t, Chassis_t, RoadModel_t>::equations
                          < 1.0e-10*std::max(1.0,std::abs(hessian_outputs_all[var+number_of_states][j+n_total*i])));
             }
 
-    for (size_t var = 0; var < number_of_algebraic_states; ++var)
-        for (size_t i = 0; i < n_total; ++i)
-            for (size_t j = 0; j < n_total; ++j)
-            {
-                solution.hessian_algebraic_equations[var][i][j] = hessian_outputs_all[var+2*number_of_states][j + n_total*i];
-
-                // Check its symmetry
-                assert(std::abs(hessian_outputs_all[var+2*number_of_states][j + n_total*i]- hessian_outputs_all[var+2*number_of_states][i + n_total*j])
-                         < 1.0e-10*std::max(1.0,std::abs(hessian_outputs_all[var+2*number_of_states][j+n_total*i])));
-            }
 
     return solution;
 }

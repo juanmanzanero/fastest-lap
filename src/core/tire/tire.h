@@ -10,7 +10,7 @@
 #include "lion/math/matrix_extensions.h"
 
 //! Basic class defining tires
-template<typename Timeseries_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
+template<typename Timeseries_t, size_t state_start, size_t control_start>
 class Tire
 {
  public:
@@ -19,7 +19,7 @@ class Tire
     //! Indices of the state variables of this class: none
     struct input_names
     {
-        enum { end = state_start + algebraic_state_start };
+        enum { end = state_start };
     };
 
     struct state_names
@@ -27,12 +27,7 @@ class Tire
         enum { end = state_start };
     };
 
-    struct algebraic_state_names
-    {
-        enum { end = algebraic_state_start };
-    };
-
-    static_assert(input_names::end == state_names::end + algebraic_state_names::end);
+    static_assert(input_names::end == state_names::end);
 
     //! Indices of the control variables of this class: none
     struct control_names
@@ -220,8 +215,8 @@ class Tire
     Vector3d<Timeseries_t> _T = {0.0, 0.0, 0.0};  //! [out] Tire torques at wheel centre [N.m]
 };
 
-template<typename Timeseries_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
-inline std::ostream& operator<<(std::ostream& os, const Tire<Timeseries_t,state_start,algebraic_state_start,control_start>& tire){return tire.print(os);}
+template<typename Timeseries_t, size_t state_start, size_t control_start>
+inline std::ostream& operator<<(std::ostream& os, const Tire<Timeseries_t,state_start,control_start>& tire){return tire.print(os);}
 
 #include "tire.hpp"
 

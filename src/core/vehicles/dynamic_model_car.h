@@ -32,10 +32,9 @@ class Dynamic_model_car : public Dynamic_model<Timeseries_t>
     //! The number of state variables
     constexpr static const size_t number_of_inputs           = Road_type::input_names::end;
     constexpr static const size_t number_of_states           = Road_type::state_names::end;
-    constexpr static const size_t number_of_algebraic_states = Road_type::algebraic_state_names::end;
     constexpr static const size_t number_of_controls         = Road_type::control_names::end;
 
-    static_assert(number_of_inputs == number_of_states + number_of_algebraic_states);
+    static_assert(number_of_inputs == number_of_states);
 
     //! Default constructor
     Dynamic_model_car(const RoadModel_t& road = RoadModel_t() ) : _chassis(), _road(road) {}
@@ -64,25 +63,22 @@ class Dynamic_model_car : public Dynamic_model<Timeseries_t>
     void set_parameter(const std::string& parameter, const T value);
 
     //! Get the input states for given states
-    template<size_t NALG = number_of_algebraic_states>
-    std::enable_if_t<NALG==0,std::array<Timeseries_t,number_of_inputs>>
+    std::array<Timeseries_t,number_of_inputs>
         transform_states_to_inputs(const std::array<Timeseries_t, number_of_states>& states, 
                                    const std::array<Timeseries_t, number_of_controls>& controls 
                                   ) const;
 
 
-    //! The time derivative functor, (q,dqdt) = operator()(x,u,t)
+    //! The time derivative functor, dqdt = operator()(q,u,t)
     //! Only enabled if the dynamic model has no algebraic equations
     //! @param[in] x: input state vector
     //! @param[in] u: controls vector
     //! @param[in] t: time/arclength
-    template<size_t NALG = number_of_algebraic_states>
-    std::enable_if_t<NALG==0,std::array<Timeseries_t,number_of_states>>
-        operator()(const std::array<Timeseries_t,number_of_states>& states, 
-                   const std::array<Timeseries_t,number_of_controls>& controls,
-                   scalar time);
+    std::array<Timeseries_t,number_of_states> ode(const std::array<Timeseries_t,number_of_states>& states, 
+                                                  const std::array<Timeseries_t,number_of_controls>& controls,
+                                                  scalar time);
 
-    //! The time derivative functor + algebraic equations: (q,dqdt,dqa = operator()(x,qa,u,t)
+    //! Get states and their time derivative: (q,dqdt) = operator()(x,u,t)
     //! @param[in] inputs: input state vector, states = f(inputs)
     //! @param[in] algebraic_states: states which do not have a time derivative associated
     //! @param[in] u: controls vector
@@ -91,7 +87,6 @@ class Dynamic_model_car : public Dynamic_model<Timeseries_t>
     {
         std::array<Timeseries_t, number_of_states> states;
         std::array<Timeseries_t, number_of_states> dstates_dt;
-        std::array<Timeseries_t, number_of_algebraic_states> algebraic_equations;
     };
 
     Dynamics_equations operator()(const std::array<Timeseries_t,number_of_inputs>& inputs,
@@ -107,17 +102,14 @@ class Dynamic_model_car : public Dynamic_model<Timeseries_t>
         // Values
         std::array<scalar,number_of_states> states;
         std::array<scalar,number_of_states> dstates_dt;
-        std::array<scalar,number_of_algebraic_states> algebraic_equations;
 
         // Jacobians: jac[i] represents the Jacobian of the i-th variable w.r.t. the pack (inputs,controls)
         std::array<std::array<scalar,number_of_inputs+number_of_controls>,number_of_states> jacobian_states; 
         std::array<std::array<scalar,number_of_inputs+number_of_controls>,number_of_states> jacobian_dstates_dt; 
-        std::array<std::array<scalar,number_of_inputs+number_of_controls>,number_of_algebraic_states> jacobian_algebraic_equations;
 
         // Hessians: hess[i] represents the Hessian of the i-th variable
         std::array<std::array<std::array<scalar,number_of_inputs+number_of_controls>,number_of_inputs+number_of_controls>,number_of_states> hessian_states;     
         std::array<std::array<std::array<scalar,number_of_inputs+number_of_controls>,number_of_inputs+number_of_controls>,number_of_states> hessian_dstates_dt;     
-        std::array<std::array<std::array<scalar,number_of_inputs+number_of_controls>,number_of_inputs+number_of_controls>,number_of_algebraic_states> hessian_algebraic_equations;
     };
 
     auto equations(const std::array<scalar,number_of_inputs>& inputs,
@@ -148,7 +140,13 @@ class Dynamic_model_car : public Dynamic_model<Timeseries_t>
 
     //! Return the road
     constexpr const RoadModel_t& get_road() const { return _road; }
-    constexpr       RoadModel_t& get_road()       { return _road; }
+
+    //! Update the track at a given point
+    constexpr void update_track_at_arclength(const scalar s) { _road.update_track(s); }
+
+    //! Change the track
+    template<typename U = RoadModel_t>
+    std::enable_if_t<road_is_curvilinear<U>::value, void> change_track(const typename U::Track_type& new_track) { _road.change_track(new_track); }
 
     //! Write as xml
     std::unique_ptr<Xml_document> xml() const
@@ -162,6 +160,32 @@ class Dynamic_model_car : public Dynamic_model<Timeseries_t>
     }
 
     std::unordered_map<std::string,Timeseries_t> get_outputs_map() const { return _chassis.get_outputs_map(); }
+
+    struct Equations_classification
+    {
+        std::vector<size_t> time_derivative;
+        std::vector<size_t> algebraic;
+    };
+
+    Equations_classification classify_equations() const
+    {
+        // By default, set all equations as time derivative, but remove the time
+        std::vector<size_t> time_derivative(number_of_states - 1);
+        std::vector<size_t> algebraic{};
+
+        size_t equation_id = 0;
+        std::for_each(time_derivative.begin(), time_derivative.begin() + Road_type::state_names::time, [&](auto& eq_id) { eq_id = equation_id++; });
+        std::for_each(time_derivative.begin() + Road_type::state_names::time, time_derivative.end(), [&](auto& eq_id) { eq_id = ++equation_id; });
+
+        if (equation_id != number_of_states-1)
+            throw fastest_lap_exception("[ERROR] classify_equations() -> Not all equations (except time) were assigned");
+
+        return Equations_classification
+        {
+            .time_derivative = time_derivative,
+            .algebraic = algebraic
+        };
+    }
 
  private:
     Frame<Timeseries_t> _inertial_frame;    //! Inertial frame that serves as an absolute coordinate system

@@ -47,33 +47,33 @@ static_assert(Front_axle_t::Axle_type::control_names::STEERING==0);
 static_assert(Rear_axle_t::Axle_type::control_names::TORQUE==1);
 
 // State
-static_assert(Rear_axle_t::input_state_names::OMEGA_AXLE==0);
-static_assert(Chassis_t::input_state_names::U==1);
-static_assert(Chassis_t::input_state_names::V==2);
-static_assert(Chassis_t::input_state_names::OMEGA==3);
-static_assert(Chassis_t::input_state_names::Z==4);
-static_assert(Chassis_t::input_state_names::PHI==5);
-static_assert(Chassis_t::input_state_names::MU==6);
-static_assert(Chassis_t::input_state_names::DZDT==7);
-static_assert(Chassis_t::input_state_names::DPHIDT==8);
-static_assert(Chassis_t::input_state_names::DMUDT==9);
-static_assert(Road_t::input_state_names::TIME==10);
-static_assert(Road_t::input_state_names::N==11);
-static_assert(Road_t::input_state_names::ALPHA==12);
+static_assert(Rear_axle_t::input_names::OMEGA_AXLE==0);
+static_assert(Chassis_t::input_names::velocity_x_mps==1);
+static_assert(Chassis_t::input_names::velocity_y_mps==2);
+static_assert(Chassis_t::input_names::yaw_rate_radps==3);
+static_assert(Chassis_t::input_names::Z==4);
+static_assert(Chassis_t::input_names::PHI==5);
+static_assert(Chassis_t::input_names::MU==6);
+static_assert(Chassis_t::input_names::DZDT==7);
+static_assert(Chassis_t::input_names::DPHIDT==8);
+static_assert(Chassis_t::input_names::DMUDT==9);
+static_assert(Road_t::input_names::time==10);
+static_assert(Road_t::input_names::lateral_displacement==11);
+static_assert(Road_t::input_names::track_heading_angle==12);
 
 static_assert(Rear_axle_t::state_names::OMEGA_AXLE==0);
-static_assert(Chassis_t::state_names::U==1);
-static_assert(Chassis_t::state_names::V==2);
-static_assert(Chassis_t::state_names::OMEGA==3);
+static_assert(Chassis_t::state_names::com_velocity_x_mps==1);
+static_assert(Chassis_t::state_names::com_velocity_y_mps==2);
+static_assert(Chassis_t::state_names::yaw_rate_radps==3);
 static_assert(Chassis_t::state_names::Z==4);
 static_assert(Chassis_t::state_names::PHI==5);
 static_assert(Chassis_t::state_names::MU==6);
 static_assert(Chassis_t::state_names::DZDT==7);
 static_assert(Chassis_t::state_names::DPHIDT==8);
 static_assert(Chassis_t::state_names::DMUDT==9);
-static_assert(Road_t::state_names::TIME==10);
-static_assert(Road_t::state_names::N==11);
-static_assert(Road_t::state_names::ALPHA==12);
+static_assert(Road_t::state_names::time==10);
+static_assert(Road_t::state_names::lateral_displacement==11);
+static_assert(Road_t::state_names::track_heading_angle==12);
 
 class Control
 {
@@ -81,7 +81,7 @@ class Control
     Control(const Road_t& road) : _roadPtr(&road) {};
 
     std::array<scalar,2> operator()(const std::array<scalar,13>& q, const scalar t) const { 
-         return { std::min(40.0,std::max(-40.0,-07.0*DEG*Value(_roadPtr->get_n()))), 0.0 };
+         return { std::min(40.0,std::max(-40.0,-07.0*DEG*Value(_roadPtr->get_lateral_displacement()))), 0.0 };
     }
 
     const Road_t* _roadPtr;
@@ -129,10 +129,10 @@ class Car_road_curvilinear_test : public ::testing::Test
 
 TEST_F(Car_road_curvilinear_test, state_vector_sizes)
 {
-    static_assert( Dynamic_model_t::NSTATE == 13 );
-    static_assert( Dynamic_model_t::NCONTROL == 2 );
-    EXPECT_EQ(Dynamic_model_t::NSTATE,13);
-    EXPECT_EQ(Dynamic_model_t::NCONTROL,2);
+    static_assert( Dynamic_model_t::number_of_inputs == 13 );
+    static_assert( Dynamic_model_t::number_of_controls == 2 );
+    EXPECT_EQ(Dynamic_model_t::number_of_inputs,13);
+    EXPECT_EQ(Dynamic_model_t::number_of_controls,2);
 
 }
 
@@ -143,7 +143,9 @@ TEST_F(Car_road_curvilinear_test, curvilinear_road_test)
     _road.update_track(t);
 
     EXPECT_DOUBLE_EQ(_road.track_length(), 20.0 + 10.0*pi/2.0 + 20.0);
-    EXPECT_NEAR(_road.get_curvature(), 1.0/10.0, 7.0e-12);
+    EXPECT_NEAR(_road.get_curvature().x(), 0.0, 7.0e-12);
+    EXPECT_NEAR(_road.get_curvature().y(), 0.0, 7.0e-12);
+    EXPECT_NEAR(_road.get_curvature().z(), 1.0/10.0, 7.0e-12);
     EXPECT_NEAR(_road.get_heading_angle(), pi/4.0, 7.0e-12);
 }
 
@@ -156,15 +158,15 @@ TEST_F(Car_road_curvilinear_test, dqdt_test)
     std::array<scalar,13> q = {omega_axle,u,v,omega,z,phi,mu,dz,dphi,dmu,0.0,n,alpha};
     std::array<scalar,2> u_con = {delta, T};
 
-    auto dqdt = _car(q,u_con,t);
+    auto dqdt = _car.ode(q,u_con,t);
 
     scalar dtimedt = (1.0-n*0.1)/(u*cos(alpha) - v*sin(alpha));
     scalar dndt = (u*sin(alpha) + v*cos(alpha))*dtimedt;
     scalar dalphadt = (omega - (u*cos(alpha)-v*sin(alpha))/(1.0 - 0.1*n)*0.1)*dtimedt;
 
-    EXPECT_NEAR(Value(dqdt[Road_t::state_names::TIME]) , Value(dtimedt) , 5.0e-11);
-    EXPECT_NEAR(Value(dqdt[Road_t::state_names::N])    , Value(dndt)    , 5.0e-11);
-    EXPECT_NEAR(Value(dqdt[Road_t::state_names::ALPHA]), Value(dalphadt), 5.0e-11);
+    EXPECT_NEAR(Value(dqdt[Road_t::state_names::time]) , Value(dtimedt) , 5.0e-11);
+    EXPECT_NEAR(Value(dqdt[Road_t::state_names::lateral_displacement])    , Value(dndt)    , 5.0e-11);
+    EXPECT_NEAR(Value(dqdt[Road_t::state_names::track_heading_angle]), Value(dalphadt), 5.0e-11);
 }
 
   
@@ -181,7 +183,7 @@ TEST_F(Car_road_curvilinear_test, corner_simulation)
 
     for (size_t i = 0; i < n_timesteps; ++i)
     {
-        RK4<Dynamic_model_t,Control,Dynamic_model_t::NSTATE>::take_step(_car, control, q, i*ds, ds);
+        RK4<Dynamic_model_t,Control,Dynamic_model_t::number_of_inputs>::take_step(_car, control, q, i*ds, ds);
     }
 
     for (size_t i = 0; i < q.size(); ++i)

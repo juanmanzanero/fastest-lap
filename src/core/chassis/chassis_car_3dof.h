@@ -20,13 +20,13 @@
 //!  @param RearAxle_t: type of the rear axle
 //!  @param state_start: index of the first state variable defined here
 //!  @param control_start: index of the first control variable defined here
-template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
-class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, state_start, algebraic_state_start, control_start>
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t control_start>
+class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, state_start, control_start>
 {
  public:
 
     //! Type of the chassic of which this class derives
-    using base_type             = Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, state_start, algebraic_state_start, control_start>;
+    using base_type             = Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, state_start, control_start>;
 
     //! Type of the front axle
     using Front_axle_type       = FrontAxle_t;
@@ -58,13 +58,11 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, st
     //! States: the vertical velocity, and the two small rotation angular momentum
     struct state_names : public base_type::state_names
     {
-        enum { com_velocity_z_mps = base_type::state_names::end, roll_angular_momentum_Nms, pitch_angular_momentum_Nms, end};
-    };
-
-    //! Algebraic variables: the roll compliance equation
-    struct algebraic_state_names : public base_type::algebraic_state_names
-    {
-        enum { roll_balance_equation_N = base_type::algebraic_state_names::end, end};
+        enum { com_velocity_z_mps = base_type::state_names::end,
+               roll_angular_momentum_Nms, 
+               pitch_angular_momentum_Nms,
+               roll_balance_equation_g,
+               end};
     };
 
     //! Control variables:: throttle/brake, and brake-bias
@@ -73,7 +71,7 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, st
         enum { throttle = base_type::control_names::end, brake_bias, end};
     };
 
-    static_assert(input_names::end == state_names::end + algebraic_state_names::end);
+    static_assert(input_names::end == state_names::end);
 
     //! Default constructor
     Chassis_car_3dof();
@@ -97,6 +95,11 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, st
     //! @param[in] rear_left_tire_type: Type of the rear left tire
     //! @param[in] rear_right_tire_type: Type of the rear right tire type
     Chassis_car_3dof(Xml_document& database);
+
+    template<size_t number_of_inputs, size_t number_of_controls>
+    void transform_states_to_inputs(const std::array<Timeseries_t,number_of_inputs>& states,
+                                          const std::array<Timeseries_t,number_of_controls>& controls,
+                                          std::array<Timeseries_t,number_of_inputs>& input_states);
 
     //! Modifyer to set a parameter from the database
     template<typename T>
@@ -129,6 +132,18 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, st
     //! Get the CoM velocity in road frame
     Vector3d<Timeseries_t> get_com_velocity() const { return { 0.0, 0.0, 0.0 }; }
 
+    //! Get the derivative of the CoM absolute vertical in body axes
+    constexpr const Timeseries_t& get_com_velocity_z_dot_mps2() const { return _com_velocity_z_dot_mps2; }
+
+    //! Get the derivative of the pitch angular momentum
+    constexpr const Timeseries_t& get_pitch_angular_momentum_dot_Nm() const { return _pitch_angular_momentum_dot_Nm; }
+
+    //! Get the derivative of the roll angular momentum
+    constexpr const Timeseries_t& get_roll_angular_momentum_dot_Nm() const { return _roll_angular_momentum_dot_Nm; }
+
+    //! Get the roll balance equation
+    constexpr const Timeseries_t& get_roll_balance_equation_N() const { return _roll_balance_equation_N; }
+
     //! Computes the front axle position in chassis frame. It is constant in the 3DOF model
     Vector3d<Timeseries_t> get_front_axle_position() const { return {_x_front_axle[0], _x_front_axle[1], _x_front_axle[2]}; }
 
@@ -152,10 +167,10 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, st
     {
         switch(id)
         {
-         case (input_names::force_z_fl_N): return _neg_force_z_fl_N; break; 
-         case (input_names::force_z_fr_N): return _neg_force_z_fr_N; break; 
-         case (input_names::force_z_rl_N): return _neg_force_z_rl_N; break; 
-         case (input_names::force_z_rr_N): return _neg_force_z_rr_N; break; 
+         case (input_names::force_z_fl_g): return _neg_force_z_fl_N; break; 
+         case (input_names::force_z_fr_g): return _neg_force_z_fr_N; break; 
+         case (input_names::force_z_rl_g): return _neg_force_z_rl_N; break; 
+         case (input_names::force_z_rr_g): return _neg_force_z_rr_N; break; 
          default:      throw fastest_lap_exception("Id is incorrect");
         }
     }
@@ -172,10 +187,9 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, st
 
     //! Load the time derivative of the state variables computed herein to the dqdt
     //! @param[out] dqdt: the vehicle state vector time derivative
-    template<size_t number_of_states, size_t number_of_algebraic_states>
+    template<size_t number_of_states>
     void get_state_and_state_derivative(std::array<Timeseries_t, number_of_states>& state,
-                                        std::array<Timeseries_t, number_of_states>& dstate_dt,
-                                        std::array<Timeseries_t, number_of_algebraic_states>& algebraic_equations
+                                        std::array<Timeseries_t, number_of_states>& dstate_dt
                                         ) const;
 
     //! Set the state variables of this class

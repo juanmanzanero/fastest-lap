@@ -29,7 +29,7 @@
 //! State and control variables for Powered (with differential) axles
 //!  @param state_start: index of the first state variable defined here
 //!  @param control_start: index of the first control variable defined here
-template<size_t state_start, size_t algebraic_state_start, size_t control_start>
+template<size_t state_start, size_t control_start>
 struct POWERED
 {
     //! State variables: kappa of the two wheels
@@ -37,8 +37,8 @@ struct POWERED
     {
         enum
         {
-            KAPPA_LEFT = state_start + algebraic_state_start,     //! Left tire longitudinal slip [-]
-            KAPPA_RIGHT,              //! Right tire longitudinal slip [-]
+            KAPPA_LEFT = state_start,  //! Left tire longitudinal slip [-]
+            KAPPA_RIGHT,               //! Right tire longitudinal slip [-]
             end
         };
     };
@@ -53,12 +53,7 @@ struct POWERED
         };
     };
 
-    struct algebraic_state_names
-    {
-        enum { end = algebraic_state_start };
-    };
-
-    static_assert(input_names::end == state_names::end + algebraic_state_names::end);
+    static_assert(input_names::end == state_names::end);
 
     //! Control variables: boost
     struct control_names
@@ -73,7 +68,7 @@ struct POWERED
 //! State and control variables for Steering with free roll axles
 //!  @param state_start: index of the first state variable defined here
 //!  @param control_start: index of the first control variable defined here
-template<size_t state_start, size_t algebraic_state_start, size_t control_start>
+template<size_t state_start, size_t control_start>
 struct STEERING
 {
     //! State variables: kappa of the two wheels
@@ -81,8 +76,8 @@ struct STEERING
     {
         enum
         {
-            KAPPA_LEFT = state_start + algebraic_state_start,     //! Left tire longitudinal slip [-]
-            KAPPA_RIGHT,              //! Right tire longitudinal slip [-]
+            KAPPA_LEFT = state_start,  //! Left tire longitudinal slip [-]
+            KAPPA_RIGHT,               //! Right tire longitudinal slip [-]
             end
         };
     };
@@ -97,12 +92,7 @@ struct STEERING
         };
     };
 
-    struct algebraic_state_names
-    {
-        enum { end = algebraic_state_start };
-    };
-
-    static_assert(input_names::end == state_names::end + algebraic_state_names::end);
+    static_assert(input_names::end == state_names::end);
 
     //! Control variables: steering angle
     struct control_names
@@ -121,26 +111,23 @@ struct STEERING
 //!  @param Axle_mode: POWERED_WITHOUT_DIFFERENTIAL or STEERING_FREE_ROLL
 //!  @param state_start: index of the first state variable defined here
 //!  @param control_start: index of the first control variable defined here
-template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t,size_t> typename Axle_mode, size_t state_start, size_t algebraic_state_start, size_t control_start>
-class Axle_car_3dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,state_start,algebraic_state_start,control_start>, 
-    public Axle_mode<Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,state_start,algebraic_state_start,control_start>::state_names::end, 
-                     Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,state_start,algebraic_state_start,control_start>::algebraic_state_names::end, 
-                     Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,state_start,algebraic_state_start,control_start>::control_names::end> 
+template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t> typename Axle_mode, size_t state_start, size_t control_start>
+class Axle_car_3dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,state_start,control_start>, 
+    public Axle_mode<Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,state_start,control_start>::state_names::end, 
+                     Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,state_start,control_start>::control_names::end> 
 {
  public:
 
     //! The parent axle class
-    using base_type       = Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,state_start,algebraic_state_start,control_start>;
+    using base_type       = Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,state_start,control_start>;
 
     //! The axle sub type (POWERED_WITHOUT_DIFFERENTIAL/STEERING_FREE_ROLL)
-    using Axle_type       = Axle_mode<Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,state_start,algebraic_state_start,control_start>::state_names::end,
-                                      Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,state_start,algebraic_state_start,control_start>::algebraic_state_names::end,
-                                      Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,state_start,algebraic_state_start,control_start>::control_names::end>;
+    using Axle_type       = Axle_mode<Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,state_start,control_start>::state_names::end,
+                                      Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right_t>,state_start,control_start>::control_names::end>;
 
-    struct input_names           : public Axle_type::input_names,           base_type::input_names {};
-    struct state_names           : public Axle_type::state_names,           base_type::state_names {};
-    struct algebraic_state_names : public Axle_type::algebraic_state_names, base_type::algebraic_state_names {};
-    struct control_names         : public Axle_type::control_names,         base_type::control_names {};
+    struct input_names           : public Axle_type::input_names,   base_type::input_names {};
+    struct state_names           : public Axle_type::state_names,   base_type::state_names {};
+    struct control_names         : public Axle_type::control_names, base_type::control_names {};
 
     //! The left tire type
     using Tire_left_type  = Tire_left_t;
@@ -235,10 +222,9 @@ class Axle_car_3dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
 
     //! Load the time derivative of the state variables computed herein to the dqdt
     //! @param[out] dqdt: the vehicle state vector time derivative
-    template<size_t number_of_states, size_t number_of_algebraic_states>
+    template<size_t number_of_states>
     void get_state_and_state_derivative(std::array<Timeseries_t,number_of_states>& state,
-                                        std::array<Timeseries_t,number_of_states>& dstate_dt, 
-                                        std::array<Timeseries_t,number_of_algebraic_states>& algebrac_equations,
+                                        std::array<Timeseries_t,number_of_states>& dstate_dt,
                                         const Timeseries_t& mass_kg) const;
 
     //! Set the state variables of this class
@@ -321,8 +307,8 @@ class Axle_car_3dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
     // Extra members for STEERING
     Timeseries_t _delta;                //! [in] Steering angle [rad]
 
-    template<typename T = Axle_mode<0,0,0>>
-    std::enable_if_t<std::is_same<T,POWERED<0,0,0>>::value,std::vector<Database_parameter_mutable>> 
+    template<typename T = Axle_mode<0,0>>
+    std::enable_if_t<std::is_same<T,POWERED<0,0>>::value,std::vector<Database_parameter_mutable>> 
     get_parameters() { return 
     { 
         { "track", _track },
@@ -331,8 +317,8 @@ class Axle_car_3dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
         { "differential_stiffness", _differential_stiffness }
     };}
 
-    template<typename T = Axle_mode<0,0,0>>
-    std::enable_if_t<std::is_same<T,POWERED<0,0,0>>::value,std::vector<Database_parameter_const>> 
+    template<typename T = Axle_mode<0,0>>
+    std::enable_if_t<std::is_same<T,POWERED<0,0>>::value,std::vector<Database_parameter_const>> 
     get_parameters() const { return 
     { 
         { "track", _track },
@@ -341,8 +327,8 @@ class Axle_car_3dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
         { "differential_stiffness", _differential_stiffness }
     };}
 
-    template<typename T = Axle_mode<0,0,0>>
-    std::enable_if_t<std::is_same<T,STEERING<0,0,0>>::value,std::vector<Database_parameter_mutable>> 
+    template<typename T = Axle_mode<0,0>>
+    std::enable_if_t<std::is_same<T,STEERING<0,0>>::value,std::vector<Database_parameter_mutable>> 
     get_parameters() { return 
     { 
         { "track", _track },
@@ -350,8 +336,8 @@ class Axle_car_3dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
         { "smooth_throttle_coeff", _throttle_smooth_pos }
     };}
 
-    template<typename T = Axle_mode<0,0,0>>
-    std::enable_if_t<std::is_same<T,STEERING<0,0,0>>::value,std::vector<Database_parameter_const>> 
+    template<typename T = Axle_mode<0,0>>
+    std::enable_if_t<std::is_same<T,STEERING<0,0>>::value,std::vector<Database_parameter_const>> 
     get_parameters() const { return 
     { 
         { "track", _track },

@@ -16,15 +16,15 @@
 //!  * The axles are located at (x_ax,0,z_ax + mu.x_ax) with velocity (0,0,dmu.x_ax)
 //!  @param FrontAxle_t: type of the front axle
 //!  @param RearAxle_t: type of the rear axle
-//!  @param STATE0: index of the first state variable defined here
-//!  @param CONTROL0: index of the first control variable defined here
-template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
-class Chassis_car_6dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, STATE0,CONTROL0>
+//!  @param state_start: index of the first state variable defined here
+//!  @param control_start: index of the first control variable defined here
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t control_start>
+class Chassis_car_6dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, state_start,control_start>
 {
  public:
 
     //! Type of the chassic of which this class derives
-    using base_type             = Chassis<Timeseries_t,FrontAxle_t, RearAxle_t,STATE0,CONTROL0>;
+    using base_type             = Chassis<Timeseries_t,FrontAxle_t, RearAxle_t,state_start,control_start>;
 
     //! Type of the front axle
     using Front_axle_type       = FrontAxle_t;
@@ -48,11 +48,11 @@ class Chassis_car_6dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
     enum Axles { FRONT, REAR }; 
 
     // State variables: six dof rigid body motion - add the 3 remaining dofs
-    struct input_state_names : public base_type::input_state_names
+    struct input_names : public base_type::input_names
     {
         enum
         {
-            Z = base_type::input_state_names::end,  //! Vertical displacement of the chassis [m]
+            Z = base_type::input_names::end,  //! Vertical displacement of the chassis [m]
             PHI,                                    //! Roll angle (assumed small) [rad]
             MU,                                     //! Pitch angle (assumed small) [rad]
             DZDT,                                   //! Vertical displacement derivative [m/s]
@@ -66,14 +66,17 @@ class Chassis_car_6dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
     {
         enum
         {
-            Z      = input_state_names::Z,
-            PHI    = input_state_names::PHI,
-            MU     = input_state_names::MU,
-            DZDT   = input_state_names::DZDT,
-            DPHIDT = input_state_names::DPHIDT,
-            DMUDT  = input_state_names::DMUDT
+            Z      = input_names::Z,
+            PHI    = input_names::PHI,
+            MU     = input_names::MU,
+            DZDT   = input_names::DZDT,
+            DPHIDT = input_names::DPHIDT,
+            DMUDT  = input_names::DMUDT,
+            end
         };
     };
+
+    static_assert(input_names::end == state_names::end);
 
     //! Control variables: none
     struct control_names : public base_type::control_names
@@ -83,8 +86,6 @@ class Chassis_car_6dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
             end = base_type::control_names::end
         };
     };
-
-    constexpr static size_t NALGEBRAIC = 0;  //! Number of algebraic equations
 
     //! Default constructor
     Chassis_car_6dof();
@@ -155,10 +156,10 @@ class Chassis_car_6dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
         { return _x_rear_axle + Vector3d<Timeseries_t>(0.0, 0.0, -_mu*_x_rear_axle[0]); }
 
     //! Get the chassis CoM absolute acceleration in road frame
-    Vector3d<Timeseries_t> get_acceleration() const { return {base_type::_du, base_type::_dv, _d2z}; }
+    Vector3d<Timeseries_t> get_acceleration() const { return {base_type::_com_velocity_x_dot_mps2, base_type::_com_velocity_y_dot_mps2, _d2z}; }
 
     //! Get the chassis angular acceleration
-    Vector3d<Timeseries_t> get_angles_acceleration() const { return {_d2phi, _d2mu, base_type::_dOmega}; }
+    Vector3d<Timeseries_t> get_angles_acceleration() const { return {_d2phi, _d2mu, base_type::_yaw_rate_dot_radps2}; }
 
     //! Computes the axle velocity in chassis frame. It would be zero, but
     //! the small pitch angle (not captured in the chassis frame) induces a vertical velocity
@@ -173,39 +174,34 @@ class Chassis_car_6dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
 
     //! Load the time derivative of the state variables computed herein to the dqdt
     //! @param[out] dqdt: the vehicle state vector time derivative
-    template<size_t N>
-    void get_state_and_state_derivative(std::array<Timeseries_t, N>& state, 
-                                        std::array<Timeseries_t,N>& dstate_dt
+    template<size_t number_of_states>
+    void get_state_and_state_derivative(std::array<Timeseries_t, number_of_states>& state, 
+                                        std::array<Timeseries_t,number_of_states>& dstate_dt
                                        ) const;
 
     //! Set the state variables of this class
     //! @param[in] q: the vehicle state vector 
     //! @param[in] u: the vehicle control vector
-    template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_controls(const std::array<Timeseries_t,NSTATE>& input_states, 
-                                const std::array<Timeseries_t,NALGEBRAIC>& algebraic_states,
-                                const std::array<Timeseries_t,NCONTROL>& controls);
+    template<size_t number_of_inputs, size_t number_of_controls>
+    void set_state_and_controls(const std::array<Timeseries_t,number_of_inputs>& inputs, 
+                                const std::array<Timeseries_t,number_of_controls>& controls);
 
     //! Set the state and controls upper, lower, and default values
-    template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_control_upper_lower_and_default_values(std::array<scalar, NSTATE>& input_states_def,
-        std::array<scalar, NSTATE>& input_states_lb,
-        std::array<scalar, NSTATE>& input_states_ub,
-        std::array<scalar, NALGEBRAIC>& algebraic_states_def,
-        std::array<scalar, NALGEBRAIC>& algebraic_states_lb,
-        std::array<scalar, NALGEBRAIC>& algebraic_states_ub,
-        std::array<scalar, NCONTROL>& control_def,
-        std::array<scalar, NCONTROL>& control_lb,
-        std::array<scalar, NCONTROL>& control_ub
+    template<size_t number_of_inputs, size_t number_of_controls>
+    void set_state_and_control_upper_lower_and_default_values(std::array<scalar, number_of_inputs>& inputs_def,
+        std::array<scalar, number_of_inputs>& inputs_lb,
+        std::array<scalar, number_of_inputs>& inputs_ub,
+        std::array<scalar, number_of_controls>& control_def,
+        std::array<scalar, number_of_controls>& control_lb,
+        std::array<scalar, number_of_controls>& control_ub
     ) const;
 
     //! Get the names of the state and control varaibles of this class
     //! @param[out] q: the vehicle state names
     //! @param[out] u: the vehicle control names
-    template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_control_names(std::array<std::string, NSTATE>& input_states,
-        std::array<std::string, NALGEBRAIC>& algebraic_states,
-        std::array<std::string, NCONTROL>& control_states) const;
+    template<size_t number_of_inputs, size_t number_of_controls>
+    void set_state_and_control_names(std::array<std::string, number_of_inputs>& inputs,
+        std::array<std::string, number_of_controls>& control_states) const;
 
     bool is_ready() const { return base_type::is_ready() && 
         std::all_of(__used_parameters.begin(), __used_parameters.end(), [](const auto& v) -> auto { return v; }); }

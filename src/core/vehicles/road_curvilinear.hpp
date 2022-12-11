@@ -1,8 +1,8 @@
 #ifndef ROAD_CURVILINEAR_HPP
 #define ROAD_CURVILINEAR_HPP
 
-template<typename Timeseries_t,typename Track_t,size_t state_start, size_t algebraic_state_start, size_t control_start>
-void Road_curvilinear<Timeseries_t,Track_t,state_start,algebraic_state_start,control_start>::update(const Timeseries_t& velocity_x_body, const Timeseries_t& velocity_y_body, const Timeseries_t& yaw_rate)
+template<typename Timeseries_t,typename Track_t,size_t state_start, size_t control_start>
+void Road_curvilinear<Timeseries_t,Track_t,state_start,control_start>::update(const Timeseries_t& velocity_x_body, const Timeseries_t& velocity_y_body, const Timeseries_t& yaw_rate)
 {
     auto& dtime_ds = base_type::get_dtimeds();
     // Compute dtime/ds
@@ -17,14 +17,14 @@ void Road_curvilinear<Timeseries_t,Track_t,state_start,algebraic_state_start,con
     // Assign the position, heading angle, and ground vertical velocity to the base type
     base_type::get_position()                 = _position + _lateral_displacement_mps * _normal_vector;
     base_type::get_psi()                      = _track_heading_angle_rad + _theta;
-    base_type::get_ground_vertical_velocity() = _lateral_displacement_mps * _curvature.x() / dtime_ds();
+    base_type::get_ground_vertical_velocity() = _lateral_displacement_mps * _curvature.x() / dtime_ds;
 }
 
 
-template<typename Timeseries_t,typename Track_t,size_t state_start, size_t algebraic_state_start, size_t control_start>
-template<size_t number_of_states, size_t number_of_algebraic_states>
-void Road_curvilinear<Timeseries_t,Track_t,state_start,algebraic_state_start,control_start>::get_state_and_state_derivative
-    (std::array<Timeseries_t, number_of_states>& states, std::array<Timeseries_t,number_of_states>& dstates_dt, std::array<Timeseries_t, number_of_algebraic_states>& algebraic_equations) const
+template<typename Timeseries_t,typename Track_t,size_t state_start, size_t control_start>
+template<size_t number_of_states>
+void Road_curvilinear<Timeseries_t,Track_t,state_start,control_start>::get_state_and_state_derivative
+    (std::array<Timeseries_t, number_of_states>& states, std::array<Timeseries_t,number_of_states>& dstates_dt) const
 {
     // dtimedt
     states    [state_names::time] = _time;
@@ -40,9 +40,9 @@ void Road_curvilinear<Timeseries_t,Track_t,state_start,algebraic_state_start,con
 }
 
 
-template<typename Timeseries_t,typename Track_t,size_t state_start, size_t algebraic_state_start, size_t control_start>
+template<typename Timeseries_t,typename Track_t,size_t state_start, size_t control_start>
 template<size_t NSTATE, size_t NCONTROL>
-void Road_curvilinear<Timeseries_t,Track_t,state_start,algebraic_state_start,control_start>::set_state_and_controls
+void Road_curvilinear<Timeseries_t,Track_t,state_start,control_start>::set_state_and_controls
     (const scalar t, const std::array<Timeseries_t,NSTATE>& inputs, const std::array<Timeseries_t,NCONTROL>& controls)
 {
     update_track(t);
@@ -58,9 +58,9 @@ void Road_curvilinear<Timeseries_t,Track_t,state_start,algebraic_state_start,con
 
 }
 
-template<typename Timeseries_t,typename Track_t,size_t state_start, size_t algebraic_state_start, size_t control_start>
+template<typename Timeseries_t,typename Track_t,size_t state_start, size_t control_start>
 template<size_t NSTATE, size_t NCONTROL>
-void Road_curvilinear<Timeseries_t,Track_t,state_start,algebraic_state_start,control_start>::set_state_and_control_upper_lower_and_default_values
+void Road_curvilinear<Timeseries_t,Track_t,state_start,control_start>::set_state_and_control_upper_lower_and_default_values
     (std::array<scalar, NSTATE>& inputs_def, std::array<scalar, NSTATE>& inputs_lb, 
      std::array<scalar, NSTATE>& inputs_ub, std::array<scalar , NCONTROL>& controls_def, 
      std::array<scalar, NCONTROL>& controls_lb, std::array<scalar, NCONTROL>& controls_ub) const
@@ -82,9 +82,9 @@ void Road_curvilinear<Timeseries_t,Track_t,state_start,algebraic_state_start,con
 }
 
 
-template<typename Timeseries_t,typename Track_t,size_t state_start, size_t algebraic_state_start, size_t control_start>
+template<typename Timeseries_t,typename Track_t,size_t state_start, size_t control_start>
 template<size_t NSTATE, size_t NCONTROL>
-void Road_curvilinear<Timeseries_t,Track_t,state_start,algebraic_state_start,control_start>::set_state_and_control_names
+void Road_curvilinear<Timeseries_t,Track_t,state_start,control_start>::set_state_and_control_names
     (std::string& key_name, std::array<std::string,NSTATE>& inputs, std::array<std::string,NCONTROL>& controls) 
 {
     key_name = "road.arclength";
@@ -100,8 +100,8 @@ void Road_curvilinear<Timeseries_t,Track_t,state_start,algebraic_state_start,con
 }
 
 
-template<typename Timeseries_t,typename Track_t,size_t state_start, size_t algebraic_state_start, size_t control_start>
-inline void Road_curvilinear<Timeseries_t,Track_t,state_start,algebraic_state_start,control_start>::update_track(const scalar t) 
+template<typename Timeseries_t,typename Track_t,size_t state_start, size_t control_start>
+inline void Road_curvilinear<Timeseries_t,Track_t,state_start,control_start>::update_track(const scalar t) 
 {
     // Get the Frenet frame at the desired point
     const auto frenet_frame = _track(t);

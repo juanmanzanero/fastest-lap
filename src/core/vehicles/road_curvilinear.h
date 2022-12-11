@@ -4,12 +4,13 @@
 #include "road.h"
 #include "lion/math/polynomial.h"
 #include "lion/math/matrix_extensions.h"
+#include "lion/math/euler_angles.h"
 
-template<typename Timeseries_t,typename Track_t,size_t state_start, size_t algebraic_state_start, size_t control_start>
-class Road_curvilinear : public Road<Timeseries_t,state_start,algebraic_state_start,control_start>
+template<typename Timeseries_t,typename Track_t,size_t state_start, size_t control_start>
+class Road_curvilinear : public Road<Timeseries_t,state_start,control_start>
 {
  public:
-    using base_type  = Road<Timeseries_t,state_start,algebraic_state_start,control_start>;
+    using base_type  = Road<Timeseries_t,state_start,control_start>;
     using Track_type = Track_t;
 
     struct input_names : public base_type::input_names
@@ -22,9 +23,7 @@ class Road_curvilinear : public Road<Timeseries_t,state_start,algebraic_state_st
         enum { time = base_type::state_names::end, lateral_displacement, track_heading_angle, end };
     };
 
-    struct algebraic_state_names : public base_type::algebraic_state_names {};
-
-    static_assert(input_names::end == state_names::end + algebraic_state_names::end);
+    static_assert(input_names::end == state_names::end);
 
     struct control_names : public base_type::control_names {};
 
@@ -89,10 +88,10 @@ class Road_curvilinear : public Road<Timeseries_t,state_start,algebraic_state_st
     //! @param[in] yaw_rate: z-component of the body frame rate
     void update(const Timeseries_t& velocity_x_body, const Timeseries_t& velocity_y_body, const Timeseries_t& yaw_rate);
 
-    template<size_t number_of_states, size_t number_of_algebraic_states>
+    template<size_t number_of_states>
     void get_state_and_state_derivative(std::array<Timeseries_t,number_of_states>& states, 
-                                        std::array<Timeseries_t,number_of_states>& dstates_dt,
-                                        std::array<Timeseries_t,number_of_algebraic_states>& algebraic_equations) const;
+                                        std::array<Timeseries_t,number_of_states>& dstates_dt
+                                        ) const;
 
 
     template<size_t number_of_inputs, size_t number_of_controls>
@@ -146,8 +145,8 @@ class Road_curvilinear : public Road<Timeseries_t,state_start,algebraic_state_st
     Timeseries_t _track_heading_angle_dot_radps; //! Time derivative of the track heading angle [rad/s]
 };
 
-template<typename Timeseries_t,typename Track_t,size_t state_start, size_t algebraic_state_start, size_t control_start>
-struct road_is_curvilinear<Road_curvilinear<Timeseries_t, Track_t, state_start, algebraic_state_start, control_start>>
+template<typename Timeseries_t,typename Track_t,size_t state_start, size_t control_start>
+struct road_is_curvilinear<Road_curvilinear<Timeseries_t, Track_t, state_start, control_start>>
 {
     const static inline bool value = true;
 };

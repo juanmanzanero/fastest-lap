@@ -26,24 +26,24 @@ static_assert(Front_axle_t::control_names::STEERING==0);
 static_assert(Rear_axle_t::control_names::TORQUE==1);
 
 // State
-static_assert(Rear_axle_t::input_state_names::OMEGA_AXLE==0);
-static_assert(Chassis_t::input_state_names::U==1);
-static_assert(Chassis_t::input_state_names::V==2);
-static_assert(Chassis_t::input_state_names::OMEGA==3);
-static_assert(Chassis_t::input_state_names::Z==4);
-static_assert(Chassis_t::input_state_names::PHI==5);
-static_assert(Chassis_t::input_state_names::MU==6);
-static_assert(Chassis_t::input_state_names::DZDT==7);
-static_assert(Chassis_t::input_state_names::DPHIDT==8);
-static_assert(Chassis_t::input_state_names::DMUDT==9);
-static_assert(Road_t::input_state_names::X==10);
-static_assert(Road_t::input_state_names::Y==11);
-static_assert(Road_t::input_state_names::PSI==12);
+static_assert(Rear_axle_t::input_names::OMEGA_AXLE==0);
+static_assert(Chassis_t::input_names::velocity_x_mps==1);
+static_assert(Chassis_t::input_names::velocity_y_mps==2);
+static_assert(Chassis_t::input_names::yaw_rate_radps==3);
+static_assert(Chassis_t::input_names::Z==4);
+static_assert(Chassis_t::input_names::PHI==5);
+static_assert(Chassis_t::input_names::MU==6);
+static_assert(Chassis_t::input_names::DZDT==7);
+static_assert(Chassis_t::input_names::DPHIDT==8);
+static_assert(Chassis_t::input_names::DMUDT==9);
+static_assert(Road_t::input_names::X==10);
+static_assert(Road_t::input_names::Y==11);
+static_assert(Road_t::input_names::PSI==12);
 
 static_assert(Rear_axle_t::state_names::OMEGA_AXLE==0);
-static_assert(Chassis_t::state_names::U==1);
-static_assert(Chassis_t::state_names::V==2);
-static_assert(Chassis_t::state_names::OMEGA==3);
+static_assert(Chassis_t::state_names::com_velocity_x_mps==1);
+static_assert(Chassis_t::state_names::com_velocity_y_mps==2);
+static_assert(Chassis_t::state_names::yaw_rate_radps==3);
 static_assert(Chassis_t::state_names::Z==4);
 static_assert(Chassis_t::state_names::PHI==5);
 static_assert(Chassis_t::state_names::MU==6);
@@ -167,10 +167,10 @@ const static std::map<std::string,scalar> Lot2016kart_parameters =
 
 TEST_F(Car_road_cartesian_test, state_vector_sizes)
 {
-    static_assert( Dynamic_model_t::NSTATE == 13 );
-    static_assert( Dynamic_model_t::NCONTROL == 2 );
-    EXPECT_EQ(Dynamic_model_t::NSTATE,13);
-    EXPECT_EQ(Dynamic_model_t::NCONTROL,2);
+    static_assert( Dynamic_model_t::number_of_inputs == 13 );
+    static_assert( Dynamic_model_t::number_of_controls == 2 );
+    EXPECT_EQ(Dynamic_model_t::number_of_inputs,13);
+    EXPECT_EQ(Dynamic_model_t::number_of_controls,2);
 }
 
 
@@ -186,17 +186,17 @@ TEST_F(Car_road_cartesian_test, copy_constructor_frame_trees_sanity)
     const Rear_left_tire_type& tire_rl = rear_axle.get_tire<Rear_axle_t::LEFT>();
     const Rear_right_tire_type& tire_rr = rear_axle.get_tire<Rear_axle_t::RIGHT>();
 
-    EXPECT_EQ(&car.get_chassis().get_inertial_frame(), car.get_chassis().get_road_frame().get_parent_ptr());
-    EXPECT_EQ(&car.get_chassis().get_road_frame(), car.get_chassis().get_chassis_frame().get_parent_ptr());
+    EXPECT_EQ(&std::as_const(car.get_chassis()).get_inertial_frame(), std::as_const(car.get_chassis()).get_road_frame().get_parent_ptr());
+    EXPECT_EQ(&std::as_const(car.get_chassis()).get_road_frame(), std::as_const(car.get_chassis()).get_chassis_frame().get_parent_ptr());
 
-    EXPECT_EQ(&car.get_chassis().get_chassis_frame(), front_axle.get_frame().get_parent_ptr());
-    EXPECT_EQ(&car.get_chassis().get_chassis_frame(), rear_axle.get_frame().get_parent_ptr());
+    EXPECT_EQ(&std::as_const(car.get_chassis()).get_chassis_frame(), std::as_const(front_axle).get_frame().get_parent_ptr());
+    EXPECT_EQ(&std::as_const(car.get_chassis()).get_chassis_frame(), std::as_const(rear_axle).get_frame().get_parent_ptr());
 
-    EXPECT_EQ(&front_axle.get_frame(), tire_fl.get_frame().get_parent_ptr());
-    EXPECT_EQ(&front_axle.get_frame(), tire_fr.get_frame().get_parent_ptr());
+    EXPECT_EQ(&std::as_const(front_axle).get_frame(), std::as_const(tire_fl).get_frame().get_parent_ptr());
+    EXPECT_EQ(&std::as_const(front_axle).get_frame(), std::as_const(tire_fr).get_frame().get_parent_ptr());
 
-    EXPECT_EQ(&rear_axle.get_frame(), tire_rl.get_frame().get_parent_ptr());
-    EXPECT_EQ(&rear_axle.get_frame(), tire_rr.get_frame().get_parent_ptr());
+    EXPECT_EQ(&std::as_const(rear_axle).get_frame(), std::as_const(tire_rl).get_frame().get_parent_ptr());
+    EXPECT_EQ(&std::as_const(rear_axle).get_frame(), std::as_const(tire_rr).get_frame().get_parent_ptr());
 }
 
 
@@ -215,18 +215,18 @@ TEST_F(Car_road_cartesian_test, copy_assignment_frame_trees_sanity)
     const Rear_left_tire_type& tire_rl = rear_axle.get_tire<Rear_axle_t::LEFT>();
     const Rear_right_tire_type& tire_rr = rear_axle.get_tire<Rear_axle_t::RIGHT>();
 
-    EXPECT_EQ(&car_copy.get_chassis().get_inertial_frame(), car_copy.get_chassis().get_road_frame().get_parent_ptr());
+    EXPECT_EQ(&std::as_const(car_copy.get_chassis()).get_inertial_frame(), std::as_const(car_copy.get_chassis()).get_road_frame().get_parent_ptr());
 
-    EXPECT_EQ(&car_copy.get_chassis().get_road_frame(), car_copy.get_chassis().get_chassis_frame().get_parent_ptr());
+    EXPECT_EQ(&std::as_const(car_copy.get_chassis()).get_road_frame(), std::as_const(car_copy.get_chassis()).get_chassis_frame().get_parent_ptr());
 
-    EXPECT_EQ(&car_copy.get_chassis().get_chassis_frame(), front_axle.get_frame().get_parent_ptr());
-    EXPECT_EQ(&car_copy.get_chassis().get_chassis_frame(), rear_axle.get_frame().get_parent_ptr());
+    EXPECT_EQ(&std::as_const(car_copy.get_chassis()).get_chassis_frame(), std::as_const(front_axle).get_frame().get_parent_ptr());
+    EXPECT_EQ(&std::as_const(car_copy.get_chassis()).get_chassis_frame(), std::as_const(rear_axle).get_frame().get_parent_ptr());
 
-    EXPECT_EQ(&front_axle.get_frame(), tire_fl.get_frame().get_parent_ptr());
-    EXPECT_EQ(&front_axle.get_frame(), tire_fr.get_frame().get_parent_ptr());
+    EXPECT_EQ(&std::as_const(front_axle).get_frame(), std::as_const(tire_fl).get_frame().get_parent_ptr());
+    EXPECT_EQ(&std::as_const(front_axle).get_frame(), std::as_const(tire_fr).get_frame().get_parent_ptr());
 
-    EXPECT_EQ(&rear_axle.get_frame(), tire_rl.get_frame().get_parent_ptr());
-    EXPECT_EQ(&rear_axle.get_frame(), tire_rr.get_frame().get_parent_ptr());
+    EXPECT_EQ(&std::as_const(rear_axle).get_frame(), std::as_const(tire_rl).get_frame().get_parent_ptr());
+    EXPECT_EQ(&std::as_const(rear_axle).get_frame(), std::as_const(tire_rr).get_frame().get_parent_ptr());
 }
   
 
@@ -236,56 +236,56 @@ TEST_F(Car_road_cartesian_test, chassis_position)
     const scalar y_chassis = y;
     const scalar z_chassis = z-car.get_chassis().get_parameter("cog_height");
 
-    EXPECT_DOUBLE_EQ(Value(car.get_chassis().get_road_frame().get_origin().at(0)), Value(x_chassis));
-    EXPECT_DOUBLE_EQ(Value(car.get_chassis().get_road_frame().get_origin().at(1)), Value(y_chassis));
-    EXPECT_DOUBLE_EQ(Value(car.get_chassis().get_road_frame().get_origin().at(2)), 0.0);
+    EXPECT_DOUBLE_EQ(Value(std::as_const(car.get_chassis()).get_road_frame().get_origin().at(0)), Value(x_chassis));
+    EXPECT_DOUBLE_EQ(Value(std::as_const(car.get_chassis()).get_road_frame().get_origin().at(1)), Value(y_chassis));
+    EXPECT_DOUBLE_EQ(Value(std::as_const(car.get_chassis()).get_road_frame().get_origin().at(2)), 0.0);
 
-    EXPECT_DOUBLE_EQ(Value(car.get_chassis().get_road_frame().get_absolute_position().at(0)), Value(x_chassis));
-    EXPECT_DOUBLE_EQ(Value(car.get_chassis().get_road_frame().get_absolute_position().at(1)), Value(y_chassis));
-    EXPECT_DOUBLE_EQ(Value(car.get_chassis().get_road_frame().get_absolute_position().at(2)), 0.0);
+    EXPECT_DOUBLE_EQ(Value(std::as_const(car.get_chassis()).get_road_frame().get_absolute_position().at(0)), Value(x_chassis));
+    EXPECT_DOUBLE_EQ(Value(std::as_const(car.get_chassis()).get_road_frame().get_absolute_position().at(1)), Value(y_chassis));
+    EXPECT_DOUBLE_EQ(Value(std::as_const(car.get_chassis()).get_road_frame().get_absolute_position().at(2)), 0.0);
 
-    EXPECT_EQ(car.get_chassis().get_road_frame().get_rotation_angles().size(),1);
-    EXPECT_DOUBLE_EQ(Value(car.get_chassis().get_road_frame().get_rotation_angles().at(0)), Value(psi));
-    EXPECT_DOUBLE_EQ(Value(car.get_chassis().get_road_frame().get_rotation_angles_derivative().at(0)), Value(omega));
-    EXPECT_EQ(car.get_chassis().get_road_frame().get_rotation_axis().at(0), Z);
+    EXPECT_EQ(std::as_const(car.get_chassis()).get_road_frame().get_rotation_angles().size(),4);
+    EXPECT_DOUBLE_EQ(Value(std::as_const(car.get_chassis()).get_road_frame().get_rotation_angles().at(3)), Value(psi));
+    EXPECT_DOUBLE_EQ(Value(std::as_const(car.get_chassis()).get_road_frame().get_rotation_angles_derivative().at(3)), Value(omega));
+    EXPECT_EQ(std::as_const(car.get_chassis()).get_road_frame().get_rotation_axis().at(3), Z);
 
-    EXPECT_DOUBLE_EQ(Value(car.get_chassis().get_chassis_frame().get_origin().at(0)), 0.0);
-    EXPECT_DOUBLE_EQ(Value(car.get_chassis().get_chassis_frame().get_origin().at(1)), 0.0);
-    EXPECT_DOUBLE_EQ(Value(car.get_chassis().get_chassis_frame().get_origin().at(2)), Value(z_chassis));
+    EXPECT_DOUBLE_EQ(Value(std::as_const(car.get_chassis()).get_chassis_frame().get_origin().at(0)), 0.0);
+    EXPECT_DOUBLE_EQ(Value(std::as_const(car.get_chassis()).get_chassis_frame().get_origin().at(1)), 0.0);
+    EXPECT_DOUBLE_EQ(Value(std::as_const(car.get_chassis()).get_chassis_frame().get_origin().at(2)), Value(z_chassis));
 
-    EXPECT_DOUBLE_EQ(Value(car.get_chassis().get_chassis_frame().get_absolute_position().at(0)), Value(x_chassis));
-    EXPECT_DOUBLE_EQ(Value(car.get_chassis().get_chassis_frame().get_absolute_position().at(1)), Value(y_chassis));
-    EXPECT_DOUBLE_EQ(Value(car.get_chassis().get_chassis_frame().get_absolute_position().at(2)), Value(z_chassis));
+    EXPECT_DOUBLE_EQ(Value(std::as_const(car.get_chassis()).get_chassis_frame().get_absolute_position().at(0)), Value(x_chassis));
+    EXPECT_DOUBLE_EQ(Value(std::as_const(car.get_chassis()).get_chassis_frame().get_absolute_position().at(1)), Value(y_chassis));
+    EXPECT_DOUBLE_EQ(Value(std::as_const(car.get_chassis()).get_chassis_frame().get_absolute_position().at(2)), Value(z_chassis));
 
-    EXPECT_EQ(car.get_chassis().get_chassis_frame().get_rotation_angles().size(), 0);
+    EXPECT_EQ(std::as_const(car.get_chassis()).get_chassis_frame().get_rotation_angles().size(), 0);
 }
 
 
 TEST_F(Car_road_cartesian_test, chassis_velocity)
 {
-    EXPECT_DOUBLE_EQ(Value(car.get_chassis().get_road_frame().get_relative_velocity().at(0)), Value(dx));
-    EXPECT_DOUBLE_EQ(Value(car.get_chassis().get_road_frame().get_relative_velocity().at(1)), Value(dy));
-    EXPECT_DOUBLE_EQ(Value(car.get_chassis().get_road_frame().get_relative_velocity().at(2)),0.0);
+    EXPECT_DOUBLE_EQ(Value(std::as_const(car.get_chassis()).get_road_frame().get_relative_velocity_in_parent().at(0)), Value(dx));
+    EXPECT_DOUBLE_EQ(Value(std::as_const(car.get_chassis()).get_road_frame().get_relative_velocity_in_parent().at(1)), Value(dy));
+    EXPECT_DOUBLE_EQ(Value(std::as_const(car.get_chassis()).get_road_frame().get_relative_velocity_in_parent().at(2)),0.0);
 
-    EXPECT_DOUBLE_EQ(Value(car.get_chassis().get_road_frame().get_absolute_velocity_in_inertial().at(0)), Value(dx));
-    EXPECT_DOUBLE_EQ(Value(car.get_chassis().get_road_frame().get_absolute_velocity_in_inertial().at(1)), Value(dy));
-    EXPECT_DOUBLE_EQ(Value(car.get_chassis().get_road_frame().get_absolute_velocity_in_inertial().at(2)),0.0);
+    EXPECT_DOUBLE_EQ(Value(std::as_const(car.get_chassis()).get_road_frame().get_absolute_velocity_in_inertial().at(0)), Value(dx));
+    EXPECT_DOUBLE_EQ(Value(std::as_const(car.get_chassis()).get_road_frame().get_absolute_velocity_in_inertial().at(1)), Value(dy));
+    EXPECT_DOUBLE_EQ(Value(std::as_const(car.get_chassis()).get_road_frame().get_absolute_velocity_in_inertial().at(2)),0.0);
 
-    EXPECT_DOUBLE_EQ(Value(car.get_chassis().get_road_frame().get_absolute_velocity_in_body().at(0)), Value(u));
-    EXPECT_NEAR     (Value(car.get_chassis().get_road_frame().get_absolute_velocity_in_body().at(1)), Value(v), 1.0e-16);
-    EXPECT_DOUBLE_EQ(Value(car.get_chassis().get_road_frame().get_absolute_velocity_in_body().at(2)),0.0);
+    EXPECT_DOUBLE_EQ(Value(std::as_const(car.get_chassis()).get_road_frame().get_absolute_velocity_in_body().at(0)), Value(u));
+    EXPECT_NEAR     (Value(std::as_const(car.get_chassis()).get_road_frame().get_absolute_velocity_in_body().at(1)), Value(v), 1.0e-16);
+    EXPECT_DOUBLE_EQ(Value(std::as_const(car.get_chassis()).get_road_frame().get_absolute_velocity_in_body().at(2)),0.0);
 
-    EXPECT_DOUBLE_EQ(Value(car.get_chassis().get_chassis_frame().get_relative_velocity().at(0)), 0.0);
-    EXPECT_DOUBLE_EQ(Value(car.get_chassis().get_chassis_frame().get_relative_velocity().at(1)), 0.0);
-    EXPECT_DOUBLE_EQ(Value(car.get_chassis().get_chassis_frame().get_relative_velocity().at(2)), Value(dz));
+    EXPECT_DOUBLE_EQ(Value(std::as_const(car.get_chassis()).get_chassis_frame().get_relative_velocity_in_parent().at(0)), 0.0);
+    EXPECT_DOUBLE_EQ(Value(std::as_const(car.get_chassis()).get_chassis_frame().get_relative_velocity_in_parent().at(1)), 0.0);
+    EXPECT_DOUBLE_EQ(Value(std::as_const(car.get_chassis()).get_chassis_frame().get_relative_velocity_in_parent().at(2)), Value(dz));
 
-    EXPECT_DOUBLE_EQ(Value(car.get_chassis().get_chassis_frame().get_absolute_velocity_in_inertial().at(0)), Value(dx));
-    EXPECT_DOUBLE_EQ(Value(car.get_chassis().get_chassis_frame().get_absolute_velocity_in_inertial().at(1)), Value(dy));
-    EXPECT_DOUBLE_EQ(Value(car.get_chassis().get_chassis_frame().get_absolute_velocity_in_inertial().at(2)), Value(dz));
+    EXPECT_DOUBLE_EQ(Value(std::as_const(car.get_chassis()).get_chassis_frame().get_absolute_velocity_in_inertial().at(0)), Value(dx));
+    EXPECT_DOUBLE_EQ(Value(std::as_const(car.get_chassis()).get_chassis_frame().get_absolute_velocity_in_inertial().at(1)), Value(dy));
+    EXPECT_DOUBLE_EQ(Value(std::as_const(car.get_chassis()).get_chassis_frame().get_absolute_velocity_in_inertial().at(2)), Value(dz));
 
-    EXPECT_DOUBLE_EQ(Value(car.get_chassis().get_chassis_frame().get_absolute_velocity_in_body().at(0)), Value( u));
-    EXPECT_NEAR     (Value(car.get_chassis().get_chassis_frame().get_absolute_velocity_in_body().at(1)), Value(v), 1.0e-16);
-    EXPECT_DOUBLE_EQ(Value(car.get_chassis().get_chassis_frame().get_absolute_velocity_in_body().at(2)), Value(dz));
+    EXPECT_DOUBLE_EQ(Value(std::as_const(car.get_chassis()).get_chassis_frame().get_absolute_velocity_in_body().at(0)), Value( u));
+    EXPECT_NEAR     (Value(std::as_const(car.get_chassis()).get_chassis_frame().get_absolute_velocity_in_body().at(1)), Value(v), 1.0e-16);
+    EXPECT_DOUBLE_EQ(Value(std::as_const(car.get_chassis()).get_chassis_frame().get_absolute_velocity_in_body().at(2)), Value(dz));
 }
 
 
@@ -301,15 +301,15 @@ TEST_F(Car_road_cartesian_test, front_axle_position)
     const scalar y_axle = y + a*sin(psi);
     const scalar z_axle = z - a*mu - R0;
 
-    EXPECT_DOUBLE_EQ(Value(front_axle.get_frame().get_origin().at(0)), a);
-    EXPECT_DOUBLE_EQ(Value(front_axle.get_frame().get_origin().at(1)), 0.0);
-    EXPECT_DOUBLE_EQ(Value(front_axle.get_frame().get_origin().at(2)), Value(h-R0-a*mu));
+    EXPECT_DOUBLE_EQ(Value(std::as_const(front_axle).get_frame().get_origin().at(0)), a);
+    EXPECT_DOUBLE_EQ(Value(std::as_const(front_axle).get_frame().get_origin().at(1)), 0.0);
+    EXPECT_DOUBLE_EQ(Value(std::as_const(front_axle).get_frame().get_origin().at(2)), Value(h-R0-a*mu));
                     
-    EXPECT_DOUBLE_EQ(Value(front_axle.get_frame().get_absolute_position().at(0)), Value(x_axle));
-    EXPECT_DOUBLE_EQ(Value(front_axle.get_frame().get_absolute_position().at(1)), Value(y_axle));
-    EXPECT_NEAR(Value(front_axle.get_frame().get_absolute_position().at(2)), Value(z_axle), 3.0e-17);
+    EXPECT_DOUBLE_EQ(Value(std::as_const(front_axle).get_frame().get_absolute_position().at(0)), Value(x_axle));
+    EXPECT_DOUBLE_EQ(Value(std::as_const(front_axle).get_frame().get_absolute_position().at(1)), Value(y_axle));
+    EXPECT_NEAR(Value(std::as_const(front_axle).get_frame().get_absolute_position().at(2)), Value(z_axle), 3.0e-17);
 
-    EXPECT_EQ(front_axle.get_frame().get_rotation_angles().size(), 0);
+    EXPECT_EQ(std::as_const(front_axle).get_frame().get_rotation_angles().size(), 0);
 }
 
 
@@ -325,15 +325,15 @@ TEST_F(Car_road_cartesian_test, rear_axle_position)
     const scalar y_axle = y + a*sin(psi);
     const scalar z_axle = z - a*mu - R0;
 
-    EXPECT_DOUBLE_EQ(Value(rear_axle.get_frame().get_origin().at(0)), a);
-    EXPECT_DOUBLE_EQ(Value(rear_axle.get_frame().get_origin().at(1)),  0.0);
-    EXPECT_DOUBLE_EQ(Value(rear_axle.get_frame().get_origin().at(2)), Value(h-R0-a*mu));
+    EXPECT_DOUBLE_EQ(Value(std::as_const(rear_axle).get_frame().get_origin().at(0)), a);
+    EXPECT_DOUBLE_EQ(Value(std::as_const(rear_axle).get_frame().get_origin().at(1)),  0.0);
+    EXPECT_DOUBLE_EQ(Value(std::as_const(rear_axle).get_frame().get_origin().at(2)), Value(h-R0-a*mu));
                     
-    EXPECT_DOUBLE_EQ(Value(rear_axle.get_frame().get_absolute_position().at(0)), Value(x_axle));
-    EXPECT_DOUBLE_EQ(Value(rear_axle.get_frame().get_absolute_position().at(1)), Value(y_axle));
-    EXPECT_DOUBLE_EQ(Value(rear_axle.get_frame().get_absolute_position().at(2)), Value(z_axle));
+    EXPECT_DOUBLE_EQ(Value(std::as_const(rear_axle).get_frame().get_absolute_position().at(0)), Value(x_axle));
+    EXPECT_DOUBLE_EQ(Value(std::as_const(rear_axle).get_frame().get_absolute_position().at(1)), Value(y_axle));
+    EXPECT_DOUBLE_EQ(Value(std::as_const(rear_axle).get_frame().get_absolute_position().at(2)), Value(z_axle));
 
-    EXPECT_EQ(rear_axle.get_frame().get_rotation_angles().size(), 0);
+    EXPECT_EQ(std::as_const(rear_axle).get_frame().get_rotation_angles().size(), 0);
 }
 
 
@@ -349,17 +349,17 @@ TEST_F(Car_road_cartesian_test, front_axle_velocity)
     const scalar dx_axle = u_axle*cos(psi) - v_axle*sin(psi);
     const scalar dy_axle = u_axle*sin(psi) + v_axle*cos(psi);
 
-    EXPECT_DOUBLE_EQ(Value(front_axle.get_frame().get_relative_velocity().at(0)),  0.0);
-    EXPECT_DOUBLE_EQ(Value(front_axle.get_frame().get_relative_velocity().at(1)),  0.0);
-    EXPECT_DOUBLE_EQ(Value(front_axle.get_frame().get_relative_velocity().at(2)), Value(-a*dmu));
+    EXPECT_DOUBLE_EQ(Value(std::as_const(front_axle).get_frame().get_relative_velocity_in_parent().at(0)),  0.0);
+    EXPECT_DOUBLE_EQ(Value(std::as_const(front_axle).get_frame().get_relative_velocity_in_parent().at(1)),  0.0);
+    EXPECT_DOUBLE_EQ(Value(std::as_const(front_axle).get_frame().get_relative_velocity_in_parent().at(2)), Value(-a*dmu));
 
-    EXPECT_DOUBLE_EQ(Value(front_axle.get_frame().get_absolute_velocity_in_body().at(0)), Value(u));
-    EXPECT_NEAR     (Value(front_axle.get_frame().get_absolute_velocity_in_body().at(1)), Value(v+a*omega), 2.0e-16);
-    EXPECT_DOUBLE_EQ(Value(front_axle.get_frame().get_absolute_velocity_in_body().at(2)), Value(dz-a*dmu));
+    EXPECT_DOUBLE_EQ(Value(std::as_const(front_axle).get_frame().get_absolute_velocity_in_body().at(0)), Value(u));
+    EXPECT_NEAR     (Value(std::as_const(front_axle).get_frame().get_absolute_velocity_in_body().at(1)), Value(v+a*omega), 2.0e-16);
+    EXPECT_DOUBLE_EQ(Value(std::as_const(front_axle).get_frame().get_absolute_velocity_in_body().at(2)), Value(dz-a*dmu));
                     
-    EXPECT_DOUBLE_EQ(Value(front_axle.get_frame().get_absolute_velocity_in_inertial().at(0)), Value(dx_axle));
-    EXPECT_DOUBLE_EQ(Value(front_axle.get_frame().get_absolute_velocity_in_inertial().at(1)), Value(dy_axle));
-    EXPECT_DOUBLE_EQ(Value(front_axle.get_frame().get_absolute_velocity_in_inertial().at(2)), Value(dz-a*dmu));
+    EXPECT_DOUBLE_EQ(Value(std::as_const(front_axle).get_frame().get_absolute_velocity_in_inertial().at(0)), Value(dx_axle));
+    EXPECT_DOUBLE_EQ(Value(std::as_const(front_axle).get_frame().get_absolute_velocity_in_inertial().at(1)), Value(dy_axle));
+    EXPECT_DOUBLE_EQ(Value(std::as_const(front_axle).get_frame().get_absolute_velocity_in_inertial().at(2)), Value(dz-a*dmu));
 }
 
 
@@ -375,17 +375,17 @@ TEST_F(Car_road_cartesian_test, rear_axle_velocity)
     const scalar dx_axle = u_axle*cos(psi) - v_axle*sin(psi);
     const scalar dy_axle = u_axle*sin(psi) + v_axle*cos(psi);
 
-    EXPECT_DOUBLE_EQ(Value(rear_axle.get_frame().get_relative_velocity().at(0)),  0.0);
-    EXPECT_DOUBLE_EQ(Value(rear_axle.get_frame().get_relative_velocity().at(1)),  0.0);
-    EXPECT_DOUBLE_EQ(Value(rear_axle.get_frame().get_relative_velocity().at(2)), Value(-a*dmu));
+    EXPECT_DOUBLE_EQ(Value(std::as_const(rear_axle).get_frame().get_relative_velocity_in_parent().at(0)),  0.0);
+    EXPECT_DOUBLE_EQ(Value(std::as_const(rear_axle).get_frame().get_relative_velocity_in_parent().at(1)),  0.0);
+    EXPECT_DOUBLE_EQ(Value(std::as_const(rear_axle).get_frame().get_relative_velocity_in_parent().at(2)), Value(-a*dmu));
 
-    EXPECT_DOUBLE_EQ(Value(rear_axle.get_frame().get_absolute_velocity_in_body().at(0)), Value(u));
-    EXPECT_NEAR     (Value(rear_axle.get_frame().get_absolute_velocity_in_body().at(1)), Value(v+a*omega), 2.0e-16);
-    EXPECT_DOUBLE_EQ(Value(rear_axle.get_frame().get_absolute_velocity_in_body().at(2)), Value(dz-a*dmu));
+    EXPECT_DOUBLE_EQ(Value(std::as_const(rear_axle).get_frame().get_absolute_velocity_in_body().at(0)), Value(u));
+    EXPECT_NEAR     (Value(std::as_const(rear_axle).get_frame().get_absolute_velocity_in_body().at(1)), Value(v+a*omega), 2.0e-16);
+    EXPECT_DOUBLE_EQ(Value(std::as_const(rear_axle).get_frame().get_absolute_velocity_in_body().at(2)), Value(dz-a*dmu));
                     
-    EXPECT_DOUBLE_EQ(Value(rear_axle.get_frame().get_absolute_velocity_in_inertial().at(0)), Value(dx_axle));
-    EXPECT_DOUBLE_EQ(Value(rear_axle.get_frame().get_absolute_velocity_in_inertial().at(1)), Value(dy_axle));
-    EXPECT_DOUBLE_EQ(Value(rear_axle.get_frame().get_absolute_velocity_in_inertial().at(2)), Value(dz-a*dmu));
+    EXPECT_DOUBLE_EQ(Value(std::as_const(rear_axle).get_frame().get_absolute_velocity_in_inertial().at(0)), Value(dx_axle));
+    EXPECT_DOUBLE_EQ(Value(std::as_const(rear_axle).get_frame().get_absolute_velocity_in_inertial().at(1)), Value(dy_axle));
+    EXPECT_DOUBLE_EQ(Value(std::as_const(rear_axle).get_frame().get_absolute_velocity_in_inertial().at(2)), Value(dz-a*dmu));
 }
 
 
@@ -506,8 +506,8 @@ TEST_F(Car_road_cartesian_test, front_axle_deformations)
     const scalar& kantiroll = axle.get_parameter("antiroll_stiffness");
     const scalar& ktire     = Lot2016kart_parameters.at("front-tire/kt");
 
-    const scalar wl = tire_left.get_frame().get_absolute_position({0.0, 0.0, R0}).at(Z);
-    const scalar wr = tire_right.get_frame().get_absolute_position({0.0, 0.0, R0}).at(Z);
+    const scalar wl = std::as_const(tire_left).get_frame().get_absolute_position({0.0, 0.0, R0}).at(Z);
+    const scalar wr = std::as_const(tire_right).get_frame().get_absolute_position({0.0, 0.0, R0}).at(Z);
 
     const scalar sl = axle.get_chassis_deformation(Front_axle_t::LEFT);
     const scalar sr = axle.get_chassis_deformation(Front_axle_t::RIGHT);
@@ -536,8 +536,8 @@ TEST_F(Car_road_cartesian_test, rear_axle_deformations)
     const scalar& kantiroll = Lot2016kart_parameters.at("rear-axle/antiroll_stiffness");
     const scalar& ktire     = Lot2016kart_parameters.at("rear-tire/kt");
 
-    const scalar wl = tire_left.get_frame().get_absolute_position({0.0, 0.0, R0}).at(Z);
-    const scalar wr = tire_right.get_frame().get_absolute_position({0.0, 0.0, R0}).at(Z);
+    const scalar wl = std::as_const(tire_left).get_frame().get_absolute_position({0.0, 0.0, R0}).at(Z);
+    const scalar wr = std::as_const(tire_right).get_frame().get_absolute_position({0.0, 0.0, R0}).at(Z);
 
     const scalar sl = axle.get_chassis_deformation(Rear_axle_t::LEFT);
     const scalar sr = axle.get_chassis_deformation(Rear_axle_t::RIGHT);
@@ -566,8 +566,8 @@ TEST_F(Car_road_cartesian_test, front_axle_deformations_velocity)
     const scalar& kantiroll = Lot2016kart_parameters.at("front-axle/antiroll_stiffness");
     const scalar& ktire     = 64.5e3;
 
-    const scalar dwl = tire_left.get_frame().get_absolute_velocity_in_body({0.0, 0.0, R0}).at(Z);
-    const scalar dwr = tire_right.get_frame().get_absolute_velocity_in_body({0.0, 0.0, R0}).at(Z);
+    const scalar dwl = std::as_const(tire_left).get_frame().get_absolute_velocity_in_body({0.0, 0.0, R0}).at(Z);
+    const scalar dwr = std::as_const(tire_right).get_frame().get_absolute_velocity_in_body({0.0, 0.0, R0}).at(Z);
 
     const scalar dsl = axle.get_chassis_deformation_velocity(Front_axle_t::LEFT);
     const scalar dsr = axle.get_chassis_deformation_velocity(Front_axle_t::RIGHT);
@@ -596,8 +596,8 @@ TEST_F(Car_road_cartesian_test, rear_axle_deformations_velocity)
     const scalar& kantiroll = Lot2016kart_parameters.at("rear-axle/antiroll_stiffness");
     const scalar& ktire     = 61.3e3;
 
-    const scalar dwl = tire_left.get_frame().get_absolute_velocity_in_body({0.0, 0.0, R0}).at(Z);
-    const scalar dwr = tire_right.get_frame().get_absolute_velocity_in_body({0.0, 0.0, R0}).at(Z);
+    const scalar dwl = std::as_const(tire_left).get_frame().get_absolute_velocity_in_body({0.0, 0.0, R0}).at(Z);
+    const scalar dwr = std::as_const(tire_right).get_frame().get_absolute_velocity_in_body({0.0, 0.0, R0}).at(Z);
 
     const scalar dsl = axle.get_chassis_deformation_velocity(Rear_axle_t::LEFT);
     const scalar dsr = axle.get_chassis_deformation_velocity(Rear_axle_t::RIGHT);
@@ -629,9 +629,9 @@ TEST_F(Car_road_cartesian_test, front_left_tire_velocity)
     const scalar v_body = v_tire*cos(delta) - u_tire*sin(delta);
     
 
-    EXPECT_DOUBLE_EQ(Value(tire.get_frame().get_relative_velocity().at(0)), 0.0);
-    EXPECT_DOUBLE_EQ(Value(tire.get_frame().get_relative_velocity().at(1)), 0.0);
-    EXPECT_DOUBLE_EQ(Value(tire.get_frame().get_relative_velocity().at(2)), Value(ds - 0.5*t*dphi ));
+    EXPECT_DOUBLE_EQ(Value(tire.get_frame().get_relative_velocity_in_parent().at(0)), 0.0);
+    EXPECT_DOUBLE_EQ(Value(tire.get_frame().get_relative_velocity_in_parent().at(1)), 0.0);
+    EXPECT_DOUBLE_EQ(Value(tire.get_frame().get_relative_velocity_in_parent().at(2)), Value(ds - 0.5*t*dphi ));
 
     EXPECT_DOUBLE_EQ(Value(tire.get_frame().get_absolute_velocity_in_parent().at(0)), Value(u_tire));
     EXPECT_DOUBLE_EQ(Value(tire.get_frame().get_absolute_velocity_in_parent().at(1)), Value(v_tire));
@@ -662,9 +662,9 @@ TEST_F(Car_road_cartesian_test, front_right_tire_velocity)
     const scalar u_body = u_tire*cos(delta) + v_tire*sin(delta);
     const scalar v_body = v_tire*cos(delta) - u_tire*sin(delta);
 
-    EXPECT_DOUBLE_EQ(Value(tire.get_frame().get_relative_velocity().at(0)), 0.0);
-    EXPECT_DOUBLE_EQ(Value(tire.get_frame().get_relative_velocity().at(1)), 0.0);
-    EXPECT_DOUBLE_EQ(Value(tire.get_frame().get_relative_velocity().at(2)), Value(ds + 0.5*t*dphi ));
+    EXPECT_DOUBLE_EQ(Value(tire.get_frame().get_relative_velocity_in_parent().at(0)), 0.0);
+    EXPECT_DOUBLE_EQ(Value(tire.get_frame().get_relative_velocity_in_parent().at(1)), 0.0);
+    EXPECT_DOUBLE_EQ(Value(tire.get_frame().get_relative_velocity_in_parent().at(2)), Value(ds + 0.5*t*dphi ));
 
     EXPECT_DOUBLE_EQ(Value(tire.get_frame().get_absolute_velocity_in_parent().at(0)), Value(u_tire));
     EXPECT_DOUBLE_EQ(Value(tire.get_frame().get_absolute_velocity_in_parent().at(1)), Value(v_tire));
@@ -697,9 +697,9 @@ TEST_F(Car_road_cartesian_test, rear_left_tire_velocity)
     const scalar v_body = v_tire;
     
 
-    EXPECT_DOUBLE_EQ(Value(tire.get_frame().get_relative_velocity().at(0)), 0.0);
-    EXPECT_DOUBLE_EQ(Value(tire.get_frame().get_relative_velocity().at(1)), 0.0);
-    EXPECT_DOUBLE_EQ(Value(tire.get_frame().get_relative_velocity().at(2)), Value(ds - 0.5*t*dphi ));
+    EXPECT_DOUBLE_EQ(Value(tire.get_frame().get_relative_velocity_in_parent().at(0)), 0.0);
+    EXPECT_DOUBLE_EQ(Value(tire.get_frame().get_relative_velocity_in_parent().at(1)), 0.0);
+    EXPECT_DOUBLE_EQ(Value(tire.get_frame().get_relative_velocity_in_parent().at(2)), Value(ds - 0.5*t*dphi ));
 
     EXPECT_DOUBLE_EQ(Value(tire.get_frame().get_absolute_velocity_in_parent().at(0)), Value(u_tire));
     EXPECT_NEAR     (Value(tire.get_frame().get_absolute_velocity_in_parent().at(1)), Value(v_tire), 1.0e-16);
@@ -731,9 +731,9 @@ TEST_F(Car_road_cartesian_test, rear_right_tire_velocity)
     const scalar u_body = u_tire;
     const scalar v_body = v_tire;
 
-    EXPECT_DOUBLE_EQ(Value(tire.get_frame().get_relative_velocity().at(0)), 0.0);
-    EXPECT_DOUBLE_EQ(Value(tire.get_frame().get_relative_velocity().at(1)), 0.0);
-    EXPECT_DOUBLE_EQ(Value(tire.get_frame().get_relative_velocity().at(2)), Value(ds + 0.5*t*dphi ));
+    EXPECT_DOUBLE_EQ(Value(tire.get_frame().get_relative_velocity_in_parent().at(0)), 0.0);
+    EXPECT_DOUBLE_EQ(Value(tire.get_frame().get_relative_velocity_in_parent().at(1)), 0.0);
+    EXPECT_DOUBLE_EQ(Value(tire.get_frame().get_relative_velocity_in_parent().at(2)), Value(ds + 0.5*t*dphi ));
 
     EXPECT_DOUBLE_EQ(Value(tire.get_frame().get_absolute_velocity_in_parent().at(0)), Value(u_tire));
     EXPECT_NEAR     (Value(tire.get_frame().get_absolute_velocity_in_parent().at(1)), Value(v_tire), 1.0e-16);
@@ -858,10 +858,10 @@ TEST_F(Car_road_cartesian_test, euler_equations)
 
 TEST_F(Car_road_cartesian_test, sizes)
 {
-    EXPECT_EQ(car.NSTATE, 13);
-    EXPECT_EQ(car.NCONTROL, 2);
+    EXPECT_EQ(car.number_of_inputs, 13);
+    EXPECT_EQ(car.number_of_controls, 2);
 
-    static_assert(Dynamic_model_t::NSTATE == 13);
+    static_assert(Dynamic_model_t::number_of_inputs == 13);
 }
 
 TEST_F(Car_road_cartesian_test, dqdt)
@@ -874,7 +874,7 @@ TEST_F(Car_road_cartesian_test, dqdt)
     std::array<scalar,13> q = { omega_axle,u,v,omega,z,phi,mu,dz,dphi,dmu,x,y,psi};
     std::array<scalar,2> u = {delta, T};
 
-    const auto dqdt = car(q,u,0.0);
+    const auto dqdt = car.ode(q,u,0.0);
 
     EXPECT_EQ(dqdt.size(), 12+1);
 
@@ -887,13 +887,13 @@ TEST_F(Car_road_cartesian_test, dqdt)
     EXPECT_DOUBLE_EQ(Value(dqdt.at(Chassis_t::state_names::PHI)), Value(dphi));
     EXPECT_DOUBLE_EQ(Value(dqdt.at(Chassis_t::state_names::MU)), Value(dmu));
 
-    EXPECT_DOUBLE_EQ(Value(dqdt.at(Chassis_t::state_names::U)), Value(dv[X]));
-    EXPECT_DOUBLE_EQ(Value(dqdt.at(Chassis_t::state_names::V)), Value(dv[Y]));
+    EXPECT_DOUBLE_EQ(Value(dqdt.at(Chassis_t::state_names::com_velocity_x_mps)), Value(dv[X]));
+    EXPECT_DOUBLE_EQ(Value(dqdt.at(Chassis_t::state_names::com_velocity_y_mps)), Value(dv[Y]));
     EXPECT_DOUBLE_EQ(Value(dqdt.at(Chassis_t::state_names::DZDT)), Value(dv[Z]));
 
     EXPECT_DOUBLE_EQ(Value(dqdt.at(Chassis_t::state_names::DPHIDT)), Value(d2phi[X]));
     EXPECT_DOUBLE_EQ(Value(dqdt.at(Chassis_t::state_names::DMUDT)), Value(d2phi[Y]));
-    EXPECT_DOUBLE_EQ(Value(dqdt.at(Chassis_t::state_names::OMEGA)), Value(d2phi[Z]));
+    EXPECT_DOUBLE_EQ(Value(dqdt.at(Chassis_t::state_names::yaw_rate_radps)), Value(d2phi[Z]));
 
     EXPECT_DOUBLE_EQ(Value(dqdt.at(Rear_axle_t::state_names::OMEGA_AXLE)), Value(domega_axle));
 }
@@ -912,7 +912,7 @@ TEST_F(Car_road_cartesian_test, acceleration_simulation)
 
     for (size_t i = 0; i < n_timesteps; ++i)
     {
-        RK4<Dynamic_model_t,Control_acceleration,Dynamic_model_t::NSTATE>::take_step(car, control, q, i*dt, dt);
+        RK4<Dynamic_model_t,Control_acceleration,Dynamic_model_t::number_of_inputs>::take_step(car, control, q, i*dt, dt);
     }
 
     for (size_t i = 0; i < q.size(); ++i)
@@ -933,7 +933,7 @@ TEST_F(Car_road_cartesian_test, braking_simulation)
 
     for (size_t i = 0; i < n_timesteps; ++i)
     {
-        RK4<Dynamic_model_t,Control_brake,Dynamic_model_t::NSTATE>::take_step(car, control, q, i*dt, dt);
+        RK4<Dynamic_model_t,Control_brake,Dynamic_model_t::number_of_inputs>::take_step(car, control, q, i*dt, dt);
     }
 
     for (size_t i = 0; i < q.size(); ++i)
@@ -971,7 +971,7 @@ TEST_F(Car_road_cartesian_test, jacobian_autodiff)
     }
 
     // Call operator()
-    auto dqdt_out = car_ad(q0,u0,0.0);
+    auto dqdt_out = car_ad.ode(q0,u0,0.0);
     std::vector<CppAD::AD<double>> dqdt_v(dqdt_out.cbegin(), dqdt_out.cend());
 
     // Create the AD function and stop the recording
@@ -995,11 +995,11 @@ TEST_F(Car_road_cartesian_test, jacobian_autodiff)
         const double eps = std::max(1.0,Value(fabs(q0[i])))*1.0e-8;
         q0[i] += eps;
 
-        auto dqdt_eps = car_ad(q0,u0,0.0);
+        auto dqdt_eps = car_ad.ode(q0,u0,0.0);
 
         q0[i] -= 2*eps;
 
-        auto dqdt_meps = car_ad(q0,u0,0.0);
+        auto dqdt_meps = car_ad.ode(q0,u0,0.0);
 
         numerical_jacobian[i] = (dqdt_eps - dqdt_meps)*(0.5/eps);
 
@@ -1013,11 +1013,11 @@ TEST_F(Car_road_cartesian_test, jacobian_autodiff)
         const double eps = std::max(1.0,Value(fabs(u0[i])))*1.0e-8;
         u0[i] += eps;
 
-        auto dqdt_eps = car_ad(q0,u0,0.0);
+        auto dqdt_eps = car_ad.ode(q0,u0,0.0);
 
         u0[i] -= 2*eps;
 
-        auto dqdt_meps = car_ad(q0,u0,0.0);
+        auto dqdt_meps = car_ad.ode(q0,u0,0.0);
 
         numerical_jacobian[i+13] = (dqdt_eps - dqdt_meps)*(0.5/eps);
 
@@ -1043,11 +1043,11 @@ TEST_F(Car_road_cartesian_test, jacobian_autodiff_integrated_function)
     std::vector<double> x0 = {1.0942729386749036e+02, 1.3888864656170503e+01, -2.5944758219334368e-02, 1.4399999999999999e-01, 1.7813769736939513e-02, -2.8474281872469206e-03, 6.8675368270008927e-03, 0.0000000000000000e+00, 0.0000000000000000e+00, 0.0000000000000000e+00, 0.0000000000000000e+00, 0.0000000000000000e+00, 1.8680236782072025e-03, 9.4530179243706314e-03, 0.0000000000000000e+00};
   
     // Fill the inputs to the operator() of the vehicle 
-    std::array<double,13> input_states;
+    std::array<double,13> inputs;
     std::array<double,2> controls;
     for (size_t i = 0; i < 13; ++i)
     {
-        input_states[i] = x0[i];
+        inputs[i] = x0[i];
     }
     for (size_t i = 0; i < 2; ++i)
     {
@@ -1055,7 +1055,7 @@ TEST_F(Car_road_cartesian_test, jacobian_autodiff_integrated_function)
     }
 
     // Call operator()
-    auto solution = car_ad.equations(input_states,{},controls,0.0);
+    auto solution = car_ad.equations(inputs,controls,0.0);
 
     // Compute the numerical Jacobian
 
@@ -1064,33 +1064,33 @@ TEST_F(Car_road_cartesian_test, jacobian_autodiff_integrated_function)
     // derivatives w.r.t q
     for (size_t i = 0; i < 13; ++i)
     {
-        // Freeze controls and add a perturbation on input_states 
-        const double eps = std::max(1.0,fabs(input_states[i]))*1.0e-8;
-        input_states[i] += eps;
+        // Freeze controls and add a perturbation on inputs 
+        const double eps = std::max(1.0,fabs(inputs[i]))*1.0e-8;
+        inputs[i] += eps;
 
-        auto dqdt_eps = car_sc(input_states,{},controls,0.0).dstates_dt;
+        auto dqdt_eps = car_sc(inputs,controls,0.0).dstates_dt;
 
-        input_states[i] -= 2*eps;
+        inputs[i] -= 2*eps;
 
-        auto dqdt_meps = car_sc(input_states,{},controls,0.0).dstates_dt;
+        auto dqdt_meps = car_sc(inputs,controls,0.0).dstates_dt;
 
         numerical_jacobian[i] = (dqdt_eps - dqdt_meps)*(0.5/eps);
 
-        input_states[i] += eps;
+        inputs[i] += eps;
     }
 
     // derivatives w.r.t u
     for (size_t i = 0; i < 2; ++i)
     {
-        // Freeze controls and add a perturbation on input_states 
+        // Freeze controls and add a perturbation on inputs 
         const double eps = std::max(1.0,fabs(controls[i]))*1.0e-8;
         controls[i] += eps;
 
-        auto dqdt_eps = car_sc(input_states,{},controls,0.0).dstates_dt;
+        auto dqdt_eps = car_sc(inputs,controls,0.0).dstates_dt;
 
         controls[i] -= 2*eps;
 
-        auto dqdt_meps = car_sc(input_states,{},controls,0.0).dstates_dt;
+        auto dqdt_meps = car_sc(inputs,controls,0.0).dstates_dt;
 
         numerical_jacobian[i+13] = (dqdt_eps - dqdt_meps)*(0.5/eps);
 

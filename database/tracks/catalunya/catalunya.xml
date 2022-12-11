@@ -1,4 +1,4 @@
-<circuit format="discrete" type="closed">
+<circuit format="discrete" type="closed" dimensions="2">
     <header>
         <track_length units="m">4634.1501076379418</track_length>
         <L2_error_left>0.027133889681561031</L2_error_left>

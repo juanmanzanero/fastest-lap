@@ -3,11 +3,11 @@
 
 #include "road.h"
 
-template<typename Timeseries_t,size_t state_start, size_t algebraic_state_start, size_t control_start>
-class Road_cartesian : public Road<Timeseries_t,state_start,algebraic_state_start,control_start>
+template<typename Timeseries_t,size_t state_start, size_t control_start>
+class Road_cartesian : public Road<Timeseries_t,state_start,control_start>
 {
  public:
-    using base_type = Road<Timeseries_t,state_start,algebraic_state_start,control_start>;
+    using base_type = Road<Timeseries_t,state_start,control_start>;
 
     struct input_names : public base_type::input_names
     {
@@ -19,16 +19,14 @@ class Road_cartesian : public Road<Timeseries_t,state_start,algebraic_state_star
         enum { X = base_type::state_names::end, Y, PSI, end };
     };
 
-    struct algebraic_state_names : public base_type::algebraic_state_names {};
-    
     struct control_names : public base_type::control_names {};
 
     void update(const Timeseries_t u, const Timeseries_t v, const Timeseries_t omega);
 
-    template<size_t number_of_states, size_t number_of_algebraic_states>
+    template<size_t number_of_states>
     void get_state_and_state_derivative(std::array<Timeseries_t, number_of_states>& state, 
-                                        std::array<Timeseries_t,number_of_states>& dstate_dt,
-                                        std::array<Timeseries_t,number_of_algebraic_states>& algebraic_equations) const;
+                                        std::array<Timeseries_t,number_of_states>& dstate_dt
+                                        ) const;
 
     template<size_t number_of_inputs, size_t number_of_controls>
     void set_state_and_controls(const Timeseries_t t, const std::array<Timeseries_t,number_of_inputs>& input, const std::array<Timeseries_t,number_of_controls>& controls);

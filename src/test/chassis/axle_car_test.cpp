@@ -108,7 +108,7 @@ class Axle_car_test : public ::testing::TestWithParam<std::tuple<double,double,d
     const scalar dy = u*sin(psi) + v*cos(psi);
 
     const sFrame inertial_frame;
-    const sFrame car_frame = sFrame({x,y,0.0}, {dx,dy,0}, {psi}, {omega}, {Z}, inertial_frame);
+    const sFrame car_frame = sFrame({x,y,0.0}, {dx,dy,0}, {psi}, {omega}, {Z}, inertial_frame, sFrame::Frame_velocity_types::parent_frame);
 
     // State of the front axle
     const scalar z_front = std::get<4>(GetParam()); 

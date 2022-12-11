@@ -6,7 +6,7 @@
 //!
 //! A basic road class with the minimum functionality.
 //!
-template<typename Timeseries_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
+template<typename Timeseries_t, size_t state_start, size_t control_start>
 class Road
 {
  public:
@@ -14,7 +14,7 @@ class Road
 
     struct input_names
     {
-        enum { end = state_start + algebraic_state_start };
+        enum { end = state_start };
     };
 
     struct state_names
@@ -22,15 +22,12 @@ class Road
         enum { end = state_start };
     };
 
-    struct algebraic_state_names
-    {
-        enum { end = algebraic_state_start };
-    };
-
     struct control_names
     {
-        enum { end = state_start };
+        enum { end = control_start };
     };
+
+    static_assert(input_names::end == state_names::end);
 
     //! Return the dtime/ds (delta-time / delta-arclength) derivative.
     constexpr const auto& get_dtimeds() const { return _dtimeds; } 

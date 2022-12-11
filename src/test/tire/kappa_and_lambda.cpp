@@ -24,7 +24,7 @@ TEST(Tire_test, base_lambda_and_kappa)
     const scalar dx = u*cos(psi) - v*sin(psi);
     const scalar dy = u*sin(psi) + v*cos(psi);
     
-    sFrame chassis_frame({x,y,0.0}, {dx,dy,0.0}, {psi}, {omega}, {Z}, inertial_frame);
+    sFrame chassis_frame({x,y,0.0}, {u,v,0.0}, {psi}, {omega}, {Z}, inertial_frame, sFrame::Frame_velocity_types::this_frame);
 
     constexpr const scalar a = 0.645;
     constexpr const scalar b = 0.4;
@@ -35,10 +35,10 @@ TEST(Tire_test, base_lambda_and_kappa)
 
     constexpr const scalar R(0.139);
 
-    sFrame tire_rr_frame({-b,tr,-R},{0.0,0.0,0.0},{}, {}, {}, chassis_frame);
-    sFrame tire_rl_frame({-b,-tr,-R},{0.0,0.0,0.0},{}, {}, {}, chassis_frame);
-    sFrame tire_fr_frame({+a,tf,-R},{0.0,0.0,0.0},{delta}, {0.0}, {Z}, chassis_frame);
-    sFrame tire_fl_frame({+a,-tf,-R},{0.0,0.0,0.0},{delta}, {0.0}, {Z}, chassis_frame);
+    sFrame tire_rr_frame({-b,tr,-R},{0.0,0.0,0.0},{}, {}, {}, chassis_frame, sFrame::Frame_velocity_types::parent_frame);
+    sFrame tire_rl_frame({-b,-tr,-R},{0.0,0.0,0.0},{}, {}, {}, chassis_frame, sFrame::Frame_velocity_types::parent_frame);
+    sFrame tire_fr_frame({+a,tf,-R},{0.0,0.0,0.0},{delta}, {0.0}, {Z}, chassis_frame, sFrame::Frame_velocity_types::parent_frame);
+    sFrame tire_fl_frame({+a,-tf,-R},{0.0,0.0,0.0},{delta}, {0.0}, {Z}, chassis_frame, sFrame::Frame_velocity_types::parent_frame);
 
     Xml_document database = { "database/vehicles/kart/roberto-lot-kart-2016.xml", true };
     Tire_t tire_rr("Rear right",database,"vehicle/rear-tire/");
@@ -95,7 +95,7 @@ TEST(Tire_test, pacejka_lambda_and_kappa)
     
     constexpr const scalar R(0.139);
 
-    sFrame chassis_frame({x,y,0.0}, {dx,dy,0.0}, {psi}, {omega}, {Z}, inertial_frame);
+    sFrame chassis_frame({x,y,0.0}, {dx,dy,0.0}, {psi}, {omega}, {Z}, inertial_frame, sFrame::Frame_velocity_types::parent_frame);
 
     constexpr const scalar a = 0.645;
     constexpr const scalar b = 0.4;
@@ -104,10 +104,10 @@ TEST(Tire_test, pacejka_lambda_and_kappa)
 
     constexpr const scalar delta = -pi/10.0;
 
-    sFrame tire_rr_frame({-b,tr,-R},{0.0,0.0,0.0},{}, {}, {}, chassis_frame);
-    sFrame tire_rl_frame({-b,-tr,-R},{0.0,0.0,0.0},{}, {}, {}, chassis_frame);
-    sFrame tire_fr_frame({+a,tf,-R},{0.0,0.0,0.0},{delta}, {0.0}, {Z}, chassis_frame);
-    sFrame tire_fl_frame({+a,-tf,-R},{0.0,0.0,0.0},{delta}, {0.0}, {Z}, chassis_frame);
+    sFrame tire_rr_frame({-b,tr,-R},{0.0,0.0,0.0},{}, {}, {}, chassis_frame, sFrame::Frame_velocity_types::parent_frame);
+    sFrame tire_rl_frame({-b,-tr,-R},{0.0,0.0,0.0},{}, {}, {}, chassis_frame, sFrame::Frame_velocity_types::parent_frame);
+    sFrame tire_fr_frame({+a,tf,-R},{0.0,0.0,0.0},{delta}, {0.0}, {Z}, chassis_frame, sFrame::Frame_velocity_types::parent_frame);
+    sFrame tire_fl_frame({+a,-tf,-R},{0.0,0.0,0.0},{delta}, {0.0}, {Z}, chassis_frame, sFrame::Frame_velocity_types::parent_frame);
 
     Xml_document database = { "database/vehicles/kart/roberto-lot-kart-2016.xml", true };
     Tire_pacejka_std_t tire_rr("Rear right",database,"vehicle/rear-tire/");

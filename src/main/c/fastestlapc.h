@@ -65,11 +65,11 @@ extern fastestlapc_API int download_vector_size(const char* name_c);
 
 extern fastestlapc_API void download_vector(double* data, const int n, const char* name_c);
 
-extern fastestlapc_API void vehicle_type_get_sizes(int* n_state, int* n_algebraic, int* n_control, int* n_outputs, const char* c_vehicle_type_name);
+extern fastestlapc_API void vehicle_type_get_sizes(int* n_inputs, int* n_control, int* n_outputs, const char* c_vehicle_type_name);
 
-extern fastestlapc_API void vehicle_type_get_names(char* key_name, char* state_names[], char* algebraic_state_names[], char* control_names[], char* output_names[], const int n_char, const char* vehicle_type_name);
+extern fastestlapc_API void vehicle_type_get_names(char* key_name, char* input_names[], char* control_names[], char* output_names[], const int n_char, const char* vehicle_type_name);
 
-extern fastestlapc_API double vehicle_get_output(const char* vehicle_name, const double* input_states, const double* algebraic_states, const double* controls, const double s, const char* property_name);
+extern fastestlapc_API double vehicle_get_output(const char* vehicle_name, const double* inputs, const double* controls, const double s, const char* property_name);
 
 extern fastestlapc_API void vehicle_save_as_xml(const char* vehicle_name, const char* file_name);
 
@@ -96,9 +96,9 @@ extern fastestlapc_API void track_set_track_limit_correction(const char* c_track
 
 // Applications --------------------------------------------------------------------------------------------------------
 
-extern fastestlapc_API void steady_state(double*input_states, double* algebraic_states, double* controls, const char* vehicle_name, double v, double ax, double ay);
+extern fastestlapc_API void steady_state(double*input_states, double* controls, const char* vehicle_name, double v, double ax, double ay);
 
-extern fastestlapc_API void propagate_vehicle(double* input_states, double* algebraic_states, double* controls, const char* vehicle_name, const char* track_name, double s, double ds, double* u_next, int use_circuit, const char* options);
+extern fastestlapc_API void propagate_vehicle(double* input_states, double* controls, const char* vehicle_name, const char* track_name, double s, double ds, double* u_next, int use_circuit, const char* options);
 
 extern fastestlapc_API void gg_diagram(double* ay, double* ax_max, double* ax_min, const char* vehicle_name, double v, const int n_points);
 

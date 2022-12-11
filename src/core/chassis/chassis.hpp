@@ -3,8 +3,8 @@
 
 #include "src/core/foundation/fastest_lap_exception.h"
 
-template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
-inline Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_start,control_start>::Chassis(
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t control_start>
+inline Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,control_start>::Chassis(
     const FrontAxle_t& front_axle, const RearAxle_t& rear_axle, const std::string& path)
 : _inertial_frame(),
   _road_frame(Frame<Timeseries_t>(Vector3d<Timeseries_t>(0.0), Vector3d<Timeseries_t>(0.0), { 0.0,0.0,0.0,0.0 }, { 0.0,0.0,0.0,0.0 }, { Z,Y,X,Z }, _inertial_frame, {})),
@@ -22,24 +22,22 @@ inline Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_s
 }
 
 
-template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
-inline Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_start,control_start>::Chassis(
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t control_start>
+inline Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,control_start>::Chassis(
     const FrontAxle_t& front_axle, const RearAxle_t& rear_axle,
     Xml_document& database, const std::string& path)
-: Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_start,control_start>::Chassis(front_axle, rear_axle, path)
+: Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,control_start>::Chassis(front_axle, rear_axle, path)
 {
     read_parameters(database, path, get_parameters(), __used_parameters);
 }
 
 
-template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
-inline Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_start,control_start>::Chassis(const Chassis& other)
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t control_start>
+inline Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,control_start>::Chassis(const Chassis& other)
 : __used_parameters(other.__used_parameters),
-  velocity_x_mps(other.velocity_x_mps),
-  velocity_y_mps(other.velocity_y_mps),
-  _com_velocity_x_mps(other._com_velocity_x_mps),
-  _com_velocity_y_mps(other._com_velocity_y_mps),
-  _omega_z_radps(other._omega_z_radps),
+  _velocity_x_mps(other._velocity_x_mps),
+  _velocity_y_mps(other._velocity_y_mps),
+  _yaw_rate_radps(other._yaw_rate_radps),
   _inertial_frame(),
   _road_frame(other._road_frame),
   _chassis_frame(other._chassis_frame),
@@ -53,8 +51,14 @@ inline Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_s
   _eastward_wind(other._eastward_wind),
   _front_axle(other._front_axle),
   _rear_axle(other._rear_axle),
+  _com_velocity_x_mps(other._com_velocity_x_mps),
+  _com_velocity_x_dot_mps2(other._com_velocity_x_dot_mps2),
+  _com_velocity_y_mps(other._com_velocity_y_mps),
+  _com_velocity_y_dot_mps2(other._com_velocity_y_dot_mps2),
+  _yaw_rate_dot_radps2(other._yaw_rate_dot_radps2),
   _total_force_N(other._total_force_N),
   _total_torque_Nm(other._total_torque_Nm)
+
 {
     _road_frame.set_parent(_inertial_frame);
 
@@ -67,15 +71,15 @@ inline Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_s
 }
 
 
-template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
-inline Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_start,control_start>& Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_start,control_start>::operator=(const Chassis& other)
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t control_start>
+inline Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,control_start>& Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,control_start>::operator=(const Chassis& other)
 {
     __used_parameters   = other.__used_parameters;
-    velocity_x_mps      = other.velocity_x_mps;
-    velocity_y_mps      = other.velocity_y_mps;
+    _velocity_x_mps      = other._velocity_x_mps;
+    _velocity_y_mps      = other._velocity_y_mps;
     _com_velocity_x_mps = other._com_velocity_x_mps;
     _com_velocity_y_mps = other._com_velocity_y_mps;
-    _omega_z_radps      = other._omega_z_radps;
+    _yaw_rate_radps      = other._yaw_rate_radps;
     _inertial_frame     = Frame<Timeseries_t>();
     _road_frame         = other._road_frame;
     _chassis_frame      = other._chassis_frame;
@@ -89,8 +93,13 @@ inline Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_s
     _eastward_wind      = other._eastward_wind;
     _front_axle         = other._front_axle;
     _rear_axle          = other._rear_axle;
-    _total_force_N      = other._total_force_N;
-    _total_torque_Nm    = other._total_torque_Nm;
+    _com_velocity_x_mps      = other._com_velocity_x_mps;
+    _com_velocity_x_dot_mps2 = other._com_velocity_x_dot_mps2;
+    _com_velocity_y_mps      = other._com_velocity_y_mps;
+    _com_velocity_y_dot_mps2 = other._com_velocity_y_dot_mps2;
+    _yaw_rate_dot_radps2     = other._yaw_rate_dot_radps2;
+    _total_force_N           = other._total_force_N;
+    _total_torque_Nm         = other._total_torque_Nm;
 
     // Update parent of road frame to new inertial frame
     _road_frame.set_parent(_inertial_frame);
@@ -106,13 +115,13 @@ inline Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_s
 }
 
 
-template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
-void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_start,control_start>::update(const Vector3d<Timeseries_t>& ground_position_vector_m,
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t control_start>
+void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,control_start>::update(const Vector3d<Timeseries_t>& ground_position_vector_m,
     const Euler_angles<scalar>& road_euler_angles_rad, const Timeseries_t& track_heading_angle_rad, const Euler_angles<Timeseries_t>& road_euler_angles_dot_radps,
     const Timeseries_t& track_heading_angle_dot_radps, const Timeseries_t& ground_velocity_z_body_mps)
 {
     // Set the new position of the frame origin
-    _road_frame.set_origin(ground_position_vector_m, {velocity_x_mps, velocity_y_mps, ground_velocity_z_body_mps}, decltype(_road_frame)::Frame_velocity_types::this_frame);
+    _road_frame.set_origin(ground_position_vector_m, {_velocity_x_mps, _velocity_y_mps, ground_velocity_z_body_mps}, decltype(_road_frame)::Frame_velocity_types::this_frame);
 
     // Set the new orientation of the frame (update only in the last call)
     _road_frame.set_rotation_angle(0, road_euler_angles_rad.yaw(),   road_euler_angles_dot_radps.yaw(),   false);
@@ -123,9 +132,9 @@ void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_sta
 
 
 
-template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t control_start>
 template<typename T>
-void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_start,control_start>::set_parameter(const std::string& parameter, const T value)
+void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,control_start>::set_parameter(const std::string& parameter, const T value)
 {
     // Check if the parameter goes to this object
     if ( parameter.find("vehicle/chassis/") == 0 )
@@ -164,8 +173,8 @@ void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_sta
 }
 
 
-template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
-void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_start,control_start>::fill_xml(Xml_document& doc) const
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t control_start>
+void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,control_start>::fill_xml(Xml_document& doc) const
 {
     // Write the parameters of this class
     ::write_parameters(doc, "vehicle/chassis/", get_parameters());
@@ -177,20 +186,18 @@ void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_sta
 
 
 
-template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t control_start>
 template<size_t number_of_inputs, size_t number_of_controls>
-inline void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_start,control_start>::transform_states_to_inputs
+inline void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,control_start>::transform_states_to_inputs
     (const std::array<Timeseries_t,number_of_inputs>& states, const std::array<Timeseries_t,number_of_controls>& controls, std::array<Timeseries_t,number_of_inputs>& inputs)
 {
-    const auto& u     = states[state_names::velocity_x_mps];
-    const auto& v     = states[state_names::velocity_y_mps];
+    const auto& u     = states[state_names::com_velocity_x_mps];
+    const auto& v     = states[state_names::com_velocity_y_mps];
     const auto& omega = states[state_names::yaw_rate_radps];
 
     // (1) Update the frames, the tires will want them updated
-    throw fastest_lap_exception("[ERROR]  Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_start,control_start>::transform_states_to_inputs -> not implemented");
-
-    _road_frame.set_origin({0.0,0.0,0.0},{u,v,0.0}, decltype(_road_frame)::Frame_velocity_type::this_frame);
-    _road_frame.set_rotation_angle(0,0.0,omega);
+    _road_frame.set_origin({0.0,0.0,0.0},{u,v,0.0}, decltype(_road_frame)::Frame_velocity_types::this_frame);
+    _road_frame.set_rotation_angle(3,0.0,omega);
 
     // (2) Transform
     get_front_axle().transform_states_to_inputs(states, controls, inputs);
@@ -202,18 +209,18 @@ inline void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_st
 }
 
 
-template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
-void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_start,control_start>::set_state(Timeseries_t u, Timeseries_t v, Timeseries_t omega)
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t control_start>
+void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,control_start>::set_state(Timeseries_t u, Timeseries_t v, Timeseries_t omega)
 {
     throw fastest_lap_exception("[ERROR] Chassis::set_state -> not implemented");
-    velocity_x_mps = u;
-    velocity_y_mps = v;
-    _omega_z_radps = omega;
+    _velocity_x_mps = u;
+    _velocity_y_mps = v;
+    _yaw_rate_radps = omega;
 }
 
 
-template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
-inline Timeseries_t Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_start,control_start>::get_longitudinal_acceleration() const
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t control_start>
+inline Timeseries_t Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,control_start>::get_longitudinal_acceleration() const
 {
     const Vector3d<Timeseries_t> velocity = {get_u(), get_v(), 0.0};
     const Vector3d<Timeseries_t> acceleration = _total_force_N / _mass_kg;
@@ -222,8 +229,8 @@ inline Timeseries_t Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,alge
 }
 
 
-template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
-inline Timeseries_t Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_start,control_start>::get_lateral_acceleration() const
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t control_start>
+inline Timeseries_t Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,control_start>::get_lateral_acceleration() const
 {
     const Vector3d<Timeseries_t> velocity = {get_u(), get_v(), 0.0};
     const Vector3d<Timeseries_t> acceleration = _total_force_N / _mass_kg;
@@ -232,15 +239,15 @@ inline Timeseries_t Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,alge
 }
 
 
-template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
-inline const Vector3d<Timeseries_t>& Chassis<Timeseries_t, FrontAxle_t, RearAxle_t, state_start,algebraic_state_start,control_start>::get_gravity_force() const
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t control_start>
+inline const Vector3d<Timeseries_t> Chassis<Timeseries_t, FrontAxle_t, RearAxle_t, state_start,control_start>::get_gravity_force() const
 {
     // Get Euler angles
     const auto& yaw                 = _road_frame.get_rotation_angles()[0];
     const auto& pitch               = _road_frame.get_rotation_angles()[1];
     const auto& roll                = _road_frame.get_rotation_angles()[2];
     const auto& track_heading_angle = _road_frame.get_rotation_angles()[3];
-      
+
     return {
         _mass_kg * g0 * (sin(track_heading_angle) * sin(roll) * cos(pitch) - cos(track_heading_angle) * sin(pitch)),
         _mass_kg * g0 * (sin(track_heading_angle) * sin(pitch) + cos(track_heading_angle) * sin(roll) * cos(pitch)),
@@ -249,9 +256,8 @@ inline const Vector3d<Timeseries_t>& Chassis<Timeseries_t, FrontAxle_t, RearAxle
 }
 
 
-
-template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
-inline auto Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_start,control_start>::get_aerodynamic_force() const -> Aerodynamic_forces
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t control_start>
+inline auto Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,control_start>::get_aerodynamic_force() const -> Aerodynamic_forces
 {
     // (1) Get car's velocity in body frame
     const Vector3d<Timeseries_t> car_velocity = _road_frame.get_absolute_velocity_in_body();
@@ -278,13 +284,13 @@ inline auto Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_st
 }
 
 
-template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
-inline Timeseries_t Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_start,control_start>::get_understeer_oversteer_indicator() const
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t control_start>
+inline Timeseries_t Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,control_start>::get_understeer_oversteer_indicator() const
 {
  if constexpr(FrontAxle_t::NTIRES == 2)
  {
     // (1) Get ideal curvature: kappa = omega/vtot         
-    const auto kappa = _omega_z_radps/sqrt(velocity_x_mps*velocity_x_mps + velocity_y_mps*velocity_y_mps);
+    const auto kappa = _yaw_rate_radps/sqrt(_velocity_x_mps*_velocity_x_mps + _velocity_y_mps*_velocity_y_mps);
 
     // (2) Get tires position
     const auto track = get_front_axle().get_track();  // Distance between the two front tires
@@ -326,27 +332,27 @@ inline Timeseries_t Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,alge
  }
 }
 
-template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t control_start>
 template<size_t number_of_inputs, size_t number_of_controls>
-void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_start,control_start>::set_state_and_controls
+void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,control_start>::set_state_and_controls
     (const std::array<Timeseries_t,number_of_inputs>& inputs, const std::array<Timeseries_t,number_of_controls>& controls)
 {
     get_front_axle().set_state_and_controls(inputs, controls);
     get_rear_axle().set_state_and_controls(inputs, controls);
 
     // u
-    velocity_x_mps = inputs[input_names::velocity_x_mps];
+    _velocity_x_mps = inputs[input_names::velocity_x_mps];
 
     // v
-    velocity_y_mps = inputs[input_names::velocity_y_mps];
+    _velocity_y_mps = inputs[input_names::velocity_y_mps];
 
     // oemga
-    _omega_z_radps = inputs[input_names::yaw_rate_radps];
+    _yaw_rate_radps = inputs[input_names::yaw_rate_radps];
 }
 
-template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t control_start>
 template<size_t number_of_inputs, size_t number_of_controls>
-void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_start,control_start>::set_state_and_control_names
+void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,control_start>::set_state_and_control_names
     (std::array<std::string,number_of_inputs>& inputs, std::array<std::string,number_of_controls>& controls) const 
 {
     _front_axle.set_state_and_control_names(inputs,controls);
@@ -364,30 +370,30 @@ void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_sta
 
 
 
-template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
-template<size_t number_of_states, size_t number_of_algebraic_states>
-void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_start,control_start>::get_state_and_state_derivative
-    (std::array<Timeseries_t,number_of_states>& state, std::array<Timeseries_t, number_of_states>& dstate_dt, std::array<Timeseries_t, number_of_algebraic_states>& algebraic_equations) const
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t control_start>
+template<size_t number_of_states>
+void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,control_start>::get_state_and_state_derivative
+    (std::array<Timeseries_t,number_of_states>& state, std::array<Timeseries_t, number_of_states>& dstate_dt) const
 {
-    get_front_axle().get_state_and_state_derivative(state, dstate_dt, algebraic_equations, _mass_kg);
-    get_rear_axle().get_state_and_state_derivative(state, dstate_dt, algebraic_equations, _mass_kg);
+    get_front_axle().get_state_and_state_derivative(state, dstate_dt, _mass_kg);
+    get_rear_axle().get_state_and_state_derivative(state, dstate_dt, _mass_kg);
 
     // dudt
-    state    [state_names::velocity_x_mps] = _com_velocity_x_mps;
-    dstate_dt[state_names::velocity_x_mps] = _com_velocity_x_dot_mps2;
+    state    [state_names::com_velocity_x_mps] = _com_velocity_x_mps;
+    dstate_dt[state_names::com_velocity_x_mps] = _com_velocity_x_dot_mps2;
 
     // dvdt
-    state    [state_names::velocity_y_mps] = _com_velocity_y_mps;
-    dstate_dt[state_names::velocity_y_mps] = _com_velocity_y_dot_mps2;
+    state    [state_names::com_velocity_y_mps] = _com_velocity_y_mps;
+    dstate_dt[state_names::com_velocity_y_mps] = _com_velocity_y_dot_mps2;
 
     // domega
-    state    [state_names::yaw_rate_radps] = _omega_z_radps;
-    dstate_dt[state_names::yaw_rate_radps] = _omega_z_dot_radps2;
+    state    [state_names::yaw_rate_radps] = _yaw_rate_radps;
+    dstate_dt[state_names::yaw_rate_radps] = _yaw_rate_dot_radps2;
 }
 
-template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t control_start>
 template<size_t number_of_inputs, size_t number_of_controls>
-void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_start,control_start>::set_state_and_control_upper_lower_and_default_values
+void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,control_start>::set_state_and_control_upper_lower_and_default_values
     (std::array<scalar, number_of_inputs>& input_states_def, std::array<scalar, number_of_inputs>& input_states_lb, 
      std::array<scalar, number_of_inputs>& input_states_ub, std::array<scalar , number_of_controls>& controls_def, 
      std::array<scalar, number_of_controls>& controls_lb, std::array<scalar, number_of_controls>& controls_ub,

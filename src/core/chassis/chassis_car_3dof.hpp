@@ -1,8 +1,8 @@
 #ifndef CHASSIS_CAR_3DOF_HPP
 #define CHASSIS_CAR_3DOF_HPP
 
-template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
-inline Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_start,control_start>::Chassis_car_3dof()
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t control_start>
+inline Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,control_start>::Chassis_car_3dof()
 : base_type(FrontAxle_t("front-axle",
             typename FrontAxle_t::Tire_left_type("front-axle.left-tire", "vehicle/front-tire/"),
             typename FrontAxle_t::Tire_right_type("front-axle.right-tire", "vehicle/front-tire/"),
@@ -22,8 +22,8 @@ inline Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebrai
     base_type::get_rear_axle().get_frame().set_origin(get_rear_axle_position(), get_rear_axle_velocity(), Frame<Timeseries_t>::Frame_velocity_types::parent_frame);
 }
 
-template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
-inline Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_start,control_start>::Chassis_car_3dof(const FrontAxle_t& front_axle, 
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t control_start>
+inline Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,control_start>::Chassis_car_3dof(const FrontAxle_t& front_axle, 
                                                          const RearAxle_t& rear_axle,
                                                          Xml_document& database,
                                                          const std::string& path)
@@ -42,9 +42,9 @@ inline Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebrai
 }
 
 
-template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
-inline Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_start,control_start>::Chassis_car_3dof(Xml_document& database)
-: Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_start,control_start>(
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t control_start>
+inline Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,control_start>::Chassis_car_3dof(Xml_document& database)
+: Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,control_start>(
            FrontAxle_t("front-axle",
                        typename FrontAxle_t::Tire_left_type("front-axle.left-tire", database, "vehicle/front-tire/"),
                        typename FrontAxle_t::Tire_right_type("front-axle.right-tire", database, "vehicle/front-tire/"),
@@ -56,9 +56,19 @@ inline Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebrai
            database, "vehicle/chassis/") 
 {}
 
-template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
+
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t control_start>
+template<size_t number_of_inputs, size_t number_of_controls>
+inline void Chassis_car_3dof<Timeseries_t, FrontAxle_t, RearAxle_t, state_start, control_start>::transform_states_to_inputs
+(const std::array<Timeseries_t, number_of_inputs>& states, const std::array<Timeseries_t, number_of_controls>& controls, std::array<Timeseries_t, number_of_inputs>& inputs)
+{
+    throw fastest_lap_exception("[ERROR] Chassis_car_3dof cannot transform states to inputs because it contains algebraic equations.");
+}
+
+
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t control_start>
 template<typename T>
-inline void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_start,control_start>::set_parameter(const std::string& parameter, const T value)
+inline void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,control_start>::set_parameter(const std::string& parameter, const T value)
 {
     // Check if the parameter goes to this object
     if ( parameter.find("vehicle/chassis/") == 0 )
@@ -69,8 +79,8 @@ inline void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,alg
         // If found, update the axles frames in case the parameter modified was their position
         if ( found )
         {
-            base_type::get_front_axle().get_frame().set_origin(get_front_axle_position(), get_front_axle_velocity(), Frame<Timeseries_t>::Frame_velocity_type::parent_frame);
-            base_type::get_rear_axle().get_frame().set_origin(get_rear_axle_position(), get_rear_axle_velocity(), Frame<Timeseries_t>::Frame_velocity_type::parent_frame);
+            base_type::get_front_axle().get_frame().set_origin(get_front_axle_position(), get_front_axle_velocity(), Frame<Timeseries_t>::Frame_velocity_types::parent_frame);
+            base_type::get_rear_axle().get_frame().set_origin(get_rear_axle_position(), get_rear_axle_velocity(), Frame<Timeseries_t>::Frame_velocity_types::parent_frame);
         }
 
         // If not found, look for the parameter in the parent class
@@ -84,8 +94,8 @@ inline void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,alg
     }
 }
 
-template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
-inline void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_start,control_start>::fill_xml(Xml_document& doc) const
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t control_start>
+inline void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,control_start>::fill_xml(Xml_document& doc) const
 {
     // Call the fill_xml of the parent
     base_type::fill_xml(doc);
@@ -95,16 +105,16 @@ inline void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,alg
 }
 
 
-template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
-inline void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_start,control_start>::set_state
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t control_start>
+inline void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,control_start>::set_state
  (const Timeseries_t& u, const Timeseries_t& v, const Timeseries_t& omega)
 {
     base_type::set_state(u,v,omega);
 }
 
 
-template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
-inline void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_start,control_start>::update(const Vector3d<Timeseries_t>& ground_position_vector_m, 
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t control_start>
+inline void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,control_start>::update(const Vector3d<Timeseries_t>& ground_position_vector_m, 
     const Euler_angles<scalar>& road_euler_angles_rad, const Timeseries_t& track_heading_angle_rad, 
     const Euler_angles<Timeseries_t>& road_euler_angles_dot_radps, const Timeseries_t& track_heading_angle_dot_radps,
     const Timeseries_t& ground_velocity_z_body_mps)
@@ -166,7 +176,7 @@ inline void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,alg
     const auto& v       = base_type::get_v();
     const auto& omega_x = absolute_omega_body_radps.x();
     const auto& omega_y = absolute_omega_body_radps.y();
-    const auto& omega_z = base_type::get_omega();
+    const auto& omega_z = base_type::get_yaw_rate_radps();
     const auto& Ixx     = base_type::get_inertia().xx();
     const auto& Iyy     = base_type::get_inertia().yy();
     const auto& Izz     = base_type::get_inertia().zz();
@@ -188,14 +198,13 @@ inline void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,alg
 
     _roll_angular_momentum_Nms  = Ixx * omega_x;
     _pitch_angular_momentum_Nms = Iyy * omega_y;
-    base_type::_yaw_rate_radps  = omega_z;
 
     // Extra compliance equation: roll balance equation
     _roll_balance_equation_N = (_force_z_fr_N-_force_z_fl_N)*(1.0-_roll_balance_coeff) + (_force_z_rl_N - _force_z_rr_N)*_roll_balance_coeff;
 }
 
-template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
-scalar Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_start,control_start>::get_parameter(const std::string& parameter_name) const
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t control_start>
+scalar Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,control_start>::get_parameter(const std::string& parameter_name) const
 {
      if (parameter_name == "cog_height") return -_x_com.z();
 
@@ -208,32 +217,31 @@ scalar Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebrai
 
 
 // ------- Handle state vector
-template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
-template<size_t number_of_states, size_t number_of_algebraic_states>
-void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_start,control_start>::get_state_and_state_derivative
-    (std::array<Timeseries_t,number_of_states>& state, std::array<Timeseries_t, number_of_states>& dstate_dt, std::array<Timeseries_t, number_of_algebraic_states>& algebraic_equations) const
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t control_start>
+template<size_t number_of_states>
+void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,control_start>::get_state_and_state_derivative
+    (std::array<Timeseries_t,number_of_states>& state, std::array<Timeseries_t, number_of_states>& dstate_dt) const
 {
     // (1) Call the parent setter
-    base_type::get_state_and_state_derivative(state, dstate_dt, algebraic_equations);
+    base_type::get_state_and_state_derivative(state, dstate_dt);
 
     // (2) Set states
-    state[state_names::com_velocity_z_mps] = _com_velocity_z_mps/g0;
-    state[state_names::roll_angular_momentum_Nms] = _roll_angular_momentum_Nms/(g0*base_type::get_mass());
-    state[state_names::pitch_angular_momentum_Nms] = _pitch_angular_momentum_Nms/(g0*base_type::get_mass());
+    state[state_names::com_velocity_z_mps]          = _com_velocity_z_mps/g0;
+    state[state_names::roll_angular_momentum_Nms]   = _roll_angular_momentum_Nms/(g0*base_type::get_mass());
+    state[state_names::pitch_angular_momentum_Nms]  = _pitch_angular_momentum_Nms/(g0*base_type::get_mass());
+    state[state_names::roll_balance_equation_g]     = 0.0;
 
     // (3) Set state time derivatives
-    dstate_dt[state_names::com_velocity_z_mps] = _com_velocity_z_dot_mps2/g0;
-    dstate_dt[state_names::roll_angular_momentum_Nms] = _roll_angular_momentum_dot_Nm/(g0*base_type::get_mass());
+    dstate_dt[state_names::com_velocity_z_mps]         = _com_velocity_z_dot_mps2/g0;
+    dstate_dt[state_names::roll_angular_momentum_Nms]  = _roll_angular_momentum_dot_Nm/(g0*base_type::get_mass());
     dstate_dt[state_names::pitch_angular_momentum_Nms] = _pitch_angular_momentum_dot_Nm/(g0*base_type::get_mass());
-
-    // (4) Set algebraic equations
-    algebraic_equations[algebraic_state_names::roll_balance_equation_g] = _roll_balance_equation_N/(g0*base_type::get_mass());
+    dstate_dt[state_names::roll_balance_equation_g]    = _roll_balance_equation_N/(g0*base_type::get_mass());
 }
 
 
-template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t control_start>
 template<size_t number_of_inputs, size_t number_of_controls>
-void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_start,control_start>::set_state_and_control_names
+void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,control_start>::set_state_and_control_names
     (std::array<std::string,number_of_inputs>& inputs, std::array<std::string,number_of_controls>& controls) const
 {
     base_type::set_state_and_control_names(inputs, controls);
@@ -242,13 +250,13 @@ void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_
     // (empty)
 
     // Algebraic states ---
-    inputs[input_names::force_z_rl_g] = base_type::get_name() + ".force_z_fl_N";
+    inputs[input_names::force_z_fl_g] = base_type::get_name() + ".force_z_fl_g";
 
-    inputs[input_names::force_z_fr_g] = base_type::get_name() + ".force_z_fr_N";
+    inputs[input_names::force_z_fr_g] = base_type::get_name() + ".force_z_fr_g";
 
-    inputs[input_names::force_z_rl_g] = base_type::get_name() + ".force_z_rl_N";
+    inputs[input_names::force_z_rl_g] = base_type::get_name() + ".force_z_rl_g";
 
-    inputs[input_names::force_z_rr_g] = base_type::get_name() + ".force_z_rr_N";
+    inputs[input_names::force_z_rr_g] = base_type::get_name() + ".force_z_rr_g";
 
     // Controls ---
 
@@ -259,9 +267,9 @@ void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_
     controls[control_names::brake_bias] = base_type::get_name() + ".brake-bias";
 }
 
-template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t control_start>
 template<size_t number_of_inputs, size_t number_of_controls>
-void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_start,control_start>::set_state_and_controls
+void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,control_start>::set_state_and_controls
     (const std::array<Timeseries_t,number_of_inputs>& inputs, const std::array<Timeseries_t,number_of_controls>& controls)
 {
     base_type::set_state_and_controls(inputs,controls);
@@ -280,7 +288,7 @@ void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_
     // Algebraic ---
 
     // Fz_fl
-    _force_z_fl_N = inputs[input_names::force_z_rl_g]*g0*base_type::get_mass();
+    _force_z_fl_N = inputs[input_names::force_z_fl_g]*g0*base_type::get_mass();
 
     // Fz_fr
     _force_z_fr_N = inputs[input_names::force_z_fr_g]*g0*base_type::get_mass();
@@ -293,9 +301,9 @@ void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_
 }
 
 
-template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t algebraic_state_start, size_t control_start>
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t control_start>
 template<size_t number_of_inputs, size_t number_of_controls>
-void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_state_start,control_start>::set_state_and_control_upper_lower_and_default_values
+void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,control_start>::set_state_and_control_upper_lower_and_default_values
     (std::array<scalar, number_of_inputs>& inputs_def, std::array<scalar, number_of_inputs>& inputs_lb,
      std::array<scalar, number_of_inputs>& inputs_ub,  
      std::array<scalar, number_of_controls>& controls_def, std::array<scalar, number_of_controls>& controls_lb,
@@ -310,24 +318,24 @@ void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,algebraic_
     // Inputs ---
 
     // Fz_fl
-    inputs_def[input_names::force_z_fl_N] = 0.25;
-    inputs_lb[input_names::force_z_fl_N] = -3.0;
-    inputs_ub[input_names::force_z_fl_N] = -0.01;
+    inputs_def[input_names::force_z_fl_g] = 0.25;
+    inputs_lb[input_names::force_z_fl_g] = -3.0;
+    inputs_ub[input_names::force_z_fl_g] = -0.01;
 
     // Fz_fr
-    inputs_def[input_names::force_z_fr_N] = 0.25;
-    inputs_lb[input_names::force_z_fr_N] = -3.0;
-    inputs_ub[input_names::force_z_fr_N] = -0.01;
+    inputs_def[input_names::force_z_fr_g] = 0.25;
+    inputs_lb[input_names::force_z_fr_g] = -3.0;
+    inputs_ub[input_names::force_z_fr_g] = -0.01;
 
     // Fz_rl
-    inputs_def[input_names::force_z_rl_N] = 0.25;
-    inputs_lb[input_names::force_z_rl_N] = -3.0;
-    inputs_ub[input_names::force_z_rl_N] = -0.01;
+    inputs_def[input_names::force_z_rl_g] = 0.25;
+    inputs_lb[input_names::force_z_rl_g] = -3.0;
+    inputs_ub[input_names::force_z_rl_g] = -0.01;
 
     // Fz_rr
-    inputs_def[input_names::force_z_rr_N] = 0.25;
-    inputs_lb[input_names::force_z_rr_N] = -3.0;
-    inputs_ub[input_names::force_z_rr_N] = -0.01;
+    inputs_def[input_names::force_z_rr_g] = 0.25;
+    inputs_lb[input_names::force_z_rr_g] = -3.0;
+    inputs_ub[input_names::force_z_rr_g] = -0.01;
 
 
     // Controls ---

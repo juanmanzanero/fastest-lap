@@ -13,7 +13,7 @@
 //!                      (1 for motorcycles/2 for cars)
 //!  @param state_start: index of the first state variable defined here
 //!  @param control_start: index of the first control variable defined here
-template <typename Timeseries_t,typename Tires_tuple, size_t state_start, size_t algebraic_state_start, size_t control_start>
+template <typename Timeseries_t,typename Tires_tuple, size_t state_start, size_t control_start>
 class Axle
 {
  public:
@@ -25,7 +25,7 @@ class Axle
     //! Indices of the state variables of this class: none
     struct input_names
     {
-        enum { end = state_start + algebraic_state_start};
+        enum { end = state_start };
     };
 
     //! Indices of the control variables of this class: none
@@ -39,12 +39,7 @@ class Axle
         enum { end = state_start };
     };
 
-    struct algebraic_state_names
-    {
-        enum { end = algebraic_state_start };
-    };
-
-    static_assert(input_names::end == state_names::end + algebraic_state_names::end);
+    static_assert(input_names::end == state_names::end);
 
     //! Default constructor
     Axle() = default;
@@ -60,6 +55,7 @@ class Axle
     Axle& operator=(const Axle& other);
 
     //! Copy constructor operator
+
     //! @param[in] other: axle to copy
     Axle(const Axle& other);
 
@@ -86,10 +82,10 @@ class Axle
 
     //! Load the time derivative of the state variables computed herein to the dqdt
     //! @param[out] dqdt: the vehicle state vector time derivative
-    template<size_t number_of_states, size_t number_of_algebraic_states>
+    template<size_t number_of_states>
     void get_state_and_state_derivative(std::array<Timeseries_t,number_of_states>& state, 
-                                        std::array<Timeseries_t,number_of_states>& dstate_dt, 
-                                        std::array<Timeseries_t, number_of_algebraic_states>& algebraic_equations) const;
+                                        std::array<Timeseries_t,number_of_states>& dstate_dt
+                                        ) const;
 
     //! Set the state variables of this class
     //! @param[in] q: the vehicle state vector 

@@ -17,19 +17,19 @@ class limebeer2014f1
  public:
     limebeer2014f1() = delete;
 
-    using Front_left_tire_type  = Tire_pacejka_simple<Timeseries_t,0,0,0>;
-    using Front_right_tire_type = Tire_pacejka_simple<Timeseries_t,Front_left_tire_type::state_names::end,Front_left_tire_type::algebraic_state_names::end, Front_left_tire_type::control_names::end>;
-    using Rear_left_tire_type   = Tire_pacejka_simple<Timeseries_t,Front_right_tire_type::state_names::end,Front_right_tire_type::algebraic_state_names::end, Front_right_tire_type::control_names::end>;
-    using Rear_right_tire_type  = Tire_pacejka_simple<Timeseries_t,Rear_left_tire_type::state_names::end,Rear_left_tire_type::algebraic_state_names::end, Rear_left_tire_type::control_names::end>;
+    using Front_left_tire_type  = Tire_pacejka_simple<Timeseries_t,0,0>;
+    using Front_right_tire_type = Tire_pacejka_simple<Timeseries_t,Front_left_tire_type::state_names::end, Front_left_tire_type::control_names::end>;
+    using Rear_left_tire_type   = Tire_pacejka_simple<Timeseries_t,Front_right_tire_type::state_names::end, Front_right_tire_type::control_names::end>;
+    using Rear_right_tire_type  = Tire_pacejka_simple<Timeseries_t,Rear_left_tire_type::state_names::end, Rear_left_tire_type::control_names::end>;
 
-    using Front_axle_t          = Axle_car_3dof<Timeseries_t,Front_left_tire_type,Front_right_tire_type,STEERING,Rear_right_tire_type::state_names::end,Rear_right_tire_type::algebraic_state_names::end,Rear_right_tire_type::control_names::end>;
-    using Rear_axle_t           = Axle_car_3dof<Timeseries_t,Rear_left_tire_type,Rear_right_tire_type,POWERED,Front_axle_t::Axle_type::state_names::end,Front_axle_t::Axle_type::algebraic_state_names::end,Front_axle_t::Axle_type::control_names::end>;
-    using Chassis_t             = Chassis_car_3dof<Timeseries_t,Front_axle_t,Rear_axle_t,Rear_axle_t::Axle_type::state_names::end,Rear_axle_t::Axle_type::algebraic_state_names::end,Rear_axle_t::Axle_type::control_names::end>;
+    using Front_axle_t          = Axle_car_3dof<Timeseries_t,Front_left_tire_type,Front_right_tire_type,STEERING,Rear_right_tire_type::state_names::end,Rear_right_tire_type::control_names::end>;
+    using Rear_axle_t           = Axle_car_3dof<Timeseries_t,Rear_left_tire_type,Rear_right_tire_type,POWERED,Front_axle_t::Axle_type::state_names::end,Front_axle_t::Axle_type::control_names::end>;
+    using Chassis_t             = Chassis_car_3dof<Timeseries_t,Front_axle_t,Rear_axle_t,Rear_axle_t::Axle_type::state_names::end,Rear_axle_t::Axle_type::control_names::end>;
 
-    using Road_cartesian_t   = Road_cartesian<Timeseries_t,Chassis_t::state_names::end,Chassis_t::algebraic_state_names::end,Chassis_t::control_names::end>;
+    using Road_cartesian_t   = Road_cartesian<Timeseries_t,Chassis_t::state_names::end,Chassis_t::control_names::end>;
 
     template<typename Track_t>
-    using Road_curvilinear_t = Road_curvilinear<Timeseries_t,Track_t,Chassis_t::state_names::end,Chassis_t::algebraic_state_names::end,Chassis_t::control_names::end>;
+    using Road_curvilinear_t = Road_curvilinear<Timeseries_t,Track_t,Chassis_t::state_names::end,Chassis_t::control_names::end>;
  
  private:
       
@@ -133,8 +133,8 @@ class limebeer2014f1
             q[Dynamic_model_t::Chassis_type::front_axle_type::input_names::KAPPA_RIGHT] = x[1];
             q[Dynamic_model_t::Chassis_type::rear_axle_type::input_names::KAPPA_LEFT]   = x[2];
             q[Dynamic_model_t::Chassis_type::rear_axle_type::input_names::KAPPA_RIGHT]  = x[3];
-            q[Dynamic_model_t::Chassis_type::input_names::com_velocity_x_mps]           = velocity_mps*cos(psi);
-            q[Dynamic_model_t::Chassis_type::input_names::com_velocity_y_mps]           = -velocity_mps*sin(psi);
+            q[Dynamic_model_t::Chassis_type::input_names::velocity_x_mps]           = velocity_mps*cos(psi);
+            q[Dynamic_model_t::Chassis_type::input_names::velocity_y_mps]           = -velocity_mps*sin(psi);
             q[Dynamic_model_t::Chassis_type::input_names::yaw_rate_radps]               = omega;
             q[Dynamic_model_t::Road_type::input_names::X]                               = 0.0;
             q[Dynamic_model_t::Road_type::input_names::Y]                               = 0.0;
@@ -149,18 +149,18 @@ class limebeer2014f1
             u[Dynamic_model_t::Chassis_type::control_names::throttle]  = x[10];
         
             // Compute time derivative
-            auto [states,dstates_dt,algebraic_equations] = (*this)(q,u,0.0);
+            auto [states,dstates_dt] = (*this)(q,u,0.0);
 
             std::array<Timeseries_t,number_of_steady_state_equations> constraints;
         
-            constraints[0] = algebraic_equations[0];
-            constraints[1] = algebraic_equations[1];
-            constraints[2] = algebraic_equations[2];
-            constraints[3] = algebraic_equations[3];
+            constraints[0] = dstates_dt[Dynamic_model_t::Chassis_type::state_names::com_velocity_z_mps];
+            constraints[1] = dstates_dt[Dynamic_model_t::Chassis_type::state_names::roll_angular_momentum_Nms];
+            constraints[2] = dstates_dt[Dynamic_model_t::Chassis_type::state_names::pitch_angular_momentum_Nms];
+            constraints[3] = dstates_dt[Dynamic_model_t::Chassis_type::state_names::roll_balance_equation_g];
             constraints[4] = (dstates_dt[Dynamic_model_t::Chassis_type::state_names::com_velocity_x_mps]*sin(psi)
                             + dstates_dt[Dynamic_model_t::Chassis_type::state_names::com_velocity_y_mps]*cos(psi))/(g0);
             constraints[5] = longitudinal_acceleration*acceleration_units/g0 + (- dstates_dt[Dynamic_model_t::Chassis_type::state_names::com_velocity_x_mps]*cos(psi)
-                                 + dstates_dt[Dynamic_model_t::Chassis_type::state_names::com_velocity_y_m]*sin(psi))/(g0);
+                                 + dstates_dt[Dynamic_model_t::Chassis_type::state_names::com_velocity_y_mps]*sin(psi))/(g0);
 
             constraints[6] = dstates_dt[Dynamic_model_t::Chassis_type::state_names::yaw_rate_radps]/g0;
 
@@ -180,6 +180,49 @@ class limebeer2014f1
         // Optimal lap-time --------------------------------------------------------
         static constexpr const size_t N_OL_EXTRA_CONSTRAINTS = 6;    //! The number of tire constraints: lambda_fl, lambda_fr, lambda_rl, lambda_rr
                                                                      //! + the real track limits: -wL < n + sign(n).t.cos(alpha) < wR
+
+
+        typename Dynamic_model_t::Equations_classification classify_equations() const
+        {
+            auto [time_derivative, algebraic] = Dynamic_model_t::classify_equations();
+
+            if constexpr (road_is_curvilinear<Road_t>::value)
+            {
+                if (!Dynamic_model_t::get_road().get_track().has_elevation())
+                {
+                    // If we are solving a 2D road, remove com_velocity_z, roll_angular_momentum, pitch_angular_momentum,
+                    // and roll balance equation from the set of equations
+                    algebraic.push_back(Dynamic_model_t::Chassis_type::state_names::com_velocity_z_mps);
+                    algebraic.push_back(Dynamic_model_t::Chassis_type::state_names::roll_angular_momentum_Nms);
+                    algebraic.push_back(Dynamic_model_t::Chassis_type::state_names::pitch_angular_momentum_Nms);
+                    algebraic.push_back(Dynamic_model_t::Chassis_type::state_names::roll_balance_equation_g);
+
+                    time_derivative.erase(std::remove(time_derivative.begin(), time_derivative.end(), Dynamic_model_t::Chassis_type::state_names::com_velocity_z_mps), time_derivative.end());
+                    time_derivative.erase(std::remove(time_derivative.begin(), time_derivative.end(), Dynamic_model_t::Chassis_type::state_names::roll_angular_momentum_Nms), time_derivative.end());
+                    time_derivative.erase(std::remove(time_derivative.begin(), time_derivative.end(), Dynamic_model_t::Chassis_type::state_names::pitch_angular_momentum_Nms), time_derivative.end());
+                    time_derivative.erase(std::remove(time_derivative.begin(), time_derivative.end(), Dynamic_model_t::Chassis_type::state_names::roll_balance_equation_g), time_derivative.end());
+                }
+            }
+            else
+            {
+                // The case of a cartesian road is also 2D
+                algebraic.push_back(Dynamic_model_t::Chassis_type::state_names::com_velocity_z_mps);
+                algebraic.push_back(Dynamic_model_t::Chassis_type::state_names::roll_angular_momentum_Nms);
+                algebraic.push_back(Dynamic_model_t::Chassis_type::state_names::pitch_angular_momentum_Nms);
+                algebraic.push_back(Dynamic_model_t::Chassis_type::state_names::roll_balance_equation_g);
+
+                time_derivative.erase(std::remove(time_derivative.begin(), time_derivative.end(), Dynamic_model_t::Chassis_type::state_names::com_velocity_z_mps), time_derivative.end());
+                time_derivative.erase(std::remove(time_derivative.begin(), time_derivative.end(), Dynamic_model_t::Chassis_type::state_names::roll_angular_momentum_Nms), time_derivative.end());
+                time_derivative.erase(std::remove(time_derivative.begin(), time_derivative.end(), Dynamic_model_t::Chassis_type::state_names::pitch_angular_momentum_Nms), time_derivative.end());
+                time_derivative.erase(std::remove(time_derivative.begin(), time_derivative.end(), Dynamic_model_t::Chassis_type::state_names::roll_balance_equation_g), time_derivative.end());
+            }
+
+            return typename Dynamic_model_t::Equations_classification
+            {
+                .time_derivative = time_derivative,
+                .algebraic       = algebraic
+            };
+        }
 
         std::tuple<std::vector<scalar>,std::vector<scalar>> optimal_laptime_derivative_control_bounds() const
         {
@@ -222,8 +265,8 @@ class limebeer2014f1
 
         std::array<Timeseries_t,N_OL_EXTRA_CONSTRAINTS> optimal_laptime_extra_constraints() const
         {
-            const auto& n = this->get_road().get_n();
-            const auto& alpha = this->get_road().get_alpha();
+            const auto& n = this->get_road().get_lateral_displacement();
+            const auto& alpha = this->get_road().get_track_heading_angle();
             const auto& track = this->get_chassis().get_front_axle().get_track();
 
             return 

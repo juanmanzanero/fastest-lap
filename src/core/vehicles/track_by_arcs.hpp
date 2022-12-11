@@ -118,11 +118,16 @@ inline std::tuple<Vector3d<Timeseries_t>,Vector3d<Timeseries_t>,Vector3d<Timeser
 }
 
 
-inline std::tuple<sVector3d,sVector3d,sVector3d> Track_by_arcs::operator()(const scalar s) const
+inline auto Track_by_arcs::operator()(const scalar s) const -> Frenet_frame
 {
     auto [r,dr,d2r,d3r] = at(s);
 
-    return std::make_tuple(r,dr,d2r);
+    return Frenet_frame
+    {
+        .position = r,
+        .euler_angles = {atan2(dr.y(), dr.x()), 0.0, 0.0},
+        .deuler_angles_ds = {dot(sVector3d(-dr.y(), dr.x(), 0.0), d2r)/dot(dr,dr), 0.0, 0.0}
+    };
 }
 
 

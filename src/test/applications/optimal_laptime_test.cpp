@@ -36,67 +36,67 @@ static void check_optimal_laptime(const Optimal_laptime<Dynamic_model_t>& opt_la
     // omega axle
     auto omega_axle_saved = opt_saved.get_element("optimal_laptime/rear-axle.omega").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
-        EXPECT_NEAR(opt_laptime.input_states[i][lot2016kart<scalar>::Rear_axle_t::input_state_names::OMEGA_AXLE], omega_axle_saved[i], 5.0e-5);
+        EXPECT_NEAR(opt_laptime.inputs[i][lot2016kart<scalar>::Rear_axle_t::input_names::OMEGA_AXLE], omega_axle_saved[i], 5.0e-5);
 
     // u
     auto u_saved = opt_saved.get_element("optimal_laptime/chassis.velocity.x").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
-        EXPECT_NEAR(opt_laptime.input_states[i][lot2016kart<scalar>::Chassis_t::input_state_names::U], u_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.inputs[i][lot2016kart<scalar>::Chassis_t::input_names::velocity_x_mps], u_saved[i], 1.0e-6);
 
     // v
     auto v_saved = opt_saved.get_element("optimal_laptime/chassis.velocity.y").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
-        EXPECT_NEAR(opt_laptime.input_states[i][lot2016kart<scalar>::Chassis_t::input_state_names::V], v_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.inputs[i][lot2016kart<scalar>::Chassis_t::input_names::velocity_y_mps], v_saved[i], 1.0e-6);
 
     // omega
     auto omega_saved = opt_saved.get_element("optimal_laptime/chassis.omega.z").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
-        EXPECT_NEAR(opt_laptime.input_states[i][lot2016kart<scalar>::Chassis_t::input_state_names::OMEGA], omega_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.inputs[i][lot2016kart<scalar>::Chassis_t::input_names::yaw_rate_radps], omega_saved[i], 1.0e-6);
 
     // z
     auto z_saved = opt_saved.get_element("optimal_laptime/chassis.position.z").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
-        EXPECT_NEAR(opt_laptime.input_states[i][lot2016kart<scalar>::Chassis_t::input_state_names::Z], z_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.inputs[i][lot2016kart<scalar>::Chassis_t::input_names::Z], z_saved[i], 1.0e-6);
 
     // phi
     auto phi_saved = opt_saved.get_element("optimal_laptime/chassis.attitude.phi").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
-        EXPECT_NEAR(opt_laptime.input_states[i][lot2016kart<scalar>::Chassis_t::input_state_names::PHI], phi_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.inputs[i][lot2016kart<scalar>::Chassis_t::input_names::PHI], phi_saved[i], 1.0e-6);
 
     // mu
     auto mu_saved = opt_saved.get_element("optimal_laptime/chassis.attitude.mu").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
-        EXPECT_NEAR(opt_laptime.input_states[i][lot2016kart<scalar>::Chassis_t::input_state_names::MU], mu_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.inputs[i][lot2016kart<scalar>::Chassis_t::input_names::MU], mu_saved[i], 1.0e-6);
 
     // dzdt
     auto dzdt_saved = opt_saved.get_element("optimal_laptime/chassis.velocity.z").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
-        EXPECT_NEAR(opt_laptime.input_states[i][lot2016kart<scalar>::Chassis_t::input_state_names::DZDT], dzdt_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.inputs[i][lot2016kart<scalar>::Chassis_t::input_names::DZDT], dzdt_saved[i], 1.0e-6);
 
     // dphidt
     auto dphidt_saved = opt_saved.get_element("optimal_laptime/chassis.omega.x").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
-        EXPECT_NEAR(opt_laptime.input_states[i][lot2016kart<scalar>::Chassis_t::input_state_names::DPHIDT], dphidt_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.inputs[i][lot2016kart<scalar>::Chassis_t::input_names::DPHIDT], dphidt_saved[i], 1.0e-6);
 
     // dmudt
     auto dmudt_saved = opt_saved.get_element("optimal_laptime/chassis.omega.y").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
-        EXPECT_NEAR(opt_laptime.input_states[i][lot2016kart<scalar>::Chassis_t::input_state_names::DMUDT], dmudt_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.inputs[i][lot2016kart<scalar>::Chassis_t::input_names::DMUDT], dmudt_saved[i], 1.0e-6);
 
     // time
     auto time_saved = opt_saved.get_element("optimal_laptime/time").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
-        EXPECT_NEAR(opt_laptime.input_states[i][lot2016kart<scalar>::curvilinear_a::Road_t::input_state_names::TIME], time_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.inputs[i][lot2016kart<scalar>::curvilinear_a::Road_t::input_names::time], time_saved[i], 1.0e-6);
 
     // n
     auto n_saved = opt_saved.get_element("optimal_laptime/road.lateral-displacement").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
-        EXPECT_NEAR(opt_laptime.input_states[i][lot2016kart<scalar>::curvilinear_a::Road_t::input_state_names::N], n_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.inputs[i][lot2016kart<scalar>::curvilinear_a::Road_t::input_names::lateral_displacement], n_saved[i], 1.0e-6);
 
     // alpha
     auto alpha_saved = opt_saved.get_element("optimal_laptime/road.track-heading-angle").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
-        EXPECT_NEAR(opt_laptime.input_states[i][lot2016kart<scalar>::curvilinear_a::Road_t::input_state_names::ALPHA], alpha_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.inputs[i][lot2016kart<scalar>::curvilinear_a::Road_t::input_names::track_heading_angle], alpha_saved[i], 1.0e-6);
 
     // delta
     auto delta_saved = opt_saved.get_element("optimal_laptime/control_variables/front-axle.steering-angle/values").get_value(std::vector<scalar>());
@@ -135,7 +135,7 @@ TEST_F(Optimal_laptime_test, maximum_acceleration)
    
     ss.controls[1] = T;
     
-    ss.dstates_dt = car_cartesian_scalar(ss.input_states, {}, ss.controls, 0.0).dstates_dt;
+    ss.dstates_dt = car_cartesian_scalar(ss.inputs, ss.controls, 0.0).dstates_dt;
 
     // Construct control variables
     auto control_variables = Optimal_laptime<decltype(car)>::Control_variables<>{};
@@ -150,21 +150,21 @@ TEST_F(Optimal_laptime_test, maximum_acceleration)
     auto opts = Optimal_laptime<decltype(car)>::Options{};
     opts.controls_lb[1] = -200.0;
     opts.controls_ub[1] =  200.0;
-    Optimal_laptime<decltype(car)> opt_laptime(s, false, true, car, {n+1,ss.input_states}, {n+1,ss.algebraic_states}, control_variables, opts);
+    Optimal_laptime<decltype(car)> opt_laptime(s, false, true, car, {n+1,ss.inputs}, control_variables, opts);
 
     // Perform tests ------------------------------------:-
 
     // Check that the car accelerates
-    constexpr const size_t IU = lot2016kart<scalar>::curvilinear<Track_by_arcs>::Chassis_type::input_state_names::U;
+    constexpr const size_t IU = lot2016kart<scalar>::curvilinear<Track_by_arcs>::Chassis_type::input_names::velocity_x_mps;
     for (size_t i = 1; i < n; ++i)
     {
-        EXPECT_TRUE(opt_laptime.input_states.at(i).at(IU) > opt_laptime.input_states.at(i-1).at(IU) );
+        EXPECT_TRUE(opt_laptime.inputs.at(i).at(IU) > opt_laptime.inputs.at(i-1).at(IU) );
     }
 
     // Check that kappa is between [0.090,0.096] from the third onwards
     for (size_t i = 4; i < n; ++i)
     {
-        car_cartesian_scalar(opt_laptime.input_states.at(i), opt_laptime.controls.control_array_at_s(car,i,s[i]), s[i]);
+        car_cartesian_scalar(opt_laptime.inputs.at(i), opt_laptime.controls.control_array_at_s(car,i,s[i]), s[i]);
         const auto& kappa_left  = car_cartesian_scalar.get_chassis().get_rear_axle().template get_tire<0>().get_kappa();
         const auto& kappa_right = car_cartesian_scalar.get_chassis().get_rear_axle().template get_tire<1>().get_kappa();
         EXPECT_TRUE( (kappa_left > 0.090) && (kappa_left < 0.096) ) << ", with i = " << i;
@@ -211,7 +211,7 @@ TEST_F(Optimal_laptime_test, Ovaltrack_open)
    
     ss.controls[1] = T;
     
-    ss.dstates_dt = car_cartesian_scalar(ss.input_states, {}, ss.controls, 0.0).dstates_dt;
+    ss.dstates_dt = car_cartesian_scalar(ss.inputs, ss.controls, 0.0).dstates_dt;
 
     // Construct control variables
     auto control_variables = Optimal_laptime<decltype(car)>::Control_variables<>{};
@@ -225,7 +225,7 @@ TEST_F(Optimal_laptime_test, Ovaltrack_open)
     auto opts = Optimal_laptime<decltype(car)>::Options{};
     opts.controls_lb[1] = -200.0;
     opts.controls_ub[1] =  200.0;
-    Optimal_laptime<decltype(car)> opt_laptime(s, false, true, car, {n+1,ss.input_states}, {n+1,ss.algebraic_states}, control_variables, opts);
+    Optimal_laptime<decltype(car)> opt_laptime(s, false, true, car, {n+1,ss.inputs}, control_variables, opts);
 
     opt_laptime.xml()->save("data/kart_ovaltrack_open.xml");
     Xml_document opt_saved("data/kart_ovaltrack_open.xml", true);
@@ -259,7 +259,7 @@ TEST_F(Optimal_laptime_test, Ovaltrack_closed)
    
     ss.controls[1] = T;
     
-    ss.dstates_dt = car_cartesian_scalar(ss.input_states, {}, ss.controls, 0.0).dstates_dt;
+    ss.dstates_dt = car_cartesian_scalar(ss.inputs, ss.controls, 0.0).dstates_dt;
 
     // Construct control variables
     auto control_variables = Optimal_laptime<decltype(car)>::Control_variables<>{};
@@ -273,7 +273,7 @@ TEST_F(Optimal_laptime_test, Ovaltrack_closed)
     auto opts = Optimal_laptime<decltype(car)>::Options{};
     opts.controls_lb[1] = -200.0;
     opts.controls_ub[1] =  200.0;
-    Optimal_laptime<decltype(car)> opt_laptime(s, true, true, car, {n,ss.input_states}, {n,ss.algebraic_states}, control_variables, opts);
+    Optimal_laptime<decltype(car)> opt_laptime(s, true, true, car, {n,ss.inputs}, control_variables, opts);
 
     opt_laptime.xml()->save("data/kart_ovaltrack_closed.xml");
     Xml_document opt_saved("data/kart_ovaltrack_closed.xml", true);
@@ -307,7 +307,7 @@ TEST_F(Optimal_laptime_test, Ovaltrack_derivative)
    
     ss.controls[1] = T;
     
-    ss.dstates_dt = car_cartesian_scalar(ss.input_states, {}, ss.controls, 0.0).dstates_dt;
+    ss.dstates_dt = car_cartesian_scalar(ss.inputs, ss.controls, 0.0).dstates_dt;
 
     // Construct control variables
     auto control_variables = Optimal_laptime<decltype(car)>::Control_variables<>{};
@@ -325,7 +325,7 @@ TEST_F(Optimal_laptime_test, Ovaltrack_derivative)
     auto opts = Optimal_laptime<decltype(car)>::Options{};
     opts.controls_lb[1] = -200.0;
     opts.controls_ub[1] =  200.0;
-    Optimal_laptime<decltype(car)> opt_laptime(s, true, false, car, {n,ss.input_states}, {n,ss.algebraic_states}, control_variables, opts);
+    Optimal_laptime<decltype(car)> opt_laptime(s, true, false, car, {n,ss.inputs}, control_variables, opts);
 
     // Check the results with a saved simulation
     opt_laptime.xml()->save("data/ovaltrack_derivative.xml");
@@ -362,7 +362,7 @@ TEST_F(Optimal_laptime_test, Catalunya_direct)
    
     ss.controls[1] = T;
 
-    ss.dstates_dt = car_cartesian_scalar(ss.input_states, {}, ss.controls, 0.0).dstates_dt;
+    ss.dstates_dt = car_cartesian_scalar(ss.inputs, ss.controls, 0.0).dstates_dt;
 
     // Construct control variables
     auto control_variables = Optimal_laptime<decltype(car)>::Control_variables<>{};
@@ -379,7 +379,7 @@ TEST_F(Optimal_laptime_test, Catalunya_direct)
     auto opts = Optimal_laptime<decltype(car)>::Options{};
     opts.controls_lb[1] = -200.0;
     opts.controls_ub[1] =  200.0;
-    Optimal_laptime<decltype(car)> opt_laptime(s, true, true, car, {n,ss.input_states}, {n,ss.algebraic_states}, control_variables, opts);
+    Optimal_laptime<decltype(car)> opt_laptime(s, true, true, car, {n,ss.inputs}, control_variables, opts);
 
     std::vector<scalar> delta_saved = results.get_root_element().get_child("catalunya/delta").get_value(std::vector<scalar>());
     std::vector<scalar> T_saved = results.get_root_element().get_child("catalunya/T").get_value(std::vector<scalar>());
@@ -428,7 +428,7 @@ TEST_F(Optimal_laptime_test, Catalunya_derivative)
    
     ss.controls[1] = T;
 
-    ss.dstates_dt = car_cartesian_scalar(ss.input_states, {}, ss.controls, 0.0).dstates_dt;
+    ss.dstates_dt = car_cartesian_scalar(ss.inputs, ss.controls, 0.0).dstates_dt;
 
     // Construct control variables
     auto control_variables = Optimal_laptime<decltype(car)>::Control_variables<>{};
@@ -446,7 +446,7 @@ TEST_F(Optimal_laptime_test, Catalunya_derivative)
     auto opts = Optimal_laptime<decltype(car)>::Options{};
     opts.controls_lb[1] = -200.0;
     opts.controls_ub[1] =  200.0;
-    Optimal_laptime<decltype(car)> opt_laptime(s, true, false, car, {n,ss.input_states}, {n,ss.algebraic_states}, control_variables, opts);
+    Optimal_laptime<decltype(car)> opt_laptime(s, true, false, car, {n,ss.inputs}, control_variables, opts);
 
     opt_laptime.xml();
 
@@ -487,7 +487,7 @@ TEST_F(Optimal_laptime_test, Catalunya_derivative_throttle)
    
     ss.controls[1] = T;
 
-    ss.dstates_dt = car_cartesian_scalar(ss.input_states, {}, ss.controls, 0.0).dstates_dt;
+    ss.dstates_dt = car_cartesian_scalar(ss.inputs, ss.controls, 0.0).dstates_dt;
 
     // Construct control variables
     auto control_variables = Optimal_laptime<decltype(car)>::Control_variables<>{};
@@ -502,7 +502,7 @@ TEST_F(Optimal_laptime_test, Catalunya_derivative_throttle)
                                                            std::vector<scalar>(n,0.0),
                                                            200*200.0*1.0e-10);
 
-    Optimal_laptime<decltype(car)> opt_laptime(s, true, false, car, {n,ss.input_states}, {n,ss.algebraic_states}, control_variables, {});
+    Optimal_laptime<decltype(car)> opt_laptime(s, true, false, car, {n,ss.inputs}, control_variables, {});
 
     opt_laptime.xml();
 
@@ -545,7 +545,7 @@ TEST_F(Optimal_laptime_test, Vendrell)
    
     ss.controls[1] = T;
 
-    ss.dstates_dt = car_cartesian_scalar(ss.input_states, {}, ss.controls, 0.0).dstates_dt;
+    ss.dstates_dt = car_cartesian_scalar(ss.inputs, ss.controls, 0.0).dstates_dt;
 
     // Construct control variables
     auto control_variables = Optimal_laptime<decltype(car)>::Control_variables<>{};
@@ -561,7 +561,7 @@ TEST_F(Optimal_laptime_test, Vendrell)
                                                            200*200.0*1.0e-10);
 
 
-    Optimal_laptime<decltype(car)> opt_laptime(s, true, false, car, {n,ss.input_states}, {n,ss.algebraic_states}, control_variables, {});
+    Optimal_laptime<decltype(car)> opt_laptime(s, true, false, car, {n,ss.inputs}, control_variables, {});
 
     opt_laptime.xml();
 

@@ -4,12 +4,12 @@
 #include "tire.h"
 #include "lion/math/matrix_extensions.h"
 
-template<typename Timeseries_t, typename Pacejka_model, size_t state_start, size_t algebraic_state_start, size_t control_start>
-class Tire_pacejka : public Tire<Timeseries_t, state_start, algebraic_state_start, control_start>
+template<typename Timeseries_t, typename Pacejka_model, size_t state_start, size_t control_start>
+class Tire_pacejka : public Tire<Timeseries_t, state_start, control_start>
 {
  public:
     //! The parent class type
-    using base_type = Tire<Timeseries_t, state_start, algebraic_state_start, control_start>;
+    using base_type = Tire<Timeseries_t, state_start, control_start>;
 
     //! Indices of the state variables of this class: none
     struct input_names
@@ -22,12 +22,7 @@ class Tire_pacejka : public Tire<Timeseries_t, state_start, algebraic_state_star
         enum { end = base_type::state_names::end };
     };
 
-    struct algebraic_state_names
-    {
-        enum { end = base_type::algebraic_state_names::end};
-    };
-
-    static_assert(input_names::end == state_names::end + algebraic_state_names::end);
+    static_assert(input_names::end == state_names::end);
 
     //! Indices of the control variables of this class: none
     struct control_names
@@ -84,10 +79,10 @@ class Tire_pacejka : public Tire<Timeseries_t, state_start, algebraic_state_star
  
     //! Load the time derivative of the state variables computed herein to the dqdt
     //! @param[out] dqdt: the vehicle state vector time derivative
-    template<size_t number_of_states, size_t number_of_algebraic_states>
+    template<size_t number_of_states>
     void get_state_and_state_derivative(std::array<Timeseries_t,number_of_states>& state, 
-                                        std::array<Timeseries_t,number_of_states>& dstate_dt,
-                                        std::array<Timeseries_t,number_of_algebraic_states>& algebraic_equations) const {};
+                                        std::array<Timeseries_t,number_of_states>& dstate_dt
+                                        ) const {};
 
     //! Set the state variables of this class
     //! @param[in] q: the vehicle state vector 
@@ -349,14 +344,14 @@ struct Pacejka_simple_model
 //! Display the properties of a tire
 //! @param[in] os: out stream
 //! @param[in] tire: the tire
-template<typename Timeseries_t,typename Pacejka_model,size_t state_start, size_t algebraic_state_start, size_t control_start>
-inline std::ostream& operator<<(std::ostream& os, const Tire_pacejka<Timeseries_t,Pacejka_model,state_start,algebraic_state_start,control_start>& tire){return tire.print(os);}
+template<typename Timeseries_t,typename Pacejka_model,size_t state_start, size_t control_start>
+inline std::ostream& operator<<(std::ostream& os, const Tire_pacejka<Timeseries_t,Pacejka_model,state_start,control_start>& tire){return tire.print(os);}
 
-template<typename Timeseries_t,size_t state_start, size_t algebraic_state_start, size_t control_start>
-using Tire_pacejka_std = Tire_pacejka<Timeseries_t,Pacejka_standard_model,state_start,algebraic_state_start,control_start>;
+template<typename Timeseries_t,size_t state_start, size_t control_start>
+using Tire_pacejka_std = Tire_pacejka<Timeseries_t,Pacejka_standard_model,state_start,control_start>;
 
-template<typename Timeseries_t,size_t state_start, size_t algebraic_state_start, size_t control_start>
-using Tire_pacejka_simple = Tire_pacejka<Timeseries_t,Pacejka_simple_model<Timeseries_t>,state_start,algebraic_state_start,control_start>;
+template<typename Timeseries_t,size_t state_start, size_t control_start>
+using Tire_pacejka_simple = Tire_pacejka<Timeseries_t,Pacejka_simple_model<Timeseries_t>,state_start,control_start>;
 
 #include "tire_pacejka.hpp"
 

@@ -1,5 +1,5 @@
-#ifndef __CIRCUIT_PREPROCESSOR_H__
-#define __CIRCUIT_PREPROCESSOR_H__
+#ifndef CIRCUIT_PREPROCESSOR_H
+#define CIRCUIT_PREPROCESSOR_H
 
 #include <vector>
 #include <array>

@@ -5,8 +5,8 @@
 #include "lion/thirdparty/include/logger.hpp"
 #include "src/core/foundation/fastest_lap_exception.h"
 
-template<typename Timeseries_t, typename Pacejka_model, size_t state_start, size_t algebraic_state_start, size_t control_start>
-inline Tire_pacejka<Timeseries_t,Pacejka_model,state_start,algebraic_state_start,control_start>::Tire_pacejka(const std::string& name, Xml_document& database, 
+template<typename Timeseries_t, typename Pacejka_model, size_t state_start, size_t control_start>
+inline Tire_pacejka<Timeseries_t,Pacejka_model,state_start,control_start>::Tire_pacejka(const std::string& name, Xml_document& database, 
                                   const std::string& path)
 : base_type(name, database, path),
  _model(),
@@ -26,9 +26,9 @@ inline Tire_pacejka<Timeseries_t,Pacejka_model,state_start,algebraic_state_start
     _model.initialise();
 }
 
-template<typename Timeseries_t, typename Pacejka_model, size_t state_start, size_t algebraic_state_start, size_t control_start>
+template<typename Timeseries_t, typename Pacejka_model, size_t state_start, size_t control_start>
 template<typename T>
-void Tire_pacejka<Timeseries_t,Pacejka_model,state_start,algebraic_state_start,control_start>::set_parameter(const std::string& parameter, const T value)
+void Tire_pacejka<Timeseries_t,Pacejka_model,state_start,control_start>::set_parameter(const std::string& parameter, const T value)
 {
     // Look for the parameter in the class
     if ( parameter.find(base_type::get_path()) == 0 )
@@ -49,8 +49,8 @@ void Tire_pacejka<Timeseries_t,Pacejka_model,state_start,algebraic_state_start,c
 }
 
 
-template<typename Timeseries_t, typename Pacejka_model, size_t state_start, size_t algebraic_state_start, size_t control_start>
-void Tire_pacejka<Timeseries_t,Pacejka_model,state_start,algebraic_state_start,control_start>::fill_xml(Xml_document& doc) const
+template<typename Timeseries_t, typename Pacejka_model, size_t state_start, size_t control_start>
+void Tire_pacejka<Timeseries_t,Pacejka_model,state_start,control_start>::fill_xml(Xml_document& doc) const
 {
     // Write the parameters of the parent 
     base_type::fill_xml(doc);
@@ -63,8 +63,8 @@ void Tire_pacejka<Timeseries_t,Pacejka_model,state_start,algebraic_state_start,c
 }
 
 
-template<typename Timeseries_t, typename Pacejka_model, size_t state_start, size_t algebraic_state_start, size_t control_start>
-inline void Tire_pacejka<Timeseries_t,Pacejka_model,state_start,algebraic_state_start,control_start>::update(Timeseries_t Fz, Timeseries_t kappa_dimensionless)
+template<typename Timeseries_t, typename Pacejka_model, size_t state_start, size_t control_start>
+inline void Tire_pacejka<Timeseries_t,Pacejka_model,state_start,control_start>::update(Timeseries_t Fz, Timeseries_t kappa_dimensionless)
 {
     // Compute omega
     base_type::update_from_kappa(kappa_dimensionless*_model.maximum_kappa(Fz));
@@ -73,8 +73,8 @@ inline void Tire_pacejka<Timeseries_t,Pacejka_model,state_start,algebraic_state_
 }
 
 
-template<typename Timeseries_t, typename Pacejka_model, size_t state_start, size_t algebraic_state_start, size_t control_start>
-inline void Tire_pacejka<Timeseries_t,Pacejka_model,state_start,algebraic_state_start,control_start>::update(const Vector3d<Timeseries_t>& x0, const Vector3d<Timeseries_t>& v0, Timeseries_t omega)
+template<typename Timeseries_t, typename Pacejka_model, size_t state_start, size_t control_start>
+inline void Tire_pacejka<Timeseries_t,Pacejka_model,state_start,control_start>::update(const Vector3d<Timeseries_t>& x0, const Vector3d<Timeseries_t>& v0, Timeseries_t omega)
 {
     base_type::update(x0, v0, omega);
 
@@ -82,8 +82,8 @@ inline void Tire_pacejka<Timeseries_t,Pacejka_model,state_start,algebraic_state_
 }
 
 
-template<typename Timeseries_t, typename Pacejka_model, size_t state_start, size_t algebraic_state_start, size_t control_start>
-inline void Tire_pacejka<Timeseries_t,Pacejka_model,state_start,algebraic_state_start,control_start>::update(Timeseries_t omega)
+template<typename Timeseries_t, typename Pacejka_model, size_t state_start, size_t control_start>
+inline void Tire_pacejka<Timeseries_t,Pacejka_model,state_start,control_start>::update(Timeseries_t omega)
 {
     base_type::update(omega);
 
@@ -91,8 +91,8 @@ inline void Tire_pacejka<Timeseries_t,Pacejka_model,state_start,algebraic_state_
 }
 
 
-template<typename Timeseries_t, typename Pacejka_model, size_t state_start, size_t algebraic_state_start, size_t control_start>
-inline void Tire_pacejka<Timeseries_t,Pacejka_model,state_start,algebraic_state_start,control_start>::update_self()
+template<typename Timeseries_t, typename Pacejka_model, size_t state_start, size_t control_start>
+inline void Tire_pacejka<Timeseries_t,Pacejka_model,state_start,control_start>::update_self()
 {
     assert(_kt > 1.0e-12);
 
@@ -103,8 +103,8 @@ inline void Tire_pacejka<Timeseries_t,Pacejka_model,state_start,algebraic_state_
 }
 
 
-template<typename Timeseries_t, typename Pacejka_model, size_t state_start, size_t algebraic_state_start, size_t control_start>
-inline void Tire_pacejka<Timeseries_t,Pacejka_model,state_start,algebraic_state_start,control_start>::update_self(const Timeseries_t Fz)
+template<typename Timeseries_t, typename Pacejka_model, size_t state_start, size_t control_start>
+inline void Tire_pacejka<Timeseries_t,Pacejka_model,state_start,control_start>::update_self(const Timeseries_t Fz)
 {
     // Compute the magic formula forces
     // For now, lets use a steady-state version
@@ -226,8 +226,8 @@ Timeseries_t Pacejka_simple_model<Timeseries_t>::force_combined_lateral_magic(Ti
 }
 
 
-template<typename Timeseries_t, typename Pacejka_model, size_t state_start, size_t algebraic_state_start, size_t control_start>
-inline std::ostream& Tire_pacejka<Timeseries_t,Pacejka_model,state_start,algebraic_state_start,control_start>::print(std::ostream& os) const
+template<typename Timeseries_t, typename Pacejka_model, size_t state_start, size_t control_start>
+inline std::ostream& Tire_pacejka<Timeseries_t,Pacejka_model,state_start,control_start>::print(std::ostream& os) const
 {
     base_type::print(os);
     out(2) << std::left << std::setw(16) << "   * kt: "  << std::right << std::setw(5) << _kt << std::endl;

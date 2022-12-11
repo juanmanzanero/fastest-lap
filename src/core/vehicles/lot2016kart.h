@@ -1,5 +1,5 @@
-#ifndef __LOT2016KART_H__
-#define __LOT2016KART_H__
+#ifndef LOT2016KART_H
+#define LOT2016KART_H
 
 #include "src/core/tire/tire_pacejka.h"
 #include "src/core/chassis/axle_car_6dof.h"
@@ -18,34 +18,60 @@ class lot2016kart
     lot2016kart() = delete;
 
     using Front_left_tire_type  = Tire_pacejka_std<Timeseries_t,0,0>;
-    using Front_right_tire_type = Tire_pacejka_std<Timeseries_t,Front_left_tire_type::input_state_names::end,Front_left_tire_type::control_names::end>;
-    using Rear_left_tire_type   = Tire_pacejka_std<Timeseries_t,Front_right_tire_type::input_state_names::end,Front_right_tire_type::control_names::end>;
-    using Rear_right_tire_type  = Tire_pacejka_std<Timeseries_t,Rear_left_tire_type::input_state_names::end,Rear_left_tire_type::control_names::end>;
+    using Front_right_tire_type = Tire_pacejka_std<Timeseries_t,Front_left_tire_type::input_names::end,Front_left_tire_type::control_names::end>;
+    using Rear_left_tire_type   = Tire_pacejka_std<Timeseries_t,Front_right_tire_type::input_names::end,Front_right_tire_type::control_names::end>;
+    using Rear_right_tire_type  = Tire_pacejka_std<Timeseries_t,Rear_left_tire_type::input_names::end,Rear_left_tire_type::control_names::end>;
 
-    using Front_axle_t          = Axle_car_6dof<Timeseries_t,Front_left_tire_type,Front_right_tire_type,STEERING_FREE_ROLL,Rear_right_tire_type::input_state_names::end,Rear_right_tire_type::control_names::end>;
-    using Rear_axle_t           = Axle_car_6dof<Timeseries_t,Rear_left_tire_type,Rear_right_tire_type,POWERED_WITHOUT_DIFFERENTIAL,Front_axle_t::Axle_type::input_state_names::end,Front_axle_t::Axle_type::control_names::end>;
-    using Chassis_t             = Chassis_car_6dof<Timeseries_t,Front_axle_t,Rear_axle_t,Rear_axle_t::Axle_type::input_state_names::end,Rear_axle_t::Axle_type::control_names::end>;
+    using Front_axle_t          = Axle_car_6dof<Timeseries_t,Front_left_tire_type,Front_right_tire_type,STEERING_FREE_ROLL,Rear_right_tire_type::input_names::end,Rear_right_tire_type::control_names::end>;
+    using Rear_axle_t           = Axle_car_6dof<Timeseries_t,Rear_left_tire_type,Rear_right_tire_type,POWERED_WITHOUT_DIFFERENTIAL,Front_axle_t::Axle_type::input_names::end,Front_axle_t::Axle_type::control_names::end>;
+    using Chassis_t             = Chassis_car_6dof<Timeseries_t,Front_axle_t,Rear_axle_t,Rear_axle_t::Axle_type::input_names::end,Rear_axle_t::Axle_type::control_names::end>;
 
-    using Road_cartesian_t   = Road_cartesian<Timeseries_t,Chassis_t::input_state_names::end,Chassis_t::control_names::end>;
+    using Road_cartesian_t   = Road_cartesian<Timeseries_t,Chassis_t::input_names::end,Chassis_t::control_names::end>;
 
     template<typename Track_t>
-    using Road_curvilinear_t = Road_curvilinear<Timeseries_t,Track_t,Chassis_t::input_state_names::end,Chassis_t::control_names::end>;
+    using Road_curvilinear_t = Road_curvilinear<Timeseries_t,Track_t,Chassis_t::input_names::end,Chassis_t::control_names::end>;
  
  private:
     
     template<typename Road_type>
-    class Dynamic_model : public Dynamic_model_car<Timeseries_t,Chassis_t,Road_type,Road_type::input_state_names::end,Road_type::control_names::end>
+    class Dynamic_model : public Dynamic_model_car<Timeseries_t,Chassis_t,Road_type>
     {
      public:
         using Road_t          = Road_type;
-        using Dynamic_model_t = Dynamic_model_car<Timeseries_t,Chassis_t, Road_type, Road_type::input_state_names::end, Road_type::control_names::end>;
+        using Dynamic_model_t = Dynamic_model_car<Timeseries_t,Chassis_t, Road_type>;
 
         Dynamic_model() {}
-        Dynamic_model(Xml_document& database, const Road_t& road = Road_t()) : Dynamic_model_t(database,road) {}
+        Dynamic_model(Xml_document& database, const Road_t& road = Road_t()) : Dynamic_model_t(database,road) 
+        {
+            if constexpr (road_is_curvilinear<Road_t>::value)
+            {
+                if (road.get_track().has_elevation())
+                {
+                    // Tracks with elevation are not currently supported
+                    throw fastest_lap_exception("[ERROR] Tracks with elevation are not supported for lot2016kart vehicles.");
+                }
+            }
+        }
+
+
+        template<typename U = Road_t>
+        std::enable_if_t<road_is_curvilinear<U>::value, void> change_track(const typename U::Track_type& new_track) 
+        {
+            // Call parent
+            Dynamic_model_t::change_track(new_track); 
+
+            // Throw if the new track has elevation
+            if (Dynamic_model_t::get_road().get_track().has_elevation())
+            {
+                // Tracks with elevation are not currently supported
+                throw fastest_lap_exception("[ERROR] Tracks with elevation are not supported for lot2016kart vehicles.");
+            }
+        }
+
 
         // Steady-state computation
-        static constexpr const size_t N_SS_VARS = 6;
-        static constexpr const size_t N_SS_EQNS = 12;
+        static constexpr const size_t number_of_steady_state_variables = 6;
+        static constexpr const size_t number_of_steady_state_equations = 12;
 
         // Optimal-laptime computation
         static constexpr const size_t N_OL_EXTRA_CONSTRAINTS = 6;    //! The number of tire constraints: kappa_rl, kappa_rr, lambda_fl, lambda_fr, lambda_rl, lambda_rr
@@ -76,17 +102,15 @@ class lot2016kart
         }
 
         template<typename T>
-        static std::vector<T> get_x(const std::array<T,Dynamic_model_t::NSTATE>& q,
-                                         const std::array<T,Dynamic_model_t::NALGEBRAIC>& qa,
-                                         const std::array<T,Dynamic_model_t::NCONTROL>& u,
+        static std::vector<T> get_x(const std::array<T,Dynamic_model_t::number_of_inputs>& q,
+                                         const std::array<T,Dynamic_model_t::number_of_controls>& u,
                                          scalar v) 
         {
-            (void)qa;
-            return {(q[Dynamic_model_t::Chassis_type::rear_axle_type::input_state_names::OMEGA_AXLE]*0.139-v)/v,
-                     q[Dynamic_model_t::Chassis_type::input_state_names::Z],
-                     q[Dynamic_model_t::Chassis_type::input_state_names::PHI],
-                     q[Dynamic_model_t::Chassis_type::input_state_names::MU],
-                     q[Dynamic_model_t::Road_type::input_state_names::PSI],
+            return {(q[Dynamic_model_t::Chassis_type::rear_axle_type::input_names::OMEGA_AXLE]*0.139-v)/v,
+                     q[Dynamic_model_t::Chassis_type::input_names::Z],
+                     q[Dynamic_model_t::Chassis_type::input_names::PHI],
+                     q[Dynamic_model_t::Chassis_type::input_names::MU],
+                     q[Dynamic_model_t::Road_type::input_names::PSI],
                      u[Dynamic_model_t::Chassis_type::front_axle_type::control_names::STEERING] 
                     };
         }
@@ -97,11 +121,10 @@ class lot2016kart
                      {0.0, 0.0, 0.0, 0.0, 0.0, 0.0,  0.11,  0.11,  0.09,  0.09,  0.09,  0.09} };
         }
 
-        std::tuple<std::array<Timeseries_t,N_SS_EQNS>,
-                   std::array<Timeseries_t,Dynamic_model_t::NSTATE>,
-                   std::array<Timeseries_t,Dynamic_model_t::NALGEBRAIC>,
-                   std::array<Timeseries_t,Dynamic_model_t::NCONTROL>>
-            steady_state_equations(const std::array<Timeseries_t,N_SS_VARS>& x, 
+        std::tuple<std::array<Timeseries_t,number_of_steady_state_equations>,
+                   std::array<Timeseries_t,Dynamic_model_t::number_of_inputs>,
+                   std::array<Timeseries_t,Dynamic_model_t::number_of_controls>>
+            steady_state_equations(const std::array<Timeseries_t,number_of_steady_state_variables>& x, 
                                    const Timeseries_t& ax, 
                                    const Timeseries_t& ay, 
                                    const Timeseries_t& v)
@@ -112,40 +135,40 @@ class lot2016kart
             const Timeseries_t omega = ay/v;
              
             // Construct the state
-            std::array<Timeseries_t,Dynamic_model_t::NSTATE> q;
-            q[Dynamic_model_t::Chassis_type::rear_axle_type::input_state_names::OMEGA_AXLE] = (x[0]+1.0)*v/0.139;
-            q[Dynamic_model_t::Chassis_type::input_state_names::U]                          = v*cos(psi);
-            q[Dynamic_model_t::Chassis_type::input_state_names::V]                          = -v*sin(psi);
-            q[Dynamic_model_t::Chassis_type::input_state_names::OMEGA]                      = omega;
-            q[Dynamic_model_t::Chassis_type::input_state_names::Z]                          = x[1];
-            q[Dynamic_model_t::Chassis_type::input_state_names::PHI]                        = x[2];
-            q[Dynamic_model_t::Chassis_type::input_state_names::MU]                         = x[3];
-            q[Dynamic_model_t::Chassis_type::input_state_names::DZDT]                       = 0.0;
-            q[Dynamic_model_t::Chassis_type::input_state_names::DPHIDT]                     = 0.0;
-            q[Dynamic_model_t::Chassis_type::input_state_names::DMUDT]                      = 0.0;
-            q[Dynamic_model_t::Road_type::input_state_names::X]                             = 0.0;
-            q[Dynamic_model_t::Road_type::input_state_names::Y]                             = 0.0;
-            q[Dynamic_model_t::Road_type::input_state_names::PSI]                           = x[4];
+            std::array<Timeseries_t,Dynamic_model_t::number_of_inputs> q;
+            q[Dynamic_model_t::Chassis_type::rear_axle_type::input_names::OMEGA_AXLE] = (x[0]+1.0)*v/0.139;
+            q[Dynamic_model_t::Chassis_type::input_names::velocity_x_mps]             = v*cos(psi);
+            q[Dynamic_model_t::Chassis_type::input_names::velocity_y_mps]             = -v*sin(psi);
+            q[Dynamic_model_t::Chassis_type::input_names::yaw_rate_radps]             = omega;
+            q[Dynamic_model_t::Chassis_type::input_names::Z]                          = x[1];
+            q[Dynamic_model_t::Chassis_type::input_names::PHI]                        = x[2];
+            q[Dynamic_model_t::Chassis_type::input_names::MU]                         = x[3];
+            q[Dynamic_model_t::Chassis_type::input_names::DZDT]                       = 0.0;
+            q[Dynamic_model_t::Chassis_type::input_names::DPHIDT]                     = 0.0;
+            q[Dynamic_model_t::Chassis_type::input_names::DMUDT]                      = 0.0;
+            q[Dynamic_model_t::Road_type::input_names::X]                             = 0.0;
+            q[Dynamic_model_t::Road_type::input_names::Y]                             = 0.0;
+            q[Dynamic_model_t::Road_type::input_names::PSI]                           = x[4];
         
             // Construct the controls
-            std::array<Timeseries_t,Dynamic_model_t::NCONTROL> u;
+            std::array<Timeseries_t,Dynamic_model_t::number_of_controls> u;
             u[Dynamic_model_t::Chassis_type::front_axle_type::control_names::STEERING] = x[5];
             u[Dynamic_model_t::Chassis_type::rear_axle_type::control_names::TORQUE]    = 0.0;
         
             // Compute time derivative
-            auto [states,dqdt,algebraic_equations] = (*this)(q,{},u,0.0);
+            auto [states,dqdt] = (*this)(q,u,0.0);
         
             // Compute constraints
-            std::array<Timeseries_t,N_SS_EQNS> constraints;
+            std::array<Timeseries_t,number_of_steady_state_equations> constraints;
         
             constraints[0] = dqdt[Dynamic_model_t::Chassis_type::state_names::DZDT];
-            constraints[1] = dqdt[Dynamic_model_t::Chassis_type::state_names::OMEGA];
+            constraints[1] = dqdt[Dynamic_model_t::Chassis_type::state_names::yaw_rate_radps];
             constraints[2] = dqdt[Dynamic_model_t::Chassis_type::state_names::DPHIDT];
             constraints[3] = dqdt[Dynamic_model_t::Chassis_type::state_names::DMUDT];
-            constraints[4] = dqdt[Dynamic_model_t::Chassis_type::state_names::U]*sin(psi)
-                            + dqdt[Dynamic_model_t::Chassis_type::state_names::V]*cos(psi);
-            constraints[5] = ax - dqdt[Dynamic_model_t::Chassis_type::state_names::U]*cos(psi)
-                                 + dqdt[Dynamic_model_t::Chassis_type::state_names::V]*sin(psi);
+            constraints[4] = dqdt[Dynamic_model_t::Chassis_type::state_names::com_velocity_x_mps]*sin(psi)
+                            + dqdt[Dynamic_model_t::Chassis_type::state_names::com_velocity_y_mps]*cos(psi);
+            constraints[5] = ax - dqdt[Dynamic_model_t::Chassis_type::state_names::com_velocity_x_mps]*cos(psi)
+                                 + dqdt[Dynamic_model_t::Chassis_type::state_names::com_velocity_y_mps]*sin(psi);
          
         
             constraints[6] = this->get_chassis().get_rear_axle().template get_tire<0>().get_kappa();
@@ -155,7 +178,7 @@ class lot2016kart
             constraints[10] = this->get_chassis().get_front_axle().template get_tire<0>().get_lambda();
             constraints[11] = this->get_chassis().get_front_axle().template get_tire<1>().get_lambda();
         
-            return {constraints,q,{},u};
+            return {constraints,q,u};
         }
 
 

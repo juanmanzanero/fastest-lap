@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <regex>
 
-//#include "src/core/vehicles/lot2016kart.h"
+#include "src/core/vehicles/lot2016kart.h"
 #include "src/core/vehicles/limebeer2014f1.h"
 #include "src/core/applications/steady_state.h"
 #include "src/core/applications/optimal_laptime.h"
@@ -26,8 +26,6 @@ catch(lion_exception& ex) \
     std::cout << "[C++ exception] -> " << ex.what() << std::endl; \
     throw ex; \
  }
-
-using lot2016kart_all = limebeer2014f1_all;
 
 // Tables
 std::unordered_map<std::string,lot2016kart_all>     table_kart_6dof;
@@ -390,20 +388,18 @@ void print_variable_to_string(char* str_out, const int n_char, const char* c_var
 
 
 template<typename Vehicle_t>
-double vehicle_get_property_generic(Vehicle_t& vehicle, const double* c_q, const double* c_qa, const double* c_u, const double s, const char* c_property_name)
+double vehicle_get_property_generic(Vehicle_t& vehicle, const double* c_q, const double* c_u, const double s, const char* c_property_name)
 {
     // (1) Construct Cpp version of the C inputs
-    std::array<scalar,Vehicle_t::NSTATE> q;
-    std::array<scalar,Vehicle_t::NALGEBRAIC> qa;
-    std::array<scalar,Vehicle_t::NCONTROL> u;
+    std::array<scalar,Vehicle_t::number_of_inputs> q;
+    std::array<scalar,Vehicle_t::number_of_controls> u;
 
-    std::copy_n(c_q, Vehicle_t::NSTATE, q.begin());
-    std::copy_n(c_qa, Vehicle_t::NALGEBRAIC, qa.begin());
-    std::copy_n(c_u, Vehicle_t::NCONTROL, u.begin());
+    std::copy_n(c_q, Vehicle_t::number_of_inputs, q.begin());
+    std::copy_n(c_u, Vehicle_t::number_of_controls, u.begin());
 
     std::string property_name(c_property_name);
 
-    vehicle(q, qa, u, s);
+    vehicle(q, u, s);
     const auto outputs_map = vehicle.get_outputs_map();
 
     const auto it_property = outputs_map.find(property_name);
@@ -415,18 +411,18 @@ double vehicle_get_property_generic(Vehicle_t& vehicle, const double* c_q, const
 }
 
 
-double vehicle_get_output(const char* c_vehicle_name, const double* q, const double* qa, const double* u, const double s, const char* property_name)
+double vehicle_get_output(const char* c_vehicle_name, const double* q, const double* u, const double s, const char* property_name)
 {
  try
  {
     const std::string vehicle_name(c_vehicle_name);
     if ( table_kart_6dof.count(vehicle_name) != 0)
     {
-        return vehicle_get_property_generic(table_kart_6dof.at(vehicle_name).curvilinear_scalar, q, qa, u, s, property_name);
+        return vehicle_get_property_generic(table_kart_6dof.at(vehicle_name).curvilinear_scalar, q, u, s, property_name);
     }
     else if ( table_f1_3dof.count(vehicle_name) != 0 )
     {
-        return vehicle_get_property_generic(table_f1_3dof.at(vehicle_name).curvilinear_scalar, q, qa, u, s, property_name);
+        return vehicle_get_property_generic(table_f1_3dof.at(vehicle_name).curvilinear_scalar, q, u, s, property_name);
     }
     else
     {
@@ -697,7 +693,7 @@ void download_vector(double* data, const int n, const char* name_c)
 }
 
 
-void vehicle_type_get_sizes(int* n_state, int* n_algebraic, int* n_control, int* n_outputs, const char* c_vehicle_type_name)
+void vehicle_type_get_sizes(int* number_of_inputs, int* n_control, int* n_outputs, const char* c_vehicle_type_name)
 {
  try
  {
@@ -705,16 +701,14 @@ void vehicle_type_get_sizes(int* n_state, int* n_algebraic, int* n_control, int*
 
     if ( vehicle_type_name == "f1-3dof" )
     {
-        *n_state     = limebeer2014f1_all::vehicle_ad_curvilinear::NSTATE;
-        *n_algebraic = limebeer2014f1_all::vehicle_ad_curvilinear::NALGEBRAIC;
-        *n_control   = limebeer2014f1_all::vehicle_ad_curvilinear::NCONTROL;
+        *number_of_inputs     = limebeer2014f1_all::vehicle_ad_curvilinear::number_of_inputs;
+        *n_control   = limebeer2014f1_all::vehicle_ad_curvilinear::number_of_controls;
         *n_outputs   = limebeer2014f1_all::vehicle_ad_curvilinear{}.get_outputs_map().size();
     }
     else if ( vehicle_type_name == "kart-6dof" )
     {
-        *n_state     = lot2016kart_all::vehicle_ad_curvilinear::NSTATE;
-        *n_algebraic = lot2016kart_all::vehicle_ad_curvilinear::NALGEBRAIC;
-        *n_control   = lot2016kart_all::vehicle_ad_curvilinear::NCONTROL;
+        *number_of_inputs     = lot2016kart_all::vehicle_ad_curvilinear::number_of_inputs;
+        *n_control   = lot2016kart_all::vehicle_ad_curvilinear::number_of_controls;
         *n_outputs   = lot2016kart_all::vehicle_ad_curvilinear{}.get_outputs_map().size();
     }
     else
@@ -727,9 +721,9 @@ void vehicle_type_get_sizes(int* n_state, int* n_algebraic, int* n_control, int*
 
 
 template<typename vehicle_t>
-void vehicle_type_get_names_generic(char* c_key_name, char* c_state_names[], char* c_algebraic_state_names[], char* c_control_names[], char* c_output_names[], const int n_char)
+void vehicle_type_get_names_generic(char* c_key_name, char* c_state_names[], char* c_control_names[], char* c_output_names[], const int n_char)
 {
-    const auto [key_name, q_names, qa_names, u_names] = vehicle_t{}.get_state_and_control_names();
+    const auto [key_name, q_names, u_names] = vehicle_t{}.get_state_and_control_names();
 
     if ( key_name.size() > static_cast<size_t>(n_char) - 1)
         throw fastest_lap_exception("[ERROR] vehicle_type_get_names_generic -> value provided for n_char was not sufficient. At least n_char = " + std::to_string(key_name.size()) + " is needed.");
@@ -739,12 +733,6 @@ void vehicle_type_get_names_generic(char* c_key_name, char* c_state_names[], cha
         if ( q_names[i].size() > static_cast<size_t>(n_char) - 1)
             throw fastest_lap_exception("[ERROR] vehicle_type_get_names_generic -> value provided for n_char was not sufficient. At least n_char = " + std::to_string(q_names[i].size()) + " is needed.");
         strcpy(c_state_names[i], q_names[i].c_str());
-    }
-
-    for (size_t i = 0; i < qa_names.size(); ++i) {
-        if ( qa_names[i].size() > static_cast<size_t>(n_char) - 1)
-            throw fastest_lap_exception("[ERROR] vehicle_type_get_names_generic -> value provided for n_char was not sufficient. At least n_char = " + std::to_string(qa_names[i].size()) + " is needed.");
-        strcpy(c_algebraic_state_names[i], qa_names[i].c_str());
     }
 
     for (size_t i = 0; i < u_names.size(); ++i) {
@@ -764,17 +752,17 @@ void vehicle_type_get_names_generic(char* c_key_name, char* c_state_names[], cha
 }
 
 
-void vehicle_type_get_names(char* c_key_name, char* c_state_names[], char* c_algebraic_state_names[], char* c_control_names[], char* c_output_names[], const int n_char, const char* c_vehicle_type_name)
+void vehicle_type_get_names(char* c_key_name, char* c_state_names[], char* c_control_names[], char* c_output_names[], const int n_char, const char* c_vehicle_type_name)
 {
  try
  {
     const std::string vehicle_type_name = c_vehicle_type_name;
 
     if ( vehicle_type_name == "f1-3dof" ) {
-        vehicle_type_get_names_generic<limebeer2014f1_all::vehicle_ad_curvilinear>(c_key_name, c_state_names, c_algebraic_state_names, c_control_names, c_output_names, n_char);
+        vehicle_type_get_names_generic<limebeer2014f1_all::vehicle_ad_curvilinear>(c_key_name, c_state_names, c_control_names, c_output_names, n_char);
 
     } else if ( vehicle_type_name == "kart-6dof" ) {
-        vehicle_type_get_names_generic<lot2016kart_all::vehicle_ad_curvilinear>(c_key_name, c_state_names, c_algebraic_state_names, c_control_names, c_output_names, n_char);
+        vehicle_type_get_names_generic<lot2016kart_all::vehicle_ad_curvilinear>(c_key_name, c_state_names, c_control_names, c_output_names, n_char);
 
     } else {
         throw fastest_lap_exception("[ERROR] vehicle_type_get_size_for_name -> No vehicle type with name \"" + vehicle_type_name + "\" exists. Types are \"f1-3dof\" and \"kart-6dof\"");
@@ -996,7 +984,7 @@ void vehicle_declare_new_variable_parameter(const char* c_vehicle_name, const ch
 }
 
 
-void vehicle_equations(double* dqdt, double* dqa, double** jac_dqdt, double** jac_dqa, double*** h_dqdt, double*** h_dqa, const char* vehicle, double* q, double* qa, double* u, double s)
+void vehicle_equations(double* dqdt, double** jac_dqdt, double*** h_dqdt, const char* vehicle, double* q, double* u, double s)
 {
 
 
@@ -1004,18 +992,16 @@ void vehicle_equations(double* dqdt, double* dqa, double** jac_dqdt, double** ja
 
 
 template<typename Vehicle_t>
-void compute_propagation(Vehicle_t car, double* c_q, double* c_qa, double* c_u, double s, double ds, double* c_u_next, const char* c_options)
+void compute_propagation(Vehicle_t car, double* c_q, double* c_u, double s, double ds, double* c_u_next, const char* c_options)
 {
     // (1) Construct Cpp version of the C inputs
-    std::array<scalar,Vehicle_t::NSTATE> q;
-    std::array<scalar,Vehicle_t::NALGEBRAIC> qa;
-    std::array<scalar,Vehicle_t::NCONTROL> u;
-    std::array<scalar,Vehicle_t::NCONTROL> u_next;
+    std::array<scalar,Vehicle_t::number_of_inputs> q;
+    std::array<scalar,Vehicle_t::number_of_controls> u;
+    std::array<scalar,Vehicle_t::number_of_controls> u_next;
 
-    std::copy_n(c_q, Vehicle_t::NSTATE, q.begin());
-    std::copy_n(c_qa, Vehicle_t::NALGEBRAIC, qa.begin());
-    std::copy_n(c_u, Vehicle_t::NCONTROL, u.begin());
-    std::copy_n(c_u_next, Vehicle_t::NCONTROL, u_next.begin());
+    std::copy_n(c_q, Vehicle_t::number_of_inputs, q.begin());
+    std::copy_n(c_u, Vehicle_t::number_of_controls, u.begin());
+    std::copy_n(c_u_next, Vehicle_t::number_of_controls, u_next.begin());
 
     // (2) Parse options
     typename Crank_nicolson<decltype(car)>::Options opts;
@@ -1032,15 +1018,14 @@ void compute_propagation(Vehicle_t car, double* c_q, double* c_qa, double* c_u, 
     }
 
     // (3) Take step
-    Crank_nicolson<decltype(car)>::take_step(car, u, u_next, q, qa, s, ds, opts);
+    Crank_nicolson<decltype(car)>::take_step(car, u, u_next, q, s, ds, opts);
 
     // (4) Return the variables to the c version
-    std::copy_n(q.begin(), Vehicle_t::NSTATE, c_q);
-    std::copy_n(qa.begin(), Vehicle_t::NALGEBRAIC, c_qa);
+    std::copy_n(q.begin(), Vehicle_t::number_of_inputs, c_q);
 }
 
 
-void propagate_vehicle(double* q, double* qa, double* u, const char* c_vehicle_name, const char* c_track_name, double s, double ds, double* u_next, int use_circuit, const char* options)
+void propagate_vehicle(double* q, double* u, const char* c_vehicle_name, const char* c_track_name, double s, double ds, double* u_next, int use_circuit, const char* options)
 {
  try
  {
@@ -1050,26 +1035,26 @@ void propagate_vehicle(double* q, double* qa, double* u, const char* c_vehicle_n
     {
         if ( use_circuit )
         {
-            table_kart_6dof.at(vehicle_name).curvilinear_ad.get_road().change_track(table_track.at(track_name));
-            table_kart_6dof.at(vehicle_name).curvilinear_scalar.get_road().change_track(table_track.at(track_name));
-            compute_propagation(table_kart_6dof.at(vehicle_name).curvilinear_ad, q, qa, u, s, ds, u_next, options);
+            table_kart_6dof.at(vehicle_name).curvilinear_ad.change_track(table_track.at(track_name));
+            table_kart_6dof.at(vehicle_name).curvilinear_scalar.change_track(table_track.at(track_name));
+            compute_propagation(table_kart_6dof.at(vehicle_name).curvilinear_ad, q, u, s, ds, u_next, options);
         }
         else
         {
-            compute_propagation(table_kart_6dof.at(vehicle_name).cartesian_ad, q, qa, u, s, ds, u_next, options);
+            compute_propagation(table_kart_6dof.at(vehicle_name).cartesian_ad, q, u, s, ds, u_next, options);
         }
     }
     else if ( table_f1_3dof.count(vehicle_name) != 0 )
     {
         if ( use_circuit )
         {
-            table_f1_3dof.at(vehicle_name).curvilinear_ad.get_road().change_track(table_track.at(track_name));
-            table_f1_3dof.at(vehicle_name).curvilinear_scalar.get_road().change_track(table_track.at(track_name));
-            compute_propagation(table_f1_3dof.at(vehicle_name).curvilinear_ad, q, qa, u, s, ds, u_next, options);
+            table_f1_3dof.at(vehicle_name).curvilinear_ad.change_track(table_track.at(track_name));
+            table_f1_3dof.at(vehicle_name).curvilinear_scalar.change_track(table_track.at(track_name));
+            compute_propagation(table_f1_3dof.at(vehicle_name).curvilinear_ad, q, u, s, ds, u_next, options);
         }
         else
         {
-            compute_propagation(table_f1_3dof.at(vehicle_name).cartesian_ad, q, qa, u, s, ds, u_next, options);
+            compute_propagation(table_f1_3dof.at(vehicle_name).cartesian_ad, q, u, s, ds, u_next, options);
         }
     }
  }
@@ -1077,7 +1062,7 @@ void propagate_vehicle(double* q, double* qa, double* u, const char* c_vehicle_n
 }
 
 template<typename vehicle_t>
-void compute_steady_state(vehicle_t& car, double* input_states, double* algebraic_states, double* controls, double v, double ax, double ay)
+void compute_steady_state(vehicle_t& car, double* inputs, double* controls, double v, double ax, double ay)
 {
     Steady_state ss(car);
     auto sol = ss.solve(v,ax,ay);
@@ -1085,24 +1070,23 @@ void compute_steady_state(vehicle_t& car, double* input_states, double* algebrai
     if (!sol.solved)
         throw fastest_lap_exception("[ERROR] compute_steady_state -> steady state not solved");
 
-    std::copy(sol.input_states.cbegin()    , sol.input_states.cend()    , input_states);
-    std::copy(sol.algebraic_states.cbegin(), sol.algebraic_states.cend(), algebraic_states);
+    std::copy(sol.inputs.cbegin()    , sol.inputs.cend()    , inputs);
     std::copy(sol.controls.cbegin()        , sol.controls.cend()        , controls);
 }
 
 
-void steady_state(double*input_states, double* algebraic_states, double* controls, const char* c_vehicle_name, double v, double ax, double ay)
+void steady_state(double*inputs, double* controls, const char* c_vehicle_name, double v, double ax, double ay)
 {
  try
  {
     const std::string vehicle_name(c_vehicle_name);
     if ( table_kart_6dof.count(vehicle_name) != 0 )
     {
-        compute_steady_state(table_kart_6dof.at(vehicle_name).cartesian_ad, input_states, algebraic_states, controls, v, ax, ay);
+        compute_steady_state(table_kart_6dof.at(vehicle_name).cartesian_ad, inputs, controls, v, ax, ay);
     }
     else if ( table_f1_3dof.count(vehicle_name) != 0 )
     {
-        compute_steady_state(table_f1_3dof.at(vehicle_name).cartesian_ad, input_states, algebraic_states, controls, v, ax, ay);
+        compute_steady_state(table_f1_3dof.at(vehicle_name).cartesian_ad, inputs, controls, v, ax, ay);
     }
  }
  CATCH()
@@ -1173,7 +1157,6 @@ struct Optimal_laptime_configuration
     //          <closed_simulation> true </closed_simulation>
     //          <initial_condition>
     //              <q/>
-    //              <qa/>
     //              <u/>
     //          </initial_condition>
     //          <control_variables>
@@ -1197,7 +1180,7 @@ struct Optimal_laptime_configuration
     {
         if ( strlen(options) == 0 ) return;
 
-        auto [key_name, q_names, qa_names, u_names] = typename vehicle_t::vehicle_scalar_curvilinear{}.get_state_and_control_names();
+        auto [key_name, q_names, u_names] = typename vehicle_t::vehicle_scalar_curvilinear{}.get_state_and_control_names();
 
         std::string s_options(options);
         Xml_document doc;
@@ -1235,7 +1218,6 @@ struct Optimal_laptime_configuration
                 // Add all variables to output
                 variables_to_save = {key_name};
                 variables_to_save.insert(variables_to_save.end(), q_names.cbegin(), q_names.cend());
-                variables_to_save.insert(variables_to_save.end(), qa_names.cbegin(), qa_names.cend());
                 variables_to_save.insert(variables_to_save.end(), u_names.cbegin(), u_names.cend());
 
                 for (const auto& [key, value] : typename vehicle_t::vehicle_scalar_curvilinear{}.get_outputs_map() ) {
@@ -1261,11 +1243,9 @@ struct Optimal_laptime_configuration
                                                                                           "in 'options/initial_condition'");
             set_initial_condition = true;
             auto v_q_start  = table_vector.at(doc.get_element("options/initial_condition/q").get_attribute("from_table"));
-            auto v_qa_start = table_vector.at(doc.get_element("options/initial_condition/qa").get_attribute("from_table"));
             auto v_u_start  = table_vector.at(doc.get_element("options/initial_condition/u").get_attribute("from_table"));
 
             std::copy(v_q_start.cbegin() , v_q_start.cend() , q_start.begin());
-            std::copy(v_qa_start.cbegin(), v_qa_start.cend(), qa_start.begin());
             std::copy(v_u_start.cbegin() , v_u_start.cend() , u_start.begin());
         }
 
@@ -1363,29 +1343,12 @@ struct Optimal_laptime_configuration
                 {
                     if ( variable.has_child("lower") )
                     {
-                        input_states_lb.at(std::distance(q_names.cbegin(), it_variable)) = variable.get_child("lower").get_value(scalar());
+                        inputs_lb.at(std::distance(q_names.cbegin(), it_variable)) = variable.get_child("lower").get_value(scalar());
                     }
 
                     if ( variable.has_child("upper") )
                     {
-                        input_states_ub.at(std::distance(q_names.cbegin(), it_variable)) = variable.get_child("upper").get_value(scalar());
-                    }
-
-                    continue;
-                }
-
-                auto it_qa = std::find(qa_names.cbegin(), qa_names.cend(), variable.get_name());
-
-                if ( it_qa != qa_names.cend() )
-                {
-                    if ( variable.has_child("lower") )
-                    {
-                        algebraic_states_lb.at(std::distance(qa_names.cbegin(), it_qa)) = variable.get_child("lower").get_value(scalar());
-                    }
-
-                    if ( variable.has_child("upper") )
-                    {
-                        algebraic_states_ub.at(std::distance(qa_names.cbegin(), it_qa)) = variable.get_child("upper").get_value(scalar());
+                        inputs_ub.at(std::distance(q_names.cbegin(), it_variable)) = variable.get_child("upper").get_value(scalar());
                     }
 
                     continue;
@@ -1429,20 +1392,17 @@ struct Optimal_laptime_configuration
     std::vector<std::tuple<std::string,scalar,scalar>> integral_constraints;
 
     // Control variables definition
-    std::array<std::string,vehicle_t::vehicle_ad_curvilinear::NCONTROL> control_type = get_default_control_types();
-    std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NCONTROL> dissipations = get_default_dissipations();
-    std::array<std::vector<scalar>,vehicle_t::vehicle_ad_curvilinear::NCONTROL> hypermeshes;
+    std::array<std::string,vehicle_t::vehicle_ad_curvilinear::number_of_controls> control_type = get_default_control_types();
+    std::array<scalar,vehicle_t::vehicle_ad_curvilinear::number_of_controls> dissipations = get_default_dissipations();
+    std::array<std::vector<scalar>,vehicle_t::vehicle_ad_curvilinear::number_of_controls> hypermeshes;
 
     // For open simulations: define starting point state and controls
-    std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NSTATE>     q_start;       // Starting states (only open simulations)
-    std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NALGEBRAIC> qa_start;      // Starting algebraic states (only open simulations)
-    std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NCONTROL> u_start;         // Starting controls (only open simulations)
+    std::array<scalar,vehicle_t::vehicle_ad_curvilinear::number_of_inputs>     q_start;       // Starting states (only open simulations)
+    std::array<scalar,vehicle_t::vehicle_ad_curvilinear::number_of_controls> u_start;         // Starting controls (only open simulations)
 
     // Upper and lower bounds
-    decltype(Optimal_laptime_type::Options::input_states_lb) input_states_lb         = typename Optimal_laptime_type::Options{}.input_states_lb;
-    decltype(Optimal_laptime_type::Options::input_states_ub) input_states_ub         = typename Optimal_laptime_type::Options{}.input_states_ub;
-    decltype(Optimal_laptime_type::Options::algebraic_states_lb) algebraic_states_lb = typename Optimal_laptime_type::Options{}.algebraic_states_lb;
-    decltype(Optimal_laptime_type::Options::algebraic_states_ub) algebraic_states_ub = typename Optimal_laptime_type::Options{}.algebraic_states_ub;
+    decltype(Optimal_laptime_type::Options::inputs_lb) inputs_lb         = typename Optimal_laptime_type::Options{}.inputs_lb;
+    decltype(Optimal_laptime_type::Options::inputs_ub) inputs_ub         = typename Optimal_laptime_type::Options{}.inputs_ub;
     decltype(Optimal_laptime_type::Options::controls_lb) controls_lb                 = typename Optimal_laptime_type::Options{}.controls_lb;
     decltype(Optimal_laptime_type::Options::controls_ub) controls_ub                 = typename Optimal_laptime_type::Options{}.controls_ub;
 
@@ -1459,7 +1419,7 @@ struct Optimal_laptime_configuration
             throw fastest_lap_exception("[ERROR] get_default_control_types() not defined for this vehicle_t");
     }
 
-    static std::array<std::string,vehicle_t::vehicle_ad_curvilinear::NCONTROL> get_default_control_types()
+    static std::array<std::string,vehicle_t::vehicle_ad_curvilinear::number_of_controls> get_default_control_types()
     {
         if constexpr (std::is_same_v<vehicle_t,limebeer2014f1_all>)
             return {"full-mesh", "dont optimize", "full-mesh", "dont optimize"};
@@ -1469,7 +1429,7 @@ struct Optimal_laptime_configuration
             throw fastest_lap_exception("[ERROR] get_default_control_types() not defined for this vehicle_t");
     }
 
-    static std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NCONTROL> get_default_dissipations()
+    static std::array<scalar,vehicle_t::vehicle_ad_curvilinear::number_of_controls> get_default_dissipations()
     {
         if constexpr (std::is_same_v<vehicle_t,limebeer2014f1_all>)
             return {50.0, 20.0*8.0e-4, 20.0*8.0e-4, 0.0};
@@ -1484,13 +1444,13 @@ struct Optimal_laptime_configuration
 template<typename vehicle_t>
 typename Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>::template Control_variables<>
     construct_control_variables(const Optimal_laptime_configuration<vehicle_t>& conf,
-    const size_t n_points, const std::array<scalar, vehicle_t::vehicle_ad_curvilinear::NCONTROL>& u_steady_state)
+    const size_t n_points, const std::array<scalar, vehicle_t::vehicle_ad_curvilinear::number_of_controls>& u_steady_state)
 {
     // (1) Define control variables
     auto control_variables = typename Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>::template Control_variables<>{};
 
     // (2) Construct each control variable from the information in the configuration
-    for (size_t j = 0; j < vehicle_t::vehicle_ad_curvilinear::NCONTROL; ++j)
+    for (size_t j = 0; j < vehicle_t::vehicle_ad_curvilinear::number_of_controls; ++j)
     {
         if ( conf.control_type[j] == "dont optimize" )
         {
@@ -1541,8 +1501,8 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
     auto conf = Optimal_laptime_configuration<vehicle_t>(options);
 
     // (3) Set the track into the curvilinear car dynamic model
-    car_curv.get_road().change_track(track);
-    car_curv_sc.get_road().change_track(track);
+    car_curv.change_track(track);
+    car_curv_sc.change_track(track);
 
     // (4) Start from the steady-state values at 0g
     scalar v = conf.steady_state_speed*KMH;
@@ -1563,10 +1523,8 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
     opts.print_level         = conf.print_level;
     opts.sigma               = conf.sigma;
     opts.check_optimality    = conf.compute_sensitivity;
-    opts.input_states_lb     = conf.input_states_lb;
-    opts.input_states_ub     = conf.input_states_ub;
-    opts.algebraic_states_lb = conf.algebraic_states_lb;
-    opts.algebraic_states_ub = conf.algebraic_states_ub;
+    opts.inputs_lb     = conf.inputs_lb;
+    opts.inputs_ub     = conf.inputs_ub;
     opts.controls_lb         = conf.controls_lb;
     opts.controls_ub         = conf.controls_ub;
 
@@ -1581,17 +1539,15 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
     // (5.2.a) Start from steady-state
     if ( !conf.warm_start )
     {
-        std::vector<std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NSTATE>> q0  = {static_cast<size_t>(n_points),ss.input_states};
-        std::vector<std::array<scalar,vehicle_t::vehicle_ad_curvilinear::NALGEBRAIC>> qa0 = {static_cast<size_t>(n_points),ss.algebraic_states};
+        std::vector<std::array<scalar,vehicle_t::vehicle_ad_curvilinear::number_of_inputs>> q0  = {static_cast<size_t>(n_points),ss.inputs};
         auto control_variables = construct_control_variables(conf, static_cast<size_t>(n_points), ss.controls);
 
         if ( conf.set_initial_condition )
         {
             q0.front()  = conf.q_start;
-            qa0.front() = conf.qa_start;
 
             // Set only full-mesh variables
-            for (size_t j = 0; j < vehicle_t::vehicle_ad_curvilinear::NCONTROL; ++j)
+            for (size_t j = 0; j < vehicle_t::vehicle_ad_curvilinear::number_of_controls; ++j)
             {
                 if ( control_variables[j].optimal_control_type == Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>::FULL_MESH)
                 {
@@ -1599,14 +1555,14 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
                 }
             }
         }
-        opt_laptime = Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>(arclength, conf.is_closed, conf.is_direct, car_curv, q0, qa0, control_variables, opts);
+        opt_laptime = Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>(arclength, conf.is_closed, conf.is_direct, car_curv, q0, control_variables, opts);
     }
     // (5.2.b) Warm start
     else
     {
         opt_laptime = Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>(get_warm_start<vehicle_t>().s, get_warm_start<vehicle_t>().is_closed, get_warm_start<vehicle_t>().is_direct,
-                        car_curv, get_warm_start<vehicle_t>().input_states,
-                        get_warm_start<vehicle_t>().algebraic_states, get_warm_start<vehicle_t>().controls,
+                        car_curv, get_warm_start<vehicle_t>().inputs,
+                        get_warm_start<vehicle_t>().controls,
                         get_warm_start<vehicle_t>().optimization_data.zl, get_warm_start<vehicle_t>().optimization_data.zu,
                         get_warm_start<vehicle_t>().optimization_data.lambda, opts);
     }
@@ -1686,12 +1642,12 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
 
     // (6.2.4) Save vector variables
     std::vector<std::vector<scalar>> data(v_variables_to_save.size(),std::vector<scalar>(n_points,0.0));
-    auto [key_name, q_names, qa_names, u_names] = typename vehicle_t::vehicle_scalar_curvilinear{}.get_state_and_control_names();
+    auto [key_name, q_names, u_names] = typename vehicle_t::vehicle_scalar_curvilinear{}.get_state_and_control_names();
     for (int i = 0; i < n_points; ++i) {
 
         // (6.2.4.1) Update car
         const auto controls_i = opt_laptime.controls.control_array_at_s(car_curv,i,s[i]);
-        car_curv_sc(opt_laptime.input_states[i], opt_laptime.algebraic_states[i], controls_i, s[i]);
+        car_curv_sc(opt_laptime.inputs[i], controls_i, s[i]);
         const auto outputs_map = car_curv_sc.get_outputs_map();
 
         for (size_t i_var = 0; i_var < v_variables_to_save.size(); ++i_var) {
@@ -1706,14 +1662,7 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
             // (6.2.4.3) Find the variable in the state vector
             const auto q_idx = std::find(q_names.cbegin(), q_names.cend(), variable_name);
             if ( q_idx != q_names.cend() ) {
-                data[i_var][i] = opt_laptime.input_states[i][std::distance(q_names.cbegin(), q_idx)];
-                continue;
-            }
-
-            // (6.2.4.4) Find the variable in the algebraic state vector
-            const auto qa_idx = std::find(qa_names.cbegin(), qa_names.cend(), variable_name);
-            if ( qa_idx != qa_names.cend() ) {
-                data[i_var][i] = opt_laptime.algebraic_states[i][std::distance(qa_names.cbegin(), qa_idx)];
+                data[i_var][i] = opt_laptime.inputs[i][std::distance(q_names.cbegin(), q_idx)];
                 continue;
             }
 
@@ -1743,12 +1692,12 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
             for (int i = 0; i < n_points; ++i) {
                 if ( variable_name == "chassis.velocity.x" ) {
                     for (size_t p = 0; p < car_curv_sc_const.get_parameters().get_number_of_parameters(); ++p) {
-                        ddatadp[p][i] = opt_laptime.dinput_states_dp[p][i][vehicle_t::vehicle_scalar_curvilinear::Chassis_type::input_state_names::U];
+                        ddatadp[p][i] = opt_laptime.dinputs_dp[p][i][vehicle_t::vehicle_scalar_curvilinear::Chassis_type::input_names::velocity_x_mps];
                     }
                 }
                 else if ( variable_name == "time" ) {
                     for (size_t p = 0; p < car_curv_sc_const.get_parameters().get_number_of_parameters(); ++p) {
-                        ddatadp[p][i] = opt_laptime.dinput_states_dp[p][i][vehicle_t::vehicle_scalar_curvilinear::Road_type::input_state_names::time];
+                        ddatadp[p][i] = opt_laptime.dinputs_dp[p][i][vehicle_t::vehicle_scalar_curvilinear::Road_type::input_names::time];
                     }
                 }
             }
@@ -1795,13 +1744,13 @@ void vehicle_change_track(const char* c_vehicle_name, const char* c_track_name)
 
     if ( table_kart_6dof.count(vehicle_name) != 0 )
     {
-        table_kart_6dof.at(vehicle_name).get_curvilinear_ad_car().get_road().change_track(table_track.at(track_name));
-        table_kart_6dof.at(vehicle_name).get_curvilinear_scalar_car().get_road().change_track(table_track.at(track_name));
+        table_kart_6dof.at(vehicle_name).get_curvilinear_ad_car().change_track(table_track.at(track_name));
+        table_kart_6dof.at(vehicle_name).get_curvilinear_scalar_car().change_track(table_track.at(track_name));
     }
     else if ( table_f1_3dof.count(vehicle_name) != 0 )
     {
-        table_f1_3dof.at(vehicle_name).get_curvilinear_ad_car().get_road().change_track(table_track.at(track_name));
-        table_f1_3dof.at(vehicle_name).get_curvilinear_scalar_car().get_road().change_track(table_track.at(track_name));
+        table_f1_3dof.at(vehicle_name).get_curvilinear_ad_car().change_track(table_track.at(track_name));
+        table_f1_3dof.at(vehicle_name).get_curvilinear_scalar_car().change_track(table_track.at(track_name));
     }
  }
  CATCH()

@@ -1,8 +1,9 @@
-#ifndef __TRACK_BY_POLYNOMIAL_H__
-#define __TRACK_BY_POLYNOMIAL_H__
+#ifndef TRACK_BY_POLYNOMIAL_H
+#define TRACK_BY_POLYNOMIAL_H
 
 #include "lion/io/Xml_document.h"
 #include "src/core/applications/circuit_preprocessor.h"
+#include "lion/math/euler_angles.h"
 
 class Track_by_polynomial
 {
@@ -11,6 +12,9 @@ class Track_by_polynomial
     Track_by_polynomial() = default;
 
     Track_by_polynomial(Xml_document& doc);
+
+    //! Constructs a planar track from the position vector and track limits vectors
+    Track_by_polynomial(const vPolynomial& position, const sPolynomial& wl, const sPolynomial& wr);
 
     Track_by_polynomial(const Circuit_preprocessor& circuit_preprocessor);
 
@@ -21,6 +25,8 @@ class Track_by_polynomial
     scalar get_left_track_limit(scalar s) const { return _wl(s) + _wl_correction(s); }
 
     scalar get_right_track_limit(scalar s) const { return _wr(s) + _wr_correction(s); }
+
+    constexpr bool has_elevation() const;
 
     constexpr const scalar& get_total_length() const { return _r.get_right_bound(); } 
 

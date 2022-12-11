@@ -1,5 +1,5 @@
-#ifndef __CIRCUIT_PREPROCESSOR_HPP__
-#define __CIRCUIT_PREPROCESSOR_HPP__
+#ifndef CIRCUIT_PREPROCESSOR_HPP
+#define CIRCUIT_PREPROCESSOR_HPP
 
 #include "lion/foundation/utils.hpp"
 #include "lion/math/polynomial.h"
@@ -73,6 +73,29 @@ inline Circuit_preprocessor::Circuit_preprocessor(Xml_document& doc)
         is_closed = false;
     else
         throw fastest_lap_exception("Incorrect track type, should be \"open\" or \"closed\"");
+
+    if (root.has_attribute("dimensions"))
+    {
+        if (root.get_attribute("dimensions") == "2")
+        {
+            options.with_elevation = false;
+        }
+        else if (root.get_attribute("dimensions") == "3")
+        {
+            options.with_elevation = true;
+        }
+        else
+        {
+            std::cout << "[WARNING] Circuit_preprocessor -> track XML file does not have a dimensions attribute. 2D track was assumed" << std::endl;
+            options.with_elevation = false;
+            //      throw fastest_lap_exception("[ERROR] Circuit_preprocessor -> \"dimensions\" attribute value \""
+            //          + root.get_attribute("dimensions") + "\" not valid. Options are \"2\" or \"3\"");
+        }
+    }
+    else {
+            std::cout << "[WARNING] Circuit_preprocessor -> track XML file does not have a dimensions attribute. 2D track was assumed" << std::endl;
+            options.with_elevation = false;
+    }
 
     // Get a header with the errors 
     auto header = root.get_child("header");
