@@ -6,7 +6,7 @@ if ( NOT ${GTest_FOUND})
 endif()
 
 # Lion
-set(BUILD_LION NO)
+set(BUILD_LION YES)
 
 
 
@@ -31,4 +31,4 @@ message(STATUS "Configuration of fastest-lap")
 
 
 find_package(GTest PATHS ${CMAKE_BINARY_DIR}/thirdparty REQUIRED)
-find_package(lion PATHS ${CMAKE_BINARY_DIR}/../../lioncpp-install/lib/cmake/lion HINTS ${CMAKE_BINARY_DIR}/../../lioncpp-install/lib/cmake/lion NO_DEFAULT_PATH REQUIRED)
+find_package(lion PATHS ${CMAKE_BINARY_DIR}/thirdparty/lib/cmake/lion HINTS ${CMAKE_BINARY_DIR}/thirdparty/lib/cmake/lion NO_DEFAULT_PATH REQUIRED)
