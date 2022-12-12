@@ -53,7 +53,7 @@ struct POWERED
         };
     };
 
-    static_assert(input_names::end == state_names::end);
+    static_assert(static_cast<size_t>(input_names::end) == static_cast<size_t>(state_names::end));
 
     //! Control variables: boost
     struct control_names

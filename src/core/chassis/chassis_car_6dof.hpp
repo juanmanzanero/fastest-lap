@@ -168,7 +168,6 @@ inline Vector3d<Timeseries_t> Chassis_car_6dof<Timeseries_t,FrontAxle_t,RearAxle
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t control_start>
 inline Vector3d<Timeseries_t> Chassis_car_6dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,control_start>::Euler_lhs() const
 {
-    const Frame<Timeseries_t>& road_frame = base_type::get_road_frame();
     const Timeseries_t& omega = base_type::get_yaw_rate_radps();
 
     const Timeseries_t& u = base_type::get_u();

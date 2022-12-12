@@ -212,10 +212,15 @@ inline void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,control_star
 template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t control_start>
 void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,control_start>::set_state(Timeseries_t u, Timeseries_t v, Timeseries_t omega)
 {
-    throw fastest_lap_exception("[ERROR] Chassis::set_state -> not implemented");
+    // u
     _velocity_x_mps = u;
+
+    // v
     _velocity_y_mps = v;
+
+    // omega
     _yaw_rate_radps = omega;
+
 }
 
 
@@ -243,7 +248,6 @@ template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_
 inline const Vector3d<Timeseries_t> Chassis<Timeseries_t, FrontAxle_t, RearAxle_t, state_start,control_start>::get_gravity_force() const
 {
     // Get Euler angles
-    const auto& yaw                 = _road_frame.get_rotation_angles()[0];
     const auto& pitch               = _road_frame.get_rotation_angles()[1];
     const auto& roll                = _road_frame.get_rotation_angles()[2];
     const auto& track_heading_angle = _road_frame.get_rotation_angles()[3];
@@ -346,7 +350,7 @@ void Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,control_start>::set
     // v
     _velocity_y_mps = inputs[input_names::velocity_y_mps];
 
-    // oemga
+    // omega
     _yaw_rate_radps = inputs[input_names::yaw_rate_radps];
 }
 

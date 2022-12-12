@@ -22,7 +22,7 @@ class Tire_pacejka : public Tire<Timeseries_t, state_start, control_start>
         enum { end = base_type::state_names::end };
     };
 
-    static_assert(input_names::end == state_names::end);
+    static_assert(static_cast<size_t>(input_names::end) == static_cast<size_t>(state_names::end));
 
     //! Indices of the control variables of this class: none
     struct control_names

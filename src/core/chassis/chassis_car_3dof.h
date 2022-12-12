@@ -71,7 +71,7 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, st
         enum { throttle = base_type::control_names::end, brake_bias, end};
     };
 
-    static_assert(input_names::end == state_names::end);
+    static_assert(static_cast<size_t>(input_names::end) == static_cast<size_t>(state_names::end));
 
     //! Default constructor
     Chassis_car_3dof();

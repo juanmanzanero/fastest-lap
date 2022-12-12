@@ -131,7 +131,7 @@ class Axle_car_6dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
         constexpr const static size_t end = Axle_type::state_names::end;
     };
 
-    static_assert(input_names::end == state_names::end);
+    static_assert(static_cast<size_t>(input_names::end) == static_cast<size_t>(state_names::end));
 
     //! The left tire type
     using Tire_left_type  = Tire_left_t;

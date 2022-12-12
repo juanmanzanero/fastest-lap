@@ -120,13 +120,13 @@ inline void Road_curvilinear<Timeseries_t,Track_t,state_start,control_start>::up
     _dphi_ds   = frenet_frame.deuler_angles_ds.roll();
 
     // Get Frenet frame
-    _tangent_vector = { cos(_theta) * cos(_mu), sin(_theta) * cos(_mu), -sin(_mu) };
+    _tangent_vector = Vector3d{ cos(_theta) * cos(_mu), sin(_theta) * cos(_mu), -sin(_mu) };
 
-    _normal_vector = { cos(_theta) * sin(_mu) * sin(_phi) - sin(_theta) * cos(_phi),
+    _normal_vector = Vector3d{ cos(_theta) * sin(_mu) * sin(_phi) - sin(_theta) * cos(_phi),
                        sin(_theta) * sin(_mu) * sin(_phi) + cos(_theta) * cos(_phi),
                        cos(_mu) * sin(_phi) };
 
-    _binormal_vector = { cos(_theta) * sin(_mu) * cos(_phi) + sin(_theta) * sin(_phi),
+    _binormal_vector = Vector3d{ cos(_theta) * sin(_mu) * cos(_phi) + sin(_theta) * sin(_phi),
                         sin(_theta) * sin(_mu) * cos(_phi) - cos(_theta) * sin(_phi),
                         cos(_mu) * cos(_phi) };
 

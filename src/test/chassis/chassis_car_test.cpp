@@ -185,10 +185,10 @@ TEST_F(Chassis_test, chassis_position)
     EXPECT_DOUBLE_EQ(std::as_const(chassis).get_road_frame().get_absolute_position().at(1), y_chassis);
     EXPECT_DOUBLE_EQ(std::as_const(chassis).get_road_frame().get_absolute_position().at(2),       0.0);
 
-    EXPECT_DOUBLE_EQ(std::as_const(chassis).get_road_frame().get_rotation_angles().size(), 1);
-    EXPECT_DOUBLE_EQ(std::as_const(chassis).get_road_frame().get_rotation_angles().at(0), psi);
-    EXPECT_DOUBLE_EQ(std::as_const(chassis).get_road_frame().get_rotation_angles_derivative().at(0), omega);
-    EXPECT_DOUBLE_EQ(std::as_const(chassis).get_road_frame().get_rotation_axis().at(0), Z);
+    EXPECT_DOUBLE_EQ(std::as_const(chassis).get_road_frame().get_rotation_angles().size(), 4);
+    EXPECT_DOUBLE_EQ(std::as_const(chassis).get_road_frame().get_rotation_angles().at(3), psi);
+    EXPECT_DOUBLE_EQ(std::as_const(chassis).get_road_frame().get_rotation_angles_derivative().at(3), omega);
+    EXPECT_DOUBLE_EQ(std::as_const(chassis).get_road_frame().get_rotation_axis().at(3), Z);
 
     EXPECT_DOUBLE_EQ(std::as_const(chassis).get_chassis_frame().get_origin().at(0), 0.0);
     EXPECT_DOUBLE_EQ(std::as_const(chassis).get_chassis_frame().get_origin().at(1), 0.0);

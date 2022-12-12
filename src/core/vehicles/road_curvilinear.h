@@ -23,7 +23,7 @@ class Road_curvilinear : public Road<Timeseries_t,state_start,control_start>
         enum { time = base_type::state_names::end, lateral_displacement, track_heading_angle, end };
     };
 
-    static_assert(input_names::end == state_names::end);
+    static_assert(static_cast<size_t>(input_names::end) == static_cast<size_t>(state_names::end));
 
     struct control_names : public base_type::control_names {};
 
@@ -48,7 +48,6 @@ class Road_curvilinear : public Road<Timeseries_t,state_start,control_start>
     //! Compute the 3D track curvature (in body axes) 
     constexpr sVector3d curvature(const Euler_angles<scalar>& euler_angles, const Euler_angles<scalar>& deuler_angles_ds) const
     {
-        const auto& yaw       = euler_angles.yaw();
         const auto& pitch     = euler_angles.pitch();
         const auto& roll      = euler_angles.roll();
         const auto& dyaw_ds   = deuler_angles_ds.yaw();

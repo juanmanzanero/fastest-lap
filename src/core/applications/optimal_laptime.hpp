@@ -471,7 +471,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
         // Equality constraints: --------------- 
 
         // (4.1) q^{i} = q^{i-1} + 0.5.ds.[dqdt^{i} + dqdt^{i-1}] 
-        for (const auto& eq_id : time_derivative_equations)
+        for (size_t i_equation = 0; i_equation < time_derivative_equations.size(); ++i_equation)
         {
             c_lb[kc] = 0.0;
             c_ub[kc] = 0.0;
@@ -479,7 +479,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
         }
 
         // (4.3) Algebraic constraints: dqa^{i} = 0.0
-        for (const auto& eq_id : algebraic_equations)
+        for (size_t i_equation = 0; i_equation < algebraic_equations.size(); ++i_equation)
         {
             c_lb[kc] = 0.0;
             c_ub[kc] = 0.0;
@@ -502,7 +502,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
         // Equality constraints: --------------- 
 
         // (5.1) q^{i} = q^{i-1} + 0.5.ds.[dqdt^{i} + dqdt^{i-1}]
-        for (const auto& eq_id : time_derivative_equations)
+        for (size_t i_equation = 0; i_equation < time_derivative_equations.size(); ++i_equation)
         {
             c_lb[kc] = 0.0;
             c_ub[kc] = 0.0;
@@ -510,7 +510,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
         }
 
         // (5.3) Algebraic constraints: dqa^{i} = 0.0
-        for (const auto& eq_id : algebraic_equations)
+        for (size_t i_equation = 0; i_equation < algebraic_equations.size(); ++i_equation)
         {
             c_lb[kc] = 0.0;
             c_ub[kc] = 0.0;
@@ -919,7 +919,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
         // Equality constraints: --------------- 
 
         // (4.1) q^{i} = q^{i-1} + 0.5.ds.[dqdt^{i} + dqdt^{i-1}]
-        for (const auto& eq_id : time_derivative_equations)
+        for (size_t i_equation = 0; i_equation < time_derivative_equations.size(); ++i_equation)
         {
             c_lb[kc] = 0.0;
             c_ub[kc] = 0.0;
@@ -927,7 +927,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
         }
 
         // (4.3) Algebraic constraints: dqa^{i} = 0.0
-        for (const auto& eq_id : algebraic_equations)
+        for (size_t i_equation = 0; i_equation < algebraic_equations.size(); ++i_equation)
         {
             c_lb[kc] = 0.0;
             c_ub[kc] = 0.0;
@@ -961,7 +961,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
         // Equality constraints: --------------- 
 
         // (5.1) q^{i} = q^{i-1} + 0.5.ds.[dqdt^{i} + dqdt^{i-1}]
-        for (const auto& eq_id : time_derivative_equations)
+        for (size_t i_equation = 0; i_equation < time_derivative_equations.size(); ++i_equation)
         {
             c_lb[kc] = 0.0;
             c_ub[kc] = 0.0;
@@ -969,7 +969,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
         }
 
         // (5.3) Algebraic constraints: dqa^{i} = 0.0
-        for (const auto& eq_id : algebraic_equations)
+        for (size_t i_equation = 0; i_equation < algebraic_equations.size(); ++i_equation)
         {
             c_lb[kc] = 0.0;
             c_ub[kc] = 0.0;

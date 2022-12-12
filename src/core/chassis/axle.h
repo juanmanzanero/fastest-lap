@@ -39,7 +39,7 @@ class Axle
         enum { end = state_start };
     };
 
-    static_assert(input_names::end == state_names::end);
+    static_assert(static_cast<size_t>(input_names::end) == static_cast<size_t>(state_names::end));
 
     //! Default constructor
     Axle() = default;

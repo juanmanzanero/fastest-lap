@@ -21,9 +21,6 @@ TEST(Tire_test, base_lambda_and_kappa)
     constexpr const scalar u = 0.95;
     constexpr const scalar v = 0.1;
 
-    const scalar dx = u*cos(psi) - v*sin(psi);
-    const scalar dy = u*sin(psi) + v*cos(psi);
-    
     sFrame chassis_frame({x,y,0.0}, {u,v,0.0}, {psi}, {omega}, {Z}, inertial_frame, sFrame::Frame_velocity_types::this_frame);
 
     constexpr const scalar a = 0.645;

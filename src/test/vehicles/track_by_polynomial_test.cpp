@@ -24,11 +24,11 @@ TEST(Track_by_polynomial_test, evaluation_at_nodes)
 
         EXPECT_NEAR(euler_angles.roll(), 0.0, 1.0e-15);
         EXPECT_NEAR(euler_angles.pitch(), 0.0, 1.0e-15);
-        EXPECT_NEAR(euler_angles.yaw(), -circuit.theta[i], 1.0e-15);
+        EXPECT_NEAR(euler_angles.yaw(), -circuit.theta[i], 2.0e-15);
 
         EXPECT_NEAR(euler_angles_dot.roll(), 0.0, 1.0e-15);
         EXPECT_NEAR(euler_angles_dot.pitch(), 0.0, 1.0e-15);
-        EXPECT_NEAR(euler_angles_dot.yaw(), -circuit.kappa[i], 1.0e-15);
+        EXPECT_NEAR(euler_angles_dot.yaw(), -circuit.kappa[i], 2.0e-15);
     }
 }
 

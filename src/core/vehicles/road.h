@@ -27,7 +27,7 @@ class Road
         enum { end = control_start };
     };
 
-    static_assert(input_names::end == state_names::end);
+    static_assert(static_cast<size_t>(input_names::end) == static_cast<size_t>(state_names::end));
 
     //! Return the dtime/ds (delta-time / delta-arclength) derivative.
     constexpr const auto& get_dtimeds() const { return _dtimeds; } 
