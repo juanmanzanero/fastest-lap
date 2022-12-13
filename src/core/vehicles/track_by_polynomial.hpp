@@ -106,12 +106,6 @@ inline Track_by_polynomial::Track_by_polynomial(const Circuit_preprocessor& circ
         }
     }
 
-    std::cout << "[WARNING] Track_by_polynomial -> flipping Y after reading file, this should be fixed!" << std::endl;
-
-    std::transform(r_centerline.begin(), r_centerline.end(), r_centerline.begin(), [](const auto& v) -> sVector3d { return { v.x(), -v.y(), v.z() }; });
-    theta = (-1.0)*theta;
-    kappa = (-1.0)*kappa;
-
     // Construct the polynomials
     _r         = {s,r_centerline,1,false};
     _theta     = { s, theta, 1, false };

@@ -120,28 +120,28 @@ class Road_curvilinear : public Road<Timeseries_t,state_start,control_start>
  private:
     Track_t _track;     //! [in] Vectorial polynomial with track coordinates
 
-    sVector3d _position; //! Position along the centerline [m]
+    sVector3d _position = { 0.0, 0.0, 0.0 }; //! Position along the centerline [m]
 
-    scalar _theta;   //! Yaw angle of the Frenet frame [rad]
-    scalar _mu;      //! Pitch angle of the Frenet frame [rad]
-    scalar _phi;     //! Roll angle of the Frenet frame [rad]
+    scalar _theta = 0.0;   //! Yaw angle of the Frenet frame [rad]
+    scalar _mu = 0.0;      //! Pitch angle of the Frenet frame [rad]
+    scalar _phi = 0.0;     //! Roll angle of the Frenet frame [rad]
 
-    scalar _dtheta_ds; //! Spatial derivative of the yaw angle [rad/m]
-    scalar _dmu_ds; //! Spatial derivative of the pitch angle [rad/m]
-    scalar _dphi_ds; //! Spatial derivative of the roll angle [rad/m]
+    scalar _dtheta_ds = 0.0; //! Spatial derivative of the yaw angle [rad/m]
+    scalar _dmu_ds = 0.0; //! Spatial derivative of the pitch angle [rad/m]
+    scalar _dphi_ds = 0.0; //! Spatial derivative of the roll angle [rad/m]
 
-    sVector3d _tangent_vector;      //! Tangent vector of the Frenet frame
-    sVector3d _normal_vector;       //! Normal vector of the Frenet frame
-    sVector3d _binormal_vector;     //! Binormal vector of the Frenet frame
+    sVector3d _tangent_vector = { 0.0, 0.0, 0.0 };      //! Tangent vector of the Frenet frame
+    sVector3d _normal_vector = { 0.0, 0.0, 0.0 };       //! Normal vector of the Frenet frame
+    sVector3d _binormal_vector = { 0.0, 0.0, 0.0 };     //! Binormal vector of the Frenet frame
 
-    sVector3d _curvature;           //! 3D curvature vector
+    sVector3d _curvature = { 0.0, 0.0, 0.0 };           //! 3D curvature vector
 
-    Timeseries_t _time;                     //! The simulation time [s]
-    Timeseries_t _lateral_displacement_mps; //! The normal distance to the road centerline [m]
-    Timeseries_t _track_heading_angle_rad;  //! Vehicle angle wrt the centerline [rad]
+    Timeseries_t _time = 0.0;                     //! The simulation time [s]
+    Timeseries_t _lateral_displacement_mps = 0.0; //! The normal distance to the road centerline [m]
+    Timeseries_t _track_heading_angle_rad = 0.0;  //! Vehicle angle wrt the centerline [rad]
 
-    Timeseries_t _lateral_displacement_dot_mps;  //! Time derivative of the lateral displacement [m/s]
-    Timeseries_t _track_heading_angle_dot_radps; //! Time derivative of the track heading angle [rad/s]
+    Timeseries_t _lateral_displacement_dot_mps = 0.0;  //! Time derivative of the lateral displacement [m/s]
+    Timeseries_t _track_heading_angle_dot_radps = 0.0; //! Time derivative of the track heading angle [rad/s]
 };
 
 template<typename Timeseries_t,typename Track_t,size_t state_start, size_t control_start>
