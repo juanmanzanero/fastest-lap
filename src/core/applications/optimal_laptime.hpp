@@ -166,17 +166,6 @@ inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(Xml_document& doc)
 
     const auto [key_name, q_names, u_names] = Dynamic_model_t{}.get_state_and_control_names();
 
-    auto q_names_modified = q_names;
-    if (q_names_modified[7] == "chassis.force_z_fl_g")
-    {
-        q_names_modified[7] = "chassis.Fz_fl";
-        q_names_modified[8] = "chassis.Fz_fr";
-        q_names_modified[9] = "chassis.Fz_rl";
-        q_names_modified[10] = "chassis.Fz_rr";
-    }
-
-    std::cout << "[WARNING] Optimal_laptime -> Loading from XML with modified input names temporarily" << std::endl;
-
     // Get the data
     n_points = std::stoi(root.get_attribute("n_points"));
     n_elements = (is_closed ? n_points : n_points - 1);
@@ -189,7 +178,7 @@ inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(Xml_document& doc)
     inputs = std::vector<std::array<scalar,Dynamic_model_t::number_of_inputs>>(n_points);
     for (size_t i = 0; i < Dynamic_model_t::number_of_inputs; ++i)
     {
-        std::vector<scalar> data_in = root.get_child(q_names_modified[i]).get_value(std::vector<scalar>());
+        std::vector<scalar> data_in = root.get_child(q_names[i]).get_value(std::vector<scalar>());
         for (size_t j = 0; j < n_points; ++j)
             inputs[j][i] = data_in[j];
     }

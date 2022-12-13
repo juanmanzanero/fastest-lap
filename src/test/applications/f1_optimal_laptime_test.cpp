@@ -132,7 +132,7 @@ static void check_optimal_laptime(const Optimal_laptime<Dynamic_model_t>& opt_la
     }
 
     // Fz_fl
-    auto Fz_fl_saved = opt_saved.get_element("optimal_laptime/chassis.Fz_fl").get_value(std::vector<scalar>());
+    auto Fz_fl_saved = opt_saved.get_element("optimal_laptime/chassis.force_z_fl_g").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
     {
         EXPECT_NEAR(opt_laptime.inputs[i][limebeer2014f1<scalar>::Chassis_t::input_names::force_z_fl_g], Fz_fl_saved[i], maximum_error);
@@ -140,7 +140,7 @@ static void check_optimal_laptime(const Optimal_laptime<Dynamic_model_t>& opt_la
     }
 
     // Fz_fr
-    auto Fz_fr_saved = opt_saved.get_element("optimal_laptime/chassis.Fz_fr").get_value(std::vector<scalar>());
+    auto Fz_fr_saved = opt_saved.get_element("optimal_laptime/chassis.force_z_fr_g").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
     {
         EXPECT_NEAR(opt_laptime.inputs[i][limebeer2014f1<scalar>::Chassis_t::input_names::force_z_fr_g], Fz_fr_saved[i], maximum_error);
@@ -148,7 +148,7 @@ static void check_optimal_laptime(const Optimal_laptime<Dynamic_model_t>& opt_la
     }
 
     // Fz_rl
-    auto Fz_rl_saved = opt_saved.get_element("optimal_laptime/chassis.Fz_rl").get_value(std::vector<scalar>());
+    auto Fz_rl_saved = opt_saved.get_element("optimal_laptime/chassis.force_z_rl_g").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
     {
         EXPECT_NEAR(opt_laptime.inputs[i][limebeer2014f1<scalar>::Chassis_t::input_names::force_z_rl_g], Fz_rl_saved[i], maximum_error);
@@ -156,7 +156,7 @@ static void check_optimal_laptime(const Optimal_laptime<Dynamic_model_t>& opt_la
     }
 
     // Fz_rr
-    auto Fz_rr_saved = opt_saved.get_element("optimal_laptime/chassis.Fz_rr").get_value(std::vector<scalar>());
+    auto Fz_rr_saved = opt_saved.get_element("optimal_laptime/chassis.force_z_rr_g").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
     {
         EXPECT_NEAR(opt_laptime.inputs[i][limebeer2014f1<scalar>::Chassis_t::input_names::force_z_rr_g], Fz_rr_saved[i], maximum_error);
