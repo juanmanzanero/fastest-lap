@@ -76,7 +76,7 @@ class Chassis_car_6dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, st
         };
     };
 
-    static_assert(input_names::end == state_names::end);
+    static_assert(static_cast<size_t>(input_names::end) == static_cast<size_t>(state_names::end));
 
     //! Control variables: none
     struct control_names : public base_type::control_names
