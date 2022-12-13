@@ -53,7 +53,7 @@ inline Track_by_polynomial::Track_by_polynomial(const vPolynomial& position, con
         auto theta_values = std::vector<scalar>(2 * polynomial_order + 1);
         auto kappa_values = std::vector<scalar>(2 * polynomial_order + 1);
 
-        for (size_t i_point = 0; i_point < 2 * polynomial_order; ++i_point)
+        for (size_t i_point = 0; i_point < 2 * polynomial_order + 1; ++i_point)
         {
             const auto dp_i = dp(x[i_point]);
             const auto d2p_i = d2p(x[i_point]);
