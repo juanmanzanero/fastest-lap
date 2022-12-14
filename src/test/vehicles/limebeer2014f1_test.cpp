@@ -542,10 +542,10 @@ TEST_F(limebeer2014f1_test, set_parameter)
     auto alpha_saved    = opt_saved.get_element("optimal_laptime/road.track-heading-angle").get_value(std::vector<scalar>());
     auto delta_saved    = opt_saved.get_element("optimal_laptime/control_variables/front-axle.steering-angle/values").get_value(std::vector<scalar>());
     auto throttle_saved = opt_saved.get_element("optimal_laptime/control_variables/chassis.throttle/values").get_value(std::vector<scalar>());
-    auto Fz_fl_saved    = opt_saved.get_element("optimal_laptime/chassis.Fz_fl").get_value(std::vector<scalar>());
-    auto Fz_fr_saved    = opt_saved.get_element("optimal_laptime/chassis.Fz_fr").get_value(std::vector<scalar>());
-    auto Fz_rl_saved    = opt_saved.get_element("optimal_laptime/chassis.Fz_rl").get_value(std::vector<scalar>());
-    auto Fz_rr_saved    = opt_saved.get_element("optimal_laptime/chassis.Fz_rr").get_value(std::vector<scalar>());
+    auto Fz_fl_saved    = opt_saved.get_element("optimal_laptime/chassis.force_z_fl_g").get_value(std::vector<scalar>());
+    auto Fz_fr_saved    = opt_saved.get_element("optimal_laptime/chassis.force_z_fr_g").get_value(std::vector<scalar>());
+    auto Fz_rl_saved    = opt_saved.get_element("optimal_laptime/chassis.force_z_rl_g").get_value(std::vector<scalar>());
+    auto Fz_rr_saved    = opt_saved.get_element("optimal_laptime/chassis.force_z_rr_g").get_value(std::vector<scalar>());
 
     for (size_t i = 0; i < n; ++i)
     {
@@ -679,10 +679,10 @@ TEST_F(limebeer2014f1_test, set_parameter_c_api)
     auto alpha_saved    = opt_saved.get_element("optimal_laptime/road.track-heading-angle").get_value(std::vector<scalar>());
     auto delta_saved    = opt_saved.get_element("optimal_laptime/control_variables/front-axle.steering-angle/values").get_value(std::vector<scalar>());
     auto throttle_saved = opt_saved.get_element("optimal_laptime/control_variables/chassis.throttle/values").get_value(std::vector<scalar>());
-    auto Fz_fl_saved    = opt_saved.get_element("optimal_laptime/chassis.Fz_fl").get_value(std::vector<scalar>());
-    auto Fz_fr_saved    = opt_saved.get_element("optimal_laptime/chassis.Fz_fr").get_value(std::vector<scalar>());
-    auto Fz_rl_saved    = opt_saved.get_element("optimal_laptime/chassis.Fz_rl").get_value(std::vector<scalar>());
-    auto Fz_rr_saved    = opt_saved.get_element("optimal_laptime/chassis.Fz_rr").get_value(std::vector<scalar>());
+    auto Fz_fl_saved    = opt_saved.get_element("optimal_laptime/chassis.force_z_fl_g").get_value(std::vector<scalar>());
+    auto Fz_fr_saved    = opt_saved.get_element("optimal_laptime/chassis.force_z_fr_g").get_value(std::vector<scalar>());
+    auto Fz_rl_saved    = opt_saved.get_element("optimal_laptime/chassis.force_z_rl_g").get_value(std::vector<scalar>());
+    auto Fz_rr_saved    = opt_saved.get_element("optimal_laptime/chassis.force_z_rr_g").get_value(std::vector<scalar>());
 
     for (size_t i = 0; i < n; ++i)
     {
@@ -745,10 +745,10 @@ TEST_F(limebeer2014f1_test,propagation_crank_nicolson)
     auto alpha_saved    = opt_saved.get_element("optimal_laptime/road.track-heading-angle").get_value(std::vector<scalar>());
     auto delta_saved    = opt_saved.get_element("optimal_laptime/control_variables/front-axle.steering-angle/values").get_value(std::vector<scalar>());
     auto throttle_saved = opt_saved.get_element("optimal_laptime/control_variables/chassis.throttle/values").get_value(std::vector<scalar>());
-    auto Fz_fl_saved    = opt_saved.get_element("optimal_laptime/chassis.Fz_fl").get_value(std::vector<scalar>());
-    auto Fz_fr_saved    = opt_saved.get_element("optimal_laptime/chassis.Fz_fr").get_value(std::vector<scalar>());
-    auto Fz_rl_saved    = opt_saved.get_element("optimal_laptime/chassis.Fz_rl").get_value(std::vector<scalar>());
-    auto Fz_rr_saved    = opt_saved.get_element("optimal_laptime/chassis.Fz_rr").get_value(std::vector<scalar>());
+    auto Fz_fl_saved    = opt_saved.get_element("optimal_laptime/chassis.force_z_fl_g").get_value(std::vector<scalar>());
+    auto Fz_fr_saved    = opt_saved.get_element("optimal_laptime/chassis.force_z_fr_g").get_value(std::vector<scalar>());
+    auto Fz_rl_saved    = opt_saved.get_element("optimal_laptime/chassis.force_z_rl_g").get_value(std::vector<scalar>());
+    auto Fz_rr_saved    = opt_saved.get_element("optimal_laptime/chassis.force_z_rr_g").get_value(std::vector<scalar>());
 
     // Take a Crank-Nicolson step on i = 112
     const size_t i_start = 112;
@@ -824,10 +824,10 @@ TEST_F(limebeer2014f1_test,propagation_crank_nicolson_corner_exit)
     auto alpha_saved    = opt_saved.get_element("optimal_laptime/road.track-heading-angle").get_value(std::vector<scalar>());
     auto delta_saved    = opt_saved.get_element("optimal_laptime/control_variables/front-axle.steering-angle/values").get_value(std::vector<scalar>());
     auto throttle_saved = opt_saved.get_element("optimal_laptime/control_variables/chassis.throttle/values").get_value(std::vector<scalar>());
-    auto Fz_fl_saved    = opt_saved.get_element("optimal_laptime/chassis.Fz_fl").get_value(std::vector<scalar>());
-    auto Fz_fr_saved    = opt_saved.get_element("optimal_laptime/chassis.Fz_fr").get_value(std::vector<scalar>());
-    auto Fz_rl_saved    = opt_saved.get_element("optimal_laptime/chassis.Fz_rl").get_value(std::vector<scalar>());
-    auto Fz_rr_saved    = opt_saved.get_element("optimal_laptime/chassis.Fz_rr").get_value(std::vector<scalar>());
+    auto Fz_fl_saved    = opt_saved.get_element("optimal_laptime/chassis.force_z_fl_g").get_value(std::vector<scalar>());
+    auto Fz_fr_saved    = opt_saved.get_element("optimal_laptime/chassis.force_z_fr_g").get_value(std::vector<scalar>());
+    auto Fz_rl_saved    = opt_saved.get_element("optimal_laptime/chassis.force_z_rl_g").get_value(std::vector<scalar>());
+    auto Fz_rr_saved    = opt_saved.get_element("optimal_laptime/chassis.force_z_rr_g").get_value(std::vector<scalar>());
 
     // Take a Crank-Nicolson step on i = 325
     const size_t i_start = 101;
