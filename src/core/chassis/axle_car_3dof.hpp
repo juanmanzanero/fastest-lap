@@ -217,15 +217,15 @@ void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,state_start,c
 
 template<typename Timeseries_t, typename Tire_left_t, typename Tire_right_t, template<size_t,size_t> typename Axle_mode, size_t state_start, size_t control_start>
 void Axle_car_3dof<Timeseries_t,Tire_left_t,Tire_right_t,Axle_mode,state_start,control_start>::update
-    (Timeseries_t Fz_left, Timeseries_t Fz_right, Timeseries_t throttle, Timeseries_t brake_bias)
+    (Timeseries_t Fz_left, Timeseries_t Fz_right, Timeseries_t throttle, Timeseries_t brake_bias, const Frame<Timeseries_t>& road_frame)
 {
     // Create aliases
     Tire_left_t& tire_l  = std::get<LEFT>(base_type::_tires);
     Tire_right_t& tire_r = std::get<RIGHT>(base_type::_tires);
 
     // Update the tires
-    tire_l.update(-Fz_left, _kappa_dimensionless_left);
-    tire_r.update(-Fz_right, _kappa_dimensionless_right);
+    tire_l.update(-Fz_left, _kappa_dimensionless_left, road_frame);
+    tire_r.update(-Fz_right, _kappa_dimensionless_right, road_frame);
 
     const Timeseries_t& omega_left = tire_l.get_omega();
     const Timeseries_t& omega_right = tire_r.get_omega();

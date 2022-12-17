@@ -171,7 +171,7 @@ class Axle_car_3dof : public Axle<Timeseries_t,std::tuple<Tire_left_t,Tire_right
     //! @param[in] Fz_right: the normal force of the right tire
     //! @param[in] throttle: the throttle/brake percentage in [-1,1]
     //! @param[in] brake_bias: the brake bias in [0,1]
-    void update(Timeseries_t Fz_left, Timeseries_t Fz_right, Timeseries_t throttle, Timeseries_t brake_bias);
+    void update(Timeseries_t Fz_left, Timeseries_t Fz_right, Timeseries_t throttle, Timeseries_t brake_bias, const Frame<Timeseries_t>& road_frame);
 
     //! Get the track
     const scalar& get_track() const { return _track; }

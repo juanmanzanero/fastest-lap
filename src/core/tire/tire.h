@@ -81,7 +81,7 @@ class Tire
 
     //! Updates omega, deformation, the contact point velocity, kappa and lambda, but the input is kappa
     //! @param[in] kappa: new value for tire longitudinal slip
-    void update_from_kappa(Timeseries_t kappa);
+    void update_from_kappa(Timeseries_t kappa, const Frame<Timeseries_t>& road_frame);
 
     //! Return the nominal radius of the tire [N]
     constexpr const scalar& get_radius() const { return _R0; }

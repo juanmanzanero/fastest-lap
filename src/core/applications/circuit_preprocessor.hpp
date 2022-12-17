@@ -86,15 +86,13 @@ inline Circuit_preprocessor::Circuit_preprocessor(Xml_document& doc)
         }
         else
         {
-            std::cout << "[WARNING] Circuit_preprocessor -> track XML file does not have a dimensions attribute. 2D track was assumed" << std::endl;
-            options.with_elevation = false;
-            //      throw fastest_lap_exception("[ERROR] Circuit_preprocessor -> \"dimensions\" attribute value \""
-            //          + root.get_attribute("dimensions") + "\" not valid. Options are \"2\" or \"3\"");
+            throw fastest_lap_exception("[ERROR] Circuit_preprocessor -> \"dimensions\" attribute value \""
+                                         + root.get_attribute("dimensions") + "\" not valid. Options are \"2\" or \"3\"");
         }
     }
-    else {
-            std::cout << "[WARNING] Circuit_preprocessor -> track XML file does not have a dimensions attribute. 2D track was assumed" << std::endl;
-            options.with_elevation = false;
+    else 
+    {
+        throw fastest_lap_exception("[ERROR] Circuit_preprocessor -> Track XML file must have a dimensions attribute");
     }
 
     // Get a header with the errors 
@@ -113,10 +111,11 @@ inline Circuit_preprocessor::Circuit_preprocessor(Xml_document& doc)
     options.eps_n          = opt.get_child("cost_track_limits_smoothness").get_value(scalar());
     options.eps_d          = opt.get_child("cost_track_limits_errors").get_value(scalar());
     options.eps_c          = opt.get_child("cost_centerline").get_value(scalar());
+    options.eps_mu         = opt.get_child("cost_pitch").get_value(scalar());
+    options.eps_phi        = opt.get_child("cost_roll").get_value(scalar());
     options.maximum_kappa  = opt.get_child("maximum_kappa").get_value(scalar());
     options.maximum_dkappa = opt.get_child("maximum_dkappa").get_value(scalar());
     
-
     // Get the GPS coordinates conversion used
     auto gps_param = root.get_child("GPS_parameters");
     theta0         = gps_param.get_child("origin_longitude").get_value(scalar())*DEG;
@@ -136,51 +135,83 @@ inline Circuit_preprocessor::Circuit_preprocessor(Xml_document& doc)
     std::vector<scalar> x = data.get_child("centerline/x").get_value(std::vector<scalar>());
     std::vector<scalar> y = data.get_child("centerline/y").get_value(std::vector<scalar>());
 
+    std::vector<scalar> z(n_points, 0.0);
+    if (options.with_elevation)
+        z = data.get_child("centerline/z").get_value(std::vector<scalar>());
+
     r_centerline = std::vector<sVector3d>(n_points);
     for (size_t i = 0; i < n_points; ++i)
-        r_centerline[i] = sVector3d(x[i], y[i], 0.0);
+        r_centerline[i] = sVector3d(x[i], y[i], z[i]);
 
     // Left boundary
     x = data.get_child("left_boundary/x").get_value(std::vector<scalar>());
     y = data.get_child("left_boundary/y").get_value(std::vector<scalar>());
 
+    if (options.with_elevation)
+        z = data.get_child("left_boundary/z").get_value(std::vector<scalar>());
+
     r_left = std::vector<sVector3d>(n_points);
     for (size_t i = 0; i < n_points; ++i)
-        r_left[i] = sVector3d(x[i], y[i], 0.0);
+        r_left[i] = sVector3d(x[i], y[i], z[i]);
     
     // Right boundary
     x = data.get_child("right_boundary/x").get_value(std::vector<scalar>());
     y = data.get_child("right_boundary/y").get_value(std::vector<scalar>());
 
+    if (options.with_elevation)
+        z = data.get_child("right_boundary/z").get_value(std::vector<scalar>());
+
     r_right = std::vector<sVector3d>(n_points);
     for (size_t i = 0; i < n_points; ++i)
-        r_right[i] = sVector3d(x[i], y[i], 0.0);
+        r_right[i] = sVector3d(x[i], y[i], z[i]);
     
     // Left measured boundary
     x = data.get_child("left_measured_boundary/x").get_value(std::vector<scalar>());
     y = data.get_child("left_measured_boundary/y").get_value(std::vector<scalar>());
 
+    z = std::vector<scalar>(x.size(), 0.0);
+    if (options.with_elevation)
+        z = data.get_child("left_measured_boundary/z").get_value(std::vector<scalar>());
+
     assert(x.size() == y.size());
+    assert(z.size() == x.size());
 
     r_left_measured = std::vector<sVector3d>(x.size());
     for (size_t i = 0; i < x.size(); ++i)
-        r_left_measured[i] = sVector3d(x[i], y[i], 0.0);
+        r_left_measured[i] = sVector3d(x[i], y[i], z[i]);
     
     // Right measured boundary
     x = data.get_child("right_measured_boundary/x").get_value(std::vector<scalar>());
     y = data.get_child("right_measured_boundary/y").get_value(std::vector<scalar>());
 
+    z = std::vector<scalar>(x.size(), 0.0);
+    if (options.with_elevation)
+        z = data.get_child("right_measured_boundary/z").get_value(std::vector<scalar>());
+
     assert(x.size() == y.size());
+    assert(z.size() == x.size());
 
     r_right_measured = std::vector<sVector3d>(x.size());
     for (size_t i = 0; i < x.size(); ++i)
-        r_right_measured[i] = sVector3d(x[i], y[i], 0.0);
+        r_right_measured[i] = sVector3d(x[i], y[i], z[i]);
     
     // Theta
     theta = data.get_child("theta").get_value(std::vector<scalar>());
 
+    if (options.with_elevation)
+    {
+        mu = data.get_child("mu").get_value(std::vector<scalar>());
+        phi = data.get_child("phi").get_value(std::vector<scalar>());
+    }
+
     // Kappa
     kappa = data.get_child("kappa").get_value(std::vector<scalar>());
+
+    if (options.with_elevation)
+    {
+        mu_dot = data.get_child("mu_dot").get_value(std::vector<scalar>());
+        phi_dot = data.get_child("phi_dot").get_value(std::vector<scalar>());
+    }
 
     // nl
     nl = data.get_child("nl").get_value(std::vector<scalar>());
@@ -190,6 +221,12 @@ inline Circuit_preprocessor::Circuit_preprocessor(Xml_document& doc)
 
     // dkappa
     dkappa = data.get_child("dkappa").get_value(std::vector<scalar>());
+
+    if (options.with_elevation)
+    {
+        dmu_dot = data.get_child("dmu_dot").get_value(std::vector<scalar>());
+        dphi_dot = data.get_child("dphi_dot").get_value(std::vector<scalar>());
+    }
 
     // dnl
     dnl = data.get_child("dnl").get_value(std::vector<scalar>());
@@ -716,6 +753,8 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
     opt.add_child("cost_track_limits_smoothness").set_value(std::to_string(options.eps_n));
     opt.add_child("cost_track_limits_errors").set_value(std::to_string(options.eps_d));
     opt.add_child("cost_centerline").set_value(std::to_string(options.eps_c));
+    opt.add_child("cost_pitch").set_value(std::to_string(options.eps_mu));
+    opt.add_child("cost_roll").set_value(std::to_string(options.eps_phi));
     opt.add_child("maximum_kappa").set_value(std::to_string(options.maximum_kappa));
     opt.add_child("maximum_dkappa").set_value(std::to_string(options.maximum_dkappa));
 
@@ -770,6 +809,13 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
     centerline.add_child("y").set_value(s_out.str()).set_attribute("units","m");
     s_out.str(""); s_out.clear();
 
+    for (size_t i = 0; i < n_points-1; ++i)
+        s_out << r_centerline[i].z() << ", " ;
+    s_out << r_centerline.back().z();
+
+    centerline.add_child("z").set_value(s_out.str()).set_attribute("units","m");
+    s_out.str(""); s_out.clear();
+
     // Left boundary
     auto left = data.add_child("left_boundary");
 
@@ -786,6 +832,14 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
 
     left.add_child("y").set_value(s_out.str()).set_attribute("units","m");
     s_out.str(""); s_out.clear();
+
+    for (size_t i = 0; i < n_points-1; ++i)
+        s_out << r_left[i].z() << ", " ;
+    s_out << r_left.back().z();
+
+    left.add_child("z").set_value(s_out.str()).set_attribute("units","m");
+    s_out.str(""); s_out.clear();
+
     
     // Right boundary
     auto right = data.add_child("right_boundary");
@@ -804,6 +858,13 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
     right.add_child("y").set_value(s_out.str()).set_attribute("units","m");
     s_out.str(""); s_out.clear();
     
+    for (size_t i = 0; i < n_points-1; ++i)
+        s_out << r_right[i].z() << ", " ;
+    s_out << r_right.back().z();
+
+    right.add_child("z").set_value(s_out.str()).set_attribute("units","m");
+    s_out.str(""); s_out.clear();
+
     // Left measured boundary
     auto left_measured = data.add_child("left_measured_boundary");
 
@@ -821,6 +882,14 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
     left_measured.add_child("y").set_value(s_out.str()).set_attribute("units","m");
     s_out.str(""); s_out.clear();
     
+    for (size_t i = 0; i < r_left_measured.size()-1; ++i)
+        s_out << r_left_measured[i].z() << ", " ;
+    s_out << r_left_measured.back().z();
+
+    left_measured.add_child("z").set_value(s_out.str()).set_attribute("units","m");
+    s_out.str(""); s_out.clear();
+    
+
     // Left measured boundary
     auto right_measured = data.add_child("right_measured_boundary");
 
@@ -838,6 +907,13 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
     right_measured.add_child("y").set_value(s_out.str()).set_attribute("units","m");
     s_out.str(""); s_out.clear();
 
+    for (size_t i = 0; i < r_right_measured.size()-1; ++i)
+        s_out << r_right_measured[i].z() << ", " ;
+    s_out << r_right_measured.back().z();
+
+    right_measured.add_child("z").set_value(s_out.str()).set_attribute("units","m");
+    s_out.str(""); s_out.clear();
+
     // Theta
     for (size_t i = 0; i < n_points-1; ++i)
         s_out << theta[i] << ", " ;
@@ -846,12 +922,44 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
     data.add_child("theta").set_value(s_out.str()).set_attribute("units","rad");
     s_out.str(""); s_out.clear();
 
+    // Mu
+    for (size_t i = 0; i < n_points-1; ++i)
+        s_out << mu[i] << ", " ;
+    s_out << mu.back();
+
+    data.add_child("mu").set_value(s_out.str()).set_attribute("units","rad");
+    s_out.str(""); s_out.clear();
+
+    // Phi
+    for (size_t i = 0; i < n_points-1; ++i)
+        s_out << phi[i] << ", " ;
+    s_out << phi.back();
+
+    data.add_child("phi").set_value(s_out.str()).set_attribute("units","rad");
+    s_out.str(""); s_out.clear();
+
     // Kappa
     for (size_t i = 0; i < n_points-1; ++i)
         s_out << kappa[i] << ", " ;
     s_out << kappa.back();
 
     data.add_child("kappa").set_value(s_out.str()).set_attribute("units","rad");
+    s_out.str(""); s_out.clear();
+
+    // mu_dot
+    for (size_t i = 0; i < n_points-1; ++i)
+        s_out << mu_dot[i] << ", " ;
+    s_out << mu_dot.back();
+
+    data.add_child("mu_dot").set_value(s_out.str()).set_attribute("units","rad");
+    s_out.str(""); s_out.clear();
+
+    // phi_dot
+    for (size_t i = 0; i < n_points-1; ++i)
+        s_out << phi_dot[i] << ", " ;
+    s_out << phi_dot.back();
+
+    data.add_child("phi_dot").set_value(s_out.str()).set_attribute("units","rad");
     s_out.str(""); s_out.clear();
 
     // nl
@@ -870,13 +978,28 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
     data.add_child("nr").set_value(s_out.str()).set_attribute("units","rad");
     s_out.str(""); s_out.clear();
 
-
     // dkappa
     for (size_t i = 0; i < n_points-1; ++i)
         s_out << dkappa[i] << ", " ;
     s_out << dkappa.back();
 
     data.add_child("dkappa").set_value(s_out.str()).set_attribute("units","rad");
+    s_out.str(""); s_out.clear();
+
+    // dmu_dot
+    for (size_t i = 0; i < n_points-1; ++i)
+        s_out << dmu_dot[i] << ", " ;
+    s_out << dmu_dot.back();
+
+    data.add_child("dmu_dot").set_value(s_out.str()).set_attribute("units","rad");
+    s_out.str(""); s_out.clear();
+
+    // dphi_dot
+    for (size_t i = 0; i < n_points-1; ++i)
+        s_out << dphi_dot[i] << ", " ;
+    s_out << dphi_dot.back();
+
+    data.add_child("dphi_dot").set_value(s_out.str()).set_attribute("units","rad");
     s_out.str(""); s_out.clear();
 
     // dnl

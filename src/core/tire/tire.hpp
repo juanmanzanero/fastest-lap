@@ -76,14 +76,13 @@ inline void Tire<Timeseries_t,state_start,control_start>::update(Timeseries_t om
 
 
 template<typename Timeseries_t, size_t state_start, size_t control_start>
-inline void Tire<Timeseries_t,state_start,control_start>::update_from_kappa(Timeseries_t kappa)
+inline void Tire<Timeseries_t,state_start,control_start>::update_from_kappa(Timeseries_t kappa, const Frame<Timeseries_t>& road_frame)
 {
     _kappa = kappa;
 
     // Compute outputs ---
 
     // Tire deformations: position and velocity of the point at (0,0,R0)
-    const auto& road_frame = _frame.get_parent().get_parent().get_parent(); // This is provisional, road frame must be an input
     _w  =  _frame.get_absolute_position({0.0,0.0,_R0}).at(Z);
     _dw = _frame.get_absolute_velocity_in_inertial({0.0,0.0,_R0}).at(Z);
 

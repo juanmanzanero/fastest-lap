@@ -64,7 +64,7 @@ class Tire_pacejka : public Tire<Timeseries_t, state_start, control_start>
     //! In this function, the normal load is provided externally
     //! @param[in] Fz: the normal load
     //! @param[in] kappa_dimensionless: new value for tire longitudinal slip [-]
-    void update(Timeseries_t Fz, Timeseries_t kappa_dimensionless);
+    void update(Timeseries_t Fz, Timeseries_t kappa_dimensionless, const Frame<Timeseries_t>& road_frame);
 
     //! Calls update(omega) of the base class, and calls update_self()
     //! @param[in] omega: new value for tire angular speed [rad/s]

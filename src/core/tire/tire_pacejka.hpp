@@ -64,10 +64,10 @@ void Tire_pacejka<Timeseries_t,Pacejka_model,state_start,control_start>::fill_xm
 
 
 template<typename Timeseries_t, typename Pacejka_model, size_t state_start, size_t control_start>
-inline void Tire_pacejka<Timeseries_t,Pacejka_model,state_start,control_start>::update(Timeseries_t Fz, Timeseries_t kappa_dimensionless)
+inline void Tire_pacejka<Timeseries_t,Pacejka_model,state_start,control_start>::update(Timeseries_t Fz, Timeseries_t kappa_dimensionless, const Frame<Timeseries_t>& road_frame)
 {
     // Compute omega
-    base_type::update_from_kappa(kappa_dimensionless*_model.maximum_kappa(Fz));
+    base_type::update_from_kappa(kappa_dimensionless*_model.maximum_kappa(Fz), road_frame);
 
     update_self(Fz);
 }

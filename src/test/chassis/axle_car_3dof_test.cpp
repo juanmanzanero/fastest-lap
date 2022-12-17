@@ -217,7 +217,7 @@ TEST_F(Axle_car_3dof_test, update_front_axle)
 {
     const scalar throttle = 1.0;
     const scalar brake_bias = 0.0;
-    front_axle.update(Fz_fl, Fz_fr, throttle, brake_bias);
+    front_axle.update(Fz_fl, Fz_fr, throttle, brake_bias, inertial_frame);
 
     // Check omega of the tires
     EXPECT_EQ(front_axle.template get_tire<0>().get_omega(), omega_fl);    
@@ -290,7 +290,7 @@ TEST_F(Axle_car_3dof_test, update_rear_axle)
 {
     const scalar throttle = -1e10;
     const scalar brake_bias = 0.0;
-    rear_axle.update(Fz_rl, Fz_rr, throttle, brake_bias);
+    rear_axle.update(Fz_rl, Fz_rr, throttle, brake_bias, inertial_frame);
 
     // Check omega of the tires
     EXPECT_EQ(rear_axle.template get_tire<0>().get_omega(), omega_rl);    

@@ -134,8 +134,8 @@ inline void Chassis_car_3dof<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,con
     _neg_force_z_rr_N = -smooth_pos(-_force_z_rr_N, _force_z_max_ref2);
 
     // Update axles
-    base_type::get_front_axle().update(_neg_force_z_fl_N, _neg_force_z_fr_N, _throttle, _brake_bias);
-    base_type::get_rear_axle().update(_neg_force_z_rl_N, _neg_force_z_rr_N, _throttle, 1.0-_brake_bias);
+    base_type::get_front_axle().update(_neg_force_z_fl_N, _neg_force_z_fr_N, _throttle, _brake_bias, base_type::get_road_frame());
+    base_type::get_rear_axle().update(_neg_force_z_rl_N, _neg_force_z_rr_N, _throttle, 1.0-_brake_bias, base_type::get_road_frame());
 
     // Compute aerodynamic forces
     const auto aerodynamic_forces = base_type::get_aerodynamic_force();
