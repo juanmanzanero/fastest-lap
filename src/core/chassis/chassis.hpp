@@ -271,7 +271,7 @@ inline auto Chassis<Timeseries_t,FrontAxle_t,RearAxle_t,state_start,control_star
     const Vector3d<Timeseries_t> wind_velocity          = transpose(_road_frame.get_absolute_rotation_matrix()) * wind_velocity_absolute;
 
     // (3) Get aerodynamic velocity in body frame
-    const Vector3d<Timeseries_t> aerodynamic_velocity    = -car_velocity + wind_velocity;
+    const Vector3d<Timeseries_t> aerodynamic_velocity = -car_velocity + wind_velocity;
     const Timeseries_t aerodynamic_velocity_norm_squared = aerodynamic_velocity.x() * aerodynamic_velocity.x() + aerodynamic_velocity.y() * aerodynamic_velocity.y();
     const Timeseries_t aerodynamic_velocity_norm         = sqrt(aerodynamic_velocity_norm_squared);
 

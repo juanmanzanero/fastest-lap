@@ -70,7 +70,6 @@ class Chassis_car_3dof_test : public ::testing::Test
     const scalar v = vel*sin(psi);
     const scalar omega = 0.3;
 
-
     const scalar delta = -10.0*DEG;
     const scalar throttle = 0.5;
 

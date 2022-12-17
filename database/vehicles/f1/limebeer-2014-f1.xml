@@ -40,8 +40,8 @@
             Inertia matrix: this 3DOF model only uses Izz
         -->
         <inertia>
-            <Ixx> 0.0 </Ixx>  <Ixy> 0.0 </Ixy> <Ixz> 0.0   </Ixz>
-            <Iyx> 0.0 </Iyx>  <Iyy> 0.0 </Iyy> <Iyz> 0.0   </Iyz>
+            <Ixx> 112.5 </Ixx>  <Ixy> 0.0 </Ixy> <Ixz> 0.0   </Ixz>
+            <Iyx> 0.0 </Iyx>  <Iyy> 425.0 </Iyy> <Iyz> 0.0   </Iyz>
             <Izx> 0.0 </Izx>  <Izy> 0.0 </Izy> <Izz> 450.0 </Izz>
         </inertia>
 

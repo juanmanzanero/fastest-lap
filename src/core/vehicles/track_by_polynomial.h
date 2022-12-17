@@ -16,6 +16,10 @@ class Track_by_polynomial
     //! Constructs a planar track from the position vector and track limits vectors
     Track_by_polynomial(const vPolynomial& position, const sPolynomial& wl, const sPolynomial& wr);
 
+    Track_by_polynomial(const vPolynomial& position, const sPolynomial& yaw, const sPolynomial& pitch, const sPolynomial& roll,
+        const sPolynomial& dyaw_ds, const sPolynomial& dpitch_ds, const sPolynomial& droll_ds, const sPolynomial& wl, const sPolynomial& wr) : _r(position), _theta(yaw), _mu(pitch), _phi(roll),
+                                                                                                               _dtheta_ds(dyaw_ds), _dmu_ds(dpitch_ds), _dphi_ds(droll_ds), _wl(wl), _wr(wr) {}
+
     Track_by_polynomial(const Circuit_preprocessor& circuit_preprocessor);
 
     void set_left_track_limit_correction(const sPolynomial& wl_correction) { _wl_correction = wl_correction;  }

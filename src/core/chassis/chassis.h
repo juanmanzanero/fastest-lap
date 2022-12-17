@@ -127,8 +127,16 @@ class Chassis
     //! Get the lateral acceleration [m/s2]
     Timeseries_t get_lateral_acceleration() const;
 
+    //! Get the center of mass longitudinal velocity 
+    constexpr const Timeseries_t& get_com_velocity_x_mps() const { return _com_velocity_x_mps; }
+
+    //! Get the center of mass lateral velocity 
+    constexpr const Timeseries_t& get_com_velocity_y_mps() const { return _com_velocity_y_mps; }
+
+    //! Get the derivative of the center of mass longitudinal velocity 
     constexpr const Timeseries_t& get_com_velocity_x_dot_mps2() const { return _com_velocity_x_dot_mps2; }
 
+    //! Get the derivative of the center of mass lateral velocity 
     constexpr const Timeseries_t& get_com_velocity_y_dot_mps2() const { return _com_velocity_y_dot_mps2; }
 
     //! Get the yaw speed [rad/s]

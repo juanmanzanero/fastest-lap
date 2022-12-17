@@ -132,6 +132,9 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, st
     //! Get the CoM velocity in road frame
     Vector3d<Timeseries_t> get_com_velocity() const { return { 0.0, 0.0, 0.0 }; }
 
+    //! Get the CoM absolute vertical in body axes
+    constexpr const Timeseries_t& get_com_velocity_z_mps() const { return _com_velocity_z_mps; }
+
     //! Get the derivative of the CoM absolute vertical in body axes
     constexpr const Timeseries_t& get_com_velocity_z_dot_mps2() const { return _com_velocity_z_dot_mps2; }
 

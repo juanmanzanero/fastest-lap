@@ -83,18 +83,24 @@ inline void Tire<Timeseries_t,state_start,control_start>::update_from_kappa(Time
     // Compute outputs ---
 
     // Tire deformations: position and velocity of the point at (0,0,R0)
+    const auto& road_frame = _frame.get_parent().get_parent().get_parent(); // This is provisional, road frame must be an input
     _w  =  _frame.get_absolute_position({0.0,0.0,_R0}).at(Z);
     _dw = _frame.get_absolute_velocity_in_inertial({0.0,0.0,_R0}).at(Z);
+
+    const auto fully_inflated_tire_contact_point_position_and_velocity = _frame.get_position_and_velocity_in_target(road_frame, { 0.0, 0.0, _R0 });
+
+    _w = fully_inflated_tire_contact_point_position_and_velocity.first.z();
+    _dw = fully_inflated_tire_contact_point_position_and_velocity.second.z();
 
     // Contact point velocity: velocity of the point at (0,0,R0-w)
     _v =  _frame.get_absolute_velocity_in_body(get_contact_point());
 
     if ( _type == ONLY_LATERAL )
-        _omega = _v[X]/_R0;
+        _omega = _v.x()/_R0;
 
     // omega and lambda
     _lambda = lambda();
-    _omega = (1.0+kappa)*_v[0]/_R0;
+    _omega = (1.0+kappa)*_v.x()/_R0;
 }
 
 
