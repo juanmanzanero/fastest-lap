@@ -111,11 +111,15 @@ inline Circuit_preprocessor::Circuit_preprocessor(Xml_document& doc)
     options.eps_n          = opt.get_child("cost_track_limits_smoothness").get_value(scalar());
     options.eps_d          = opt.get_child("cost_track_limits_errors").get_value(scalar());
     options.eps_c          = opt.get_child("cost_centerline").get_value(scalar());
-    options.eps_mu         = opt.get_child("cost_pitch").get_value(scalar());
-    options.eps_phi        = opt.get_child("cost_roll").get_value(scalar());
     options.maximum_kappa  = opt.get_child("maximum_kappa").get_value(scalar());
     options.maximum_dkappa = opt.get_child("maximum_dkappa").get_value(scalar());
-    
+
+    if (options.with_elevation)
+    {
+        options.eps_mu = opt.get_child("cost_pitch").get_value(scalar());
+        options.eps_phi = opt.get_child("cost_roll").get_value(scalar());
+    }
+
     // Get the GPS coordinates conversion used
     auto gps_param = root.get_child("GPS_parameters");
     theta0         = gps_param.get_child("origin_longitude").get_value(scalar())*DEG;
@@ -723,6 +727,8 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
         root.set_attribute("type","closed");
     else
         root.set_attribute("type","open");
+
+    root.set_attribute("dimensions", (options.with_elevation ? "3" : "2"));
     
     // Add a header with the errors 
     auto header = root.add_child("header");

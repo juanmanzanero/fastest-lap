@@ -989,6 +989,18 @@ TEST_F(limebeer2014f1_test, three_dimensional_track)
     car_sc.set_parameter("vehicle/front-axle/inertia", 2.0);
     car_sc.set_parameter("vehicle/rear-axle/inertia", 3.0);
 
+    EXPECT_TRUE(track.has_elevation());
+
+    const auto [time_derivative_equations, algebraic_equations] = car_sc.classify_equations();
+
+    const std::vector<size_t> time_derivative_equations_expected = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13 };
+
+    EXPECT_EQ(time_derivative_equations.size(), 13);
+    EXPECT_EQ(algebraic_equations.size(), 0);
+
+    for (size_t i = 0; i < 13; ++i)
+        EXPECT_EQ(time_derivative_equations.at(i), time_derivative_equations_expected.at(i));
+
     const auto& chassis = car_sc.get_chassis();
     const auto& road = car_sc.get_road();
     const auto& tire_fl = chassis.get_front_axle().template get_tire<0>();

@@ -1241,3 +1241,98 @@ TEST_F(F1_optimal_laptime_test, Catalunya_boost)
 
     EXPECT_NEAR(opt_laptime.integral_quantities.back().value, 10.0, 1.0e-3);
 }
+
+
+TEST_F(F1_optimal_laptime_test, Catalunya_2022_3d)
+{
+    if ( is_valgrind ) GTEST_SKIP();
+
+    Xml_document catalunya_xml("./database/tracks/catalunya_2022/catalunya_2022_3d.xml",true);
+    Circuit_preprocessor catalunya_pproc(catalunya_xml);
+    Track_by_polynomial catalunya(catalunya_pproc);
+    
+    limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial>::Road_t road(catalunya);
+    limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial> car(database, road);
+
+    // Start from the steady-state values at 50km/h-0g    
+    const scalar v = 50.0*KMH;
+    auto ss = Steady_state(car_cartesian).solve(v,0.0,0.0); 
+
+    const auto& s = catalunya_pproc.s;
+    const auto& n = s.size();
+    
+    EXPECT_EQ(n, 500);
+
+    // Construct control variables
+    auto control_variables = Optimal_laptime<decltype(car)>::template Control_variables<>{};
+
+    // steering wheel: optimize in the full mesh
+    control_variables[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING]
+        = Optimal_laptime<decltype(car)>::create_full_mesh(std::vector<scalar>(n,ss.controls[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING]), 50.0e0); 
+
+    // throttle: optimize in the full mesh
+    control_variables[decltype(car)::Chassis_type::control_names::throttle]
+        = Optimal_laptime<decltype(car)>::create_full_mesh(std::vector<scalar>(n,ss.controls[decltype(car)::Chassis_type::control_names::throttle]), 50.0*8.0e-4); 
+
+    // brake bias: don't optimize
+    control_variables[decltype(car)::Chassis_type::control_names::brake_bias]
+        = Optimal_laptime<decltype(car)>::create_dont_optimize(); 
+
+    auto opts = Optimal_laptime<decltype(car)>::Options{};
+    opts.print_level = 0;
+    Optimal_laptime<decltype(car)> opt_laptime(s, true, true, car, {n,ss.inputs}, control_variables, opts);
+    opt_laptime.xml();
+
+    // Check the results with a saved simulation
+    Xml_document opt_saved("data/f1_optimal_laptime_catalunya_2022_3d.xml", true);
+
+    check_optimal_laptime(opt_laptime, opt_saved, n, 1.0e-6);
+
+}
+
+TEST_F(F1_optimal_laptime_test, Catalunya_3d)
+{
+    if ( is_valgrind ) GTEST_SKIP();
+
+    Xml_document catalunya_xml("catalunya_3d.xml",true);
+    Circuit_preprocessor catalunya_pproc(catalunya_xml);
+    Track_by_polynomial catalunya(catalunya_pproc);
+    
+    limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial>::Road_t road(catalunya);
+    limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial> car(database, road);
+
+    // Start from the steady-state values at 50km/h-0g    
+    const scalar v = 50.0*KMH;
+    auto ss = Steady_state(car_cartesian).solve(v,0.0,0.0); 
+
+    const auto& s = catalunya_pproc.s;
+    const auto& n = s.size();
+    
+    EXPECT_EQ(n, 500);
+
+    // Construct control variables
+    auto control_variables = Optimal_laptime<decltype(car)>::template Control_variables<>{};
+
+    // steering wheel: optimize in the full mesh
+    control_variables[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING]
+        = Optimal_laptime<decltype(car)>::create_full_mesh(std::vector<scalar>(n,ss.controls[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING]), 50.0e0); 
+
+    // throttle: optimize in the full mesh
+    control_variables[decltype(car)::Chassis_type::control_names::throttle]
+        = Optimal_laptime<decltype(car)>::create_full_mesh(std::vector<scalar>(n,ss.controls[decltype(car)::Chassis_type::control_names::throttle]), 50.0*8.0e-4); 
+
+    // brake bias: don't optimize
+    control_variables[decltype(car)::Chassis_type::control_names::brake_bias]
+        = Optimal_laptime<decltype(car)>::create_dont_optimize(); 
+
+    auto opts = Optimal_laptime<decltype(car)>::Options{};
+    opts.print_level = 0;
+    Optimal_laptime<decltype(car)> opt_laptime(s, true, true, car, {n,ss.inputs}, control_variables, opts);
+    opt_laptime.xml();
+
+    // Check the results with a saved simulation
+    Xml_document opt_saved("data/f1_optimal_laptime_catalunya_3d.xml", true);
+
+    check_optimal_laptime(opt_laptime, opt_saved, n, 1.0e-6);
+}
+
