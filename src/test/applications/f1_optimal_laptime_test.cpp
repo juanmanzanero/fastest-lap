@@ -1294,7 +1294,8 @@ TEST_F(F1_optimal_laptime_test, Catalunya_3d)
 {
     if ( is_valgrind ) GTEST_SKIP();
 
-    Xml_document catalunya_xml("catalunya_3d.xml",true);
+    Xml_document catalunya_xml("./database/tracks/catalunya/catalunya_3d.xml",true);
+
     Circuit_preprocessor catalunya_pproc(catalunya_xml);
     Track_by_polynomial catalunya(catalunya_pproc);
     
