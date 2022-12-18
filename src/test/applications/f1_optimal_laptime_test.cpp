@@ -176,6 +176,9 @@ TEST_F(F1_optimal_laptime_test, Catalunya_discrete)
     limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial>::Road_t road(catalunya);
     limebeer2014f1<CppAD::AD<scalar>>::curvilinear<Track_by_polynomial> car(database, road);
 
+    car.set_parameter("vehicle/chassis/inertia/Ixx", 0.0);
+    car.set_parameter("vehicle/chassis/inertia/Iyy", 0.0);
+
     // Start from the steady-state values at 50km/h-0g    
     const scalar v = 50.0*KMH;
     auto ss = Steady_state(car_cartesian).solve(v,0.0,0.0); 
