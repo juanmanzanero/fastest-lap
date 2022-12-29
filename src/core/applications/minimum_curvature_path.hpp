@@ -91,7 +91,7 @@ inline void Minimum_curvature_path::compute_track_by_polynomial(const Track_by_p
     std::vector<scalar> x_lb(fg.get_n_variables(), 0.0);
     std::vector<scalar> x_ub(fg.get_n_variables(), 0.0);
 
-    using input_names = Fitness_fcn_by_polynomial<is_closed>::input_names;
+    using input_names = typename Fitness_fcn_by_polynomial<is_closed>::input_names;
 
     for (size_t i_point = 0; i_point < num_points; ++i_point)
     {
