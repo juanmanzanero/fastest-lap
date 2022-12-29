@@ -41,7 +41,7 @@ class Track_by_polynomial
         Euler_angles<scalar> deuler_angles_ds;
     };
 
-    Frenet_frame operator()(const scalar& t) { return { _r(t), {_theta(t),_mu(t),_phi(t)}, {_dtheta_ds(t),_dmu_ds(t), _dphi_ds(t)} };  }
+    Frenet_frame operator()(const scalar& t) const { return { _r(t), {_theta(t),_mu(t),_phi(t)}, {_dtheta_ds(t),_dmu_ds(t), _dphi_ds(t)} };  }
 
     template<typename Timeseries_t>
     Vector3d<Timeseries_t> position_at(const scalar t, const Timeseries_t& w)

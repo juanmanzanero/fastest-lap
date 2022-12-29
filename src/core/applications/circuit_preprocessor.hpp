@@ -237,6 +237,10 @@ inline Circuit_preprocessor::Circuit_preprocessor(Xml_document& doc)
 
     // dnr
     dnr = data.get_child("dnr").get_value(std::vector<scalar>());
+
+    // Get direction
+    if (is_closed)
+        direction = ( theta.back() > theta.front() ? COUNTERCLOCKWISE : CLOCKWISE);
 }
 
 template<bool closed>

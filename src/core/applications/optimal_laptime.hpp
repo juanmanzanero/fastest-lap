@@ -54,7 +54,7 @@ inline void Optimal_laptime<Dynamic_model_t>::check_inputs(const Dynamic_model_t
     n_points = s.size();
     n_elements = (is_closed ? n_points : n_points - 1);
 
-    // (2) Verify the vector or arclength
+    // (2) Verify the vector of arclength
     const scalar& L = car.get_road().track_length();
 
     if (is_closed)
