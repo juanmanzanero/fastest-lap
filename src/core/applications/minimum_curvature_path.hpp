@@ -89,14 +89,14 @@ inline void Minimum_curvature_path::compute_track_by_polynomial(const Circuit_ge
 
     const auto centerline_poly = Polynomial(circuit_geometry.s, circuit_geometry.r_centerline, 1, false);
 
-    const auto yaw_poly = sPolynomial(circuit_geometry.s, circuit_geometry.theta, 1, false);
-    const auto pitch_poly = circuit_geometry.mu.size() > 0 ? sPolynomial(circuit_geometry.s, circuit_geometry.mu, 1, false) : sPolynomial();
-    const auto roll_poly = circuit_geometry.phi.size() > 0 ? sPolynomial(circuit_geometry.s, circuit_geometry.phi, 1, false) : sPolynomial();
+    const auto yaw_poly = sPolynomial(circuit_geometry.s, circuit_geometry.yaw, 1, false);
+    const auto pitch_poly = circuit_geometry.pitch.size() > 0 ? sPolynomial(circuit_geometry.s, circuit_geometry.pitch, 1, false) : sPolynomial();
+    const auto roll_poly = circuit_geometry.roll.size() > 0 ? sPolynomial(circuit_geometry.s, circuit_geometry.roll, 1, false) : sPolynomial();
 
 
-    const auto yaw_dot_poly = sPolynomial(circuit_geometry.s, circuit_geometry.kappa, 1, false);
-    const auto pitch_dot_poly = circuit_geometry.mu_dot.size() > 0 ? sPolynomial(circuit_geometry.s, circuit_geometry.mu_dot, 1, false) : sPolynomial();
-    const auto roll_dot_poly = circuit_geometry.phi_dot.size() > 0 ? sPolynomial(circuit_geometry.s, circuit_geometry.phi_dot, 1, false) : sPolynomial();
+    const auto yaw_dot_poly = sPolynomial(circuit_geometry.s, circuit_geometry.yaw_dot, 1, false);
+    const auto pitch_dot_poly = circuit_geometry.pitch_dot.size() > 0 ? sPolynomial(circuit_geometry.s, circuit_geometry.pitch_dot, 1, false) : sPolynomial();
+    const auto roll_dot_poly = circuit_geometry.roll_dot.size() > 0 ? sPolynomial(circuit_geometry.s, circuit_geometry.roll_dot, 1, false) : sPolynomial();
 
     const auto nl_poly = sPolynomial(circuit_geometry.s, circuit_geometry.nl, 1, false);
     const auto nr_poly = sPolynomial(circuit_geometry.s, circuit_geometry.nr, 1, false);
@@ -113,7 +113,7 @@ inline void Minimum_curvature_path::compute_track_by_polynomial(const Circuit_ge
 
         centerline[i_point] = centerline_poly(s_compute[i_point]);
 
-        normal_vector[i_point] = { cos(yaw) * sin(pitch) * sin(roll) - sin(yaw) * cos(roll),
+        normal_vector[i_point] = sVector3d{ cos(yaw) * sin(pitch) * sin(roll) - sin(yaw) * cos(roll),
                                    sin(yaw) * sin(pitch) * sin(roll) + cos(yaw) * cos(roll),
                                    cos(pitch) * sin(roll) };
     }
@@ -411,7 +411,7 @@ inline void Minimum_curvature_path::Fitness_fcn_by_polynomial<is_closed>::operat
         _curvature_z[i_point] = -sin(_roll[i_point]) * _pitch_dot[i_point] + cos(_pitch[i_point]) * cos(_roll[i_point]) * _yaw_dot[i_point];
     }
 
-    // (4) Compute fitness function and constraints: the definition of theta and kappa
+    // (4) Compute fitness function and constraints: the definition of yaw and yaw_dot
     size_t constraint_counter = 0;
     fg.front() = 0.0;
     for (size_t i_point = 1; i_point < _num_points; ++i_point)

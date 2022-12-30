@@ -498,8 +498,8 @@ void track_download_data(double* data, const char* track_name_c, const int n, co
 
     std::vector<std::pair<std::string,const double*>> track_variable_map = {
         { "arclength", preprocessor.s.data() },
-        { "heading-angle", preprocessor.theta.data() } ,
-        { "curvature", preprocessor.kappa.data() },
+        { "heading-angle", preprocessor.yaw.data() } ,
+        { "curvature", preprocessor.yaw_dot.data() },
         { "distance-left-boundary", preprocessor.nl.data() },
         { "distance-right-boundary", preprocessor.nr.data() } };
 
@@ -1868,10 +1868,10 @@ struct Circuit_preprocessor_configuration
             if ( doc.has_element("options/optimization/cost_track_limits_errors") )
                 eps_d = doc.get_element("options/optimization/cost_track_limits_errors").get_value(scalar());
             if ( doc.has_element("options/optimization/cost_centerline") ) eps_c = doc.get_element("options/optimization/cost_centerline").get_value(scalar());
-            if ( doc.has_element("options/optimization/maximum_kappa") )    
-                maximum_kappa = doc.get_element("options/optimization/maximum_kappa").get_value(scalar());
-            if ( doc.has_element("options/optimization/maximum_dkappa") )
-                maximum_dkappa = doc.get_element("options/optimization/maximum_dkappa").get_value(scalar());
+            if ( doc.has_element("options/optimization/maximum_yaw_dot") )    
+                maximum_yaw_dot = doc.get_element("options/optimization/maximum_yaw_dot").get_value(scalar());
+            if ( doc.has_element("options/optimization/maximum_dyaw_dot") )
+                maximum_dyaw_dot = doc.get_element("options/optimization/maximum_dyaw_dot").get_value(scalar());
         }
 
         if ( doc.has_element("options/print_level") ) print_level = doc.get_element("options/print_level").get_value(scalar());
@@ -1910,8 +1910,8 @@ struct Circuit_preprocessor_configuration
     scalar eps_k                     = Circuit_preprocessor::Options().eps_k;
     scalar eps_n                     = Circuit_preprocessor::Options().eps_n;
     scalar eps_c                     = Circuit_preprocessor::Options().eps_c;
-    scalar maximum_kappa             = Circuit_preprocessor::Options().maximum_kappa;
-    scalar maximum_dkappa            = Circuit_preprocessor::Options().maximum_dkappa;
+    scalar maximum_yaw_dot             = Circuit_preprocessor::Options().maximum_yaw_dot;
+    scalar maximum_dyaw_dot            = Circuit_preprocessor::Options().maximum_dyaw_dot;
     scalar maximum_dn                = Circuit_preprocessor::Options().maximum_dn;
     scalar maximum_distance_find     = Circuit_preprocessor::Options().maximum_distance_find;
     scalar adaption_aspect_ratio_max = Circuit_preprocessor::Options().adaption_aspect_ratio_max;
@@ -1947,8 +1947,8 @@ void circuit_preprocessor(const char* options)
     preprocessor_options.eps_n = conf.eps_n ;
     preprocessor_options.eps_c = conf.eps_c ;
 
-    preprocessor_options.maximum_kappa = conf.maximum_kappa ;
-    preprocessor_options.maximum_dkappa = conf.maximum_dkappa ;
+    preprocessor_options.maximum_yaw_dot = conf.maximum_yaw_dot ;
+    preprocessor_options.maximum_dyaw_dot = conf.maximum_dyaw_dot ;
     preprocessor_options.maximum_dn     = conf.maximum_dn     ;
     preprocessor_options.maximum_distance_find = conf.maximum_distance_find ;
 
@@ -2109,10 +2109,10 @@ void circuit_preprocessor(const char* options)
         table_vector.insert({conf.output_variables_prefix + "right_measured/y", right_measured_y});
 
         // (3.3.12) Curvature
-        if ( table_vector.count(conf.output_variables_prefix + "kappa") != 0 )
-            throw fastest_lap_exception(std::string("Variable \"") + conf.output_variables_prefix + "kappa" + "\" already exists in the vector table");
+        if ( table_vector.count(conf.output_variables_prefix + "yaw_dot") != 0 )
+            throw fastest_lap_exception(std::string("Variable \"") + conf.output_variables_prefix + "yaw_dot" + "\" already exists in the vector table");
 
-        table_vector.insert({conf.output_variables_prefix + "kappa", circuit_preprocessor.kappa});
+        table_vector.insert({conf.output_variables_prefix + "yaw_dot", circuit_preprocessor.yaw_dot});
 
         // (3.3.13) Distance to left
         if ( table_vector.count(conf.output_variables_prefix + "nl") != 0 )

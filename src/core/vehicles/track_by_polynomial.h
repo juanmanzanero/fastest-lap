@@ -17,8 +17,8 @@ class Track_by_polynomial
     Track_by_polynomial(const vPolynomial& position, const sPolynomial& wl, const sPolynomial& wr);
 
     Track_by_polynomial(const vPolynomial& position, const sPolynomial& yaw, const sPolynomial& pitch, const sPolynomial& roll,
-        const sPolynomial& dyaw_ds, const sPolynomial& dpitch_ds, const sPolynomial& droll_ds, const sPolynomial& wl, const sPolynomial& wr) : _r(position), _theta(yaw), _mu(pitch), _phi(roll),
-                                                                                                               _dtheta_ds(dyaw_ds), _dmu_ds(dpitch_ds), _dphi_ds(droll_ds), _wl(wl), _wr(wr) {}
+        const sPolynomial& dyaw_ds, const sPolynomial& dpitch_ds, const sPolynomial& droll_ds, const sPolynomial& wl, const sPolynomial& wr) : _r(position), _yaw(yaw), _pitch(pitch), _roll(roll),
+                                                                                                               _dyaw_ds(dyaw_ds), _dpitch_ds(dpitch_ds), _droll_ds(droll_ds), _wl(wl), _wr(wr) {}
 
     Track_by_polynomial(const Circuit_preprocessor& circuit_preprocessor);
 
@@ -41,19 +41,19 @@ class Track_by_polynomial
         Euler_angles<scalar> deuler_angles_ds;
     };
 
-    Frenet_frame operator()(const scalar& t) const { return { _r(t), {_theta(t),_mu(t),_phi(t)}, {_dtheta_ds(t),_dmu_ds(t), _dphi_ds(t)} };  }
+    Frenet_frame operator()(const scalar& t) const { return { _r(t), {_yaw(t),_pitch(t),_roll(t)}, {_dyaw_ds(t),_dpitch_ds(t), _droll_ds(t)} };  }
 
     template<typename Timeseries_t>
     Vector3d<Timeseries_t> position_at(const scalar t, const Timeseries_t& w)
     {
         const auto r = _r(t);
-        const auto theta = _theta(t);
-        const auto mu = _mu(t);
-        const auto phi = _phi(t);
+        const auto yaw = _yaw(t);
+        const auto mu = _pitch(t);
+        const auto roll = _roll(t);
 
-        const auto normal_vector = { cos(theta) * sin(mu) * sin(phi) - sin(theta) * cos(phi),
-                                     sin(theta) * sin(mu) * sin(phi) + cos(theta) * cos(phi),
-                                     cos(mu) * sin(phi) };
+        const auto normal_vector = { cos(yaw) * sin(mu) * sin(roll) - sin(yaw) * cos(roll),
+                                     sin(yaw) * sin(mu) * sin(roll) + cos(yaw) * cos(roll),
+                                     cos(mu) * sin(roll) };
                 
         return 
         {  
@@ -68,14 +68,14 @@ class Track_by_polynomial
     vPolynomial _r;     //! Position vector polynomial
 
     // Frenet frame orientation
-    sPolynomial _theta; //! Track heading angle [rad]
-    sPolynomial _mu;    //! Track pitch angle [rad]
-    sPolynomial _phi;   //! Track roll angle [rad]
+    sPolynomial _yaw; //! Track heading angle [rad]
+    sPolynomial _pitch;    //! Track pitch angle [rad]
+    sPolynomial _roll;   //! Track roll angle [rad]
 
     // Curvature
-    sPolynomial _dtheta_ds; //! Kappa (yaw-rate) [rad/m]
-    sPolynomial _dmu_ds;    //! pitch-rate [rad/m]
-    sPolynomial _dphi_ds;   //! roll-rate [rad/m]
+    sPolynomial _dyaw_ds; //! Kappa (yaw-rate) [rad/m]
+    sPolynomial _dpitch_ds;    //! pitch-rate [rad/m]
+    sPolynomial _droll_ds;   //! roll-rate [rad/m]
 
     sPolynomial _wl;    //! Distance to the left track limit [m]
     sPolynomial _wr;    //! Distance to the right track limit [m]

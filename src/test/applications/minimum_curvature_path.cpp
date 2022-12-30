@@ -115,7 +115,7 @@ TEST(Minimum_curvature_path, catalunya_2022_3d)
     Minimum_curvature_path minimum_path(track, s, true, options);
     minimum_path.xml();
 
-    Xml_document minimum_path_saved("data/minimum_path_catalunya_2022.xml_3d", true);
+    Xml_document minimum_path_saved("data/minimum_path_catalunya_2022_3d.xml", true);
 
     check_minimum_curvature(minimum_path_saved, minimum_path);
 }

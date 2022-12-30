@@ -111,21 +111,21 @@ inline Circuit_preprocessor::Circuit_preprocessor(Xml_document& doc)
     options.eps_n          = opt.get_child("cost_track_limits_smoothness").get_value(scalar());
     options.eps_d          = opt.get_child("cost_track_limits_errors").get_value(scalar());
     options.eps_c          = opt.get_child("cost_centerline").get_value(scalar());
-    options.maximum_kappa  = opt.get_child("maximum_kappa").get_value(scalar());
-    options.maximum_dkappa = opt.get_child("maximum_dkappa").get_value(scalar());
+    options.maximum_yaw_dot  = opt.get_child("maximum_yaw_dot").get_value(scalar());
+    options.maximum_dyaw_dot = opt.get_child("maximum_dyaw_dot").get_value(scalar());
 
     if (options.with_elevation)
     {
-        options.eps_mu = opt.get_child("cost_pitch").get_value(scalar());
-        options.eps_phi = opt.get_child("cost_roll").get_value(scalar());
+        options.eps_pitch = opt.get_child("cost_pitch").get_value(scalar());
+        options.eps_roll = opt.get_child("cost_roll").get_value(scalar());
     }
 
     // Get the GPS coordinates conversion used
     auto gps_param = root.get_child("GPS_parameters");
-    theta0         = gps_param.get_child("origin_longitude").get_value(scalar())*DEG;
-    phi0           = gps_param.get_child("origin_latitude").get_value(scalar())*DEG;
+    yaw0         = gps_param.get_child("origin_longitude").get_value(scalar())*DEG;
+    roll0           = gps_param.get_child("origin_latitude").get_value(scalar())*DEG;
     R_earth        = gps_param.get_child("earth_radius").get_value(scalar());
-    phi_ref        = gps_param.get_child("reference_latitude").get_value(scalar())*DEG;
+    roll_ref        = gps_param.get_child("reference_latitude").get_value(scalar())*DEG;
 
     // Get the data
     auto data = root.get_child("data");
@@ -200,21 +200,21 @@ inline Circuit_preprocessor::Circuit_preprocessor(Xml_document& doc)
         r_right_measured[i] = sVector3d(x[i], y[i], z[i]);
     
     // Theta
-    theta = data.get_child("theta").get_value(std::vector<scalar>());
+    yaw = data.get_child("yaw").get_value(std::vector<scalar>());
 
     if (options.with_elevation)
     {
-        mu = data.get_child("mu").get_value(std::vector<scalar>());
-        phi = data.get_child("phi").get_value(std::vector<scalar>());
+        pitch = data.get_child("pitch").get_value(std::vector<scalar>());
+        roll = data.get_child("roll").get_value(std::vector<scalar>());
     }
 
     // Kappa
-    kappa = data.get_child("kappa").get_value(std::vector<scalar>());
+    yaw_dot = data.get_child("yaw_dot").get_value(std::vector<scalar>());
 
     if (options.with_elevation)
     {
-        mu_dot = data.get_child("mu_dot").get_value(std::vector<scalar>());
-        phi_dot = data.get_child("phi_dot").get_value(std::vector<scalar>());
+        pitch_dot = data.get_child("pitch_dot").get_value(std::vector<scalar>());
+        roll_dot = data.get_child("roll_dot").get_value(std::vector<scalar>());
     }
 
     // nl
@@ -223,13 +223,13 @@ inline Circuit_preprocessor::Circuit_preprocessor(Xml_document& doc)
     // nr
     nr = data.get_child("nr").get_value(std::vector<scalar>());
 
-    // dkappa
-    dkappa = data.get_child("dkappa").get_value(std::vector<scalar>());
+    // dyaw_dot
+    dyaw_dot = data.get_child("dyaw_dot").get_value(std::vector<scalar>());
 
     if (options.with_elevation)
     {
-        dmu_dot = data.get_child("dmu_dot").get_value(std::vector<scalar>());
-        dphi_dot = data.get_child("dphi_dot").get_value(std::vector<scalar>());
+        dpitch_dot = data.get_child("dpitch_dot").get_value(std::vector<scalar>());
+        droll_dot = data.get_child("droll_dot").get_value(std::vector<scalar>());
     }
 
     // dnl
@@ -240,28 +240,28 @@ inline Circuit_preprocessor::Circuit_preprocessor(Xml_document& doc)
 
     // Get direction
     if (is_closed)
-        direction = ( theta.back() > theta.front() ? COUNTERCLOCKWISE : CLOCKWISE);
+        direction = ( yaw.back() > yaw.front() ? COUNTERCLOCKWISE : CLOCKWISE);
 }
 
 template<bool closed>
 inline void Circuit_preprocessor::transform_coordinates(const std::vector<Coordinates>& coord_left, const std::vector<Coordinates>& coord_right)
 {
     // (1) Get reference latitude (arbitrarily, that of the first right curve)
-    phi_ref = coord_right.front().latitude*DEG;
-    phi0    = coord_right.front().latitude*DEG;
-    theta0  = coord_right.front().longitude*DEG;
+    roll_ref = coord_right.front().latitude*DEG;
+    roll0    = coord_right.front().latitude*DEG;
+    yaw0  = coord_right.front().longitude*DEG;
 
-    x0   = theta0*R_earth*cos(phi_ref);
-    y0   = phi0*R_earth;
+    x0   = yaw0*R_earth*cos(roll_ref);
+    y0   = roll0*R_earth;
 
     // (2) Transform coordinates to cartesian (x,y,z) -> Flip y and z
     r_left_measured = std::vector<sVector3d>(coord_left.size(),{0.0,0.0,0.0});
     for (size_t i = 0; i < coord_left.size(); ++i)
-        r_left_measured[i] = sVector3d((coord_left[i].longitude*DEG-theta0)*R_earth*cos(phi_ref), - (coord_left[i].latitude*DEG-phi0)*R_earth, - coord_left[i].altitude);
+        r_left_measured[i] = sVector3d((coord_left[i].longitude*DEG-yaw0)*R_earth*cos(roll_ref), - (coord_left[i].latitude*DEG-roll0)*R_earth, - coord_left[i].altitude);
 
     r_right_measured = std::vector<sVector3d>(coord_right.size(),{0.0,0.0,0.0});
     for (size_t i = 0; i < coord_right.size(); ++i)
-        r_right_measured[i] = sVector3d((coord_right[i].longitude*DEG-theta0)*R_earth*cos(phi_ref), - (coord_right[i].latitude*DEG-phi0)*R_earth, - coord_right[i].altitude);
+        r_right_measured[i] = sVector3d((coord_right[i].longitude*DEG-yaw0)*R_earth*cos(roll_ref), - (coord_right[i].latitude*DEG-roll0)*R_earth, - coord_right[i].altitude);
 }
 
 
@@ -277,18 +277,18 @@ inline void Circuit_preprocessor::compute(const std::vector<scalar>& s_center, c
     std::vector<scalar> x_init(n_points,0.0);
     std::vector<scalar> y_init(n_points,0.0);
     std::vector<scalar> z_init(n_points,0.0);
-    std::vector<scalar> theta_init(n_points,0.0);
-    std::vector<scalar> mu_init(n_points,0.0);
-    std::vector<scalar> phi_init(n_points,0.0);
-    std::vector<scalar> kappa_init(n_points,0.0);
-    std::vector<scalar> mu_dot_init(n_points,0.0);
-    std::vector<scalar> phi_dot_init(n_points,0.0);
+    std::vector<scalar> yaw_init(n_points,0.0);
+    std::vector<scalar> pitch_init(n_points,0.0);
+    std::vector<scalar> roll_init(n_points,0.0);
+    std::vector<scalar> yaw_dot_init(n_points,0.0);
+    std::vector<scalar> pitch_dot_init(n_points,0.0);
+    std::vector<scalar> roll_dot_init(n_points,0.0);
     std::vector<scalar> nl_init(n_points,0.0);
     std::vector<scalar> nr_init(n_points,0.0);
 
-    std::vector<scalar> dkappa_init(n_points,0.0);
-    std::vector<scalar> dmu_dot_init(n_points,0.0);
-    std::vector<scalar> dphi_dot_init(n_points,0.0);
+    std::vector<scalar> dyaw_dot_init(n_points,0.0);
+    std::vector<scalar> dpitch_dot_init(n_points,0.0);
+    std::vector<scalar> droll_dot_init(n_points,0.0);
     std::vector<scalar> dnl_init(n_points,0.0);
     std::vector<scalar> dnr_init(n_points,0.0);
 
@@ -327,66 +327,66 @@ inline void Circuit_preprocessor::compute(const std::vector<scalar>& s_center, c
         // (1.3) Compute Euler angles
         for (size_t i = 0; i < n_points; ++i)
         {
-            const auto [theta, mu, phi] = rotmat2ea(transpose(Matrix3x3(tangent_dir_init[i], normal_dir_init[i], bi_normal_dir_init[i])));
+            const auto [yaw, pitch, roll] = rotmat2ea(transpose(Matrix3x3(tangent_dir_init[i], normal_dir_init[i], bi_normal_dir_init[i])));
 
-            theta_init[i] = theta;
-            mu_init[i] = mu;
-            phi_init[i] = phi;
+            yaw_init[i] = yaw;
+            pitch_init[i] = pitch;
+            roll_init[i] = roll;
         }
     }
     else
     {
         static_assert(std::is_same_v<computation_type, flat_computation_names>);
 
-        // theta
+        // yaw
         for (size_t i = 0; i < n_points-1; ++i)
-            theta_init[i] = atan2(y_init[i+1]-y_init[i],x_init[i+1]-x_init[i]);
+            yaw_init[i] = atan2(y_init[i+1]-y_init[i],x_init[i+1]-x_init[i]);
         
         if constexpr (closed)
-            theta_init[n_elements-1] = atan2(y_init[0]-y_init[n_elements-1],x_init[0]-x_init[n_elements-1]);
+            yaw_init[n_elements-1] = atan2(y_init[0]-y_init[n_elements-1],x_init[0]-x_init[n_elements-1]);
 
         else
-            theta_init[n_elements] = theta_init[n_elements-1];
+            yaw_init[n_elements] = yaw_init[n_elements-1];
     }
 
-    // (1.3.1) Make sure that theta is continuous
+    // (1.3.1) Make sure that yaw is continuous
     for (size_t i = 1; i < n_points; ++i)
-        theta_init[i] = theta_init[i - 1] + wrap_to_pi(theta_init[i] - theta_init[i - 1]);
+        yaw_init[i] = yaw_init[i - 1] + wrap_to_pi(yaw_init[i] - yaw_init[i - 1]);
 
     // (1.4) Compute track direction
     if constexpr (closed)
-        direction = ( theta_init[n_elements-1] > theta_init[0] ? COUNTERCLOCKWISE : CLOCKWISE );
+        direction = ( yaw_init[n_elements-1] > yaw_init[0] ? COUNTERCLOCKWISE : CLOCKWISE );
 
     // (1.5) Compute euler angles derivatives
     for (size_t i = 0; i < n_points - 1; ++i)
     {
-        kappa_init[i] = (theta_init[i + 1] - theta_init[i]) / (s_center[i + 1] - s_center[i]);
+        yaw_dot_init[i] = (yaw_init[i + 1] - yaw_init[i]) / (s_center[i + 1] - s_center[i]);
 
         if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
         {
-            mu_dot_init[i] = (mu_init[i + 1] - mu_init[i]) / (s_center[i + 1] - s_center[i]);
-            phi_dot_init[i] = (phi_init[i + 1] - phi_init[i]) / (s_center[i + 1] - s_center[i]);
+            pitch_dot_init[i] = (pitch_init[i + 1] - pitch_init[i]) / (s_center[i + 1] - s_center[i]);
+            roll_dot_init[i] = (roll_init[i + 1] - roll_init[i]) / (s_center[i + 1] - s_center[i]);
         }
     }
 
     if (closed)
     {
-        kappa_init[n_elements - 1] = (theta_init[0] + 2.0 * pi * direction - theta_init[n_elements - 1]) / norm(r_center.front() - r_center.back());
+        yaw_dot_init[n_elements - 1] = (yaw_init[0] + 2.0 * pi * direction - yaw_init[n_elements - 1]) / norm(r_center.front() - r_center.back());
 
         if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
         {
-            mu_dot_init[n_elements - 1] = (mu_init[0] - mu_init[n_elements - 1]) / norm(r_center.front() - r_center.back());
-            phi_dot_init[n_elements - 1] = (phi_init[0] - phi_init[n_elements - 1]) / norm(r_center.front() - r_center.back());
+            pitch_dot_init[n_elements - 1] = (pitch_init[0] - pitch_init[n_elements - 1]) / norm(r_center.front() - r_center.back());
+            roll_dot_init[n_elements - 1] = (roll_init[0] - roll_init[n_elements - 1]) / norm(r_center.front() - r_center.back());
         }
     }
     else
     {
-        kappa_init[n_elements] = kappa_init[n_elements - 1];
+        yaw_dot_init[n_elements] = yaw_dot_init[n_elements - 1];
 
         if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
         {
-            mu_dot_init[n_elements] = mu_dot_init[n_elements - 1];
-            phi_dot_init[n_elements] = phi_dot_init[n_elements - 1];
+            pitch_dot_init[n_elements] = pitch_dot_init[n_elements - 1];
+            roll_dot_init[n_elements] = roll_dot_init[n_elements - 1];
         }
     }
 
@@ -411,42 +411,42 @@ inline void Circuit_preprocessor::compute(const std::vector<scalar>& s_center, c
         nr_init = nl_init;
     }
 
-    // dkappa, dnl, and dnr
+    // dyaw_dot, dnl, and dnr
     for (size_t i = 0; i < n_points-1; ++i)
     {
-        dkappa_init[i] = (kappa_init[i+1]-kappa_init[i])/(s_center[i+1]-s_center[i]);
+        dyaw_dot_init[i] = (yaw_dot_init[i+1]-yaw_dot_init[i])/(s_center[i+1]-s_center[i]);
         dnl_init[i] = (nl_init[i+1]-nl_init[i])/(s_center[i+1]-s_center[i]);
         dnr_init[i] = (nr_init[i+1]-nr_init[i])/(s_center[i+1]-s_center[i]);
 
         if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
         {
-            dmu_dot_init[i] = (mu_dot_init[i + 1] - mu_dot_init[i]) / (s_center[i + 1] - s_center[i]);
-            dphi_dot_init[i] = (phi_dot_init[i + 1] - phi_dot_init[i]) / (s_center[i + 1] - s_center[i]);
+            dpitch_dot_init[i] = (pitch_dot_init[i + 1] - pitch_dot_init[i]) / (s_center[i + 1] - s_center[i]);
+            droll_dot_init[i] = (roll_dot_init[i + 1] - roll_dot_init[i]) / (s_center[i + 1] - s_center[i]);
         }
     }
 
     if (closed)
     {
-        dkappa_init[n_elements-1] = (kappa_init[0] - kappa_init[n_elements-1])/norm(r_center.front()-r_center.back());
+        dyaw_dot_init[n_elements-1] = (yaw_dot_init[0] - yaw_dot_init[n_elements-1])/norm(r_center.front()-r_center.back());
         dnl_init[n_elements-1] = (nl_init[0] - nl_init[n_elements-1])/norm(r_center.front()-r_center.back());
         dnr_init[n_elements-1] = (nr_init[0] - nr_init[n_elements-1])/norm(r_center.front()-r_center.back());
 
         if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
         {
-            dmu_dot_init[n_elements - 1] = (mu_dot_init[0] - mu_dot_init[n_elements - 1]) / norm(r_center.front() - r_center.back());
-            dphi_dot_init[n_elements - 1] = (phi_dot_init[0] - phi_dot_init[n_elements - 1]) / norm(r_center.front() - r_center.back());
+            dpitch_dot_init[n_elements - 1] = (pitch_dot_init[0] - pitch_dot_init[n_elements - 1]) / norm(r_center.front() - r_center.back());
+            droll_dot_init[n_elements - 1] = (roll_dot_init[0] - roll_dot_init[n_elements - 1]) / norm(r_center.front() - r_center.back());
         }
     }
     else
     {
-        dkappa_init[n_elements] = dkappa_init[n_elements-1];
+        dyaw_dot_init[n_elements] = dyaw_dot_init[n_elements-1];
         dnl_init[n_elements] = dnl_init[n_elements-1];
         dnr_init[n_elements] = dnr_init[n_elements-1];
 
         if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
         {
-            dmu_dot_init[n_elements] = dmu_dot_init[n_elements - 1];
-            dphi_dot_init[n_elements] = dphi_dot_init[n_elements - 1];
+            dpitch_dot_init[n_elements] = dpitch_dot_init[n_elements - 1];
+            droll_dot_init[n_elements] = droll_dot_init[n_elements - 1];
         }
     }
 
@@ -480,30 +480,30 @@ inline void Circuit_preprocessor::compute(const std::vector<scalar>& s_center, c
         if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
             x[k++] = z_init[i];
 
-        x[k++] = theta_init[i];
+        x[k++] = yaw_init[i];
 
         if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
         {
-            x[k++] = mu_init[i];
-            x[k++] = phi_init[i];
+            x[k++] = pitch_init[i];
+            x[k++] = roll_init[i];
         }
 
-        x[k++] = kappa_init[i];
+        x[k++] = yaw_dot_init[i];
 
         if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
         {
-            x[k++] = mu_dot_init[i];
-            x[k++] = phi_dot_init[i];
+            x[k++] = pitch_dot_init[i];
+            x[k++] = roll_dot_init[i];
         }
 
         x[k++] = nl_init[i];
         x[k++] = nr_init[i];
-        x[k++] = dkappa_init[i];
+        x[k++] = dyaw_dot_init[i];
 
         if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
         {
-            x[k++] = dmu_dot_init[i];
-            x[k++] = dphi_dot_init[i];
+            x[k++] = dpitch_dot_init[i];
+            x[k++] = droll_dot_init[i];
         }
 
         x[k++] = dnl_init[i];
@@ -515,30 +515,30 @@ inline void Circuit_preprocessor::compute(const std::vector<scalar>& s_center, c
         if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
             x_lb[k_lb++] = z_init[i] - 10.0;
 
-        x_lb[k_lb++] = theta_init[i]-30.0*DEG;
+        x_lb[k_lb++] = yaw_init[i]-30.0*DEG;
 
         if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
         {
-            x_lb[k_lb++] = mu_init[i] - 10.0 * DEG;
-            x_lb[k_lb++] = phi_init[i] - 10.0 * DEG;
+            x_lb[k_lb++] = pitch_init[i] - 10.0 * DEG;
+            x_lb[k_lb++] = roll_init[i] - 10.0 * DEG;
         }
 
-        x_lb[k_lb++] = -options.maximum_kappa;
+        x_lb[k_lb++] = -options.maximum_yaw_dot;
 
         if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
         {
-            x_lb[k_lb++] = -options.maximum_kappa;
-            x_lb[k_lb++] = -options.maximum_kappa;
+            x_lb[k_lb++] = -options.maximum_yaw_dot;
+            x_lb[k_lb++] = -options.maximum_yaw_dot;
         }
 
         x_lb[k_lb++] = 1.0;
         x_lb[k_lb++] = 1.0;
-        x_lb[k_lb++] = -options.maximum_dkappa;
+        x_lb[k_lb++] = -options.maximum_dyaw_dot;
 
         if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
         {
-            x_lb[k_lb++] = -options.maximum_dkappa;
-            x_lb[k_lb++] = -options.maximum_dkappa;
+            x_lb[k_lb++] = -options.maximum_dyaw_dot;
+            x_lb[k_lb++] = -options.maximum_dyaw_dot;
         }
 
         x_lb[k_lb++] = -options.maximum_dn;
@@ -550,30 +550,30 @@ inline void Circuit_preprocessor::compute(const std::vector<scalar>& s_center, c
         if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
             x_ub[k_ub++] = z_init[i]+10.0;
 
-        x_ub[k_ub++] = theta_init[i]+30.0*DEG;
+        x_ub[k_ub++] = yaw_init[i]+30.0*DEG;
 
         if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
         {
-            x_ub[k_ub++] = mu_init[i] + 10.0 * DEG;
-            x_ub[k_ub++] = phi_init[i] + 10.0 * DEG;
+            x_ub[k_ub++] = pitch_init[i] + 10.0 * DEG;
+            x_ub[k_ub++] = roll_init[i] + 10.0 * DEG;
         }
 
-        x_ub[k_ub++] = options.maximum_kappa;
+        x_ub[k_ub++] = options.maximum_yaw_dot;
 
         if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
         {
-            x_ub[k_ub++] = options.maximum_kappa;
-            x_ub[k_ub++] = options.maximum_kappa;
+            x_ub[k_ub++] = options.maximum_yaw_dot;
+            x_ub[k_ub++] = options.maximum_yaw_dot;
         }
 
         x_ub[k_ub++] = nl_init[i]+nr_init[i];
         x_ub[k_ub++] = nl_init[i]+nr_init[i];
-        x_ub[k_ub++] = options.maximum_dkappa;
+        x_ub[k_ub++] = options.maximum_dyaw_dot;
 
         if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
         {
-            x_ub[k_ub++] = options.maximum_dkappa;
-            x_ub[k_ub++] = options.maximum_dkappa;
+            x_ub[k_ub++] = options.maximum_dyaw_dot;
+            x_ub[k_ub++] = options.maximum_dyaw_dot;
         }
 
         x_ub[k_ub++] = options.maximum_dn;
@@ -612,17 +612,17 @@ inline void Circuit_preprocessor::compute(const std::vector<scalar>& s_center, c
     r_left       = std::vector<sVector3d>(n_points, { 0.0, 0.0, 0.0 });
     r_right      = std::vector<sVector3d>(n_points, { 0.0, 0.0, 0.0 });
     r_centerline = std::vector<sVector3d>(n_points, { 0.0, 0.0, 0.0 });
-    theta        = std::vector<scalar>(n_points, 0.0);
-    mu           = std::vector<scalar>(n_points, 0.0);
-    phi          = std::vector<scalar>(n_points, 0.0);
-    kappa        = std::vector<scalar>(n_points, 0.0);
-    mu_dot       = std::vector<scalar>(n_points, 0.0);
-    phi_dot      = std::vector<scalar>(n_points, 0.0);
+    yaw        = std::vector<scalar>(n_points, 0.0);
+    pitch           = std::vector<scalar>(n_points, 0.0);
+    roll          = std::vector<scalar>(n_points, 0.0);
+    yaw_dot        = std::vector<scalar>(n_points, 0.0);
+    pitch_dot       = std::vector<scalar>(n_points, 0.0);
+    roll_dot      = std::vector<scalar>(n_points, 0.0);
     nl           = std::vector<scalar>(n_points, 0.0);
     nr           = std::vector<scalar>(n_points, 0.0);
-    dkappa       = std::vector<scalar>(n_points, 0.0);
-    dmu_dot      = std::vector<scalar>(n_points, 0.0);
-    dphi_dot     = std::vector<scalar>(n_points, 0.0);
+    dyaw_dot       = std::vector<scalar>(n_points, 0.0);
+    dpitch_dot      = std::vector<scalar>(n_points, 0.0);
+    droll_dot     = std::vector<scalar>(n_points, 0.0);
     dnl          = std::vector<scalar>(n_points, 0.0);
     dnr          = std::vector<scalar>(n_points, 0.0);
 
@@ -644,22 +644,22 @@ inline void Circuit_preprocessor::compute(const std::vector<scalar>& s_center, c
         r_right[i] = fg_type::get_coordinates(states, states[state_names::nr]);
         r_centerline[i] = fg_type::get_coordinates(states, 0.0);
 
-        theta[i]  = states[state_names::theta];
-        kappa[i]  = states[state_names::kappa];
+        yaw[i]  = states[state_names::yaw];
+        yaw_dot[i]  = states[state_names::yaw_dot];
         nl[i]     = states[state_names::nl];
         nr[i]     = states[state_names::nr];
-        dkappa[i] = controls[control_names::dkappa];
+        dyaw_dot[i] = controls[control_names::dyaw_dot];
         dnl[i]    = controls[control_names::dnl];
         dnr[i]    = controls[control_names::dnr];
 
         if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
         {
-            mu[i]       = states[state_names::mu];
-            phi[i]      = states[state_names::phi];
-            mu_dot[i]   = states[state_names::mu_dot];
-            phi_dot[i]  = states[state_names::phi_dot];
-            dmu_dot[i]  = controls[control_names::dmu_dot];
-            dphi_dot[i] = controls[control_names::dphi_dot];
+            pitch[i]       = states[state_names::pitch];
+            roll[i]      = states[state_names::roll];
+            pitch_dot[i]   = states[state_names::pitch_dot];
+            roll_dot[i]  = states[state_names::roll_dot];
+            dpitch_dot[i]  = controls[control_names::dpitch_dot];
+            droll_dot[i] = controls[control_names::droll_dot];
         }
     }
 
@@ -715,7 +715,7 @@ inline void Circuit_preprocessor::compute(const std::vector<scalar>& s_center, c
 
     // (7) Compute kerbs
 
-    // (7.1) Run a minimum curvature problem
+    // (7.1) Run a minipitchm curvature problem
 }
 
 
@@ -767,10 +767,10 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
     opt.add_child("cost_track_limits_smoothness").set_value(std::to_string(options.eps_n));
     opt.add_child("cost_track_limits_errors").set_value(std::to_string(options.eps_d));
     opt.add_child("cost_centerline").set_value(std::to_string(options.eps_c));
-    opt.add_child("cost_pitch").set_value(std::to_string(options.eps_mu));
-    opt.add_child("cost_roll").set_value(std::to_string(options.eps_phi));
-    opt.add_child("maximum_kappa").set_value(std::to_string(options.maximum_kappa));
-    opt.add_child("maximum_dkappa").set_value(std::to_string(options.maximum_dkappa));
+    opt.add_child("cost_pitch").set_value(std::to_string(options.eps_pitch));
+    opt.add_child("cost_roll").set_value(std::to_string(options.eps_roll));
+    opt.add_child("maximum_yaw_dot").set_value(std::to_string(options.maximum_yaw_dot));
+    opt.add_child("maximum_dyaw_dot").set_value(std::to_string(options.maximum_dyaw_dot));
 
 
     // Add the GPS coordinates conversion used
@@ -778,11 +778,11 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
     gps_param.add_comment(" x =  earth_radius.cos(reference_latitude).(longitude - origin_longitude) ");
     gps_param.add_comment(" y = -earth_radius.(latitude - origin_latitude) ");
 
-    s_out << theta0*RAD;
+    s_out << yaw0*RAD;
     gps_param.add_child("origin_longitude").set_value(s_out.str()).set_attribute("units","deg");
     s_out.str(""); s_out.clear();
 
-    s_out << phi0*RAD;
+    s_out << roll0*RAD;
     gps_param.add_child("origin_latitude").set_value(s_out.str()).set_attribute("units","deg");
     s_out.str(""); s_out.clear();
 
@@ -790,7 +790,7 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
     gps_param.add_child("earth_radius").set_value(s_out.str()).set_attribute("units","m");
     s_out.str(""); s_out.clear();
 
-    s_out << phi_ref*RAD;
+    s_out << roll_ref*RAD;
     gps_param.add_child("reference_latitude").set_value(s_out.str()).set_attribute("units","deg");
     s_out.str(""); s_out.clear();
 
@@ -930,50 +930,50 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
 
     // Theta
     for (size_t i = 0; i < n_points-1; ++i)
-        s_out << theta[i] << ", " ;
-    s_out << theta.back();
+        s_out << yaw[i] << ", " ;
+    s_out << yaw.back();
 
-    data.add_child("theta").set_value(s_out.str()).set_attribute("units","rad");
+    data.add_child("yaw").set_value(s_out.str()).set_attribute("units","rad");
     s_out.str(""); s_out.clear();
 
     // Mu
     for (size_t i = 0; i < n_points-1; ++i)
-        s_out << mu[i] << ", " ;
-    s_out << mu.back();
+        s_out << pitch[i] << ", " ;
+    s_out << pitch.back();
 
-    data.add_child("mu").set_value(s_out.str()).set_attribute("units","rad");
+    data.add_child("pitch").set_value(s_out.str()).set_attribute("units","rad");
     s_out.str(""); s_out.clear();
 
     // Phi
     for (size_t i = 0; i < n_points-1; ++i)
-        s_out << phi[i] << ", " ;
-    s_out << phi.back();
+        s_out << roll[i] << ", " ;
+    s_out << roll.back();
 
-    data.add_child("phi").set_value(s_out.str()).set_attribute("units","rad");
+    data.add_child("roll").set_value(s_out.str()).set_attribute("units","rad");
     s_out.str(""); s_out.clear();
 
     // Kappa
     for (size_t i = 0; i < n_points-1; ++i)
-        s_out << kappa[i] << ", " ;
-    s_out << kappa.back();
+        s_out << yaw_dot[i] << ", " ;
+    s_out << yaw_dot.back();
 
-    data.add_child("kappa").set_value(s_out.str()).set_attribute("units","rad");
+    data.add_child("yaw_dot").set_value(s_out.str()).set_attribute("units","rad");
     s_out.str(""); s_out.clear();
 
-    // mu_dot
+    // pitch_dot
     for (size_t i = 0; i < n_points-1; ++i)
-        s_out << mu_dot[i] << ", " ;
-    s_out << mu_dot.back();
+        s_out << pitch_dot[i] << ", " ;
+    s_out << pitch_dot.back();
 
-    data.add_child("mu_dot").set_value(s_out.str()).set_attribute("units","rad");
+    data.add_child("pitch_dot").set_value(s_out.str()).set_attribute("units","rad");
     s_out.str(""); s_out.clear();
 
-    // phi_dot
+    // roll_dot
     for (size_t i = 0; i < n_points-1; ++i)
-        s_out << phi_dot[i] << ", " ;
-    s_out << phi_dot.back();
+        s_out << roll_dot[i] << ", " ;
+    s_out << roll_dot.back();
 
-    data.add_child("phi_dot").set_value(s_out.str()).set_attribute("units","rad");
+    data.add_child("roll_dot").set_value(s_out.str()).set_attribute("units","rad");
     s_out.str(""); s_out.clear();
 
     // nl
@@ -992,28 +992,28 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
     data.add_child("nr").set_value(s_out.str()).set_attribute("units","rad");
     s_out.str(""); s_out.clear();
 
-    // dkappa
+    // dyaw_dot
     for (size_t i = 0; i < n_points-1; ++i)
-        s_out << dkappa[i] << ", " ;
-    s_out << dkappa.back();
+        s_out << dyaw_dot[i] << ", " ;
+    s_out << dyaw_dot.back();
 
-    data.add_child("dkappa").set_value(s_out.str()).set_attribute("units","rad");
+    data.add_child("dyaw_dot").set_value(s_out.str()).set_attribute("units","rad");
     s_out.str(""); s_out.clear();
 
-    // dmu_dot
+    // dpitch_dot
     for (size_t i = 0; i < n_points-1; ++i)
-        s_out << dmu_dot[i] << ", " ;
-    s_out << dmu_dot.back();
+        s_out << dpitch_dot[i] << ", " ;
+    s_out << dpitch_dot.back();
 
-    data.add_child("dmu_dot").set_value(s_out.str()).set_attribute("units","rad");
+    data.add_child("dpitch_dot").set_value(s_out.str()).set_attribute("units","rad");
     s_out.str(""); s_out.clear();
 
-    // dphi_dot
+    // droll_dot
     for (size_t i = 0; i < n_points-1; ++i)
-        s_out << dphi_dot[i] << ", " ;
-    s_out << dphi_dot.back();
+        s_out << droll_dot[i] << ", " ;
+    s_out << droll_dot.back();
 
-    data.add_child("dphi_dot").set_value(s_out.str()).set_attribute("units","rad");
+    data.add_child("droll_dot").set_value(s_out.str()).set_attribute("units","rad");
     s_out.str(""); s_out.clear();
 
     // dnl
@@ -1482,14 +1482,14 @@ void Circuit_preprocessor::FG<closed, computation_type>::operator()(ADvector& fg
         fg[0] += 0.5*ds*options.eps_d*(_dist2_left[i] + _dist2_left[i-1]);
         fg[0] += 0.5*ds*options.eps_d*(_dist2_right[i]  + _dist2_right[i-1]  );
         fg[0] += 0.5*ds*options.eps_c*(_dist2_center[i] + _dist2_center[i-1] );
-        fg[0] += 0.5*ds*options.eps_k*(_u[i][control_names::dkappa]*_u[i][control_names::dkappa] + _u[i-1][control_names::dkappa]*_u[i-1][control_names::dkappa]);
+        fg[0] += 0.5*ds*options.eps_k*(_u[i][control_names::dyaw_dot]*_u[i][control_names::dyaw_dot] + _u[i-1][control_names::dyaw_dot]*_u[i-1][control_names::dyaw_dot]);
         fg[0] += 0.5*ds*options.eps_n*(_u[i][control_names::dnl]*_u[i][control_names::dnl] + _u[i-1][control_names::dnl]*_u[i-1][control_names::dnl]);
         fg[0] += 0.5*ds*options.eps_n*(_u[i][control_names::dnr]*_u[i][control_names::dnr] + _u[i-1][control_names::dnr]*_u[i-1][control_names::dnr]);
 
         if constexpr (std::is_same_v<computation_type, elevation_computation_names>)
         {
-            fg[0] += 0.5*ds*options.eps_mu*(_u[i][control_names::dmu_dot]*_u[i][control_names::dmu_dot] + _u[i-1][control_names::dmu_dot]*_u[i-1][control_names::dmu_dot]);
-            fg[0] += 0.5*ds*options.eps_phi*(_u[i][control_names::dphi_dot]*_u[i][control_names::dphi_dot] + _u[i-1][control_names::dphi_dot]*_u[i-1][control_names::dphi_dot]);
+            fg[0] += 0.5*ds*options.eps_pitch*(_u[i][control_names::dpitch_dot]*_u[i][control_names::dpitch_dot] + _u[i-1][control_names::dpitch_dot]*_u[i-1][control_names::dpitch_dot]);
+            fg[0] += 0.5*ds*options.eps_roll*(_u[i][control_names::droll_dot]*_u[i][control_names::droll_dot] + _u[i-1][control_names::droll_dot]*_u[i-1][control_names::droll_dot]);
         }
 
         // Equality constraints:  q^{i} = q^{i-1} + 0.5.ds.[dqds^{i} + dqds^{i-1}]
@@ -1506,14 +1506,14 @@ void Circuit_preprocessor::FG<closed, computation_type>::operator()(ADvector& fg
         fg[0] += 0.5*ds*options.eps_d*(_dist2_left[0]    + _dist2_left[_n_elements-1] );
         fg[0] += 0.5*ds*options.eps_d*(_dist2_right[0]   + _dist2_right[_n_elements-1]  );
         fg[0] += 0.5*ds*options.eps_c*(_dist2_center[0]  + _dist2_center[_n_elements-1]);
-        fg[0] += 0.5*ds*options.eps_k*(_u[0][control_names::dkappa]*_u[0][control_names::dkappa] + _u[_n_elements-1][control_names::dkappa]*_u[_n_elements-1][control_names::dkappa]);
+        fg[0] += 0.5*ds*options.eps_k*(_u[0][control_names::dyaw_dot]*_u[0][control_names::dyaw_dot] + _u[_n_elements-1][control_names::dyaw_dot]*_u[_n_elements-1][control_names::dyaw_dot]);
         fg[0] += 0.5*ds*options.eps_n*(_u[0][control_names::dnl]*_u[0][control_names::dnl] + _u[_n_elements-1][control_names::dnl]*_u[_n_elements-1][control_names::dnl]);
         fg[0] += 0.5*ds*options.eps_n*(_u[0][control_names::dnr]*_u[0][control_names::dnr] + _u[_n_elements-1][control_names::dnr]*_u[_n_elements-1][control_names::dnr]);
     
         // Equality constraints:  q^{i} = q^{i-1} + 0.5.ds.[dqds^{i} + dqds^{i-1}]
-        // except for theta, where q^{i} = q^{i-1} + 0.5.ds.[dqds^{i} + dqds^{i-1}] - 2.pi
+        // except for yaw, where q^{i} = q^{i-1} + 0.5.ds.[dqds^{i} + dqds^{i-1}] - 2.pi
         for (size_t j = 0; j < state_names::end; ++j)
-            fg[k++] = _q[0][j] - _q[_n_elements-1][j] - 0.5*ds*(_dqds[_n_elements-1][j] + _dqds[0][j]) + (j==state_names::theta ? 2.0*pi*_direction : 0.0);
+            fg[k++] = _q[0][j] - _q[_n_elements-1][j] - 0.5*ds*(_dqds[_n_elements-1][j] + _dqds[0][j]) + (j==state_names::yaw ? 2.0*pi*_direction : 0.0);
     }
 
     // (7) Add a last constraint: the first point should be in the start line

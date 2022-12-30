@@ -15,17 +15,17 @@ struct Circuit_geometry
     std::vector<sVector3d> r_centerline;
 
     std::vector<scalar> s;
-    std::vector<scalar> theta;
-    std::vector<scalar> mu;
-    std::vector<scalar> phi;
-    std::vector<scalar> kappa;
-    std::vector<scalar> mu_dot;
-    std::vector<scalar> phi_dot;
+    std::vector<scalar> yaw;
+    std::vector<scalar> pitch;
+    std::vector<scalar> roll;
+    std::vector<scalar> yaw_dot;
+    std::vector<scalar> pitch_dot;
+    std::vector<scalar> roll_dot;
     std::vector<scalar> nl;
     std::vector<scalar> nr;
-    std::vector<scalar> dkappa;
-    std::vector<scalar> dmu_dot;
-    std::vector<scalar> dphi_dot;
+    std::vector<scalar> dyaw_dot;
+    std::vector<scalar> dpitch_dot;
+    std::vector<scalar> droll_dot;
     std::vector<scalar> dnl;
     std::vector<scalar> dnr;
 

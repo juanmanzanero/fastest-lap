@@ -33,11 +33,11 @@ class Circuit_preprocessor : public Circuit_geometry
         scalar eps_k = 5.0e4;
         scalar eps_n = 1.0e-1;
         scalar eps_c = 1.0e-1;
-        scalar eps_mu = 1.0e6;
-        scalar eps_phi = 1.0e6;
+        scalar eps_pitch = 1.0e6;
+        scalar eps_roll = 1.0e6;
 
-        scalar maximum_kappa = 0.1;
-        scalar maximum_dkappa = 2.0e-2;
+        scalar maximum_yaw_dot = 0.1;
+        scalar maximum_dyaw_dot = 2.0e-2;
         scalar maximum_dn     = 1.0;
         scalar maximum_distance_find = 50.0;
 
@@ -114,8 +114,8 @@ class Circuit_preprocessor : public Circuit_geometry
 
         for (size_t i = 0; i < ds_breakpoints.size(); ++i)
         {
-            ds_breakpoints_v3d[i].first = sVector3d((ds_breakpoints[i].first.longitude*DEG-theta0)*R_earth*cos(phi_ref), 
-                                                    -(ds_breakpoints[i].first.latitude*DEG-phi0)*R_earth, 
+            ds_breakpoints_v3d[i].first = sVector3d((ds_breakpoints[i].first.longitude*DEG-yaw0)*R_earth*cos(roll_ref), 
+                                                    -(ds_breakpoints[i].first.latitude*DEG-roll0)*R_earth, 
                                                     0.0);
             ds_breakpoints_v3d[i].second = ds_breakpoints[i].second;
         }
@@ -211,9 +211,9 @@ class Circuit_preprocessor : public Circuit_geometry
     // Outputs -----------------------------------:-
     scalar x0;      
     scalar y0;      
-    scalar phi0;    
-    scalar theta0;  
-    scalar phi_ref; 
+    scalar roll0;    
+    scalar yaw0;  
+    scalar roll_ref; 
     scalar R_earth = 6378388.0;
 
 
@@ -234,12 +234,12 @@ class Circuit_preprocessor : public Circuit_geometry
     {
         struct state_names
         {
-            enum { x, y, theta, kappa, nl, nr, end };
+            enum { x, y, yaw, yaw_dot, nl, nr, end };
         };
 
         struct control_names
         {
-            enum { dkappa, dnl, dnr, end };
+            enum { dyaw_dot, dnl, dnr, end };
         };
     };
 
@@ -247,12 +247,12 @@ class Circuit_preprocessor : public Circuit_geometry
     {
         struct state_names
         {
-            enum { x, y, z, theta, mu, phi, kappa, mu_dot, phi_dot, nl, nr, end };
+            enum { x, y, z, yaw, pitch, roll, yaw_dot, pitch_dot, roll_dot, nl, nr, end };
         };
 
         struct control_names
         {
-            enum { dkappa, dmu_dot, dphi_dot, dnl, dnr, end };
+            enum { dyaw_dot, dpitch_dot, droll_dot, dnl, dnr, end };
         };
     };
 
@@ -285,21 +285,21 @@ class Circuit_preprocessor : public Circuit_geometry
         std::array<CppAD::AD<scalar>,state_names::end> equations(const std::array<CppAD::AD<scalar>,state_names::end>& q, const std::array<CppAD::AD<scalar>,control_names::end>& u) const
         {
             if constexpr (std::is_same_v<computation_type, flat_computation_names>)
-                return { cos(q[state_names::theta]), sin(q[state_names::theta]), q[state_names::kappa], u[control_names::dkappa], u[control_names::dnl], u[control_names::dnr] };
+                return { cos(q[state_names::yaw]), sin(q[state_names::yaw]), q[state_names::yaw_dot], u[control_names::dyaw_dot], u[control_names::dnl], u[control_names::dnr] };
 
             else
             {
                 static_assert(std::is_same_v<computation_type, elevation_computation_names>);
 
-                return { cos(q[state_names::theta]) * cos(q[state_names::mu]),
-                         sin(q[state_names::theta]) * cos(q[state_names::mu]),
-                         -sin(q[state_names::mu]),
-                         q[state_names::kappa],
-                         q[state_names::mu_dot],
-                         q[state_names::phi_dot],
-                         u[control_names::dkappa],
-                         u[control_names::dmu_dot],
-                         u[control_names::dphi_dot],
+                return { cos(q[state_names::yaw]) * cos(q[state_names::pitch]),
+                         sin(q[state_names::yaw]) * cos(q[state_names::pitch]),
+                         -sin(q[state_names::pitch]),
+                         q[state_names::yaw_dot],
+                         q[state_names::pitch_dot],
+                         q[state_names::roll_dot],
+                         u[control_names::dyaw_dot],
+                         u[control_names::dpitch_dot],
+                         u[control_names::droll_dot],
                          u[control_names::dnl],
                          u[control_names::dnr]
                 };
@@ -311,18 +311,18 @@ class Circuit_preprocessor : public Circuit_geometry
         {
             if constexpr (std::is_same_v<computation_type, flat_computation_names>)
             {
-                return { q[state_names::x] - sin(q[state_names::theta]) * n, q[state_names::y] + cos(q[state_names::theta]) * n, 0.0 };
+                return { q[state_names::x] - sin(q[state_names::yaw]) * n, q[state_names::y] + cos(q[state_names::yaw]) * n, 0.0 };
             }
             else
             {
                 static_assert(std::is_same_v<computation_type, elevation_computation_names>);
 
-                const auto& theta = q[state_names::theta];
-                const auto& mu = q[state_names::mu];
-                const auto& phi = q[state_names::phi];
-                Vector3d<U> normal_vector = { cos(theta) * sin(mu) * sin(phi) - sin(theta) * cos(phi),
-                                                             sin(theta) * sin(mu) * sin(phi) + cos(theta) * cos(phi),
-                                                             cos(mu) * sin(phi) };
+                const auto& yaw = q[state_names::yaw];
+                const auto& pitch = q[state_names::pitch];
+                const auto& roll = q[state_names::roll];
+                Vector3d<U> normal_vector = { cos(yaw) * sin(pitch) * sin(roll) - sin(yaw) * cos(roll),
+                                                             sin(yaw) * sin(pitch) * sin(roll) + cos(yaw) * cos(roll),
+                                                             cos(pitch) * sin(roll) };
 
                 return { q[state_names::x] + normal_vector.x() * n, 
                          q[state_names::y] + normal_vector.y() * n, 

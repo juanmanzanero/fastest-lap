@@ -24,11 +24,11 @@ TEST(Track_by_polynomial_test, evaluation_at_nodes)
 
         EXPECT_NEAR(euler_angles.roll(), 0.0, 1.0e-15);
         EXPECT_NEAR(euler_angles.pitch(), 0.0, 1.0e-15);
-        EXPECT_NEAR(euler_angles.yaw(), circuit.theta[i], 2.0e-15);
+        EXPECT_NEAR(euler_angles.yaw(), circuit.yaw[i], 2.0e-15);
 
         EXPECT_NEAR(euler_angles_dot.roll(), 0.0, 1.0e-15);
         EXPECT_NEAR(euler_angles_dot.pitch(), 0.0, 1.0e-15);
-        EXPECT_NEAR(euler_angles_dot.yaw(), circuit.kappa[i], 2.0e-15);
+        EXPECT_NEAR(euler_angles_dot.yaw(), circuit.yaw_dot[i], 2.0e-15);
     }
 }
 
@@ -60,11 +60,11 @@ TEST(Track_by_polynomial_test, create_track_c_api)
 
     track_download_data(var.data(), "test_track", circuit.n_points, "heading-angle");
     for (size_t i = 0; i < circuit.n_points; ++i)
-        EXPECT_EQ(circuit.theta[i], var[i]);
+        EXPECT_EQ(circuit.yaw[i], var[i]);
 
     track_download_data(var.data(), "test_track", circuit.n_points, "curvature");
     for (size_t i = 0; i < circuit.n_points; ++i)
-        EXPECT_EQ(circuit.kappa[i], var[i]);
+        EXPECT_EQ(circuit.yaw_dot[i], var[i]);
 
     track_download_data(var.data(), "test_track", circuit.n_points, "distance-left-boundary");
     for (size_t i = 0; i < circuit.n_points; ++i)
