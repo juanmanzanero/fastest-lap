@@ -250,7 +250,7 @@ inline void Minimum_curvature_path::compute_track_by_polynomial(const Circuit_ge
     std::transform(fg._roll_dot.cbegin(), fg._roll_dot.cend(), roll_dot.begin(), [](const auto& x_cppad) { return Value(x_cppad); });
 }
 
-std::unique_ptr<Xml_document> Minimum_curvature_path::xml() const
+inline std::unique_ptr<Xml_document> Minimum_curvature_path::xml() const
 {
     std::unique_ptr<Xml_document> doc_ptr(std::make_unique<Xml_document>());
 

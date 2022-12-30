@@ -980,6 +980,7 @@ TEST(Circuit_preprocessor_test, catalunya_2022_3d)
     options.with_elevation = true;
     options.eps_pitch = 1.0e7;
     options.eps_roll = 1.0e7;
+    options.compute_kerbs = true;
     Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, options, 500);
 
     circuit.xml();
@@ -1066,6 +1067,36 @@ TEST(Circuit_preprocessor_test, catalunya_2022_3d)
         EXPECT_DOUBLE_EQ(lon, circuit.r_left_measured[i].x()/(circuit.R_earth*cos(roll0*DEG))*RAD + yaw0);
         EXPECT_DOUBLE_EQ(lat,-circuit.r_left_measured[i].y()/(circuit.R_earth)*RAD + roll0);
         EXPECT_DOUBLE_EQ(elevation, -circuit.r_left_measured[i].z());
+    }
+
+    // Check the generation of kerbs
+    auto kerbs = solution_saved.get_element("circuit/kerbs");
+
+    // Left kerb
+    EXPECT_EQ(kerbs.get_child("left").get_children().size(), circuit.left_kerb.get_kerbs().size());
+
+    for (size_t i_kerb = 0; i_kerb < circuit.left_kerb.get_kerbs().size(); ++i_kerb)
+    {
+        const auto& kerb = circuit.left_kerb.get_kerbs()[i_kerb];
+        const auto kerb_xml = kerbs.get_child("left").get_children()[i_kerb];
+
+        EXPECT_NEAR(kerb.arclength_start, kerb_xml.get_child("arclength_start").get_value(double()), 1.0e-6);
+        EXPECT_NEAR(kerb.arclength_finish, kerb_xml.get_child("arclength_finish").get_value(double()), 1.0e-6);
+        EXPECT_NEAR(kerb.width, kerb_xml.get_child("width").get_value(double()), 1.0e-6);
+        EXPECT_EQ(kerb.used, to_bool(kerb_xml.get_attribute("used")));
+    }
+
+    EXPECT_EQ(kerbs.get_child("right").get_children().size(), circuit.right_kerb.get_kerbs().size());
+
+    for (size_t i_kerb = 0; i_kerb < circuit.right_kerb.get_kerbs().size(); ++i_kerb)
+    {
+        const auto& kerb = circuit.right_kerb.get_kerbs()[i_kerb];
+        const auto kerb_xml = kerbs.get_child("right").get_children()[i_kerb];
+
+        EXPECT_NEAR(kerb.arclength_start, kerb_xml.get_child("arclength_start").get_value(double()), 1.0e-6);
+        EXPECT_NEAR(kerb.arclength_finish, kerb_xml.get_child("arclength_finish").get_value(double()), 1.0e-6);
+        EXPECT_NEAR(kerb.width, kerb_xml.get_child("width").get_value(double()), 1.0e-6);
+        EXPECT_EQ(kerb.used, to_bool(kerb_xml.get_attribute("used")));
     }
 }
 

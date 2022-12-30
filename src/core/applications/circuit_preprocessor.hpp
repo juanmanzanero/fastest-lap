@@ -7,6 +7,7 @@
 #include "lion/math/matrix_extensions.h"
 #include "lion/math/ipopt_cppad_handler.hpp"
 #include "src/core/foundation/fastest_lap_exception.h"
+#include "src/core/applications/minimum_curvature_path.h"
 
 inline std::pair<std::vector<Circuit_preprocessor::Coordinates>,std::vector<Circuit_preprocessor::Coordinates>>
     Circuit_preprocessor::read_kml(Xml_document& coord_left_kml, Xml_document& coord_right_kml)
@@ -241,6 +242,19 @@ inline Circuit_preprocessor::Circuit_preprocessor(Xml_document& doc)
     // Get direction
     if (is_closed)
         direction = ( yaw.back() > yaw.front() ? COUNTERCLOCKWISE : CLOCKWISE);
+
+    // Get kerbs
+    if (root.has_child("kerbs"))
+    {
+        options.compute_kerbs = true;
+
+        auto kerbs = root.get_child("kerbs");
+        auto left_kerb_xml = kerbs.get_child("left");
+        left_kerb = Kerb(left_kerb_xml);
+
+        auto right_kerb_xml = kerbs.get_child("right");
+        right_kerb = Kerb(right_kerb_xml);
+    }
 }
 
 template<bool closed>
@@ -714,8 +728,22 @@ inline void Circuit_preprocessor::compute(const std::vector<scalar>& s_center, c
     right_boundary_L2_error = sqrt(right_boundary_L2_error/track_length);
 
     // (7) Compute kerbs
+    if (options.compute_kerbs)
+    {
 
-    // (7.1) Run a minipitchm curvature problem
+        // (7.1) Run a minimum curvature problem
+        const Minimum_curvature_path minimum_curvature(*this, s, is_closed, {});
+
+        minimum_curvature.xml();
+
+        // (7.2) Compute left kerb
+        auto lateral_displacement_percentage = (minimum_curvature.n + nl);
+        for (size_t i_s = 0; i_s < s.size(); ++i_s)
+            lateral_displacement_percentage[i_s] *= 1.0 / (nr[i_s] + nl[i_s]);
+
+        left_kerb = Kerb(s, std::vector<scalar>(s.size(),1.0) - lateral_displacement_percentage, yaw_dot, Kerb::Side::left, 1.0, false, Kerb::Direction::inside);
+        right_kerb = Kerb(s, lateral_displacement_percentage, yaw_dot, Kerb::Side::right, 1.0, false, Kerb::Direction::inside);
+    }
 }
 
 
@@ -1031,6 +1059,16 @@ inline std::unique_ptr<Xml_document> Circuit_preprocessor::xml() const
 
     data.add_child("dnr").set_value(s_out.str()).set_attribute("units","rad");
     s_out.str(""); s_out.clear();
+
+    if (options.compute_kerbs)
+    {
+        auto kerbs = root.add_child("kerbs");
+        auto left_kerb_xml = kerbs.add_child("left");
+        left_kerb.xml(left_kerb_xml);
+
+        auto right_kerb_xml = kerbs.add_child("right");
+        right_kerb.xml(right_kerb_xml);
+    }
 
     return doc_ptr;
 }

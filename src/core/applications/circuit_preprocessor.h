@@ -44,6 +44,8 @@ class Circuit_preprocessor : public Circuit_geometry
         scalar adaption_aspect_ratio_max = 1.2;
 
         int print_level = 0;
+
+        bool compute_kerbs = false;
     };
 
     //! Default constructor
