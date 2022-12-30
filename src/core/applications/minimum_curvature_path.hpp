@@ -2,6 +2,8 @@
 #define MINIMUM_CURVATURE_PATH_HPP
 
 #include "lion/thirdparty/include/cppad/ipopt/solve.hpp"
+#include "lion/math/polynomial.h"
+#include "lion/math/ipopt_cppad_handler.hpp"
 
 inline std::vector<scalar> Minimum_curvature_path::compute_track_by_arcs(const Track_by_arcs& track, const size_t N) 
 {
@@ -51,77 +53,132 @@ inline std::vector<scalar> Minimum_curvature_path::compute_track_by_arcs(const T
 
 
 template<bool is_closed>
-inline void Minimum_curvature_path::compute_track_by_polynomial(const Track_by_polynomial& track, const std::vector<scalar>& s_)
+inline void Minimum_curvature_path::compute_track_by_polynomial(const Circuit_geometry& circuit_geometry, const std::vector<scalar>& s_compute_)
 {
-    s = s_;
-    num_points = s.size();
+    s_compute = s_compute_;
+    num_points = s_compute.size();
     num_elements = (is_closed ? num_points : num_points - 1);
 
     // (2) Verify the vector of arclength
-    const scalar& L = track.get_total_length();
+    const scalar& L = circuit_geometry.track_length;
 
     if constexpr (is_closed)
     {
-        if (std::abs(s.front()) > 1.0e-12)
-            throw fastest_lap_exception("In closed circuits, s[0] should be 0.0");
+        if (std::abs(s_compute.front()) > 1.0e-12)
+            throw fastest_lap_exception("In closed circuits, s_compute[0] should be 0.0");
 
-        if (s.back() > L - 1.0e-10)
-            throw fastest_lap_exception("In closed circuits, s[end] should be < track_length");
+        if (s_compute.back() > L - 1.0e-10)
+            throw fastest_lap_exception("In closed circuits, s_compute[end] should be < track_length");
     }
     else
     {
-        if (s[0] < -1.0e-12)
-            throw fastest_lap_exception("s[0] must be >= 0");
+        if (s_compute[0] < -1.0e-12)
+            throw fastest_lap_exception("s_compute[0] must be >= 0");
 
-        if (s.back() > L)
-            throw fastest_lap_exception("s[end] must be <= L");
+        if (s_compute.back() > L)
+            throw fastest_lap_exception("s_compute[end] must be <= L");
     }
 
     // If closed, replace the initial arclength by 0
     if constexpr (is_closed)
     {   
-        s.front() = 0.0;
+        s_compute.front() = 0.0;
+    }
+
+    using input_names = typename Fitness_fcn_by_polynomial<is_closed>::input_names;
+
+    const auto centerline_poly = Polynomial(circuit_geometry.s, circuit_geometry.r_centerline, 1, false);
+
+    const auto yaw_poly = sPolynomial(circuit_geometry.s, circuit_geometry.theta, 1, false);
+    const auto pitch_poly = circuit_geometry.mu.size() > 0 ? sPolynomial(circuit_geometry.s, circuit_geometry.mu, 1, false) : sPolynomial();
+    const auto roll_poly = circuit_geometry.phi.size() > 0 ? sPolynomial(circuit_geometry.s, circuit_geometry.phi, 1, false) : sPolynomial();
+
+
+    const auto yaw_dot_poly = sPolynomial(circuit_geometry.s, circuit_geometry.kappa, 1, false);
+    const auto pitch_dot_poly = circuit_geometry.mu_dot.size() > 0 ? sPolynomial(circuit_geometry.s, circuit_geometry.mu_dot, 1, false) : sPolynomial();
+    const auto roll_dot_poly = circuit_geometry.phi_dot.size() > 0 ? sPolynomial(circuit_geometry.s, circuit_geometry.phi_dot, 1, false) : sPolynomial();
+
+    const auto nl_poly = sPolynomial(circuit_geometry.s, circuit_geometry.nl, 1, false);
+    const auto nr_poly = sPolynomial(circuit_geometry.s, circuit_geometry.nr, 1, false);
+
+    std::vector<sVector3d> centerline(num_points);
+    std::vector<sVector3d> normal_vector(num_points);
+
+
+    for (size_t i_point = 0; i_point < num_points; ++i_point)
+    {
+        const auto yaw = yaw_poly(s_compute[i_point]);
+        const auto pitch = pitch_poly(s_compute[i_point]);
+        const auto roll = roll_poly(s_compute[i_point]);
+
+        centerline[i_point] = centerline_poly(s_compute[i_point]);
+
+        normal_vector[i_point] = { cos(yaw) * sin(pitch) * sin(roll) - sin(yaw) * cos(roll),
+                                   sin(yaw) * sin(pitch) * sin(roll) + cos(yaw) * cos(roll),
+                                   cos(pitch) * sin(roll) };
     }
 
     // (3) Construct fitness function
-    Fitness_fcn_by_polynomial<is_closed> fg(track, num_points, num_elements, s);
+    Fitness_fcn_by_polynomial<is_closed> fg(num_points, num_elements, s_compute, centerline, normal_vector, circuit_geometry.direction);
+
 
     // (4) Set initial condition and bounds
     std::vector<scalar> x_start(fg.get_n_variables(), 0.0);
     std::vector<scalar> x_lb(fg.get_n_variables(), 0.0);
     std::vector<scalar> x_ub(fg.get_n_variables(), 0.0);
 
-    using input_names = typename Fitness_fcn_by_polynomial<is_closed>::input_names;
 
     for (size_t i_point = 0; i_point < num_points; ++i_point)
     {
-        const auto [position, euler_angles, deuler_angles] = track(s[i_point]);
+        const auto yaw = yaw_poly(s_compute[i_point]);
+        const auto pitch = pitch_poly(s_compute[i_point]);
+        const auto roll = roll_poly(s_compute[i_point]);
+
+        const auto yaw_dot = yaw_dot_poly(s_compute[i_point]);
+        const auto pitch_dot = pitch_dot_poly(s_compute[i_point]);
+        const auto roll_dot = roll_dot_poly(s_compute[i_point]);
 
         x_start[input_names::end * i_point + input_names::n] = 0.0;
-        x_lb[input_names::end * i_point + input_names::n] = -track.get_left_track_limit(s[i_point]);
-        x_ub[input_names::end * i_point + input_names::n] =  track.get_right_track_limit(s[i_point]);
+        x_lb[input_names::end * i_point + input_names::n] = -nl_poly(s_compute[i_point]);
+        x_ub[input_names::end * i_point + input_names::n] =  nr_poly(s_compute[i_point]);
 
-        x_start[input_names::end * i_point + input_names::theta] = euler_angles.yaw();
-        x_lb[input_names::end * i_point + input_names::theta] = euler_angles.yaw() - 60.0*DEG;
-        x_ub[input_names::end * i_point + input_names::theta] = euler_angles.yaw() + 60.0*DEG;
+        x_start[input_names::end * i_point + input_names::yaw] = yaw;
+        x_lb[input_names::end * i_point + input_names::yaw] = yaw - 60.0*DEG;
+        x_ub[input_names::end * i_point + input_names::yaw] = yaw + 60.0*DEG;
 
-        x_start[input_names::end * i_point + input_names::kappa] = deuler_angles.yaw();
-        x_lb[input_names::end * i_point + input_names::kappa] = deuler_angles.yaw() - 1.0;
-        x_ub[input_names::end * i_point + input_names::kappa] = deuler_angles.yaw() + 1.0;
+        x_start[input_names::end * i_point + input_names::pitch] = pitch;
+        x_lb[input_names::end * i_point + input_names::pitch] = pitch - 30.0*DEG;
+        x_ub[input_names::end * i_point + input_names::pitch] = pitch + 30.0*DEG;
+
+        x_start[input_names::end * i_point + input_names::roll] = roll;
+        x_lb[input_names::end * i_point + input_names::roll] = roll - 30.0*DEG;
+        x_ub[input_names::end * i_point + input_names::roll] = roll + 30.0*DEG;
+
+        x_start[input_names::end * i_point + input_names::yaw_dot] = yaw_dot;
+        x_lb[input_names::end * i_point + input_names::yaw_dot] = yaw_dot - 1.0;
+        x_ub[input_names::end * i_point + input_names::yaw_dot] = yaw_dot + 1.0;
+
+        x_start[input_names::end * i_point + input_names::pitch_dot] = pitch_dot;
+        x_lb[input_names::end * i_point + input_names::pitch_dot] = pitch_dot - 1.0;
+        x_ub[input_names::end * i_point + input_names::pitch_dot] = pitch_dot + 1.0;
+
+        x_start[input_names::end * i_point + input_names::roll_dot] = roll_dot;
+        x_lb[input_names::end * i_point + input_names::roll_dot] = roll_dot - 1.0;
+        x_ub[input_names::end * i_point + input_names::roll_dot] = roll_dot + 1.0;
     }
 
     for (size_t i_point = 1; i_point < num_points; ++i_point)
     {
-        x_start[input_names::end * (i_point-1) + input_names::delta_path_arclength] = s[i_point] - s[i_point-1];
-        x_lb[input_names::end * (i_point-1) + input_names::delta_path_arclength] = 0.05*(s[i_point]-s[i_point-1]);
-        x_ub[input_names::end * (i_point-1) + input_names::delta_path_arclength] = 5.00*(s[i_point]-s[i_point-1]);
+        x_start[input_names::end * (i_point-1) + input_names::delta_path_arclength] = s_compute[i_point] - s_compute[i_point-1];
+        x_lb[input_names::end * (i_point-1) + input_names::delta_path_arclength] = 0.05*(s_compute[i_point]-s_compute[i_point-1]);
+        x_ub[input_names::end * (i_point-1) + input_names::delta_path_arclength] = 5.00*(s_compute[i_point]-s_compute[i_point-1]);
     }
 
     if (is_closed)
     {
-        x_start[input_names::end * (num_points-1) + input_names::delta_path_arclength] = track.get_total_length() - s.back();
-        x_lb[input_names::end * (num_points-1) + input_names::delta_path_arclength] = 0.05*(track.get_total_length() - s.back());
-        x_ub[input_names::end * (num_points-1) + input_names::delta_path_arclength] = 5.00*(track.get_total_length() - s.back());
+        x_start[input_names::end * (num_points-1) + input_names::delta_path_arclength] = circuit_geometry.track_length - s_compute.back();
+        x_lb[input_names::end * (num_points-1) + input_names::delta_path_arclength] = 0.05*(circuit_geometry.track_length - s_compute.back());
+        x_ub[input_names::end * (num_points-1) + input_names::delta_path_arclength] = 5.00*(circuit_geometry.track_length - s_compute.back());
     }
 
     // (5) Set constraints bounds
@@ -171,11 +228,26 @@ inline void Minimum_curvature_path::compute_track_by_polynomial(const Track_by_p
     y = std::vector<scalar>(num_points, 0.0);
     std::transform(fg._y.cbegin(), fg._y.cend(), y.begin(), [](const auto& x_cppad) { return Value(x_cppad); });
 
-    theta = std::vector<scalar>(num_points, 0.0);
-    std::transform(fg._theta.cbegin(), fg._theta.cend(), theta.begin(), [](const auto& x_cppad) { return Value(x_cppad); });
+    z = std::vector<scalar>(num_points, 0.0);
+    std::transform(fg._z.cbegin(), fg._z.cend(), z.begin(), [](const auto& x_cppad) { return Value(x_cppad); });
 
-    kappa = std::vector<scalar>(num_points, 0.0);
-    std::transform(fg._kappa.cbegin(), fg._kappa.cend(), kappa.begin(), [](const auto& x_cppad) { return Value(x_cppad); });
+    yaw = std::vector<scalar>(num_points, 0.0);
+    std::transform(fg._yaw.cbegin(), fg._yaw.cend(), yaw.begin(), [](const auto& x_cppad) { return Value(x_cppad); });
+
+    pitch = std::vector<scalar>(num_points, 0.0);
+    std::transform(fg._pitch.cbegin(), fg._pitch.cend(), pitch.begin(), [](const auto& x_cppad) { return Value(x_cppad); });
+
+    roll = std::vector<scalar>(num_points, 0.0);
+    std::transform(fg._roll.cbegin(), fg._roll.cend(), roll.begin(), [](const auto& x_cppad) { return Value(x_cppad); });
+
+    yaw_dot = std::vector<scalar>(num_points, 0.0);
+    std::transform(fg._yaw_dot.cbegin(), fg._yaw_dot.cend(), yaw_dot.begin(), [](const auto& x_cppad) { return Value(x_cppad); });
+
+    pitch_dot = std::vector<scalar>(num_points, 0.0);
+    std::transform(fg._pitch_dot.cbegin(), fg._pitch_dot.cend(), pitch_dot.begin(), [](const auto& x_cppad) { return Value(x_cppad); });
+
+    roll_dot = std::vector<scalar>(num_points, 0.0);
+    std::transform(fg._roll_dot.cbegin(), fg._roll_dot.cend(), roll_dot.begin(), [](const auto& x_cppad) { return Value(x_cppad); });
 }
 
 std::unique_ptr<Xml_document> Minimum_curvature_path::xml() const
@@ -203,6 +275,13 @@ std::unique_ptr<Xml_document> Minimum_curvature_path::xml() const
     root.add_child("y").set_value(s_out.str());
     s_out.str(""); s_out.clear();
 
+    for (size_t j = 0; j < z.size() - 1; ++j)
+        s_out << z[j] << ", " ;
+
+    s_out << z.back();
+    root.add_child("z").set_value(s_out.str());
+    s_out.str(""); s_out.clear();
+
     for (size_t j = 0; j < n.size() - 1; ++j)
         s_out << n[j] << ", " ;
 
@@ -210,21 +289,47 @@ std::unique_ptr<Xml_document> Minimum_curvature_path::xml() const
     root.add_child("lateral_displacement").set_value(s_out.str());
     s_out.str(""); s_out.clear();
 
-    for (size_t j = 0; j < theta.size() - 1; ++j)
-        s_out << theta[j] << ", " ;
+    for (size_t j = 0; j < yaw.size() - 1; ++j)
+        s_out << yaw[j] << ", " ;
 
-    s_out << theta.back();
-    root.add_child("theta").set_value(s_out.str());
+    s_out << yaw.back();
+    root.add_child("yaw").set_value(s_out.str());
     s_out.str(""); s_out.clear();
 
+    for (size_t j = 0; j < pitch.size() - 1; ++j)
+        s_out << pitch[j] << ", " ;
 
-    for (size_t j = 0; j < kappa.size() - 1; ++j)
-        s_out << kappa[j] << ", " ;
-
-    s_out << kappa.back();
-    root.add_child("kappa").set_value(s_out.str());
+    s_out << pitch.back();
+    root.add_child("pitch").set_value(s_out.str());
     s_out.str(""); s_out.clear();
 
+    for (size_t j = 0; j < roll.size() - 1; ++j)
+        s_out << roll[j] << ", " ;
+
+    s_out << roll.back();
+    root.add_child("roll").set_value(s_out.str());
+    s_out.str(""); s_out.clear();
+
+    for (size_t j = 0; j < yaw_dot.size() - 1; ++j)
+        s_out << yaw_dot[j] << ", " ;
+
+    s_out << yaw_dot.back();
+    root.add_child("yaw_dot").set_value(s_out.str());
+    s_out.str(""); s_out.clear();
+
+    for (size_t j = 0; j < pitch_dot.size() - 1; ++j)
+        s_out << pitch_dot[j] << ", " ;
+
+    s_out << pitch_dot.back();
+    root.add_child("pitch_dot").set_value(s_out.str());
+    s_out.str(""); s_out.clear();
+
+    for (size_t j = 0; j < roll_dot.size() - 1; ++j)
+        s_out << roll_dot[j] << ", " ;
+
+    s_out << roll_dot.back();
+    root.add_child("roll_dot").set_value(s_out.str());
+    s_out.str(""); s_out.clear();
 
     return doc_ptr;
 }
@@ -281,8 +386,12 @@ inline void Minimum_curvature_path::Fitness_fcn_by_polynomial<is_closed>::operat
     for (size_t i_point = 0; i_point < _num_points; ++i_point)
     {
         _n[i_point] = x[input_names::end * i_point + input_names::n];
-        _theta[i_point] = x[input_names::end * i_point + input_names::theta];
-        _kappa[i_point] = x[input_names::end * i_point + input_names::kappa];
+        _yaw[i_point] = x[input_names::end * i_point + input_names::yaw];
+        _pitch[i_point] = x[input_names::end * i_point + input_names::pitch];
+        _roll[i_point] = x[input_names::end * i_point + input_names::roll];
+        _yaw_dot[i_point] = x[input_names::end * i_point + input_names::yaw_dot];
+        _pitch_dot[i_point] = x[input_names::end * i_point + input_names::pitch_dot];
+        _roll_dot[i_point] = x[input_names::end * i_point + input_names::roll_dot];
     }
 
     for (size_t i_element = 0; i_element < _num_elements; ++i_element)
@@ -293,10 +402,13 @@ inline void Minimum_curvature_path::Fitness_fcn_by_polynomial<is_closed>::operat
     // (3) Compute auxiliary variables
     for (size_t i_point = 0; i_point < _num_points; ++i_point)
     {
-        Vector3d<CppAD::AD<scalar>> normal_vector = { -sin(_theta[i_point]), cos(_theta[i_point]), 0.0};
-        const auto centerline = _track(_s[i_point]).position;
-        _x[i_point] = centerline.x() + _n[i_point] * normal_vector.x();
-        _y[i_point] = centerline.y() + _n[i_point] * normal_vector.y();
+        _x[i_point] = _centerline[i_point].x() + _n[i_point] * _normal_vector[i_point].x();
+        _y[i_point] = _centerline[i_point].y() + _n[i_point] * _normal_vector[i_point].y();
+        _z[i_point] = _centerline[i_point].z() + _n[i_point] * _normal_vector[i_point].z();
+
+        _curvature_x[i_point] = _roll_dot[i_point] - sin(_pitch[i_point]) * _yaw_dot[i_point];
+        _curvature_y[i_point] = cos(_roll[i_point]) * _pitch_dot[i_point] + cos(_pitch[i_point]) * sin(_roll[i_point]) * _yaw_dot[i_point];
+        _curvature_z[i_point] = -sin(_roll[i_point]) * _pitch_dot[i_point] + cos(_pitch[i_point]) * cos(_roll[i_point]) * _yaw_dot[i_point];
     }
 
     // (4) Compute fitness function and constraints: the definition of theta and kappa
@@ -305,19 +417,27 @@ inline void Minimum_curvature_path::Fitness_fcn_by_polynomial<is_closed>::operat
     for (size_t i_point = 1; i_point < _num_points; ++i_point)
     {
         const auto ds = _delta_path_arclength[i_point-1];
-        fg.front() += 0.5 * ds * (_kappa[i_point-1] * _kappa[i_point-1] + _kappa[i_point] * _kappa[i_point]);
-        fg[++constraint_counter] = _x[i_point] - _x[i_point-1] - 0.5 * ds * (cos(_theta[i_point]) + cos(_theta[i_point-1]));
-        fg[++constraint_counter] = _y[i_point] - _y[i_point-1] - 0.5 * ds * (sin(_theta[i_point]) + sin(_theta[i_point-1]));
-        fg[++constraint_counter] = _theta[i_point] - _theta[i_point - 1] - 0.5 * ds * (_kappa[i_point] + _kappa[i_point - 1]);
+        fg.front() += 0.5 * ds * (_curvature_x[i_point]*_curvature_x[i_point] + _curvature_y[i_point]*_curvature_y[i_point] + _curvature_z[i_point]*_curvature_z[i_point]
+                + _curvature_x[i_point - 1]*_curvature_x[i_point - 1] + _curvature_y[i_point - 1]*_curvature_y[i_point - 1] + _curvature_z[i_point - 1]*_curvature_z[i_point - 1]);
+
+        fg[++constraint_counter] = _x[i_point] - _x[i_point - 1] - 0.5 * ds * (cos(_yaw[i_point]) * cos(_pitch[i_point]) + cos(_yaw[i_point - 1]) * cos(_pitch[i_point - 1]));
+        fg[++constraint_counter] = _y[i_point] - _y[i_point-1] - 0.5 * ds * (sin(_yaw[i_point])*cos(_pitch[i_point]) + sin(_yaw[i_point - 1])*cos(_pitch[i_point-1]));
+        fg[++constraint_counter] = _z[i_point] - _z[i_point-1] - 0.5 * ds * (sin(_pitch[i_point]) + sin(_pitch[i_point - 1]));
+        fg[++constraint_counter] = _yaw[i_point] - _yaw[i_point - 1] - 0.5 * ds * (_yaw_dot[i_point] + _yaw_dot[i_point - 1]);
+        fg[++constraint_counter] = _pitch[i_point] - _pitch[i_point - 1] - 0.5 * ds * (_pitch_dot[i_point] + _pitch_dot[i_point - 1]);
+        fg[++constraint_counter] = _roll[i_point] - _roll[i_point - 1] - 0.5 * ds * (_roll_dot[i_point] + _roll_dot[i_point - 1]);
     }
 
     if constexpr (is_closed)
     {
         const auto ds = _delta_path_arclength.back();
-        fg.front() += 0.5 * ds * (_kappa.back() * _kappa.back() + _kappa.front() * _kappa.front());
-        fg[++constraint_counter] = _x.front() - _x.back() - 0.5 * ds * (cos(_theta.front()) + cos(_theta.back()));
-        fg[++constraint_counter] = _y.front() - _y.back() - 0.5 * ds * (sin(_theta.front()) + sin(_theta.back()));
-        fg[++constraint_counter] = _theta.front() - _theta.back() - 0.5 * ds * (_kappa.front() + _kappa.back()) + 2.0 * pi * _track.get_preprocessor().direction;
+        fg.front() += 0.5 * ds * (_yaw_dot.back() * _yaw_dot.back() + _yaw_dot.front() * _yaw_dot.front());
+        fg[++constraint_counter] = _x.front() - _x.back() - 0.5 * ds * (cos(_yaw.front())*cos(_pitch.front()) + cos(_yaw.back())*cos(_pitch.back()));
+        fg[++constraint_counter] = _y.front() - _y.back() - 0.5 * ds * (sin(_yaw.front())*cos(_pitch.front()) + sin(_yaw.back())*cos(_pitch.back()));
+        fg[++constraint_counter] = _z.front() - _z.back() - 0.5 * ds * (sin(_pitch.front()) + sin(_pitch.back()));
+        fg[++constraint_counter] = _yaw.front() - _yaw.back() - 0.5 * ds * (_yaw_dot.front() + _yaw_dot.back()) + 2.0 * pi * _circuit_direction;
+        fg[++constraint_counter] = _pitch.front() - _pitch.back() - 0.5 * ds * (_pitch_dot.front() + _pitch_dot.back());
+        fg[++constraint_counter] = _roll.front() - _roll.back() - 0.5 * ds * (_roll_dot.front() + _roll_dot.back());
     }
 
     assert(constraint_counter == _num_constraints);

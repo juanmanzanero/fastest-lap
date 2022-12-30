@@ -712,6 +712,10 @@ inline void Circuit_preprocessor::compute(const std::vector<scalar>& s_center, c
 
     left_boundary_L2_error = sqrt(left_boundary_L2_error/track_length);
     right_boundary_L2_error = sqrt(right_boundary_L2_error/track_length);
+
+    // (7) Compute kerbs
+
+    // (7.1) Run a minimum curvature problem
 }
 
 

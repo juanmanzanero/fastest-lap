@@ -5,10 +5,12 @@
 #include <array>
 #include "lion/math/vector3d.h"
 #include "lion/io/Xml_document.h"
+#include "src/core/vehicles/kerb.h"
+#include "src/core/vehicles/circuit_geometry.h"
 #include <memory>
 
 
-class Circuit_preprocessor
+class Circuit_preprocessor : public Circuit_geometry
 {
  public:
 
@@ -70,8 +72,12 @@ class Circuit_preprocessor
                          const std::vector<Coordinates>& coord_right, 
                          const Options opts, 
                          const size_t n_el) 
-    : options(opts), n_elements(n_el), n_points(n_el), is_closed(true), direction(0)
+    : options(opts)
     {
+        n_elements = n_el;
+        n_points = n_el;
+        is_closed = true;
+        direction = 0;
         // (1) Compute the centerline and preprocess inputs
         transform_coordinates<true>(coord_left, coord_right);
 
@@ -94,8 +100,12 @@ class Circuit_preprocessor
                          const std::vector<Coordinates>& coord_right, 
                          const Options opts, 
                          const std::vector<std::pair<Coordinates,scalar>>& ds_breakpoints) 
-    : options(opts), n_elements(0), n_points(0), is_closed(true), direction(0)
+    : options(opts)
     {
+        n_elements = 0;
+        n_points = 0;
+        is_closed = true;
+        direction = 0;
         // (1) Compute the centerline and preprocess inputs
         transform_coordinates<true>(coord_left, coord_right);
 
@@ -134,8 +144,13 @@ class Circuit_preprocessor
                          const Options opts, 
                          const std::vector<scalar>& s_distribution,
                          const std::vector<scalar>& ds_distribution)
-    : options(opts), n_elements(0), n_points(0), is_closed(true), direction(0)
+    : options(opts)
     {
+        n_elements = 0;
+        n_points = 0;
+        is_closed = true;
+        direction = 0;
+
         // (1) Compute the centerline and preprocess inputs
         transform_coordinates<true>(coord_left, coord_right);
 
@@ -163,8 +178,13 @@ class Circuit_preprocessor
                          Coordinates start, 
                          Coordinates finish, 
                          const size_t n_el) 
-    : options(opts), n_elements(n_el), n_points(n_el+1), is_closed(false), direction(0)
+    : options(opts)
     {
+        n_elements = n_el;
+        n_points = n_el + 1;
+        is_closed = false;
+        direction = 0;
+
         // (1) Trim the coordinates to the provided start/finish points
         auto [coord_left_trim, coord_right_trim] = trim_coordinates(coord_left, coord_right, start, finish);
 
@@ -187,10 +207,6 @@ class Circuit_preprocessor
 
     // Inputs ------------------------------------:-
     Options     options;
-    size_t      n_elements;
-    size_t      n_points;
-    bool        is_closed;
-    int         direction;      
 
     // Outputs -----------------------------------:-
     scalar x0;      
@@ -200,32 +216,9 @@ class Circuit_preprocessor
     scalar phi_ref; 
     scalar R_earth = 6378388.0;
 
-    std::vector<sVector3d> r_left;
-    std::vector<sVector3d> r_left_measured;     
-    std::vector<sVector3d> r_right;
-    std::vector<sVector3d> r_right_measured;    
-    std::vector<sVector3d> r_centerline;
 
-    std::vector<scalar> s;
-    std::vector<scalar> theta;
-    std::vector<scalar> mu;
-    std::vector<scalar> phi;
-    std::vector<scalar> kappa;
-    std::vector<scalar> mu_dot;
-    std::vector<scalar> phi_dot;
-    std::vector<scalar> nl;
-    std::vector<scalar> nr;
-    std::vector<scalar> dkappa;
-    std::vector<scalar> dmu_dot;
-    std::vector<scalar> dphi_dot;
-    std::vector<scalar> dnl;
-    std::vector<scalar> dnr;
-
-    scalar track_length;
-    scalar left_boundary_max_error;
-    scalar right_boundary_max_error;
-    scalar left_boundary_L2_error;
-    scalar right_boundary_L2_error;
+    Kerb left_kerb;
+    Kerb right_kerb;
 
     std::unique_ptr<Xml_document> xml() const;
 
