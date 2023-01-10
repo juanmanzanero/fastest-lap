@@ -79,6 +79,10 @@ Fastest-lap uses several open-source libraries:
 
 Precompiled binaries are available to download for every release.
   - [v0.1](https://github.com/juanmanzanero/fastest-lap/releases/tag/v0.1)
+  - [v0.2](https://github.com/juanmanzanero/fastest-lap/releases/tag/v0.2)
+  - [v0.3](https://github.com/juanmanzanero/fastest-lap/releases/tag/v0.3)  
+  - [v0.4](https://github.com/juanmanzanero/fastest-lap/releases/tag/v0.4)
+  - [v0.5](https://github.com/juanmanzanero/fastest-lap/releases/tag/v0.5)  
 
 Download and unzip. The contents of the zip folder are:
   - bin: the dynamic libraries. Fastest-lap C++ core is there. If fastest-lap is used from MATLAB, point `loadlibrary()` to this directory.
