@@ -2,6 +2,7 @@
 #define CHASSIS_CAR_3DOF_H
 
 #include "src/core/foundation/fastest_lap_exception.h"
+#include "lion/math/euler_angles.h"
 #include "chassis.h"
 #include <array>
 #include <vector>
@@ -17,15 +18,15 @@
 //!  * The axles are located at (x_ax,0,z_ax + mu.x_ax) with velocity (0,0,dmu.x_ax)
 //!  @param FrontAxle_t: type of the front axle
 //!  @param RearAxle_t: type of the rear axle
-//!  @param STATE0: index of the first state variable defined here
-//!  @param CONTROL0: index of the first control variable defined here
-template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t STATE0, size_t CONTROL0>
-class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, STATE0,CONTROL0>
+//!  @param state_start: index of the first state variable defined here
+//!  @param control_start: index of the first control variable defined here
+template<typename Timeseries_t, typename FrontAxle_t, typename RearAxle_t, size_t state_start, size_t control_start>
+class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, state_start, control_start>
 {
  public:
 
     //! Type of the chassic of which this class derives
-    using base_type             = Chassis<Timeseries_t,FrontAxle_t, RearAxle_t,STATE0,CONTROL0>;
+    using base_type             = Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, state_start, control_start>;
 
     //! Type of the front axle
     using Front_axle_type       = FrontAxle_t;
@@ -48,25 +49,29 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
     //! The two axles: FRONT and REAR
     enum Axles { FRONT, REAR }; 
 
-    // State variables: none
-    struct input_state_names : public base_type::input_state_names
+    // Inputs: the four vertical forces at each wheel contact point
+    struct input_names : public base_type::input_names
     {
-        enum { end = base_type::input_state_names::end };
+        enum { force_z_fl_g = base_type::input_names::end, force_z_fr_g, force_z_rl_g, force_z_rr_g, end };
     };
-   
+
+    //! States: the vertical velocity, and the two small rotation angular momentum
+    struct state_names : public base_type::state_names
+    {
+        enum { com_velocity_z_mps = base_type::state_names::end,
+               roll_angular_momentum_Nms, 
+               pitch_angular_momentum_Nms,
+               roll_balance_equation_g,
+               end};
+    };
+
     //! Control variables:: throttle/brake, and brake-bias
     struct control_names : public base_type::control_names
     {
-        enum { THROTTLE = base_type::control_names::end, BRAKE_BIAS, end};
+        enum { throttle = base_type::control_names::end, brake_bias, end};
     };
 
-    //! Algebraic variables: the four vertical forces
-    struct algebraic_state_names
-    {
-        enum Algebraic { FZFL, FZFR, FZRL, FZRR, end };
-    };
-
-    constexpr static size_t NALGEBRAIC = algebraic_state_names::end;
+    static_assert(static_cast<size_t>(input_names::end) == static_cast<size_t>(state_names::end));
 
     //! Default constructor
     Chassis_car_3dof();
@@ -91,6 +96,11 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
     //! @param[in] rear_right_tire_type: Type of the rear right tire type
     Chassis_car_3dof(Xml_document& database);
 
+    template<size_t number_of_inputs, size_t number_of_controls>
+    void transform_states_to_inputs(const std::array<Timeseries_t,number_of_inputs>& states,
+                                          const std::array<Timeseries_t,number_of_controls>& controls,
+                                          std::array<Timeseries_t,number_of_inputs>& input_states);
+
     //! Modifyer to set a parameter from the database
     template<typename T>
     void set_parameter(const std::string& parameter, const T value);
@@ -98,29 +108,44 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
     //! Fill the corresponding nodes of an xml document
     void fill_xml(Xml_document& doc) const;
 
-    template<size_t NSTATE, size_t NCONTROL>
-    void transform_states_to_input_states(const std::array<Timeseries_t,NSTATE>& states, 
-                                          const std::array<Timeseries_t,NCONTROL>& controls,
-                                          std::array<Timeseries_t,NSTATE>& input_states);
-
     //! Update the chassis: update the axles to get forces and compute accelerations
     //! @param[in] x: x-coordinate of the road frame [m]
     //! @param[in] y: y-coordinate of the road frame [m]
     //! @param[in] psi: yaw angle of the road frame [rad]
-    void update(Timeseries_t x, Timeseries_t y, Timeseries_t psi);
+    void update(const Vector3d<Timeseries_t>& ground_position_vector_m,
+                const Euler_angles<scalar>& road_euler_angles_rad,
+                const Timeseries_t& track_heading_angle_rad,
+                const Euler_angles<Timeseries_t>& road_euler_angles_dot_radps,
+                const Timeseries_t& track_heading_angle_dot_radps,
+                const Timeseries_t& ground_velocity_z_body_mps);
 
     //! Set the chassis state variables from direct values
     //      --- Set by the parent class ---
     //! @param[in] u: road frame x-velocity (in road frame) [m/s]
     //! @param[in] v: road frame y-velocity (in road frame) [m/s]
     //! @param[in] omega: road frame yaw speed [rad/s]
-    void set_state(Timeseries_t u, Timeseries_t v, Timeseries_t omega); 
+    void set_state(const Timeseries_t& u, const Timeseries_t& v, const Timeseries_t& omega); 
 
     //! Get the CoM position in road frame
     Vector3d<Timeseries_t> get_com_position() const { return _x_com; }
 
     //! Get the CoM velocity in road frame
     Vector3d<Timeseries_t> get_com_velocity() const { return { 0.0, 0.0, 0.0 }; }
+
+    //! Get the CoM absolute vertical in body axes
+    constexpr const Timeseries_t& get_com_velocity_z_mps() const { return _com_velocity_z_mps; }
+
+    //! Get the derivative of the CoM absolute vertical in body axes
+    constexpr const Timeseries_t& get_com_velocity_z_dot_mps2() const { return _com_velocity_z_dot_mps2; }
+
+    //! Get the derivative of the pitch angular momentum
+    constexpr const Timeseries_t& get_pitch_angular_momentum_dot_Nm() const { return _pitch_angular_momentum_dot_Nm; }
+
+    //! Get the derivative of the roll angular momentum
+    constexpr const Timeseries_t& get_roll_angular_momentum_dot_Nm() const { return _roll_angular_momentum_dot_Nm; }
+
+    //! Get the roll balance equation
+    constexpr const Timeseries_t& get_roll_balance_equation_N() const { return _roll_balance_equation_N; }
 
     //! Computes the front axle position in chassis frame. It is constant in the 3DOF model
     Vector3d<Timeseries_t> get_front_axle_position() const { return {_x_front_axle[0], _x_front_axle[1], _x_front_axle[2]}; }
@@ -141,14 +166,14 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
     Vector3d<Timeseries_t> get_rear_axle_velocity() const { return {0.0, 0.0, 0.0}; }
 
     //! Get a negative normal force
-    const Timeseries_t& get_negative_normal_force(const typename algebraic_state_names::Algebraic id) const
+    const Timeseries_t& get_negative_normal_force(const size_t& id) const
     {
         switch(id)
         {
-        case (algebraic_state_names::FZFL): return _neg_Fz_fl; break; 
-        case (algebraic_state_names::FZFR): return _neg_Fz_fr; break; 
-        case (algebraic_state_names::FZRL): return _neg_Fz_rl; break; 
-        case (algebraic_state_names::FZRR): return _neg_Fz_rr; break; 
+         case (input_names::force_z_fl_g): return _neg_force_z_fl_N; break; 
+         case (input_names::force_z_fr_g): return _neg_force_z_fr_N; break; 
+         case (input_names::force_z_rl_g): return _neg_force_z_rl_N; break; 
+         case (input_names::force_z_rr_g): return _neg_force_z_rr_N; break; 
          default:      throw fastest_lap_exception("Id is incorrect");
         }
     }
@@ -165,45 +190,35 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
 
     //! Load the time derivative of the state variables computed herein to the dqdt
     //! @param[out] dqdt: the vehicle state vector time derivative
-    template<size_t N>
-    void get_state_and_state_derivative(std::array<Timeseries_t,N>& state,
-                                        std::array<Timeseries_t, N>& dstate_dt
+    template<size_t number_of_states>
+    void get_state_and_state_derivative(std::array<Timeseries_t, number_of_states>& state,
+                                        std::array<Timeseries_t, number_of_states>& dstate_dt
                                         ) const;
-
-    //! Load the algebraic constraints computed herein to the dqa
-    //! @param[out] dqa: the algebraic constraints
-    template<size_t NALGEBRAIC_>
-    void get_algebraic_constraints(std::array<Timeseries_t,NALGEBRAIC_>& algebraic_equations) const;
 
     //! Set the state variables of this class
     //! @param[in] q: the vehicle state vector 
     //! @param[in] u: the vehicle control vector
-    template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_controls(const std::array<Timeseries_t,NSTATE>& input_states, 
-                                const std::array<Timeseries_t,NALGEBRAIC>& algebraic_states,
-                                const std::array<Timeseries_t,NCONTROL>& controls);
+    template<size_t number_of_inputs, size_t number_of_controls>
+    void set_state_and_controls(const std::array<Timeseries_t,number_of_inputs>& inputs, 
+                                const std::array<Timeseries_t,number_of_controls>& controls);
 
 
     //! Set the state and controls upper, lower, and default values
-    template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_control_upper_lower_and_default_values(std::array<scalar,NSTATE>& input_states_def,
-                                                              std::array<scalar,NSTATE>& input_states_lb,
-                                                              std::array<scalar,NSTATE>& input_states_ub,
-                                                              std::array<scalar,NALGEBRAIC>& algebraic_states_def,
-                                                              std::array<scalar,NALGEBRAIC>& algebraic_states_lb,
-                                                              std::array<scalar,NALGEBRAIC>& algebraic_states_ub,
-                                                              std::array<scalar,NCONTROL>& control_def,
-                                                              std::array<scalar,NCONTROL>& control_lb,
-                                                              std::array<scalar,NCONTROL>& control_ub
+    template<size_t number_of_inputs, size_t number_of_controls>
+    void set_state_and_control_upper_lower_and_default_values(std::array<scalar,number_of_inputs>& inputs_def,
+                                                              std::array<scalar,number_of_inputs>& inputs_lb,
+                                                              std::array<scalar,number_of_inputs>& inputs_ub,
+                                                              std::array<scalar,number_of_controls>& control_def,
+                                                              std::array<scalar,number_of_controls>& control_lb,
+                                                              std::array<scalar,number_of_controls>& control_ub
                                                               ) const;
 
     //! Get the names of the state and control varaibles of this class
     //! @param[out] q: the vehicle state names
     //! @param[out] u: the vehicle control names
-    template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_control_names(std::array<std::string,NSTATE>& input_states, 
-                                     std::array<std::string,NALGEBRAIC>& algebraic_states,
-                                     std::array<std::string,NCONTROL>& control_states) const;
+    template<size_t number_of_inputs, size_t number_of_controls>
+    void set_state_and_control_names(std::array<std::string,number_of_inputs>& inputs, 
+                                     std::array<std::string,number_of_controls>& controls) const;
 
     bool is_ready() const { return base_type::is_ready() && 
         std::all_of(__used_parameters.begin(), __used_parameters.end(), [](const auto& v) -> auto { return v; }); }
@@ -231,7 +246,7 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
 
     // Mechanical properties
     Timeseries_t   _roll_balance_coeff; //! [c] Coefficient in [0,1], usually 1/2, such that: Fz_fr − Fz_fl = D(Fz_fr + Fz_rr − Fz_fl − Fz_rl)
-    scalar         _Fz_max_ref2;        //! [c] Square of the parasitic smooth positive force when Fz = 0
+    scalar         _force_z_max_ref2;        //! [c] Square of the parasitic smooth positive force when Fz = 0
 
     // Variables    ----------------------------------------------------------------
 
@@ -239,25 +254,30 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
     Timeseries_t _brake_bias_0; //! [in] Initial value for the brake bias (to be read from database)
 
     // Control variables
-    Timeseries_t _throttle = 0.0;     //! [in] throttle: 1-full throttle, -1-hard brake
+    Timeseries_t _throttle   = 0.0;   //! [in] throttle: 1-full throttle, -1-hard brake
     Timeseries_t _brake_bias = 0.0;   //! [in] Brake bias: 1-only front, 0-only rear
 
     // Algebraic variables
-    Timeseries_t _Fz_fl = 0.0;    //! [in] Vertical load for FL tire
-    Timeseries_t _Fz_fr = 0.0;    //! [in] Vertical load for FR tire
-    Timeseries_t _Fz_rl = 0.0;    //! [in] Vertical load for RL tire
-    Timeseries_t _Fz_rr = 0.0;    //! [in] Vertical load for RR tire
+    Timeseries_t _force_z_fl_N = 0.0;    //! [in] Vertical load for FL tire
+    Timeseries_t _force_z_fr_N = 0.0;    //! [in] Vertical load for FR tire
+    Timeseries_t _force_z_rl_N = 0.0;    //! [in] Vertical load for RL tire
+    Timeseries_t _force_z_rr_N = 0.0;    //! [in] Vertical load for RR tire
 
-    Timeseries_t _neg_Fz_fl = 0.0;    //! negative vertical load for FL tire
-    Timeseries_t _neg_Fz_fr = 0.0;    //! negative vertical load for FR tire
-    Timeseries_t _neg_Fz_rl = 0.0;    //! negative vertical load for RL tire
-    Timeseries_t _neg_Fz_rr = 0.0;    //! negative vertical load for RR tire
+    Timeseries_t _neg_force_z_fl_N = 0.0;    //! negative vertical load for FL tire
+    Timeseries_t _neg_force_z_fr_N = 0.0;    //! negative vertical load for FR tire
+    Timeseries_t _neg_force_z_rl_N = 0.0;    //! negative vertical load for RL tire
+    Timeseries_t _neg_force_z_rr_N = 0.0;    //! negative vertical load for RR tire
 
     // Algebraic constraints
-    Timeseries_t _Fz_eq = 0.0;            //! [out] vertical equilibrium equation
-    Timeseries_t _Mx_eq = 0.0;            //! [out] roll equilibrium equation
-    Timeseries_t _My_eq = 0.0;            //! [out] pitch equilibrium equation
-    Timeseries_t _roll_balance_eq = 0.0;  //! [out] roll balance equation
+    Timeseries_t _com_velocity_z_mps         = 0.0;
+    Timeseries_t _roll_angular_momentum_Nms  = 0.0;
+    Timeseries_t _pitch_angular_momentum_Nms = 0.0;
+
+    Timeseries_t _com_velocity_z_dot_mps2       = 0.0;
+    Timeseries_t _roll_angular_momentum_dot_Nm  = 0.0;
+    Timeseries_t _pitch_angular_momentum_dot_Nm = 0.0;
+
+    Timeseries_t _roll_balance_equation_N = 0.0;  //! [out] roll balance equation
 
     DECLARE_PARAMS(
         { "com/x", _x_com.x() },
@@ -274,7 +294,7 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
         { "pressure_center/z", _x_aero.z() },
         { "brake_bias", _brake_bias_0 },
         { "roll_balance_coefficient", _roll_balance_coeff},
-        { "Fz_max_ref2", _Fz_max_ref2 }
+        { "Fz_max_ref2", _force_z_max_ref2 }
     );  
 
     std::unordered_map<std::string,Timeseries_t> get_outputs_map_self() const
@@ -283,7 +303,6 @@ class Chassis_car_3dof : public Chassis<Timeseries_t,FrontAxle_t, RearAxle_t, ST
         {
         };
     }
-
 };
 
 #include "chassis_car_3dof.hpp"

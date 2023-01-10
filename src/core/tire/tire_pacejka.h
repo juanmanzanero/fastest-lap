@@ -4,6 +4,162 @@
 #include "tire.h"
 #include "lion/math/matrix_extensions.h"
 
+template<typename Timeseries_t, typename Pacejka_model, size_t state_start, size_t control_start>
+class Tire_pacejka : public Tire<Timeseries_t, state_start, control_start>
+{
+ public:
+    //! The parent class type
+    using base_type = Tire<Timeseries_t, state_start, control_start>;
+
+    //! Indices of the state variables of this class: none
+    struct input_names
+    {
+        enum { end = base_type::input_names::end };
+    };
+
+    struct state_names
+    {
+        enum { end = base_type::state_names::end };
+    };
+
+    static_assert(static_cast<size_t>(input_names::end) == static_cast<size_t>(state_names::end));
+
+    //! Indices of the control variables of this class: none
+    struct control_names
+    {
+        enum { end = base_type::control_names::end };
+    };
+
+    //! Default constructor
+    Tire_pacejka() = default;
+
+    //! Empty constructor
+    Tire_pacejka(const std::string& name, const std::string& path) : base_type(name,path), _model(), _kt(0.0),
+        _ct(0.0), _Fz_max_ref2(1.0), _Smagic(0.0), _Fmagic(0.0) {}
+
+    //! Constructor
+    //! @param[in] name: name of the tire
+    //! @param[in] parameters: map(string,scalar) with the tire parameters
+    //! @param[in] path: path of this tire on the parameters map
+    //! @param[in] type: type of the tire: NORMAL or ONLY_LATERAL
+    Tire_pacejka(const std::string& name, 
+                 Xml_document& database,
+                 const std::string& path="" 
+                );
+
+    template<typename T>
+    void set_parameter(const std::string& parameter, const T value);
+
+    void fill_xml(Xml_document& doc) const;
+
+    //! Calls Tire::update(x0,v0,omega) of the base class, and calls update_self()
+    //! This updates the tire dynamics and tire forces
+    //! @param[in] x0: new frame origin position [m]
+    //! @param[in] v0: new frame origin velocity [m/s]
+    //! @param[in] omega: new value for tire angular speed [rad/s]
+    void update(const Vector3d<Timeseries_t>& x0, const Vector3d<Timeseries_t>& v0, Timeseries_t omega);
+
+    //! Calls Tire::update(omega) of the base class, and calls update_self(Fz)
+    //! This updates the tire dynamics and tire forces
+    //! In this function, the normal load is provided externally
+    //! @param[in] Fz: the normal load
+    //! @param[in] kappa_dimensionless: new value for tire longitudinal slip [-]
+    void update(Timeseries_t Fz, Timeseries_t kappa_dimensionless, const Frame<Timeseries_t>& road_frame);
+
+    //! Calls update(omega) of the base class, and calls update_self()
+    //! @param[in] omega: new value for tire angular speed [rad/s]
+    void update(Timeseries_t omega);
+
+    //! Returns the tire carcass radial stiffness [N/m]
+    constexpr const scalar& get_radial_stiffness() const { return _kt; }
+
+    //! Print the tire parameters
+    //! @param[in] os: output stream
+    std::ostream& print(std::ostream& os) const;
+ 
+    //! Load the time derivative of the state variables computed herein to the dqdt
+    //! @param[out] dqdt: the vehicle state vector time derivative
+    template<size_t number_of_states>
+    void get_state_and_state_derivative(std::array<Timeseries_t,number_of_states>& state, 
+                                        std::array<Timeseries_t,number_of_states>& dstate_dt
+                                        ) const {};
+
+    //! Set the state variables of this class
+    //! @param[in] q: the vehicle state vector 
+    //! @param[in] u: the vehicle control vector
+    template<size_t number_of_inputs, size_t number_of_controls>
+    void set_state_and_controls(const std::array<Timeseries_t,number_of_inputs>& inputs,
+                                const std::array<Timeseries_t,number_of_controls>& controls) {};
+
+
+    //! Set the state and controls upper, lower, and default values
+    template<size_t number_of_inputs, size_t number_of_controls>
+    void set_state_and_control_upper_lower_and_default_values(const std::array<scalar,number_of_inputs>& inputs_def,
+                                                               const std::array<scalar,number_of_inputs>& inputs_lb,
+                                                               const std::array<scalar,number_of_inputs>& inputs_ub,
+                                                               const std::array<scalar,number_of_controls>& controls_def,
+                                                               const std::array<scalar,number_of_controls>& controls_lb,
+                                                               const std::array<scalar,number_of_controls>& controls_ub 
+                                                              ) const {};
+
+    //! Get the names of the state and control varaibles of this class
+    //! @param[out] q: the vehicle state names
+    //! @param[out] u: the vehicle control names
+    template<size_t number_of_inputs, size_t number_of_controls>
+    void set_state_and_control_names(std::array<std::string,number_of_inputs>& inputs, 
+                                     std::array<std::string,number_of_controls>& controls) const {};
+
+    static std::string type() { return "tire_pacejka"; }
+
+    const Pacejka_model& get_model() const { return _model; }
+
+    bool is_ready() const { return base_type::is_ready() && 
+            std::all_of(__used_parameters.begin(), __used_parameters.end(), [](const auto& v) -> auto { return v; }) &&
+            std::all_of(get_model().__used_parameters.begin(), get_model().__used_parameters.end(), [](const auto& v) -> auto { return v; }); }
+
+    std::unordered_map<std::string,Timeseries_t> get_outputs_map() const
+    {
+        auto map = get_outputs_map_self();
+        const auto base_type_map = base_type::get_outputs_map();
+
+        map.insert(base_type_map.cbegin(), base_type_map.cend());
+
+        return map;
+    }
+
+ private:
+    //! Performs an update of the tire: computes tire forces from kappa, lambda, and tire 
+    //! deformations
+    void update_self();
+
+    //! Performs an update with given normal load
+    void update_self(const Timeseries_t Fz);
+
+    Pacejka_model _model;
+
+    scalar _kt = 0.0; //! [c] Radial stiffness of the carcass
+    scalar _ct = 0.0; //! [c] Radial damping of the carcass
+    scalar _Fz_max_ref2 = 0.0;    //! [c] Reference normal force for the smooth max function
+
+    // Forces as given by the magic formula
+    Timeseries_t _Smagic = 0.0;     //! [out] Longitudinal force given by the magic formula
+    Timeseries_t _Fmagic = 0.0;     //! [out] Lateral force given by the magic formula
+
+    DECLARE_PARAMS(
+        { "radial-stiffness", _kt },
+        { "radial-damping", _ct },
+        { "Fz-max-ref2", _Fz_max_ref2 }
+    ); 
+
+    std::unordered_map<std::string,Timeseries_t> get_outputs_map_self() const
+    {
+        return
+        {
+        };
+    }
+
+};
+
 //! Implementation of the complete Pacejka tire model
 struct Pacejka_standard_model
 {
@@ -183,165 +339,19 @@ struct Pacejka_simple_model
 
 };
 
-template<typename Timeseries_t, typename Pacejka_model, size_t STATE0, size_t CONTROL0>
-class Tire_pacejka : public Tire<Timeseries_t, STATE0,CONTROL0>
-{
- public:
-    //! The parent class type
-    using base_type = Tire<Timeseries_t,STATE0,CONTROL0>;
-
-    //! Indices of the state variables of this class: none
-    struct input_state_names
-    {
-        enum { end = base_type::input_state_names::end };
-    };
-
-    //! Indices of the control variables of this class: none
-    struct control_names
-    {
-        enum { end = base_type::control_names::end };
-    };
-
-    //! Default constructor
-    Tire_pacejka() = default;
-
-    //! Empty constructor
-    Tire_pacejka(const std::string& name, const std::string& path) : base_type(name,path), _model(), _kt(0.0),
-        _ct(0.0), _Fz_max_ref2(1.0), _Smagic(0.0), _Fmagic(0.0) {}
-
-    //! Constructor
-    //! @param[in] name: name of the tire
-    //! @param[in] parameters: map(string,scalar) with the tire parameters
-    //! @param[in] path: path of this tire on the parameters map
-    //! @param[in] type: type of the tire: NORMAL or ONLY_LATERAL
-    Tire_pacejka(const std::string& name, 
-                 Xml_document& database,
-                 const std::string& path="" 
-                );
-
-    template<typename T>
-    void set_parameter(const std::string& parameter, const T value);
-
-    void fill_xml(Xml_document& doc) const;
-
-    //! Calls Tire::update(x0,v0,omega) of the base class, and calls update_self()
-    //! This updates the tire dynamics and tire forces
-    //! @param[in] x0: new frame origin position [m]
-    //! @param[in] v0: new frame origin velocity [m/s]
-    //! @param[in] omega: new value for tire angular speed [rad/s]
-    void update(const Vector3d<Timeseries_t>& x0, const Vector3d<Timeseries_t>& v0, Timeseries_t omega);
-
-    //! Calls Tire::update(omega) of the base class, and calls update_self(Fz)
-    //! This updates the tire dynamics and tire forces
-    //! In this function, the normal load is provided externally
-    //! @param[in] Fz: the normal load
-    //! @param[in] kappa_dimensionless: new value for tire longitudinal slip [-]
-    void update(Timeseries_t Fz, Timeseries_t kappa_dimensionless);
-
-    //! Calls update(omega) of the base class, and calls update_self()
-    //! @param[in] omega: new value for tire angular speed [rad/s]
-    void update(Timeseries_t omega);
-
-    //! Returns the tire carcass radial stiffness [N/m]
-    constexpr const scalar& get_radial_stiffness() const { return _kt; }
-
-    //! Print the tire parameters
-    //! @param[in] os: output stream
-    std::ostream& print(std::ostream& os) const;
- 
-    //! Load the time derivative of the state variables computed herein to the dqdt
-    //! @param[out] dqdt: the vehicle state vector time derivative
-    template<size_t N>
-    void get_state_and_state_derivative(std::array<Timeseries_t,N>& state, std::array<Timeseries_t,N>& dstate_dt) const {};
-
-    //! Set the state variables of this class
-    //! @param[in] q: the vehicle state vector 
-    //! @param[in] u: the vehicle control vector
-    template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_controls(const std::array<Timeseries_t,NSTATE>& input_states,
-                                const std::array<Timeseries_t,NCONTROL>& controls) {};
-
-
-    //! Set the state and controls upper, lower, and default values
-    template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_control_upper_lower_and_default_values(const std::array<scalar,NSTATE>& input_states_def,
-                                                               const std::array<scalar,NSTATE>& input_states_lb,
-                                                               const std::array<scalar,NSTATE>& input_states_ub,
-                                                               const std::array<scalar,NCONTROL>& controls_def,
-                                                               const std::array<scalar,NCONTROL>& controls_lb,
-                                                               const std::array<scalar,NCONTROL>& controls_ub 
-                                                              ) const {};
-
-    //! Get the names of the state and control varaibles of this class
-    //! @param[out] q: the vehicle state names
-    //! @param[out] u: the vehicle control names
-    template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_control_names(std::array<std::string,NSTATE>& input_states, 
-                                     std::array<std::string,NCONTROL>& controls) const {};
-
-    static std::string type() { return "tire_pacejka"; }
-
-    const Pacejka_model& get_model() const { return _model; }
-
-    bool is_ready() const { return base_type::is_ready() && 
-            std::all_of(__used_parameters.begin(), __used_parameters.end(), [](const auto& v) -> auto { return v; }) &&
-            std::all_of(get_model().__used_parameters.begin(), get_model().__used_parameters.end(), [](const auto& v) -> auto { return v; }); }
-
-    std::unordered_map<std::string,Timeseries_t> get_outputs_map() const
-    {
-        auto map = get_outputs_map_self();
-        const auto base_type_map = base_type::get_outputs_map();
-
-        map.insert(base_type_map.cbegin(), base_type_map.cend());
-
-        return map;
-    }
-
- private:
-    //! Performs an update of the tire: computes tire forces from kappa, lambda, and tire 
-    //! deformations
-    void update_self();
-
-    //! Performs an update with given normal load
-    void update_self(const Timeseries_t Fz);
-
-    Pacejka_model _model;
-
-    scalar _kt = 0.0; //! [c] Radial stiffness of the carcass
-    scalar _ct = 0.0; //! [c] Radial damping of the carcass
-    scalar _Fz_max_ref2 = 0.0;    //! [c] Reference normal force for the smooth max function
-
-    // Forces as given by the magic formula
-    Timeseries_t _Smagic = 0.0;     //! [out] Longitudinal force given by the magic formula
-    Timeseries_t _Fmagic = 0.0;     //! [out] Lateral force given by the magic formula
-
-    DECLARE_PARAMS(
-        { "radial-stiffness", _kt },
-        { "radial-damping", _ct },
-        { "Fz-max-ref2", _Fz_max_ref2 }
-    ); 
-
-    std::unordered_map<std::string,Timeseries_t> get_outputs_map_self() const
-    {
-        return
-        {
-        };
-    }
-
-};
 
 
 //! Display the properties of a tire
 //! @param[in] os: out stream
 //! @param[in] tire: the tire
-template<typename Timeseries_t,typename Pacejka_model,size_t STATE0, size_t CONTROL0>
-inline std::ostream& operator<<(std::ostream& os, const Tire_pacejka<Timeseries_t,Pacejka_model,STATE0,CONTROL0>& tire){return tire.print(os);}
+template<typename Timeseries_t,typename Pacejka_model,size_t state_start, size_t control_start>
+inline std::ostream& operator<<(std::ostream& os, const Tire_pacejka<Timeseries_t,Pacejka_model,state_start,control_start>& tire){return tire.print(os);}
 
-template<typename Timeseries_t,size_t STATE0, size_t CONTROL0>
-using Tire_pacejka_std = Tire_pacejka<Timeseries_t,Pacejka_standard_model,STATE0,CONTROL0>;
+template<typename Timeseries_t,size_t state_start, size_t control_start>
+using Tire_pacejka_std = Tire_pacejka<Timeseries_t,Pacejka_standard_model,state_start,control_start>;
 
-template<typename Timeseries_t,size_t STATE0, size_t CONTROL0>
-using Tire_pacejka_simple = Tire_pacejka<Timeseries_t,Pacejka_simple_model<Timeseries_t>,STATE0,CONTROL0>;
+template<typename Timeseries_t,size_t state_start, size_t control_start>
+using Tire_pacejka_simple = Tire_pacejka<Timeseries_t,Pacejka_simple_model<Timeseries_t>,state_start,control_start>;
 
 #include "tire_pacejka.hpp"
 

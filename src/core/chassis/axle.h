@@ -11,9 +11,9 @@
 //! The generic axle class is responsible of the storage and interface with the tire objects
 //!  @param Tires_tuple: must be a tuple with the types of the tires 
 //!                      (1 for motorcycles/2 for cars)
-//!  @param STATE0: index of the first state variable defined here
-//!  @param CONTROL0: index of the first control variable defined here
-template <typename Timeseries_t,typename Tires_tuple, size_t STATE0, size_t CONTROL0>
+//!  @param state_start: index of the first state variable defined here
+//!  @param control_start: index of the first control variable defined here
+template <typename Timeseries_t,typename Tires_tuple, size_t state_start, size_t control_start>
 class Axle
 {
  public:
@@ -23,18 +23,23 @@ class Axle
     constexpr static size_t NTIRES = std::tuple_size<Tires_tuple>::value;
 
     //! Indices of the state variables of this class: none
-    struct input_state_names
+    struct input_names
     {
-        enum { end = STATE0 };
+        enum { end = state_start };
     };
 
     //! Indices of the control variables of this class: none
     struct control_names
     {
-        enum { end = CONTROL0 };
+        enum { end = control_start };
     };
 
-    struct state_names {};
+    struct state_names
+    {
+        enum { end = state_start };
+    };
+
+    static_assert(static_cast<size_t>(input_names::end) == static_cast<size_t>(state_names::end));
 
     //! Default constructor
     Axle() = default;
@@ -50,6 +55,7 @@ class Axle
     Axle& operator=(const Axle& other);
 
     //! Copy constructor operator
+
     //! @param[in] other: axle to copy
     Axle(const Axle& other);
 
@@ -76,32 +82,34 @@ class Axle
 
     //! Load the time derivative of the state variables computed herein to the dqdt
     //! @param[out] dqdt: the vehicle state vector time derivative
-    template<size_t N>
-    void get_state_and_state_derivative(std::array<Timeseries_t,N>& state, std::array<Timeseries_t,N>& dstate_dt) const;
+    template<size_t number_of_states>
+    void get_state_and_state_derivative(std::array<Timeseries_t,number_of_states>& state, 
+                                        std::array<Timeseries_t,number_of_states>& dstate_dt
+                                        ) const;
 
     //! Set the state variables of this class
     //! @param[in] q: the vehicle state vector 
     //! @param[in] u: the vehicle control vector
-    template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_controls(const std::array<Timeseries_t,NSTATE>& input_states, 
-                                const std::array<Timeseries_t,NCONTROL>& controls);
+    template<size_t number_of_inputs, size_t number_of_controls>
+    void set_state_and_controls(const std::array<Timeseries_t,number_of_inputs>& inputs, 
+                                const std::array<Timeseries_t,number_of_controls>& controls);
 
     //! Set the state and controls upper, lower, and default values
-    template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_control_upper_lower_and_default_values(std::array<scalar,NSTATE>& input_states_def,
-                                                               std::array<scalar,NSTATE>& input_states_lb,
-                                                               std::array<scalar,NSTATE>& input_states_ub,
-                                                               std::array<scalar,NCONTROL>& controls_def,
-                                                               std::array<scalar,NCONTROL>& controls_lb,
-                                                               std::array<scalar,NCONTROL>& controls_ub 
+    template<size_t number_of_inputs, size_t number_of_controls>
+    void set_state_and_control_upper_lower_and_default_values(std::array<scalar,number_of_inputs>& inputs_def,
+                                                               std::array<scalar,number_of_inputs>& inputs_lb,
+                                                               std::array<scalar,number_of_inputs>& inputs_ub,
+                                                               std::array<scalar,number_of_controls>& controls_def,
+                                                               std::array<scalar,number_of_controls>& controls_lb,
+                                                               std::array<scalar,number_of_controls>& controls_ub 
                                                               ) const;
 
     //! Get the names of the state and control varaibles of this class
     //! @param[out] q: the vehicle state names
     //! @param[out] u: the vehicle control names
-    template<size_t NSTATE, size_t NCONTROL>
-    void set_state_and_control_names(std::array<std::string,NSTATE>& input_states, 
-                                     std::array<std::string,NCONTROL>& controls) const;
+    template<size_t number_of_inputs, size_t number_of_controls>
+    void set_state_and_control_names(std::array<std::string,number_of_inputs>& inputs, 
+                                     std::array<std::string,number_of_controls>& controls) const;
 
     bool is_ready() const;
 

@@ -1,5 +1,5 @@
-#ifndef __TIRE_H__
-#define __TIRE_H__
+#ifndef TIRE_H
+#define TIRE_H
 
 #include <unordered_map>
 #include "lion/foundation/types.h"
@@ -10,22 +10,29 @@
 #include "lion/math/matrix_extensions.h"
 
 //! Basic class defining tires
-template<typename Timeseries_t, size_t STATE0, size_t CONTROL0>
+template<typename Timeseries_t, size_t state_start, size_t control_start>
 class Tire
 {
  public:
     using Timeseries_type = Timeseries_t;
 
     //! Indices of the state variables of this class: none
-    struct input_state_names
+    struct input_names
     {
-        enum { end = STATE0 };
+        enum { end = state_start };
     };
+
+    struct state_names
+    {
+        enum { end = state_start };
+    };
+
+    static_assert(static_cast<size_t>(input_names::end) == static_cast<size_t>(state_names::end));
 
     //! Indices of the control variables of this class: none
     struct control_names
     {
-        enum { end = CONTROL0 };
+        enum { end = control_start };
     };
 
     // Two tire types implemented: NORMAL (both lateral and longitudinal) and ONLY_LATERAL (only lateral)
@@ -74,7 +81,7 @@ class Tire
 
     //! Updates omega, deformation, the contact point velocity, kappa and lambda, but the input is kappa
     //! @param[in] kappa: new value for tire longitudinal slip
-    void update_from_kappa(Timeseries_t kappa);
+    void update_from_kappa(Timeseries_t kappa, const Frame<Timeseries_t>& road_frame);
 
     //! Return the nominal radius of the tire [N]
     constexpr const scalar& get_radius() const { return _R0; }
@@ -208,8 +215,8 @@ class Tire
     Vector3d<Timeseries_t> _T = {0.0, 0.0, 0.0};  //! [out] Tire torques at wheel centre [N.m]
 };
 
-template<typename Timeseries_t, size_t STATE0, size_t CONTROL0>
-inline std::ostream& operator<<(std::ostream& os, const Tire<Timeseries_t,STATE0,CONTROL0>& tire){return tire.print(os);}
+template<typename Timeseries_t, size_t state_start, size_t control_start>
+inline std::ostream& operator<<(std::ostream& os, const Tire<Timeseries_t,state_start,control_start>& tire){return tire.print(os);}
 
 #include "tire.hpp"
 

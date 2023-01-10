@@ -7,18 +7,18 @@
 
 
 using Front_left_tire_type  = Tire_pacejka_std<scalar,0,0>;
-using Front_right_tire_type = Tire_pacejka_std<scalar,Front_left_tire_type ::input_state_names::end, Front_left_tire_type ::control_names::end>;
-using Rear_left_tire_type   = Tire_pacejka_std<scalar,Front_right_tire_type::input_state_names::end, Front_right_tire_type::control_names::end>;
-using Rear_right_tire_type  = Tire_pacejka_std<scalar,Rear_left_tire_type  ::input_state_names::end, Rear_left_tire_type  ::control_names::end>;
+using Front_right_tire_type = Tire_pacejka_std<scalar,Front_left_tire_type ::input_names::end, Front_left_tire_type ::control_names::end>;
+using Rear_left_tire_type   = Tire_pacejka_std<scalar,Front_right_tire_type::input_names::end, Front_right_tire_type::control_names::end>;
+using Rear_right_tire_type  = Tire_pacejka_std<scalar,Rear_left_tire_type  ::input_names::end, Rear_left_tire_type  ::control_names::end>;
 
-using Front_axle_type = Axle_car_6dof<scalar,Front_left_tire_type,Front_right_tire_type,STEERING_FREE_ROLL,Rear_right_tire_type::input_state_names::end,Rear_right_tire_type::control_names::end>;
-using Rear_axle_type  = Axle_car_6dof<scalar,Rear_left_tire_type,Rear_right_tire_type,POWERED_WITHOUT_DIFFERENTIAL,Front_axle_type::input_state_names::end,Front_axle_type::control_names::end>;
-using Chassis_t = Chassis_car_6dof<scalar,Front_axle_type,Rear_axle_type,Rear_axle_type::input_state_names::end,Rear_axle_type::control_names::end>;
+using Front_axle_type = Axle_car_6dof<scalar,Front_left_tire_type,Front_right_tire_type,STEERING_FREE_ROLL,Rear_right_tire_type::input_names::end,Rear_right_tire_type::control_names::end>;
+using Rear_axle_type  = Axle_car_6dof<scalar,Rear_left_tire_type,Rear_right_tire_type,POWERED_WITHOUT_DIFFERENTIAL,Front_axle_type::input_names::end,Front_axle_type::control_names::end>;
+using Chassis_t = Chassis_car_6dof<scalar,Front_axle_type,Rear_axle_type,Rear_axle_type::input_names::end,Rear_axle_type::control_names::end>;
 
-template class Axle_car_6dof<scalar,Front_left_tire_type,Front_right_tire_type,STEERING_FREE_ROLL,Rear_right_tire_type::input_state_names::end,Rear_right_tire_type::control_names::end>;
-template class Axle_car_6dof<scalar,Rear_left_tire_type,Rear_right_tire_type,POWERED_WITHOUT_DIFFERENTIAL,Front_axle_type::input_state_names::end,Front_axle_type::control_names::end>;
-template class Chassis_car_6dof<scalar,Front_axle_type,Rear_axle_type,Rear_axle_type::input_state_names::end,Rear_axle_type::control_names::end>;
-template class Chassis<scalar,Front_axle_type,Rear_axle_type,Rear_axle_type::input_state_names::end,Rear_axle_type::control_names::end>;
+template class Axle_car_6dof<scalar,Front_left_tire_type,Front_right_tire_type,STEERING_FREE_ROLL,Rear_right_tire_type::input_names::end,Rear_right_tire_type::control_names::end>;
+template class Axle_car_6dof<scalar,Rear_left_tire_type,Rear_right_tire_type,POWERED_WITHOUT_DIFFERENTIAL,Front_axle_type::input_names::end,Front_axle_type::control_names::end>;
+template class Chassis_car_6dof<scalar,Front_axle_type,Rear_axle_type,Rear_axle_type::input_names::end,Rear_axle_type::control_names::end>;
+template class Chassis<scalar,Front_axle_type,Rear_axle_type,Rear_axle_type::input_names::end,Rear_axle_type::control_names::end>;
 
   
 class Chassis_test : public ::testing::Test
@@ -26,11 +26,10 @@ class Chassis_test : public ::testing::Test
  protected:
     Chassis_test() 
     {
-        chassis.get_road_frame().set_rotation_angle(0,psi,omega);
         chassis.get_front_axle().set_steering_angle(delta);
         chassis.get_rear_axle().set_torque_and_omega(T,omega_axle);
         chassis.set_state(u,v,omega,z,dz,mu,dmu,phi,dphi);
-        chassis.update(x,y,psi);
+        chassis.update({ x,y,0 }, { 0,0,0 }, psi, { 0,0,0 }, omega, 0);
     }
 
     const scalar x = 2.0;
@@ -129,17 +128,17 @@ TEST_F(Chassis_test, copy_constructor_frame_trees_sanity)
     const Rear_left_tire_type& tire_rl = rear_axle.get_tire<Rear_axle_type::LEFT>();
     const Rear_right_tire_type& tire_rr = rear_axle.get_tire<Rear_axle_type::RIGHT>();
 
-    EXPECT_EQ(&chassis.get_inertial_frame(), chassis.get_road_frame().get_parent_ptr());
-    EXPECT_EQ(&chassis.get_road_frame(), chassis.get_chassis_frame().get_parent_ptr());
+    EXPECT_EQ(&std::as_const(chassis).get_inertial_frame(), std::as_const(chassis).get_road_frame().get_parent_ptr());
+    EXPECT_EQ(&std::as_const(chassis).get_road_frame(), std::as_const(chassis).get_chassis_frame().get_parent_ptr());
 
-    EXPECT_EQ(&chassis.get_chassis_frame(), front_axle.get_frame().get_parent_ptr());
-    EXPECT_EQ(&chassis.get_chassis_frame(), rear_axle.get_frame().get_parent_ptr());
+    EXPECT_EQ(&std::as_const(chassis).get_chassis_frame(), std::as_const(front_axle).get_frame().get_parent_ptr());
+    EXPECT_EQ(&std::as_const(chassis).get_chassis_frame(), std::as_const(rear_axle).get_frame().get_parent_ptr());
 
-    EXPECT_EQ(&front_axle.get_frame(), tire_fl.get_frame().get_parent_ptr());
-    EXPECT_EQ(&front_axle.get_frame(), tire_fr.get_frame().get_parent_ptr());
+    EXPECT_EQ(&std::as_const(front_axle).get_frame(), std::as_const(tire_fl).get_frame().get_parent_ptr());
+    EXPECT_EQ(&std::as_const(front_axle).get_frame(), std::as_const(tire_fr).get_frame().get_parent_ptr());
 
-    EXPECT_EQ(&rear_axle.get_frame(), tire_rl.get_frame().get_parent_ptr());
-    EXPECT_EQ(&rear_axle.get_frame(), tire_rr.get_frame().get_parent_ptr());
+    EXPECT_EQ(&std::as_const(rear_axle).get_frame(), std::as_const(tire_rl).get_frame().get_parent_ptr());
+    EXPECT_EQ(&std::as_const(rear_axle).get_frame(), std::as_const(tire_rr).get_frame().get_parent_ptr());
 }
 
 
@@ -158,18 +157,18 @@ TEST_F(Chassis_test, copy_assignment_frame_trees_sanity)
     const Rear_left_tire_type& tire_rl = rear_axle.get_tire<Rear_axle_type::LEFT>();
     const Rear_right_tire_type& tire_rr = rear_axle.get_tire<Rear_axle_type::RIGHT>();
 
-    EXPECT_EQ(&chassis_copy.get_inertial_frame(), chassis_copy.get_road_frame().get_parent_ptr());
+    EXPECT_EQ(&std::as_const(chassis_copy).get_inertial_frame(), std::as_const(chassis_copy).get_road_frame().get_parent_ptr());
 
-    EXPECT_EQ(&chassis_copy.get_road_frame(), chassis_copy.get_chassis_frame().get_parent_ptr());
+    EXPECT_EQ(&std::as_const(chassis_copy).get_road_frame(), std::as_const(chassis_copy).get_chassis_frame().get_parent_ptr());
 
-    EXPECT_EQ(&chassis_copy.get_chassis_frame(), front_axle.get_frame().get_parent_ptr());
-    EXPECT_EQ(&chassis_copy.get_chassis_frame(), rear_axle.get_frame().get_parent_ptr());
+    EXPECT_EQ(&std::as_const(chassis_copy).get_chassis_frame(), std::as_const(front_axle).get_frame().get_parent_ptr());
+    EXPECT_EQ(&std::as_const(chassis_copy).get_chassis_frame(), std::as_const(rear_axle).get_frame().get_parent_ptr());
 
-    EXPECT_EQ(&front_axle.get_frame(), tire_fl.get_frame().get_parent_ptr());
-    EXPECT_EQ(&front_axle.get_frame(), tire_fr.get_frame().get_parent_ptr());
+    EXPECT_EQ(&std::as_const(front_axle).get_frame(), std::as_const(tire_fl).get_frame().get_parent_ptr());
+    EXPECT_EQ(&std::as_const(front_axle).get_frame(), std::as_const(tire_fr).get_frame().get_parent_ptr());
 
-    EXPECT_EQ(&rear_axle.get_frame(), tire_rl.get_frame().get_parent_ptr());
-    EXPECT_EQ(&rear_axle.get_frame(), tire_rr.get_frame().get_parent_ptr());
+    EXPECT_EQ(&std::as_const(rear_axle).get_frame(), std::as_const(tire_rl).get_frame().get_parent_ptr());
+    EXPECT_EQ(&std::as_const(rear_axle).get_frame(), std::as_const(tire_rr).get_frame().get_parent_ptr());
 }
   
 
@@ -178,57 +177,57 @@ TEST_F(Chassis_test, chassis_position)
     const scalar x_chassis = x;
     const scalar y_chassis = y;
     const scalar z_chassis = z + database.get_element("vehicle/chassis/com").get_value(sVector3d())[2];
-    EXPECT_DOUBLE_EQ(chassis.get_road_frame().get_origin().at(0), x_chassis);
-    EXPECT_DOUBLE_EQ(chassis.get_road_frame().get_origin().at(1), y_chassis);
-    EXPECT_DOUBLE_EQ(chassis.get_road_frame().get_origin().at(2),       0.0);
+    EXPECT_DOUBLE_EQ(std::as_const(chassis).get_road_frame().get_origin().at(0), x_chassis);
+    EXPECT_DOUBLE_EQ(std::as_const(chassis).get_road_frame().get_origin().at(1), y_chassis);
+    EXPECT_DOUBLE_EQ(std::as_const(chassis).get_road_frame().get_origin().at(2),       0.0);
 
-    EXPECT_DOUBLE_EQ(chassis.get_road_frame().get_absolute_position().at(0), x_chassis);
-    EXPECT_DOUBLE_EQ(chassis.get_road_frame().get_absolute_position().at(1), y_chassis);
-    EXPECT_DOUBLE_EQ(chassis.get_road_frame().get_absolute_position().at(2),       0.0);
+    EXPECT_DOUBLE_EQ(std::as_const(chassis).get_road_frame().get_absolute_position().at(0), x_chassis);
+    EXPECT_DOUBLE_EQ(std::as_const(chassis).get_road_frame().get_absolute_position().at(1), y_chassis);
+    EXPECT_DOUBLE_EQ(std::as_const(chassis).get_road_frame().get_absolute_position().at(2),       0.0);
 
-    EXPECT_DOUBLE_EQ(chassis.get_road_frame().get_rotation_angles().size(), 1);
-    EXPECT_DOUBLE_EQ(chassis.get_road_frame().get_rotation_angles().at(0), psi);
-    EXPECT_DOUBLE_EQ(chassis.get_road_frame().get_rotation_angles_derivative().at(0), omega);
-    EXPECT_DOUBLE_EQ(chassis.get_road_frame().get_rotation_axis().at(0), Z);
+    EXPECT_DOUBLE_EQ(std::as_const(chassis).get_road_frame().get_rotation_angles().size(), 4);
+    EXPECT_DOUBLE_EQ(std::as_const(chassis).get_road_frame().get_rotation_angles().at(3), psi);
+    EXPECT_DOUBLE_EQ(std::as_const(chassis).get_road_frame().get_rotation_angles_derivative().at(3), omega);
+    EXPECT_DOUBLE_EQ(std::as_const(chassis).get_road_frame().get_rotation_axis().at(3), Z);
 
-    EXPECT_DOUBLE_EQ(chassis.get_chassis_frame().get_origin().at(0), 0.0);
-    EXPECT_DOUBLE_EQ(chassis.get_chassis_frame().get_origin().at(1), 0.0);
-    EXPECT_DOUBLE_EQ(chassis.get_chassis_frame().get_origin().at(2), z_chassis);
+    EXPECT_DOUBLE_EQ(std::as_const(chassis).get_chassis_frame().get_origin().at(0), 0.0);
+    EXPECT_DOUBLE_EQ(std::as_const(chassis).get_chassis_frame().get_origin().at(1), 0.0);
+    EXPECT_DOUBLE_EQ(std::as_const(chassis).get_chassis_frame().get_origin().at(2), z_chassis);
 
-    EXPECT_DOUBLE_EQ(chassis.get_chassis_frame().get_absolute_position().at(0), x_chassis);
-    EXPECT_DOUBLE_EQ(chassis.get_chassis_frame().get_absolute_position().at(1), y_chassis);
-    EXPECT_DOUBLE_EQ(chassis.get_chassis_frame().get_absolute_position().at(2), z_chassis);
+    EXPECT_DOUBLE_EQ(std::as_const(chassis).get_chassis_frame().get_absolute_position().at(0), x_chassis);
+    EXPECT_DOUBLE_EQ(std::as_const(chassis).get_chassis_frame().get_absolute_position().at(1), y_chassis);
+    EXPECT_DOUBLE_EQ(std::as_const(chassis).get_chassis_frame().get_absolute_position().at(2), z_chassis);
 
-    EXPECT_DOUBLE_EQ(chassis.get_chassis_frame().get_rotation_angles().size(), 0);
+    EXPECT_DOUBLE_EQ(std::as_const(chassis).get_chassis_frame().get_rotation_angles().size(), 0);
 
 }
 
 
 TEST_F(Chassis_test, chassis_velocity)
 {
-    EXPECT_DOUBLE_EQ(chassis.get_road_frame().get_relative_velocity().at(0), dx);
-    EXPECT_DOUBLE_EQ(chassis.get_road_frame().get_relative_velocity().at(1), dy);
-    EXPECT_DOUBLE_EQ(chassis.get_road_frame().get_relative_velocity().at(2),0.0);
+    EXPECT_DOUBLE_EQ(std::as_const(chassis).get_road_frame().get_relative_velocity_in_parent().at(0), dx);
+    EXPECT_DOUBLE_EQ(std::as_const(chassis).get_road_frame().get_relative_velocity_in_parent().at(1), dy);
+    EXPECT_DOUBLE_EQ(std::as_const(chassis).get_road_frame().get_relative_velocity_in_parent().at(2),0.0);
 
-    EXPECT_DOUBLE_EQ(chassis.get_road_frame().get_absolute_velocity_in_inertial().at(0), dx);
-    EXPECT_DOUBLE_EQ(chassis.get_road_frame().get_absolute_velocity_in_inertial().at(1), dy);
-    EXPECT_DOUBLE_EQ(chassis.get_road_frame().get_absolute_velocity_in_inertial().at(2),0.0);
+    EXPECT_DOUBLE_EQ(std::as_const(chassis).get_road_frame().get_absolute_velocity_in_inertial().at(0), dx);
+    EXPECT_DOUBLE_EQ(std::as_const(chassis).get_road_frame().get_absolute_velocity_in_inertial().at(1), dy);
+    EXPECT_DOUBLE_EQ(std::as_const(chassis).get_road_frame().get_absolute_velocity_in_inertial().at(2),0.0);
 
-    EXPECT_DOUBLE_EQ(chassis.get_road_frame().get_absolute_velocity_in_body().at(0),  u);
-    EXPECT_NEAR     (chassis.get_road_frame().get_absolute_velocity_in_body().at(1),  v, 1.0e-16);
-    EXPECT_DOUBLE_EQ(chassis.get_road_frame().get_absolute_velocity_in_body().at(2),0.0);
+    EXPECT_DOUBLE_EQ(std::as_const(chassis).get_road_frame().get_absolute_velocity_in_body().at(0),  u);
+    EXPECT_NEAR     (std::as_const(chassis).get_road_frame().get_absolute_velocity_in_body().at(1),  v, 1.0e-16);
+    EXPECT_DOUBLE_EQ(std::as_const(chassis).get_road_frame().get_absolute_velocity_in_body().at(2),0.0);
 
-    EXPECT_DOUBLE_EQ(chassis.get_chassis_frame().get_relative_velocity().at(0), 0.0);
-    EXPECT_DOUBLE_EQ(chassis.get_chassis_frame().get_relative_velocity().at(1), 0.0);
-    EXPECT_DOUBLE_EQ(chassis.get_chassis_frame().get_relative_velocity().at(2), dz);
+    EXPECT_DOUBLE_EQ(std::as_const(chassis).get_chassis_frame().get_relative_velocity_in_parent().at(0), 0.0);
+    EXPECT_DOUBLE_EQ(std::as_const(chassis).get_chassis_frame().get_relative_velocity_in_parent().at(1), 0.0);
+    EXPECT_DOUBLE_EQ(std::as_const(chassis).get_chassis_frame().get_relative_velocity_in_parent().at(2), dz);
 
-    EXPECT_DOUBLE_EQ(chassis.get_chassis_frame().get_absolute_velocity_in_inertial().at(0), dx);
-    EXPECT_DOUBLE_EQ(chassis.get_chassis_frame().get_absolute_velocity_in_inertial().at(1), dy);
-    EXPECT_DOUBLE_EQ(chassis.get_chassis_frame().get_absolute_velocity_in_inertial().at(2), dz);
+    EXPECT_DOUBLE_EQ(std::as_const(chassis).get_chassis_frame().get_absolute_velocity_in_inertial().at(0), dx);
+    EXPECT_DOUBLE_EQ(std::as_const(chassis).get_chassis_frame().get_absolute_velocity_in_inertial().at(1), dy);
+    EXPECT_DOUBLE_EQ(std::as_const(chassis).get_chassis_frame().get_absolute_velocity_in_inertial().at(2), dz);
 
-    EXPECT_DOUBLE_EQ(chassis.get_chassis_frame().get_absolute_velocity_in_body().at(0),  u);
-    EXPECT_NEAR     (chassis.get_chassis_frame().get_absolute_velocity_in_body().at(1),  v, 1.0e-16);
-    EXPECT_DOUBLE_EQ(chassis.get_chassis_frame().get_absolute_velocity_in_body().at(2), dz);
+    EXPECT_DOUBLE_EQ(std::as_const(chassis).get_chassis_frame().get_absolute_velocity_in_body().at(0),  u);
+    EXPECT_NEAR     (std::as_const(chassis).get_chassis_frame().get_absolute_velocity_in_body().at(1),  v, 1.0e-16);
+    EXPECT_DOUBLE_EQ(std::as_const(chassis).get_chassis_frame().get_absolute_velocity_in_body().at(2), dz);
 }
 
 
@@ -244,15 +243,15 @@ TEST_F(Chassis_test, front_axle_position)
     const scalar y_axle = y + a*sin(psi);
     const scalar z_axle = z - R0 -mu*a ;
 
-    EXPECT_DOUBLE_EQ(front_axle.get_frame().get_origin().at(0), a);
-    EXPECT_DOUBLE_EQ(front_axle.get_frame().get_origin().at(1),  0.0);
-    EXPECT_DOUBLE_EQ(front_axle.get_frame().get_origin().at(2), h-R0-a*mu);
+    EXPECT_DOUBLE_EQ(std::as_const(front_axle).get_frame().get_origin().at(0), a);
+    EXPECT_DOUBLE_EQ(std::as_const(front_axle).get_frame().get_origin().at(1),  0.0);
+    EXPECT_DOUBLE_EQ(std::as_const(front_axle).get_frame().get_origin().at(2), h-R0-a*mu);
                     
-    EXPECT_DOUBLE_EQ(front_axle.get_frame().get_absolute_position().at(0), x_axle);
-    EXPECT_DOUBLE_EQ(front_axle.get_frame().get_absolute_position().at(1), y_axle);
-    EXPECT_NEAR(front_axle.get_frame().get_absolute_position().at(2), z_axle, 3.0e-17);
+    EXPECT_DOUBLE_EQ(std::as_const(front_axle).get_frame().get_absolute_position().at(0), x_axle);
+    EXPECT_DOUBLE_EQ(std::as_const(front_axle).get_frame().get_absolute_position().at(1), y_axle);
+    EXPECT_NEAR(std::as_const(front_axle).get_frame().get_absolute_position().at(2), z_axle, 3.0e-17);
 
-    EXPECT_EQ(front_axle.get_frame().get_rotation_angles().size(), 0);
+    EXPECT_EQ(std::as_const(front_axle).get_frame().get_rotation_angles().size(), 0);
 }
 
 
@@ -268,15 +267,15 @@ TEST_F(Chassis_test, rear_axle_position)
     const scalar y_axle = y + a*sin(psi);
     const scalar z_axle = z - a*mu - R0;
 
-    EXPECT_DOUBLE_EQ(rear_axle.get_frame().get_origin().at(0), a);
-    EXPECT_DOUBLE_EQ(rear_axle.get_frame().get_origin().at(1),  0.0);
-    EXPECT_DOUBLE_EQ(rear_axle.get_frame().get_origin().at(2), h-R0-a*mu);
+    EXPECT_DOUBLE_EQ(std::as_const(rear_axle).get_frame().get_origin().at(0), a);
+    EXPECT_DOUBLE_EQ(std::as_const(rear_axle).get_frame().get_origin().at(1),  0.0);
+    EXPECT_DOUBLE_EQ(std::as_const(rear_axle).get_frame().get_origin().at(2), h-R0-a*mu);
                     
-    EXPECT_DOUBLE_EQ(rear_axle.get_frame().get_absolute_position().at(0), x_axle);
-    EXPECT_DOUBLE_EQ(rear_axle.get_frame().get_absolute_position().at(1), y_axle);
-    EXPECT_DOUBLE_EQ(rear_axle.get_frame().get_absolute_position().at(2), z_axle);
+    EXPECT_DOUBLE_EQ(std::as_const(rear_axle).get_frame().get_absolute_position().at(0), x_axle);
+    EXPECT_DOUBLE_EQ(std::as_const(rear_axle).get_frame().get_absolute_position().at(1), y_axle);
+    EXPECT_DOUBLE_EQ(std::as_const(rear_axle).get_frame().get_absolute_position().at(2), z_axle);
 
-    EXPECT_EQ(rear_axle.get_frame().get_rotation_angles().size(), 0);
+    EXPECT_EQ(std::as_const(rear_axle).get_frame().get_rotation_angles().size(), 0);
 }
 
 
@@ -292,17 +291,17 @@ TEST_F(Chassis_test, front_axle_velocity)
     const scalar dx_axle = u_axle*cos(psi) - v_axle*sin(psi);
     const scalar dy_axle = u_axle*sin(psi) + v_axle*cos(psi);
 
-    EXPECT_DOUBLE_EQ(front_axle.get_frame().get_relative_velocity().at(0),  0.0);
-    EXPECT_DOUBLE_EQ(front_axle.get_frame().get_relative_velocity().at(1),  0.0);
-    EXPECT_DOUBLE_EQ(front_axle.get_frame().get_relative_velocity().at(2), -a*dmu);
+    EXPECT_DOUBLE_EQ(std::as_const(front_axle).get_frame().get_relative_velocity_in_parent().at(0),  0.0);
+    EXPECT_DOUBLE_EQ(std::as_const(front_axle).get_frame().get_relative_velocity_in_parent().at(1),  0.0);
+    EXPECT_DOUBLE_EQ(std::as_const(front_axle).get_frame().get_relative_velocity_in_parent().at(2), -a*dmu);
 
-    EXPECT_DOUBLE_EQ(front_axle.get_frame().get_absolute_velocity_in_body().at(0), u);
-    EXPECT_NEAR     (front_axle.get_frame().get_absolute_velocity_in_body().at(1), v+a*omega, 2.0e-16);
-    EXPECT_DOUBLE_EQ(front_axle.get_frame().get_absolute_velocity_in_body().at(2), dz-a*dmu);
+    EXPECT_DOUBLE_EQ(std::as_const(front_axle).get_frame().get_absolute_velocity_in_body().at(0), u);
+    EXPECT_NEAR     (std::as_const(front_axle).get_frame().get_absolute_velocity_in_body().at(1), v+a*omega, 2.0e-16);
+    EXPECT_DOUBLE_EQ(std::as_const(front_axle).get_frame().get_absolute_velocity_in_body().at(2), dz-a*dmu);
                     
-    EXPECT_DOUBLE_EQ(front_axle.get_frame().get_absolute_velocity_in_inertial().at(0), dx_axle);
-    EXPECT_DOUBLE_EQ(front_axle.get_frame().get_absolute_velocity_in_inertial().at(1), dy_axle);
-    EXPECT_DOUBLE_EQ(front_axle.get_frame().get_absolute_velocity_in_inertial().at(2), dz-a*dmu);
+    EXPECT_DOUBLE_EQ(std::as_const(front_axle).get_frame().get_absolute_velocity_in_inertial().at(0), dx_axle);
+    EXPECT_DOUBLE_EQ(std::as_const(front_axle).get_frame().get_absolute_velocity_in_inertial().at(1), dy_axle);
+    EXPECT_DOUBLE_EQ(std::as_const(front_axle).get_frame().get_absolute_velocity_in_inertial().at(2), dz-a*dmu);
 }
 
 
@@ -318,17 +317,17 @@ TEST_F(Chassis_test, rear_axle_velocity)
     const scalar dx_axle = u_axle*cos(psi) - v_axle*sin(psi);
     const scalar dy_axle = u_axle*sin(psi) + v_axle*cos(psi);
 
-    EXPECT_DOUBLE_EQ(rear_axle.get_frame().get_relative_velocity().at(0),  0.0);
-    EXPECT_DOUBLE_EQ(rear_axle.get_frame().get_relative_velocity().at(1),  0.0);
-    EXPECT_DOUBLE_EQ(rear_axle.get_frame().get_relative_velocity().at(2), -a*dmu);
+    EXPECT_DOUBLE_EQ(std::as_const(rear_axle).get_frame().get_relative_velocity_in_parent().at(0),  0.0);
+    EXPECT_DOUBLE_EQ(std::as_const(rear_axle).get_frame().get_relative_velocity_in_parent().at(1),  0.0);
+    EXPECT_DOUBLE_EQ(std::as_const(rear_axle).get_frame().get_relative_velocity_in_parent().at(2), -a*dmu);
 
-    EXPECT_DOUBLE_EQ(rear_axle.get_frame().get_absolute_velocity_in_body().at(0), u);
-    EXPECT_NEAR     (rear_axle.get_frame().get_absolute_velocity_in_body().at(1), v+a*omega, 2.0e-16);
-    EXPECT_DOUBLE_EQ(rear_axle.get_frame().get_absolute_velocity_in_body().at(2), dz-a*dmu);
+    EXPECT_DOUBLE_EQ(std::as_const(rear_axle).get_frame().get_absolute_velocity_in_body().at(0), u);
+    EXPECT_NEAR     (std::as_const(rear_axle).get_frame().get_absolute_velocity_in_body().at(1), v+a*omega, 2.0e-16);
+    EXPECT_DOUBLE_EQ(std::as_const(rear_axle).get_frame().get_absolute_velocity_in_body().at(2), dz-a*dmu);
                     
-    EXPECT_DOUBLE_EQ(rear_axle.get_frame().get_absolute_velocity_in_inertial().at(0), dx_axle);
-    EXPECT_DOUBLE_EQ(rear_axle.get_frame().get_absolute_velocity_in_inertial().at(1), dy_axle);
-    EXPECT_DOUBLE_EQ(rear_axle.get_frame().get_absolute_velocity_in_inertial().at(2), dz-a*dmu);
+    EXPECT_DOUBLE_EQ(std::as_const(rear_axle).get_frame().get_absolute_velocity_in_inertial().at(0), dx_axle);
+    EXPECT_DOUBLE_EQ(std::as_const(rear_axle).get_frame().get_absolute_velocity_in_inertial().at(1), dy_axle);
+    EXPECT_DOUBLE_EQ(std::as_const(rear_axle).get_frame().get_absolute_velocity_in_inertial().at(2), dz-a*dmu);
 }
 
 
@@ -449,8 +448,8 @@ TEST_F(Chassis_test, front_axle_deformations)
     const scalar& kantiroll = front_axle_parameters.at("antiroll_stiffness");
     const scalar& ktire     = 64.5e3;
 
-    const scalar wl = tire_left.get_frame().get_absolute_position({0.0, 0.0, R0}).at(Z);
-    const scalar wr = tire_right.get_frame().get_absolute_position({0.0, 0.0, R0}).at(Z);
+    const scalar wl = std::as_const(tire_left).get_frame().get_absolute_position({0.0, 0.0, R0}).at(Z);
+    const scalar wr = std::as_const(tire_right).get_frame().get_absolute_position({0.0, 0.0, R0}).at(Z);
 
     const scalar sl = axle.get_chassis_deformation(Front_axle_type::LEFT);
     const scalar sr = axle.get_chassis_deformation(Front_axle_type::RIGHT);
@@ -479,8 +478,8 @@ TEST_F(Chassis_test, rear_axle_deformations)
     const scalar& kantiroll = rear_axle_parameters.at("antiroll_stiffness");
     const scalar& ktire     = 61.3e3;
 
-    const scalar wl = tire_left.get_frame().get_absolute_position({0.0, 0.0, R0}).at(Z);
-    const scalar wr = tire_right.get_frame().get_absolute_position({0.0, 0.0, R0}).at(Z);
+    const scalar wl = std::as_const(tire_left).get_frame().get_absolute_position({0.0, 0.0, R0}).at(Z);
+    const scalar wr = std::as_const(tire_right).get_frame().get_absolute_position({0.0, 0.0, R0}).at(Z);
 
     const scalar sl = axle.get_chassis_deformation(Rear_axle_type::LEFT);
     const scalar sr = axle.get_chassis_deformation(Rear_axle_type::RIGHT);
@@ -509,8 +508,8 @@ TEST_F(Chassis_test, front_axle_deformations_velocity)
     const scalar& kantiroll = front_axle_parameters.at("antiroll_stiffness");
     const scalar  ktire     = 64.5e3;
 
-    const scalar dwl = tire_left.get_frame().get_absolute_velocity_in_body({0.0, 0.0, R0}).at(Z);
-    const scalar dwr = tire_right.get_frame().get_absolute_velocity_in_body({0.0, 0.0, R0}).at(Z);
+    const scalar dwl = std::as_const(tire_left).get_frame().get_absolute_velocity_in_body({0.0, 0.0, R0}).at(Z);
+    const scalar dwr = std::as_const(tire_right).get_frame().get_absolute_velocity_in_body({0.0, 0.0, R0}).at(Z);
 
     const scalar dsl = axle.get_chassis_deformation_velocity(Front_axle_type::LEFT);
     const scalar dsr = axle.get_chassis_deformation_velocity(Front_axle_type::RIGHT);
@@ -539,8 +538,8 @@ TEST_F(Chassis_test, rear_axle_deformations_velocity)
     const scalar& kantiroll = rear_axle_parameters.at("antiroll_stiffness");
     const scalar  ktire     = 61.3e3;
 
-    const scalar dwl = tire_left.get_frame().get_absolute_velocity_in_body({0.0, 0.0, R0}).at(Z);
-    const scalar dwr = tire_right.get_frame().get_absolute_velocity_in_body({0.0, 0.0, R0}).at(Z);
+    const scalar dwl = std::as_const(tire_left).get_frame().get_absolute_velocity_in_body({0.0, 0.0, R0}).at(Z);
+    const scalar dwr = std::as_const(tire_right).get_frame().get_absolute_velocity_in_body({0.0, 0.0, R0}).at(Z);
 
     const scalar dsl = axle.get_chassis_deformation_velocity(Rear_axle_type::LEFT);
     const scalar dsr = axle.get_chassis_deformation_velocity(Rear_axle_type::RIGHT);
@@ -572,9 +571,9 @@ TEST_F(Chassis_test, front_left_tire_velocity)
     const scalar v_body = v_tire*cos(delta) - u_tire*sin(delta);
     
 
-    EXPECT_DOUBLE_EQ(tire.get_frame().get_relative_velocity().at(0), 0.0);
-    EXPECT_DOUBLE_EQ(tire.get_frame().get_relative_velocity().at(1), 0.0);
-    EXPECT_DOUBLE_EQ(tire.get_frame().get_relative_velocity().at(2), ds - 0.5*t*dphi );
+    EXPECT_DOUBLE_EQ(tire.get_frame().get_relative_velocity_in_parent().at(0), 0.0);
+    EXPECT_DOUBLE_EQ(tire.get_frame().get_relative_velocity_in_parent().at(1), 0.0);
+    EXPECT_DOUBLE_EQ(tire.get_frame().get_relative_velocity_in_parent().at(2), ds - 0.5*t*dphi );
 
     EXPECT_DOUBLE_EQ(tire.get_frame().get_absolute_velocity_in_parent().at(0), u_tire);
     EXPECT_DOUBLE_EQ(tire.get_frame().get_absolute_velocity_in_parent().at(1), v_tire);
@@ -605,9 +604,9 @@ TEST_F(Chassis_test, front_right_tire_velocity)
     const scalar u_body = u_tire*cos(delta) + v_tire*sin(delta);
     const scalar v_body = v_tire*cos(delta) - u_tire*sin(delta);
 
-    EXPECT_DOUBLE_EQ(tire.get_frame().get_relative_velocity().at(0), 0.0);
-    EXPECT_DOUBLE_EQ(tire.get_frame().get_relative_velocity().at(1), 0.0);
-    EXPECT_DOUBLE_EQ(tire.get_frame().get_relative_velocity().at(2), ds + 0.5*t*dphi );
+    EXPECT_DOUBLE_EQ(tire.get_frame().get_relative_velocity_in_parent().at(0), 0.0);
+    EXPECT_DOUBLE_EQ(tire.get_frame().get_relative_velocity_in_parent().at(1), 0.0);
+    EXPECT_DOUBLE_EQ(tire.get_frame().get_relative_velocity_in_parent().at(2), ds + 0.5*t*dphi );
 
     EXPECT_DOUBLE_EQ(tire.get_frame().get_absolute_velocity_in_parent().at(0), u_tire);
     EXPECT_DOUBLE_EQ(tire.get_frame().get_absolute_velocity_in_parent().at(1), v_tire);
@@ -640,9 +639,9 @@ TEST_F(Chassis_test, rear_left_tire_velocity)
     const scalar v_body = v_tire;
     
 
-    EXPECT_DOUBLE_EQ(tire.get_frame().get_relative_velocity().at(0), 0.0);
-    EXPECT_DOUBLE_EQ(tire.get_frame().get_relative_velocity().at(1), 0.0);
-    EXPECT_DOUBLE_EQ(tire.get_frame().get_relative_velocity().at(2), ds - 0.5*t*dphi );
+    EXPECT_DOUBLE_EQ(tire.get_frame().get_relative_velocity_in_parent().at(0), 0.0);
+    EXPECT_DOUBLE_EQ(tire.get_frame().get_relative_velocity_in_parent().at(1), 0.0);
+    EXPECT_DOUBLE_EQ(tire.get_frame().get_relative_velocity_in_parent().at(2), ds - 0.5*t*dphi );
 
     EXPECT_DOUBLE_EQ(tire.get_frame().get_absolute_velocity_in_parent().at(0), u_tire);
     EXPECT_NEAR     (tire.get_frame().get_absolute_velocity_in_parent().at(1), v_tire, 1.0e-16);
@@ -674,9 +673,9 @@ TEST_F(Chassis_test, rear_right_tire_velocity)
     const scalar u_body = u_tire;
     const scalar v_body = v_tire;
 
-    EXPECT_DOUBLE_EQ(tire.get_frame().get_relative_velocity().at(0), 0.0);
-    EXPECT_DOUBLE_EQ(tire.get_frame().get_relative_velocity().at(1), 0.0);
-    EXPECT_DOUBLE_EQ(tire.get_frame().get_relative_velocity().at(2), ds + 0.5*t*dphi );
+    EXPECT_DOUBLE_EQ(tire.get_frame().get_relative_velocity_in_parent().at(0), 0.0);
+    EXPECT_DOUBLE_EQ(tire.get_frame().get_relative_velocity_in_parent().at(1), 0.0);
+    EXPECT_DOUBLE_EQ(tire.get_frame().get_relative_velocity_in_parent().at(2), ds + 0.5*t*dphi );
 
     EXPECT_DOUBLE_EQ(tire.get_frame().get_absolute_velocity_in_parent().at(0), u_tire);
     EXPECT_NEAR     (tire.get_frame().get_absolute_velocity_in_parent().at(1), v_tire, 1.0e-16);
@@ -711,10 +710,11 @@ TEST_F(Chassis_test, total_force)
     const scalar Fy = F_rl[Y] + F_rr[Y] + (F_fl[Y]+F_fr[Y])*cos(delta);
     const scalar Fz = chassis.get_mass()*g0 + F_fl[Z] + F_fr[Z] + F_rl[Z] + F_rr[Z];
 
-    const scalar Fx_aero = 0.5*chassis_parameters.at("rho_air")*chassis_parameters.at("CdA")*u*u;
+    const scalar Fx_aero = 0.5*chassis_parameters.at("rho_air")*chassis_parameters.at("CdA")*sqrt(u*u+v*v)*u;
+    const scalar Fy_aero = 0.5*chassis_parameters.at("rho_air")*chassis_parameters.at("CdA")*sqrt(u*u+v*v)*v;
 
     EXPECT_DOUBLE_EQ(chassis.get_force().at(X), Fx-Fx_aero);
-    EXPECT_DOUBLE_EQ(chassis.get_force().at(Y), Fy);
+    EXPECT_DOUBLE_EQ(chassis.get_force().at(Y), Fy-Fy_aero);
     EXPECT_DOUBLE_EQ(chassis.get_force().at(Z), Fz);
 
     EXPECT_EQ(F_fl[Z] <= 0.0, true);
@@ -747,8 +747,8 @@ TEST_F(Chassis_test, total_torque)
     const sVector3d& F_rr = tire_rr.get_force();
     
     // Torques as written in Lot 2016
-    const scalar Tx = - tf*(F_fl[Z] - F_fr[Z]) - tr*(F_rl[Z] - F_rr[Z]);
-    const scalar Ty = - a*(F_fr[Z] + F_fl[Z]) + b*(F_rr[Z] + F_rl[Z]) - 0.5*rho*CdA*u*u*(z-h);
+    const scalar Tx = - tf*(F_fl[Z] - F_fr[Z]) - tr*(F_rl[Z] - F_rr[Z]) + 0.5*rho*CdA*sqrt(u*u+v*v)*v*(z-h);
+    const scalar Ty = - a*(F_fr[Z] + F_fl[Z]) + b*(F_rr[Z] + F_rl[Z]) - 0.5*rho*CdA*sqrt(u*u+v*v)*u*(z-h);
     const scalar Tz = a*(F_fl[Y]+F_fr[Y])*cos(delta) - b*(F_rl[Y]+F_rr[Y])
                           +tf*(F_fr[Y]-F_fl[Y])*sin(delta) + tr*(F_rl[X] - F_rr[X]);
 

@@ -1,8 +1,9 @@
-#ifndef __TRACK_BY_ARCS_H__
-#define __TRACK_BY_ARCS_H__
+#ifndef TRACK_BY_ARCS_H
+#define TRACK_BY_ARCS_H
 
 #include "lion/io/Xml_document.h"
 #include "lion/thirdparty/include/logger.hpp"
+#include "lion/math/euler_angles.h"
 
 //! A class to compute the characteristics of a track built by circumference arcs connected by straight lines
 class Track_by_arcs
@@ -22,7 +23,14 @@ class Track_by_arcs
 
     //! operator(): Compute the position, velocity, and acceleration of a point in the centerline at a given arclength
     //! @param[in] s: arclength
-    std::tuple<sVector3d,sVector3d,sVector3d> operator()(const scalar s) const;
+    struct Frenet_frame
+    {
+        sVector3d position;
+        Euler_angles<scalar> euler_angles;
+        Euler_angles<scalar> deuler_angles_ds;
+    };
+
+    Frenet_frame operator()(const scalar s) const;
 
     //! Compute the position, velocity, acceleration and jerk of a point in the centerline at a given arclength
     //! @param[in] s: arclength
@@ -52,6 +60,9 @@ class Track_by_arcs
 
     //! Return the track total length
     const scalar& get_total_length() const { return total_length; }
+
+    //! Check if the track has elevation (false for track by arcs)
+    constexpr const bool has_elevation() const { return false; }
 
  private:
 

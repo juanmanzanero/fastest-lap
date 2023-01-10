@@ -16,11 +16,11 @@ static_assert(Front_axle_t::RIGHT == 1);
 static_assert(Rear_axle_t::LEFT == 0);
 static_assert(Rear_axle_t::RIGHT == 1);
 
-static_assert(Front_axle_t::input_state_names::KAPPA_LEFT  == 0);
-static_assert(Front_axle_t::input_state_names::KAPPA_RIGHT == 1);
+static_assert(Front_axle_t::input_names::KAPPA_LEFT  == 0);
+static_assert(Front_axle_t::input_names::KAPPA_RIGHT == 1);
 
-static_assert(Rear_axle_t::input_state_names::KAPPA_LEFT  == 2);
-static_assert(Rear_axle_t::input_state_names::KAPPA_RIGHT == 3);
+static_assert(Rear_axle_t::input_names::KAPPA_LEFT  == 2);
+static_assert(Rear_axle_t::input_names::KAPPA_RIGHT == 3);
 
 static_assert(Front_axle_t::state_names::angular_momentum_left  == 0);
 static_assert(Front_axle_t::state_names::angular_momentum_right== 1);
@@ -109,7 +109,7 @@ class Axle_car_3dof_test : public testing::Test
 
     // Construct frames
     sFrame inertial_frame = {};
-    sFrame axle_frame = {{0.0,0.0,-0.33},{u,v,0.0},{0.0},{omega},{Z},inertial_frame}; 
+    sFrame axle_frame = {{0.0,0.0,-0.33},{u,v,0.0},{0.0},{omega},{Z},inertial_frame, sFrame::Frame_velocity_types::parent_frame}; 
 };
 
 
@@ -143,13 +143,13 @@ TEST_F(Axle_car_3dof_test, front_axle_constructor)
     EXPECT_DOUBLE_EQ(front_axle.template get_tire<1>().get_frame().get_origin()[1], 0.73); 
     EXPECT_DOUBLE_EQ(front_axle.template get_tire<1>().get_frame().get_origin()[2], 0.0); 
 
-    EXPECT_DOUBLE_EQ(front_axle.template get_tire<0>().get_frame().get_relative_velocity()[0], 0.0); 
-    EXPECT_DOUBLE_EQ(front_axle.template get_tire<0>().get_frame().get_relative_velocity()[1], 0.0); 
-    EXPECT_DOUBLE_EQ(front_axle.template get_tire<0>().get_frame().get_relative_velocity()[2], 0.0); 
+    EXPECT_DOUBLE_EQ(front_axle.template get_tire<0>().get_frame().get_relative_velocity_in_parent()[0], 0.0); 
+    EXPECT_DOUBLE_EQ(front_axle.template get_tire<0>().get_frame().get_relative_velocity_in_parent()[1], 0.0); 
+    EXPECT_DOUBLE_EQ(front_axle.template get_tire<0>().get_frame().get_relative_velocity_in_parent()[2], 0.0); 
 
-    EXPECT_DOUBLE_EQ(front_axle.template get_tire<1>().get_frame().get_relative_velocity()[0], 0.0); 
-    EXPECT_DOUBLE_EQ(front_axle.template get_tire<1>().get_frame().get_relative_velocity()[1], 0.0); 
-    EXPECT_DOUBLE_EQ(front_axle.template get_tire<1>().get_frame().get_relative_velocity()[2], 0.0); 
+    EXPECT_DOUBLE_EQ(front_axle.template get_tire<1>().get_frame().get_relative_velocity_in_parent()[0], 0.0); 
+    EXPECT_DOUBLE_EQ(front_axle.template get_tire<1>().get_frame().get_relative_velocity_in_parent()[1], 0.0); 
+    EXPECT_DOUBLE_EQ(front_axle.template get_tire<1>().get_frame().get_relative_velocity_in_parent()[2], 0.0); 
 
     EXPECT_EQ(front_axle.template get_tire<0>().get_frame().get_rotation_angles().size(), 1);
     EXPECT_EQ(front_axle.template get_tire<1>().get_frame().get_rotation_angles().size(), 1);
@@ -188,13 +188,13 @@ TEST_F(Axle_car_3dof_test, rear_axle_constructor)
     EXPECT_DOUBLE_EQ(rear_axle.template get_tire<1>().get_frame().get_origin()[1], 0.73); 
     EXPECT_DOUBLE_EQ(rear_axle.template get_tire<1>().get_frame().get_origin()[2], 0.0); 
 
-    EXPECT_DOUBLE_EQ(rear_axle.template get_tire<0>().get_frame().get_relative_velocity()[0], 0.0); 
-    EXPECT_DOUBLE_EQ(rear_axle.template get_tire<0>().get_frame().get_relative_velocity()[1], 0.0); 
-    EXPECT_DOUBLE_EQ(rear_axle.template get_tire<0>().get_frame().get_relative_velocity()[2], 0.0); 
+    EXPECT_DOUBLE_EQ(rear_axle.template get_tire<0>().get_frame().get_relative_velocity_in_parent()[0], 0.0); 
+    EXPECT_DOUBLE_EQ(rear_axle.template get_tire<0>().get_frame().get_relative_velocity_in_parent()[1], 0.0); 
+    EXPECT_DOUBLE_EQ(rear_axle.template get_tire<0>().get_frame().get_relative_velocity_in_parent()[2], 0.0); 
 
-    EXPECT_DOUBLE_EQ(rear_axle.template get_tire<1>().get_frame().get_relative_velocity()[0], 0.0); 
-    EXPECT_DOUBLE_EQ(rear_axle.template get_tire<1>().get_frame().get_relative_velocity()[1], 0.0); 
-    EXPECT_DOUBLE_EQ(rear_axle.template get_tire<1>().get_frame().get_relative_velocity()[2], 0.0); 
+    EXPECT_DOUBLE_EQ(rear_axle.template get_tire<1>().get_frame().get_relative_velocity_in_parent()[0], 0.0); 
+    EXPECT_DOUBLE_EQ(rear_axle.template get_tire<1>().get_frame().get_relative_velocity_in_parent()[1], 0.0); 
+    EXPECT_DOUBLE_EQ(rear_axle.template get_tire<1>().get_frame().get_relative_velocity_in_parent()[2], 0.0); 
 
     EXPECT_EQ(rear_axle.template get_tire<0>().get_frame().get_rotation_angles().size(), 0);
     EXPECT_EQ(rear_axle.template get_tire<1>().get_frame().get_rotation_angles().size(), 0);
@@ -217,7 +217,7 @@ TEST_F(Axle_car_3dof_test, update_front_axle)
 {
     const scalar throttle = 1.0;
     const scalar brake_bias = 0.0;
-    front_axle.update(Fz_fl, Fz_fr, throttle, brake_bias);
+    front_axle.update(Fz_fl, Fz_fr, throttle, brake_bias, inertial_frame);
 
     // Check omega of the tires
     EXPECT_EQ(front_axle.template get_tire<0>().get_omega(), omega_fl);    
@@ -290,7 +290,7 @@ TEST_F(Axle_car_3dof_test, update_rear_axle)
 {
     const scalar throttle = -1e10;
     const scalar brake_bias = 0.0;
-    rear_axle.update(Fz_rl, Fz_rr, throttle, brake_bias);
+    rear_axle.update(Fz_rl, Fz_rr, throttle, brake_bias, inertial_frame);
 
     // Check omega of the tires
     EXPECT_EQ(rear_axle.template get_tire<0>().get_omega(), omega_rl);    

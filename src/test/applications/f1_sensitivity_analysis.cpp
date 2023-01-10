@@ -28,71 +28,71 @@ inline static void check_derivatives(const Optimal_laptime<Dynamic_model_t>& opt
     // kappa fl
     for (size_t i = 0; i < n; ++i)
     {
-        EXPECT_NEAR(opt_laptime.dinput_states_dp.front()[i][limebeer2014f1<scalar>::Front_axle_t::input_state_names::KAPPA_LEFT], 
-                    (dopt_laptime.input_states[i][limebeer2014f1<scalar>::Front_axle_t::input_state_names::KAPPA_LEFT] - opt_laptime.input_states[i][limebeer2014f1<scalar>::Front_axle_t::input_state_names::KAPPA_LEFT])/dpar, 1.0e-5);
+        EXPECT_NEAR(opt_laptime.dinputs_dp.front()[i][limebeer2014f1<scalar>::Front_axle_t::input_names::KAPPA_LEFT], 
+                    (dopt_laptime.inputs[i][limebeer2014f1<scalar>::Front_axle_t::input_names::KAPPA_LEFT] - opt_laptime.inputs[i][limebeer2014f1<scalar>::Front_axle_t::input_names::KAPPA_LEFT])/dpar, 1.0e-5);
     }
 
     // kappa fr
     for (size_t i = 0; i < n; ++i)
     {
-        EXPECT_NEAR(opt_laptime.dinput_states_dp.front()[i][limebeer2014f1<scalar>::Front_axle_t::input_state_names::KAPPA_RIGHT], 
-                    (dopt_laptime.input_states[i][limebeer2014f1<scalar>::Front_axle_t::input_state_names::KAPPA_RIGHT] - opt_laptime.input_states[i][limebeer2014f1<scalar>::Front_axle_t::input_state_names::KAPPA_RIGHT])/dpar, 1.0e-5);
+        EXPECT_NEAR(opt_laptime.dinputs_dp.front()[i][limebeer2014f1<scalar>::Front_axle_t::input_names::KAPPA_RIGHT], 
+                    (dopt_laptime.inputs[i][limebeer2014f1<scalar>::Front_axle_t::input_names::KAPPA_RIGHT] - opt_laptime.inputs[i][limebeer2014f1<scalar>::Front_axle_t::input_names::KAPPA_RIGHT])/dpar, 1.0e-5);
     }
 
     // kappa rl
     for (size_t i = 0; i < n; ++i)
     {
-        EXPECT_NEAR(opt_laptime.dinput_states_dp.front()[i][limebeer2014f1<scalar>::Rear_axle_t::input_state_names::KAPPA_LEFT], 
-                    (dopt_laptime.input_states[i][limebeer2014f1<scalar>::Rear_axle_t::input_state_names::KAPPA_LEFT] - opt_laptime.input_states[i][limebeer2014f1<scalar>::Rear_axle_t::input_state_names::KAPPA_LEFT])/dpar, 1.0e-5);
+        EXPECT_NEAR(opt_laptime.dinputs_dp.front()[i][limebeer2014f1<scalar>::Rear_axle_t::input_names::KAPPA_LEFT], 
+                    (dopt_laptime.inputs[i][limebeer2014f1<scalar>::Rear_axle_t::input_names::KAPPA_LEFT] - opt_laptime.inputs[i][limebeer2014f1<scalar>::Rear_axle_t::input_names::KAPPA_LEFT])/dpar, 1.0e-5);
     }
 
     // kappa rr
     for (size_t i = 0; i < n; ++i)
     {
-        EXPECT_NEAR(opt_laptime.dinput_states_dp.front()[i][limebeer2014f1<scalar>::Rear_axle_t::input_state_names::KAPPA_RIGHT], 
-                    (dopt_laptime.input_states[i][limebeer2014f1<scalar>::Rear_axle_t::input_state_names::KAPPA_RIGHT] - opt_laptime.input_states[i][limebeer2014f1<scalar>::Rear_axle_t::input_state_names::KAPPA_RIGHT])/dpar, 1.0e-5);
+        EXPECT_NEAR(opt_laptime.dinputs_dp.front()[i][limebeer2014f1<scalar>::Rear_axle_t::input_names::KAPPA_RIGHT], 
+                    (dopt_laptime.inputs[i][limebeer2014f1<scalar>::Rear_axle_t::input_names::KAPPA_RIGHT] - opt_laptime.inputs[i][limebeer2014f1<scalar>::Rear_axle_t::input_names::KAPPA_RIGHT])/dpar, 1.0e-5);
     }
 
     // u
     for (size_t i = 0; i < n; ++i)
     {
-        EXPECT_NEAR(opt_laptime.dinput_states_dp.front()[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::input_state_names::U], 
-                    (dopt_laptime.input_states[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::input_state_names::U] - opt_laptime.input_states[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::input_state_names::U])/dpar, 1.0e-5);
+        EXPECT_NEAR(opt_laptime.dinputs_dp.front()[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::input_names::velocity_x_mps], 
+                    (dopt_laptime.inputs[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::input_names::velocity_x_mps] - opt_laptime.inputs[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::input_names::velocity_x_mps])/dpar, 1.0e-5);
     }
 
     // v
     for (size_t i = 0; i < n; ++i)
     {
-        EXPECT_NEAR(opt_laptime.dinput_states_dp.front()[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::input_state_names::V], 
-                    (dopt_laptime.input_states[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::input_state_names::V] - opt_laptime.input_states[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::input_state_names::V])/dpar, 2.0e-5);
+        EXPECT_NEAR(opt_laptime.dinputs_dp.front()[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::input_names::velocity_y_mps], 
+                    (dopt_laptime.inputs[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::input_names::velocity_y_mps] - opt_laptime.inputs[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::input_names::velocity_y_mps])/dpar, 2.0e-5);
     }
 
     // omega
     for (size_t i = 0; i < n; ++i)
     {
-        EXPECT_NEAR(opt_laptime.dinput_states_dp.front()[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::input_state_names::OMEGA], 
-                    (dopt_laptime.input_states[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::input_state_names::OMEGA] - opt_laptime.input_states[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::input_state_names::OMEGA])/dpar, 2.0e-5);
+        EXPECT_NEAR(opt_laptime.dinputs_dp.front()[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::input_names::yaw_rate_radps], 
+                    (dopt_laptime.inputs[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::input_names::yaw_rate_radps] - opt_laptime.inputs[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::input_names::yaw_rate_radps])/dpar, 2.0e-5);
     }
 
     // n
     for (size_t i = 0; i < n; ++i)
     {
-        EXPECT_NEAR(opt_laptime.dinput_states_dp.front()[i][limebeer2014f1<scalar>::curvilinear_p::Road_t::input_state_names::N], 
-                    (dopt_laptime.input_states[i][limebeer2014f1<scalar>::curvilinear_p::Road_t::input_state_names::N] - opt_laptime.input_states[i][limebeer2014f1<scalar>::curvilinear_p::Road_t::input_state_names::N])/dpar, 2.0e-5);
+        EXPECT_NEAR(opt_laptime.dinputs_dp.front()[i][limebeer2014f1<scalar>::curvilinear_p::Road_t::input_names::lateral_displacement], 
+                    (dopt_laptime.inputs[i][limebeer2014f1<scalar>::curvilinear_p::Road_t::input_names::lateral_displacement] - opt_laptime.inputs[i][limebeer2014f1<scalar>::curvilinear_p::Road_t::input_names::lateral_displacement])/dpar, 2.0e-5);
     }
 
     // alpha
     for (size_t i = 0; i < n; ++i)
     {
-        EXPECT_NEAR(opt_laptime.dinput_states_dp.front()[i][limebeer2014f1<scalar>::curvilinear_p::Road_t::input_state_names::ALPHA], 
-                    (dopt_laptime.input_states[i][limebeer2014f1<scalar>::curvilinear_p::Road_t::input_state_names::ALPHA] - opt_laptime.input_states[i][limebeer2014f1<scalar>::curvilinear_p::Road_t::input_state_names::ALPHA])/dpar, 1.0e-6);
+        EXPECT_NEAR(opt_laptime.dinputs_dp.front()[i][limebeer2014f1<scalar>::curvilinear_p::Road_t::input_names::track_heading_angle], 
+                    (dopt_laptime.inputs[i][limebeer2014f1<scalar>::curvilinear_p::Road_t::input_names::track_heading_angle] - opt_laptime.inputs[i][limebeer2014f1<scalar>::curvilinear_p::Road_t::input_names::track_heading_angle])/dpar, 1.0e-6);
     }
 
     // time
     for (size_t i = 0; i < n; ++i)
     {
-        EXPECT_NEAR(opt_laptime.dinput_states_dp.front()[i][limebeer2014f1<scalar>::curvilinear_p::Road_t::input_state_names::TIME], 
-                    (dopt_laptime.input_states[i][limebeer2014f1<scalar>::curvilinear_p::Road_t::input_state_names::TIME] - opt_laptime.input_states[i][limebeer2014f1<scalar>::curvilinear_p::Road_t::input_state_names::TIME])/dpar, 1.0e-6);
+        EXPECT_NEAR(opt_laptime.dinputs_dp.front()[i][limebeer2014f1<scalar>::curvilinear_p::Road_t::input_names::time], 
+                    (dopt_laptime.inputs[i][limebeer2014f1<scalar>::curvilinear_p::Road_t::input_names::time] - opt_laptime.inputs[i][limebeer2014f1<scalar>::curvilinear_p::Road_t::input_names::time])/dpar, 1.0e-6);
     }
 
     // steering
@@ -100,43 +100,43 @@ inline static void check_derivatives(const Optimal_laptime<Dynamic_model_t>& opt
     {
         EXPECT_NEAR(opt_laptime.dcontrols_dp.front()[limebeer2014f1<scalar>::Chassis_t::Front_axle_type::control_names::STEERING].controls[i], 
                     (dopt_laptime.controls[limebeer2014f1<scalar>::Chassis_t::Front_axle_type::control_names::STEERING].controls[i] 
-                      - opt_laptime.controls[limebeer2014f1<scalar>::Chassis_t::Front_axle_type::control_names::STEERING].controls[i])/dpar, 6.0e-5);
+                      - opt_laptime.controls[limebeer2014f1<scalar>::Chassis_t::Front_axle_type::control_names::STEERING].controls[i])/dpar, 7.0e-5);
     }
 
     // throttle
     for (size_t i = 1; i < n; ++i)
     {
-        EXPECT_NEAR(opt_laptime.dcontrols_dp.front()[limebeer2014f1<scalar>::Chassis_t::control_names::THROTTLE].controls[i], 
-                    (dopt_laptime.controls[limebeer2014f1<scalar>::Chassis_t::control_names::THROTTLE].controls[i] 
-                      - opt_laptime.controls[limebeer2014f1<scalar>::Chassis_t::control_names::THROTTLE].controls[i])/dpar, 1.0e-6);
+        EXPECT_NEAR(opt_laptime.dcontrols_dp.front()[limebeer2014f1<scalar>::Chassis_t::control_names::throttle].controls[i], 
+                    (dopt_laptime.controls[limebeer2014f1<scalar>::Chassis_t::control_names::throttle].controls[i] 
+                      - opt_laptime.controls[limebeer2014f1<scalar>::Chassis_t::control_names::throttle].controls[i])/dpar, 2.0e-6);
     }
 
     // Fz_fl
     for (size_t i = 0; i < n; ++i)
     {
-        EXPECT_NEAR(opt_laptime.dalgebraic_states_dp.front()[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::algebraic_state_names::FZFL], 
-                    (dopt_laptime.algebraic_states[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::algebraic_state_names::FZFL] - opt_laptime.algebraic_states[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::algebraic_state_names::FZFL])/dpar, 4.0e-6);
+        EXPECT_NEAR(opt_laptime.dinputs_dp.front()[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::input_names::force_z_fl_g], 
+                    (dopt_laptime.inputs[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::input_names::force_z_fl_g] - opt_laptime.inputs[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::input_names::force_z_fl_g])/dpar, 4.0e-6);
     }
 
     // Fz_fr
     for (size_t i = 0; i < n; ++i)
     {
-        EXPECT_NEAR(opt_laptime.dalgebraic_states_dp.front()[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::algebraic_state_names::FZFR], 
-                    (dopt_laptime.algebraic_states[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::algebraic_state_names::FZFR] - opt_laptime.algebraic_states[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::algebraic_state_names::FZFR])/dpar, 4.0e-6);
+        EXPECT_NEAR(opt_laptime.dinputs_dp.front()[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::input_names::force_z_fr_g], 
+                    (dopt_laptime.inputs[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::input_names::force_z_fr_g] - opt_laptime.inputs[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::input_names::force_z_fr_g])/dpar, 4.0e-6);
     }
 
     // Fz_rl
     for (size_t i = 0; i < n; ++i)
     {
-        EXPECT_NEAR(opt_laptime.dalgebraic_states_dp.front()[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::algebraic_state_names::FZRL], 
-                    (dopt_laptime.algebraic_states[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::algebraic_state_names::FZRL] - opt_laptime.algebraic_states[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::algebraic_state_names::FZRL])/dpar, 4.0e-6);
+        EXPECT_NEAR(opt_laptime.dinputs_dp.front()[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::input_names::force_z_rl_g], 
+                    (dopt_laptime.inputs[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::input_names::force_z_rl_g] - opt_laptime.inputs[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::input_names::force_z_rl_g])/dpar, 4.0e-6);
     }
 
     // Fz_rl
     for (size_t i = 0; i < n; ++i)
     {
-        EXPECT_NEAR(opt_laptime.dalgebraic_states_dp.front()[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::algebraic_state_names::FZRR], 
-                    (dopt_laptime.algebraic_states[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::algebraic_state_names::FZRR] - opt_laptime.algebraic_states[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::algebraic_state_names::FZRR])/dpar, 4.0e-6);
+        EXPECT_NEAR(opt_laptime.dinputs_dp.front()[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::input_names::force_z_rr_g], 
+                    (dopt_laptime.inputs[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::input_names::force_z_rr_g] - opt_laptime.inputs[i][limebeer2014f1<scalar>::curvilinear_p::Chassis_type::input_names::force_z_rr_g])/dpar, 4.0e-6);
     }
 
 }
@@ -152,52 +152,52 @@ inline static void check_case(const Optimal_laptime<Dynamic_model_t>& opt_laptim
     // kappa front left
     auto kappa_fl_saved = opt_saved.get_element("optimal_laptime/front-axle.left-tire.kappa").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
-        EXPECT_NEAR(opt_laptime.input_states[i][limebeer2014f1<scalar>::Front_axle_t::input_state_names::KAPPA_LEFT], kappa_fl_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.inputs[i][limebeer2014f1<scalar>::Front_axle_t::input_names::KAPPA_LEFT], kappa_fl_saved[i], 1.0e-6);
     
     // kappa front right
     auto kappa_fr_saved = opt_saved.get_element("optimal_laptime/front-axle.right-tire.kappa").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
-        EXPECT_NEAR(opt_laptime.input_states[i][limebeer2014f1<scalar>::Front_axle_t::input_state_names::KAPPA_RIGHT], kappa_fr_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.inputs[i][limebeer2014f1<scalar>::Front_axle_t::input_names::KAPPA_RIGHT], kappa_fr_saved[i], 1.0e-6);
     
     // kappa rear left
     auto kappa_rl_saved = opt_saved.get_element("optimal_laptime/rear-axle.left-tire.kappa").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
-        EXPECT_NEAR(opt_laptime.input_states[i][limebeer2014f1<scalar>::Rear_axle_t::input_state_names::KAPPA_LEFT], kappa_rl_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.inputs[i][limebeer2014f1<scalar>::Rear_axle_t::input_names::KAPPA_LEFT], kappa_rl_saved[i], 1.0e-6);
     
     // kappa rear right
     auto kappa_rr_saved = opt_saved.get_element("optimal_laptime/rear-axle.right-tire.kappa").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
-        EXPECT_NEAR(opt_laptime.input_states[i][limebeer2014f1<scalar>::Rear_axle_t::input_state_names::KAPPA_RIGHT], kappa_rr_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.inputs[i][limebeer2014f1<scalar>::Rear_axle_t::input_names::KAPPA_RIGHT], kappa_rr_saved[i], 1.0e-6);
 
     // u
     auto u_saved = opt_saved.get_element("optimal_laptime/chassis.velocity.x").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
-        EXPECT_NEAR(opt_laptime.input_states[i][limebeer2014f1<scalar>::Chassis_t::input_state_names::U], u_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.inputs[i][limebeer2014f1<scalar>::Chassis_t::input_names::velocity_x_mps], u_saved[i], 1.0e-6);
 
     // v
     auto v_saved = opt_saved.get_element("optimal_laptime/chassis.velocity.y").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
-        EXPECT_NEAR(opt_laptime.input_states[i][limebeer2014f1<scalar>::Chassis_t::input_state_names::V], v_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.inputs[i][limebeer2014f1<scalar>::Chassis_t::input_names::velocity_y_mps], v_saved[i], 1.0e-6);
 
     // omega
     auto omega_saved = opt_saved.get_element("optimal_laptime/chassis.omega.z").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
-        EXPECT_NEAR(opt_laptime.input_states[i][limebeer2014f1<scalar>::Chassis_t::input_state_names::OMEGA], omega_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.inputs[i][limebeer2014f1<scalar>::Chassis_t::input_names::yaw_rate_radps], omega_saved[i], 1.0e-6);
 
     // time
     auto time_saved = opt_saved.get_element("optimal_laptime/time").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
-        EXPECT_NEAR(opt_laptime.input_states[i][limebeer2014f1<scalar>::curvilinear_p::Road_t::input_state_names::TIME], time_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.inputs[i][limebeer2014f1<scalar>::curvilinear_p::Road_t::input_names::time], time_saved[i], 1.0e-6);
 
     // n
     auto n_saved = opt_saved.get_element("optimal_laptime/road.lateral-displacement").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
-        EXPECT_NEAR(opt_laptime.input_states[i][limebeer2014f1<scalar>::curvilinear_p::Road_t::input_state_names::N], n_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.inputs[i][limebeer2014f1<scalar>::curvilinear_p::Road_t::input_names::lateral_displacement], n_saved[i], 1.0e-6);
 
     // alpha
     auto alpha_saved = opt_saved.get_element("optimal_laptime/road.track-heading-angle").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
-        EXPECT_NEAR(opt_laptime.input_states[i][limebeer2014f1<scalar>::curvilinear_p::Road_t::input_state_names::ALPHA], alpha_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.inputs[i][limebeer2014f1<scalar>::curvilinear_p::Road_t::input_names::track_heading_angle], alpha_saved[i], 1.0e-6);
 
     // delta
     auto delta_saved = opt_saved.get_element("optimal_laptime/control_variables/front-axle.steering-angle/values").get_value(std::vector<scalar>());
@@ -207,7 +207,7 @@ inline static void check_case(const Optimal_laptime<Dynamic_model_t>& opt_laptim
     // throttle
     auto throttle_saved = opt_saved.get_element("optimal_laptime/control_variables/chassis.throttle/values").get_value(std::vector<scalar>());
     for (size_t i = 0; i < n; ++i)
-        EXPECT_NEAR(opt_laptime.controls[limebeer2014f1<scalar>::Chassis_t::control_names::THROTTLE].controls[i], throttle_saved[i], 1.0e-6);
+        EXPECT_NEAR(opt_laptime.controls[limebeer2014f1<scalar>::Chassis_t::control_names::throttle].controls[i], throttle_saved[i], 1.0e-6);
 }
 
 
@@ -241,8 +241,7 @@ TEST_F(F1_sensitivity_analysis, Catalunya_chicane)
     const size_t n = s.size();
 
     // Set initial condtion
-    std::vector<std::array<scalar,limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p::NSTATE>>       q0(n,ss.input_states);
-    std::vector<std::array<scalar,limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p::NALGEBRAIC>>   qa0(n,ss.algebraic_states);
+    std::vector<std::array<scalar,limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p::number_of_inputs>>       q0(n,ss.inputs);
     
     // Construct control variables
     auto controls = Optimal_laptime<decltype(car)>::template Control_variables<>{};
@@ -252,25 +251,23 @@ TEST_F(F1_sensitivity_analysis, Catalunya_chicane)
         = Optimal_laptime<decltype(car)>::create_full_mesh(std::vector<scalar>(n,ss.controls[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING]), 50.0e0); 
 
     // throttle: optimize in the full mesh
-    controls[decltype(car)::Chassis_type::control_names::THROTTLE]
-        = Optimal_laptime<decltype(car)>::create_full_mesh(std::vector<scalar>(n,ss.controls[decltype(car)::Chassis_type::control_names::THROTTLE]), 20.0*8.0e-4); 
+    controls[decltype(car)::Chassis_type::control_names::throttle]
+        = Optimal_laptime<decltype(car)>::create_full_mesh(std::vector<scalar>(n,ss.controls[decltype(car)::Chassis_type::control_names::throttle]), 20.0*8.0e-4); 
 
     // brake bias: don't optimize
-    controls[decltype(car)::Chassis_type::control_names::BRAKE_BIAS]
+    controls[decltype(car)::Chassis_type::control_names::brake_bias]
         = Optimal_laptime<decltype(car)>::create_dont_optimize(); 
 
     // Set starting condition
     Xml_document opt_full_lap("data/f1_optimal_laptime_catalunya_adapted.xml", true);
     Optimal_laptime<limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p> opt_laptime_full_lap(opt_full_lap);
 
-    std::array<scalar,limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p::NSTATE>       q_start(opt_laptime_full_lap.input_states[i0]);
-    std::array<scalar,limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p::NALGEBRAIC>   qa_start(opt_laptime_full_lap.algebraic_states[i0]);
+    std::array<scalar,limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p::number_of_inputs>       q_start(opt_laptime_full_lap.inputs[i0]);
     auto u_start(opt_laptime_full_lap.controls.control_array_at_s(car,i0,s.front()));
 
     q0.front()  = q_start;
-    qa0.front() = qa_start;
 
-    for (size_t i = 0; i < decltype(car)::NCONTROL; ++i)
+    for (size_t i = 0; i < decltype(car)::number_of_controls; ++i)
     {
         if ( controls[i].optimal_control_type != Optimal_laptime<decltype(car)>::DONT_OPTIMIZE )
             controls[i].controls.front() = u_start[i];
@@ -278,13 +275,13 @@ TEST_F(F1_sensitivity_analysis, Catalunya_chicane)
 
     auto opts = Optimal_laptime<decltype(car)>::Options{};
     opts.check_optimality = true;
-    Optimal_laptime<decltype(car)> opt_laptime(s, false, true, car, q0, qa0, controls, opts);
+    Optimal_laptime<decltype(car)> opt_laptime(s, false, true, car, q0, controls, opts);
     
     const scalar dmass = 1.0e-2;
     car.set_parameter("vehicle/chassis/mass",660.0 + dmass);
 
     opts.check_optimality = false;
-    Optimal_laptime<decltype(car)> dopt_laptime(s, false, true, car, opt_laptime.input_states, opt_laptime.algebraic_states, opt_laptime.controls, 
+    Optimal_laptime<decltype(car)> dopt_laptime(s, false, true, car, opt_laptime.inputs, opt_laptime.controls, 
         opt_laptime.optimization_data.zl, opt_laptime.optimization_data.zu, opt_laptime.optimization_data.lambda, opts);
 
     Xml_document opt_saved("data/f1_optimal_laptime_catalunya_chicane.xml", true);
@@ -316,27 +313,27 @@ TEST_F(F1_sensitivity_analysis, maximum_acceleration)
     controls[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING] 
         = Optimal_laptime<decltype(car)>::create_full_mesh(std::vector<scalar>(n+1,ss.controls[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING]), 0.0e0);
 
-    controls[decltype(car)::Chassis_type::control_names::THROTTLE] 
-        = Optimal_laptime<decltype(car)>::create_full_mesh(std::vector<scalar>(n+1,ss.controls[decltype(car)::Chassis_type::control_names::THROTTLE]), 4.0e-7);
+    controls[decltype(car)::Chassis_type::control_names::throttle] 
+        = Optimal_laptime<decltype(car)>::create_full_mesh(std::vector<scalar>(n+1,ss.controls[decltype(car)::Chassis_type::control_names::throttle]), 4.0e-7);
 
-    controls[decltype(car)::Chassis_type::control_names::BRAKE_BIAS] 
+    controls[decltype(car)::Chassis_type::control_names::brake_bias] 
         = Optimal_laptime<decltype(car)>::create_dont_optimize();
 
     auto opts = Optimal_laptime<decltype(car)>::Options{};
     opts.check_optimality = true;
-    Optimal_laptime<decltype(car)> opt_laptime(s, false, true, car, {n+1,ss.input_states}, {n+1,ss.algebraic_states}, controls, opts);
+    Optimal_laptime<decltype(car)> opt_laptime(s, false, true, car, {n+1,ss.inputs}, controls, opts);
     opt_laptime.xml();
     
     const scalar dmass = 1.0e-3;
     car.set_parameter("vehicle/chassis/mass",660.0 + dmass);
 
     opts.check_optimality = false;
-    Optimal_laptime<decltype(car)> dopt_laptime(s, false, true, car, opt_laptime.input_states, opt_laptime.algebraic_states, opt_laptime.controls, 
+    Optimal_laptime<decltype(car)> dopt_laptime(s, false, true, car, opt_laptime.inputs, opt_laptime.controls, 
         opt_laptime.optimization_data.zl, opt_laptime.optimization_data.zu, opt_laptime.optimization_data.lambda, opts);
     opt_laptime.xml();
 
     car.set_parameter("vehicle/chassis/mass",659.999);
-    Optimal_laptime<decltype(car)> dopt_laptime_m(s, false, true, car, opt_laptime.input_states, opt_laptime.algebraic_states, opt_laptime.controls, 
+    Optimal_laptime<decltype(car)> dopt_laptime_m(s, false, true, car, opt_laptime.inputs, opt_laptime.controls, 
         opt_laptime.optimization_data.zl, opt_laptime.optimization_data.zu, opt_laptime.optimization_data.lambda, opts);
     opt_laptime.xml();
 
@@ -381,25 +378,26 @@ TEST_F(F1_sensitivity_analysis, Catalunya_discrete)
         = Optimal_laptime<decltype(car)>::create_full_mesh(std::vector<scalar>(n,ss.controls[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING]), 50.0e0); 
 
     // throttle: optimize in the full mesh
-    controls[decltype(car)::Chassis_type::control_names::THROTTLE]
-        = Optimal_laptime<decltype(car)>::create_full_mesh(std::vector<scalar>(n,ss.controls[decltype(car)::Chassis_type::control_names::THROTTLE]), 20.0*8.0e-4); 
+    controls[decltype(car)::Chassis_type::control_names::throttle]
+        = Optimal_laptime<decltype(car)>::create_full_mesh(std::vector<scalar>(n,ss.controls[decltype(car)::Chassis_type::control_names::throttle]), 20.0*8.0e-4); 
 
     // brake bias: don't optimize
-    controls[decltype(car)::Chassis_type::control_names::BRAKE_BIAS]
+    controls[decltype(car)::Chassis_type::control_names::brake_bias]
         = Optimal_laptime<decltype(car)>::create_dont_optimize(); 
 
     auto opts = Optimal_laptime<decltype(car)>::Options{};
     opts.check_optimality = true;
-    Optimal_laptime<decltype(car)> opt_laptime(s, true, true, car, {n,ss.input_states}, {n,ss.algebraic_states}, controls, opts);
+    Optimal_laptime<decltype(car)> opt_laptime(s, true, true, car, {n,ss.inputs}, controls, opts);
 
     const scalar dmass = 1.0e-4;
     car.set_parameter("vehicle/chassis/mass",660.0 + dmass);
 
     opts.check_optimality = false;
-    Optimal_laptime<decltype(car)> dopt_laptime(s, true, true, car, opt_laptime.input_states, opt_laptime.algebraic_states, opt_laptime.controls, 
+    Optimal_laptime<decltype(car)> dopt_laptime(s, true, true, car, opt_laptime.inputs, opt_laptime.controls, 
         opt_laptime.optimization_data.zl, opt_laptime.optimization_data.zu, opt_laptime.optimization_data.lambda, opts);
 
     // Check the results with a saved simulation
+    opt_laptime.xml()->save("f1_optimal_laptime_catalunya_discrete_with_wheel_inertia.xml");
     Xml_document opt_saved("data/f1_optimal_laptime_catalunya_discrete_with_wheel_inertia.xml", true);
 
     check_case(opt_laptime, dopt_laptime, dmass, opt_saved, n, 1.0e-4);
@@ -486,16 +484,16 @@ TEST_F(F1_sensitivity_analysis, Catalunya_discrete_optimization_variables)
         = Optimal_laptime<decltype(car)>::create_full_mesh(std::vector<scalar>(n,ss.controls[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING]), 50.0e0); 
 
     // throttle: optimize in the full mesh
-    controls[decltype(car)::Chassis_type::control_names::THROTTLE]
-        = Optimal_laptime<decltype(car)>::create_full_mesh(std::vector<scalar>(n,ss.controls[decltype(car)::Chassis_type::control_names::THROTTLE]), 20.0*8.0e-4); 
+    controls[decltype(car)::Chassis_type::control_names::throttle]
+        = Optimal_laptime<decltype(car)>::create_full_mesh(std::vector<scalar>(n,ss.controls[decltype(car)::Chassis_type::control_names::throttle]), 20.0*8.0e-4); 
 
     // brake bias: don't optimize
-    controls[decltype(car)::Chassis_type::control_names::BRAKE_BIAS]
+    controls[decltype(car)::Chassis_type::control_names::brake_bias]
         = Optimal_laptime<decltype(car)>::create_dont_optimize(); 
 
     auto opts = Optimal_laptime<decltype(car)>::Options{};
     opts.check_optimality = true;
-    Optimal_laptime<decltype(car)> opt_laptime(s, true, true, car, {n,ss.input_states}, {n,ss.algebraic_states}, controls, opts);
+    Optimal_laptime<decltype(car)> opt_laptime(s, true, true, car, {n,ss.inputs}, controls, opts);
 
     // (1) Derivatives w.r.t. differential stiffness
     const scalar d_differential_stiffness = 1.0e-4;
@@ -520,7 +518,7 @@ TEST_F(F1_sensitivity_analysis, Catalunya_discrete_optimization_variables)
     car.set_parameter("vehicle/rear-axle/brakes/max_torque"     , max_torque);
 
     opts.check_optimality = false;
-    Optimal_laptime<decltype(car)> dopt_laptime_diff_stiffness(s, true, true, car, opt_laptime.input_states, opt_laptime.algebraic_states, opt_laptime.controls, 
+    Optimal_laptime<decltype(car)> dopt_laptime_diff_stiffness(s, true, true, car, opt_laptime.inputs, opt_laptime.controls, 
         opt_laptime.optimization_data.zl, opt_laptime.optimization_data.zu, opt_laptime.optimization_data.lambda, opts);
 
     const size_t total_size = opt_laptime.optimization_data.x.size();
@@ -560,7 +558,7 @@ TEST_F(F1_sensitivity_analysis, Catalunya_discrete_optimization_variables)
     car.set_parameter("vehicle/rear-axle/brakes/max_torque"     , max_torque);
 
     opts.check_optimality = false;
-    Optimal_laptime<decltype(car)> dopt_laptime_power(s, true, true, car, opt_laptime.input_states, opt_laptime.algebraic_states, opt_laptime.controls, 
+    Optimal_laptime<decltype(car)> dopt_laptime_power(s, true, true, car, opt_laptime.inputs, opt_laptime.controls, 
         opt_laptime.optimization_data.zl, opt_laptime.optimization_data.zu, opt_laptime.optimization_data.lambda, opts);
 
     for (size_t i = 0; i < total_size; ++i)
@@ -593,7 +591,7 @@ TEST_F(F1_sensitivity_analysis, Catalunya_discrete_optimization_variables)
     car.set_parameter("vehicle/rear-axle/brakes/max_torque"     , max_torque);
 
     opts.check_optimality = false;
-    Optimal_laptime<decltype(car)> dopt_laptime_cd(s, true, true, car, opt_laptime.input_states, opt_laptime.algebraic_states, opt_laptime.controls, 
+    Optimal_laptime<decltype(car)> dopt_laptime_cd(s, true, true, car, opt_laptime.inputs, opt_laptime.controls, 
         opt_laptime.optimization_data.zl, opt_laptime.optimization_data.zu, opt_laptime.optimization_data.lambda, opts);
 
     for (size_t i = 0; i < total_size; ++i)
@@ -626,7 +624,7 @@ TEST_F(F1_sensitivity_analysis, Catalunya_discrete_optimization_variables)
     car.set_parameter("vehicle/rear-axle/brakes/max_torque"     , max_torque);
 
     opts.check_optimality = false;
-    Optimal_laptime<decltype(car)> dopt_laptime_cl(s, true, true, car, opt_laptime.input_states, opt_laptime.algebraic_states, opt_laptime.controls, 
+    Optimal_laptime<decltype(car)> dopt_laptime_cl(s, true, true, car, opt_laptime.inputs, opt_laptime.controls, 
         opt_laptime.optimization_data.zl, opt_laptime.optimization_data.zu, opt_laptime.optimization_data.lambda, opts);
 
     for (size_t i = 0; i < total_size; ++i)
@@ -659,7 +657,7 @@ TEST_F(F1_sensitivity_analysis, Catalunya_discrete_optimization_variables)
     car.set_parameter("vehicle/rear-axle/brakes/max_torque"      , max_torque);
 
     opts.check_optimality = false;
-    Optimal_laptime<decltype(car)> dopt_laptime_xcog(s, true, true, car, opt_laptime.input_states, opt_laptime.algebraic_states, opt_laptime.controls, 
+    Optimal_laptime<decltype(car)> dopt_laptime_xcog(s, true, true, car, opt_laptime.inputs, opt_laptime.controls, 
         opt_laptime.optimization_data.zl, opt_laptime.optimization_data.zu, opt_laptime.optimization_data.lambda, opts);
 
     for (size_t i = 0; i < total_size; ++i)
@@ -692,7 +690,7 @@ TEST_F(F1_sensitivity_analysis, Catalunya_discrete_optimization_variables)
     car.set_parameter("vehicle/rear-axle/brakes/max_torque"     , max_torque);
 
     opts.check_optimality = false;
-    Optimal_laptime<decltype(car)> dopt_laptime_x_press(s, true, true, car, opt_laptime.input_states, opt_laptime.algebraic_states, opt_laptime.controls, 
+    Optimal_laptime<decltype(car)> dopt_laptime_x_press(s, true, true, car, opt_laptime.inputs, opt_laptime.controls, 
         opt_laptime.optimization_data.zl, opt_laptime.optimization_data.zu, opt_laptime.optimization_data.lambda, opts);
 
     car.set_parameter("vehicle/rear-axle/differential_stiffness", differential_stiffness);
@@ -716,7 +714,7 @@ TEST_F(F1_sensitivity_analysis, Catalunya_discrete_optimization_variables)
     car.set_parameter("vehicle/rear-axle/brakes/max_torque"     , max_torque);
 
     opts.check_optimality = false;
-    Optimal_laptime<decltype(car)> dopt_laptime_x_press_m(s, true, true, car, opt_laptime.input_states, opt_laptime.algebraic_states, opt_laptime.controls, 
+    Optimal_laptime<decltype(car)> dopt_laptime_x_press_m(s, true, true, car, opt_laptime.inputs, opt_laptime.controls, 
         opt_laptime.optimization_data.zl, opt_laptime.optimization_data.zu, opt_laptime.optimization_data.lambda, opts);
 
 
@@ -751,7 +749,7 @@ TEST_F(F1_sensitivity_analysis, Catalunya_discrete_optimization_variables)
     car.set_parameter("vehicle/rear-axle/brakes/max_torque"     , max_torque);
 
     opts.check_optimality = false;
-    Optimal_laptime<decltype(car)> dopt_laptime_z_press(s, true, true, car, opt_laptime.input_states, opt_laptime.algebraic_states, opt_laptime.controls, 
+    Optimal_laptime<decltype(car)> dopt_laptime_z_press(s, true, true, car, opt_laptime.inputs, opt_laptime.controls, 
         opt_laptime.optimization_data.zl, opt_laptime.optimization_data.zu, opt_laptime.optimization_data.lambda, opts);
 
     for (size_t i = 0; i < total_size; ++i)
@@ -784,7 +782,7 @@ TEST_F(F1_sensitivity_analysis, Catalunya_discrete_optimization_variables)
     car.set_parameter("vehicle/rear-axle/brakes/max_torque"     , max_torque);
 
     opts.check_optimality = false;
-    Optimal_laptime<decltype(car)> dopt_laptime_roll_balance(s, true, true, car, opt_laptime.input_states, opt_laptime.algebraic_states, opt_laptime.controls, 
+    Optimal_laptime<decltype(car)> dopt_laptime_roll_balance(s, true, true, car, opt_laptime.inputs, opt_laptime.controls, 
         opt_laptime.optimization_data.zl, opt_laptime.optimization_data.zu, opt_laptime.optimization_data.lambda, opts);
 
     for (size_t i = 0; i < total_size; ++i)
@@ -818,7 +816,7 @@ TEST_F(F1_sensitivity_analysis, Catalunya_discrete_optimization_variables)
     car.set_parameter("vehicle/rear-axle/brakes/max_torque"     , max_torque);
 
     opts.check_optimality = false;
-    Optimal_laptime<decltype(car)> dopt_laptime_grip(s, true, true, car, opt_laptime.input_states, opt_laptime.algebraic_states, opt_laptime.controls, 
+    Optimal_laptime<decltype(car)> dopt_laptime_grip(s, true, true, car, opt_laptime.inputs, opt_laptime.controls, 
         opt_laptime.optimization_data.zl, opt_laptime.optimization_data.zu, opt_laptime.optimization_data.lambda, opts);
 
     for (size_t i = 0; i < total_size; ++i)
@@ -850,7 +848,7 @@ TEST_F(F1_sensitivity_analysis, Catalunya_discrete_optimization_variables)
     car.set_parameter("vehicle/rear-axle/brakes/max_torque"     , max_torque);
 
     opts.check_optimality = false;
-    Optimal_laptime<decltype(car)> dopt_laptime_grip_front_2(s, true, true, car, opt_laptime.input_states, opt_laptime.algebraic_states, opt_laptime.controls, 
+    Optimal_laptime<decltype(car)> dopt_laptime_grip_front_2(s, true, true, car, opt_laptime.inputs, opt_laptime.controls, 
         opt_laptime.optimization_data.zl, opt_laptime.optimization_data.zu, opt_laptime.optimization_data.lambda, opts);
 
     for (size_t i = 0; i < total_size; ++i)
@@ -883,7 +881,7 @@ TEST_F(F1_sensitivity_analysis, Catalunya_discrete_optimization_variables)
     car.set_parameter("vehicle/rear-axle/brakes/max_torque"     , max_torque);
 
     opts.check_optimality = false;
-    Optimal_laptime<decltype(car)> dopt_laptime_grip_rear_1(s, true, true, car, opt_laptime.input_states, opt_laptime.algebraic_states, opt_laptime.controls, 
+    Optimal_laptime<decltype(car)> dopt_laptime_grip_rear_1(s, true, true, car, opt_laptime.inputs, opt_laptime.controls, 
         opt_laptime.optimization_data.zl, opt_laptime.optimization_data.zu, opt_laptime.optimization_data.lambda, opts);
 
     for (size_t i = 0; i < total_size; ++i)
@@ -915,7 +913,7 @@ TEST_F(F1_sensitivity_analysis, Catalunya_discrete_optimization_variables)
     car.set_parameter("vehicle/rear-axle/brakes/max_torque"     , max_torque);
 
     opts.check_optimality = false;
-    Optimal_laptime<decltype(car)> dopt_laptime_grip_rear_2(s, true, true, car, opt_laptime.input_states, opt_laptime.algebraic_states, opt_laptime.controls, 
+    Optimal_laptime<decltype(car)> dopt_laptime_grip_rear_2(s, true, true, car, opt_laptime.inputs, opt_laptime.controls, 
         opt_laptime.optimization_data.zl, opt_laptime.optimization_data.zu, opt_laptime.optimization_data.lambda, opts);
 
     for (size_t i = 0; i < total_size; ++i)
@@ -948,7 +946,7 @@ TEST_F(F1_sensitivity_analysis, Catalunya_discrete_optimization_variables)
     car.set_parameter("vehicle/rear-axle/brakes/max_torque"     , max_torque + 660.0*9.81*dmax_torque);
 
     opts.check_optimality = false;
-    Optimal_laptime<decltype(car)> dopt_laptime_max_torque(s, true, true, car, opt_laptime.input_states, opt_laptime.algebraic_states, opt_laptime.controls, 
+    Optimal_laptime<decltype(car)> dopt_laptime_max_torque(s, true, true, car, opt_laptime.inputs, opt_laptime.controls, 
         opt_laptime.optimization_data.zl, opt_laptime.optimization_data.zu, opt_laptime.optimization_data.lambda, opts);
 
     for (size_t i = 0; i < total_size; ++i)

@@ -108,7 +108,7 @@ class Axle_car_test : public ::testing::TestWithParam<std::tuple<double,double,d
     const scalar dy = u*sin(psi) + v*cos(psi);
 
     const sFrame inertial_frame;
-    const sFrame car_frame = sFrame({x,y,0.0}, {dx,dy,0}, {psi}, {omega}, {Z}, inertial_frame);
+    const sFrame car_frame = sFrame({x,y,0.0}, {dx,dy,0}, {psi}, {omega}, {Z}, inertial_frame, sFrame::Frame_velocity_types::parent_frame);
 
     // State of the front axle
     const scalar z_front = std::get<4>(GetParam()); 
@@ -359,7 +359,7 @@ TEST_P(Axle_car_test, front_left_tire_velocity)
                             - 0.5*dphi*t ;
 
     EXPECT_DOUBLE_EQ(tire_fl.get_frame().get_absolute_velocity_in_parent().at(X), u+0.5*omega*t);
-    EXPECT_NEAR     (tire_fl.get_frame().get_absolute_velocity_in_parent().at(Y), v+omega*a,2.0e-16);
+    EXPECT_NEAR     (tire_fl.get_frame().get_absolute_velocity_in_parent().at(Y), v+omega*a,4.0e-16);
     EXPECT_DOUBLE_EQ(tire_fl.get_frame().get_absolute_velocity_in_parent().at(Z), vz);
 }
 

@@ -36,7 +36,7 @@ class Dynamic_model_powered_axle
 
     const Axle_t& get_axle() const { return _axle; }
 
-    std::array<Timeseries_t, NSTATE> transform_states_to_input_states(const std::array<Timeseries_t, NSTATE>& states, 
+    std::array<Timeseries_t, NSTATE> transform_states_to_inputs(const std::array<Timeseries_t, NSTATE>& states, 
                                                                        const std::array<Timeseries_t, NCONTROL>& controls 
                                                                       ) const { return states; }
 

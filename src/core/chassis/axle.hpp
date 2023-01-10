@@ -3,8 +3,8 @@
 
 #include "src/core/foundation/fastest_lap_exception.h"
 
-template<typename Timeseries_t, typename Tires_tuple, size_t STATE0, size_t CONTROL0>
-inline Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>::Axle(const std::string& name, const Tires_tuple& tires)
+template<typename Timeseries_t, typename Tires_tuple, size_t state_start, size_t control_start>
+inline Axle<Timeseries_t,Tires_tuple,state_start,control_start>::Axle(const std::string& name, const Tires_tuple& tires)
 : _frame(),
   _name(name),
   _path(),
@@ -23,8 +23,8 @@ inline Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>::Axle(const std::string& n
 }
 
 
-template<typename Timeseries_t, typename Tires_tuple, size_t STATE0, size_t CONTROL0>
-inline Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>::Axle(const Axle& other)
+template<typename Timeseries_t, typename Tires_tuple, size_t state_start, size_t control_start>
+inline Axle<Timeseries_t,Tires_tuple,state_start,control_start>::Axle(const Axle& other)
 : _frame(other._frame),
   __used_parameters(other.__used_parameters),
   _name(other._name),
@@ -40,12 +40,11 @@ inline Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>::Axle(const Axle& other)
 
     if constexpr (NTIRES == 2)
         std::get<1>(_tires).get_frame().set_parent(_frame);
-
 }
 
 
-template<typename Timeseries_t, typename Tires_tuple, size_t STATE0, size_t CONTROL0>
-inline Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>& Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>::operator=(const Axle& other)
+template<typename Timeseries_t, typename Tires_tuple, size_t state_start, size_t control_start>
+inline Axle<Timeseries_t,Tires_tuple,state_start,control_start>& Axle<Timeseries_t,Tires_tuple,state_start,control_start>::operator=(const Axle& other)
 {
     _name = other._name;
     _path = other._path;
@@ -65,9 +64,10 @@ inline Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>& Axle<Timeseries_t,Tires_t
     return *this;
 }
 
-template<typename Timeseries_t, typename Tires_tuple, size_t STATE0, size_t CONTROL0>
-template<size_t N>
-void Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>::get_state_and_state_derivative(std::array<Timeseries_t,N>& state, std::array<Timeseries_t,N>& dstate_dt) const
+template<typename Timeseries_t, typename Tires_tuple, size_t state_start, size_t control_start>
+template<size_t number_of_states>
+void Axle<Timeseries_t,Tires_tuple,state_start,control_start>::get_state_and_state_derivative
+    (std::array<Timeseries_t,number_of_states>& state, std::array<Timeseries_t,number_of_states>& dstate_dt) const
 {
     std::get<0>(_tires).get_state_and_state_derivative(state, dstate_dt);
 
@@ -76,43 +76,43 @@ void Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>::get_state_and_state_derivat
 }
 
 
-template<typename Timeseries_t, typename Tires_tuple, size_t STATE0, size_t CONTROL0>
-template<size_t NSTATE, size_t NCONTROL>
-void Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>::set_state_and_control_names(std::array<std::string,NSTATE>& input_states, std::array<std::string,NCONTROL>& controls) const
+template<typename Timeseries_t, typename Tires_tuple, size_t state_start, size_t control_start>
+template<size_t number_of_inputs, size_t number_of_controls>
+void Axle<Timeseries_t,Tires_tuple,state_start,control_start>::set_state_and_control_names(std::array<std::string,number_of_inputs>& inputs, std::array<std::string,number_of_controls>& controls) const
 {
-    std::get<0>(_tires).set_state_and_control_names(input_states, controls);
+    std::get<0>(_tires).set_state_and_control_names(inputs, controls);
     
     if constexpr (NTIRES == 2)
-        std::get<1>(_tires).set_state_and_control_names(input_states, controls);
+        std::get<1>(_tires).set_state_and_control_names(inputs, controls);
 }
 
 
-template<typename Timeseries_t, typename Tires_tuple, size_t STATE0, size_t CONTROL0>
-template<size_t NSTATE, size_t NCONTROL>
-void Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>::set_state_and_controls(const std::array<Timeseries_t,NSTATE>& input_states, const std::array<Timeseries_t,NCONTROL>& controls)
+template<typename Timeseries_t, typename Tires_tuple, size_t state_start, size_t control_start>
+template<size_t number_of_inputs, size_t number_of_controls>
+void Axle<Timeseries_t,Tires_tuple,state_start,control_start>::set_state_and_controls(const std::array<Timeseries_t,number_of_inputs>& inputs, const std::array<Timeseries_t,number_of_controls>& controls)
 {
-    std::get<0>(_tires).set_state_and_controls(input_states,controls);
+    std::get<0>(_tires).set_state_and_controls(inputs,controls);
 
     if constexpr (NTIRES == 2)
-        std::get<1>(_tires).set_state_and_controls(input_states,controls);
+        std::get<1>(_tires).set_state_and_controls(inputs,controls);
 }
 
 
-template<typename Timeseries_t, typename Tires_tuple, size_t STATE0, size_t CONTROL0>
-template<size_t NSTATE, size_t NCONTROL>
-void Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>::set_state_and_control_upper_lower_and_default_values
-    (std::array<scalar, NSTATE>& input_states_def     , std::array<scalar, NSTATE>& input_states_lb     , std::array<scalar, NSTATE>& input_states_ub     ,
-    std::array<scalar , NCONTROL>& controls_def   , std::array<scalar, NCONTROL>& controls_lb   , std::array<scalar, NCONTROL>& controls_ub) const
+template<typename Timeseries_t, typename Tires_tuple, size_t state_start, size_t control_start>
+template<size_t number_of_inputs, size_t number_of_controls>
+void Axle<Timeseries_t,Tires_tuple,state_start,control_start>::set_state_and_control_upper_lower_and_default_values
+    (std::array<scalar, number_of_inputs>& inputs_def     , std::array<scalar, number_of_inputs>& inputs_lb     , std::array<scalar, number_of_inputs>& inputs_ub     ,
+    std::array<scalar , number_of_controls>& controls_def   , std::array<scalar, number_of_controls>& controls_lb   , std::array<scalar, number_of_controls>& controls_ub) const
 {
-    std::get<0>(_tires).set_state_and_control_upper_lower_and_default_values(input_states_def, input_states_lb, input_states_ub, controls_def, controls_lb, controls_ub); 
+    std::get<0>(_tires).set_state_and_control_upper_lower_and_default_values(inputs_def, inputs_lb, inputs_ub, controls_def, controls_lb, controls_ub); 
 
     if constexpr (NTIRES == 2)
-        std::get<1>(_tires).set_state_and_control_upper_lower_and_default_values(input_states_def, input_states_lb, input_states_ub, controls_def, controls_lb, controls_ub);
+        std::get<1>(_tires).set_state_and_control_upper_lower_and_default_values(inputs_def, inputs_lb, inputs_ub, controls_def, controls_lb, controls_ub);
 }
 
-template<typename Timeseries_t, typename Tires_tuple, size_t STATE0, size_t CONTROL0>
+template<typename Timeseries_t, typename Tires_tuple, size_t state_start, size_t control_start>
 template<typename T>
-bool Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>::set_parameter(const std::string& parameter, const T value)
+bool Axle<Timeseries_t,Tires_tuple,state_start,control_start>::set_parameter(const std::string& parameter, const T value)
 {
     // This class does not have any parameter, so we just search it in the tires
 
@@ -139,16 +139,16 @@ bool Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>::set_parameter(const std::st
     return found;
 }
 
-template<typename Timeseries_t, typename Tires_tuple, size_t STATE0, size_t CONTROL0>
-inline void Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>::fill_xml(Xml_document& doc) const
+template<typename Timeseries_t, typename Tires_tuple, size_t state_start, size_t control_start>
+inline void Axle<Timeseries_t,Tires_tuple,state_start,control_start>::fill_xml(Xml_document& doc) const
 {
     // Call the method for the first tire
     std::get<0>(_tires).fill_xml(doc);
 }
 
 
-template<typename Timeseries_t, typename Tires_tuple, size_t STATE0, size_t CONTROL0>
-inline bool Axle<Timeseries_t,Tires_tuple,STATE0,CONTROL0>::is_ready() const
+template<typename Timeseries_t, typename Tires_tuple, size_t state_start, size_t control_start>
+inline bool Axle<Timeseries_t,Tires_tuple,state_start,control_start>::is_ready() const
 {
     if constexpr (NTIRES == 1)
         return std::get<0>(_tires).is_ready() &&

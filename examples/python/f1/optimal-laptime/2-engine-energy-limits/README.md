@@ -52,7 +52,7 @@ engine_energy    = fastest_lap.download_scalar("run_without_limits/integral_quan
 print(f'Engine energy used: {engine_energy:.3f}.')
 ```
 
-    Engine energy used: 32.682.
+    Engine energy used: 32.713.
 
 
 # Lap with limits

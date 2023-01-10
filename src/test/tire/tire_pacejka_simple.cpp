@@ -73,13 +73,13 @@ TEST_F(Tire_pacejka_simple_test, update)
 {
     const sVector3d x0 = {0.0,0.0,0.0};
     const sVector3d v0 = {cos(15.0*DEG),sin(15.0*DEG),0.0};
-    tire.get_frame().set_origin(x0,v0);
+    tire.get_frame().set_origin(x0,v0,sFrame::Frame_velocity_types::parent_frame);
     const scalar Fz = 5555.0;
 
     const scalar kappa = (1.0-v0[0])/v0[0];
     const scalar lambda = -v0[1]/v0[0]; 
 
-    tire.update(Fz,kappa/tire.get_model().maximum_kappa(Fz)); 
+    tire.update(Fz,kappa/tire.get_model().maximum_kappa(Fz), inertial_frame); 
 
     EXPECT_DOUBLE_EQ(tire.get_omega(), 1/0.33);
     EXPECT_DOUBLE_EQ(tire.get_kappa(), kappa);
