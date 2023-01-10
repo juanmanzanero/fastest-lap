@@ -7,16 +7,16 @@ def plot_turn(s_start,s_end,title):
     # (1) Download data
     s = fastest_lap.download_vector("track/arclength");
     x = fastest_lap.download_vector("track/centerline/x");
-    y = fastest_lap.download_vector("track/centerline/y");
+    y = -np.array(fastest_lap.download_vector("track/centerline/y"));
     x_left = fastest_lap.download_vector("track/left/x");
-    y_left = fastest_lap.download_vector("track/left/y");
+    y_left = -np.array(fastest_lap.download_vector("track/left/y"));
     x_right = fastest_lap.download_vector("track/right/x");
-    y_right = fastest_lap.download_vector("track/right/y");
+    y_right = -np.array(fastest_lap.download_vector("track/right/y"));
     x_left_measured = fastest_lap.download_vector("track/left_measured/x");
-    y_left_measured = fastest_lap.download_vector("track/left_measured/y");
+    y_left_measured = -np.array(fastest_lap.download_vector("track/left_measured/y"));
     x_right_measured = fastest_lap.download_vector("track/right_measured/x");
-    y_right_measured = fastest_lap.download_vector("track/right_measured/y");
-    kappa = fastest_lap.download_vector("track/kappa");
+    y_right_measured = -np.array(fastest_lap.download_vector("track/right_measured/y"));
+    yaw_dot = fastest_lap.download_vector("track/yaw_dot");
     nl = fastest_lap.download_vector("track/nl");
     nr = fastest_lap.download_vector("track/nr");    
 
@@ -47,7 +47,7 @@ def plot_turn(s_start,s_end,title):
     ax1.set_title('GPS',fontweight='bold',fontsize=32)
     
     # (2.2) Curvature
-    ax2.plot(s[i_start:i_end],kappa[i_start:i_end],'.-w');
+    ax2.plot(s[i_start:i_end],yaw_dot[i_start:i_end],'.-w');
     ax2.set_title('curvature',fontweight='bold',fontsize=32)
     
     # (2.3) Full view GPS

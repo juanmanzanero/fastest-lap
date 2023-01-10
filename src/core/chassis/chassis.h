@@ -294,7 +294,7 @@ class Chassis
             {get_name() + ".acceleration.yaw", _yaw_rate_dot_radps2},
             {get_name() + ".position.x", _road_frame.get_origin().x()},
             {get_name() + ".position.y", _road_frame.get_origin().y()},
-            {get_name() + ".attitude.yaw", _road_frame.get_rotation_angles().front()},
+            {get_name() + ".attitude.yaw", _road_frame.get_rotation_angles().front() + _road_frame.get_rotation_angles().back()},
             {get_name() + ".understeer_oversteer_indicator", get_understeer_oversteer_indicator()},
             {get_name() + ".aerodynamics.cd", _cd},
             {get_name() + ".aerodynamics.lift", get_aerodynamic_force().lift.z()},
