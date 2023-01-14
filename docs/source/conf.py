@@ -22,7 +22,7 @@ copyright = '2022, Juan Manzanero'
 author = 'Juan Manzanero'
 
 # The full version, including alpha/beta/rc tags
-release = 'v0.1'
+release = 'v0.5'
 
 
 # -- General configuration ---------------------------------------------------

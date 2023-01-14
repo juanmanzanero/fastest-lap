@@ -17,16 +17,18 @@ Fastest-lap an open source (`MIT <https://github.com/juanmanzanero/fastest-lap/b
 
 Fastest-lap is characterized for its simplity and ease of use. With less than 10 lines of code you will be running and analyzing your first laptime simulation.
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Tutorials
-
-   installation
-   quickstart
+.. image:: https://miro.medium.com/max/1400/1*5bEM9whHYY3jYB_kP1zAkA.webp
 
 .. toctree::
    :maxdepth: 2
-   :caption: User-manual
+   :caption: Getting started
+
+   getting_started/installation
+   getting_started/quickstart
+
+.. toctree::
+   :maxdepth: 2
+   :caption: User guide
 
    overview
    variable_types
@@ -34,10 +36,14 @@ Fastest-lap is characterized for its simplity and ease of use. With less than 10
 
 .. toctree::
    :maxdepth: 2
+   :caption: Tutorials
+
+.. toctree::
+   :maxdepth: 2
    :caption: Blog
 
-   lift_and_coast
-   blog_car_tire_dynamics_part_1
-   blog_car_tire_dynamics_part_2
-   blog_130R_Suzuka
-   blog_USGP_tech_bits
+   blogs/blog_lift_and_coast
+   blogs/blog_car_tire_dynamics_part_1
+   blogs/blog_car_tire_dynamics_part_2
+   blogs/blog_130R_Suzuka
+   blogs/blog_USGP_tech_bits

@@ -8,12 +8,14 @@ Windows 10 (Precompiled binaries)
 
 Prerequisites: none :)
 
-Download the latest `release <https://github.com/juanmanzanero/fastest-lap/releases>`_ of Fastest-lap, and unzip its contents into an appropriate folder. If you don't want bad things to happen, keep all the files into their original directory!
+Download the latest `release <https://github.com/juanmanzanero/fastest-lap/releases>`_ of Fastest-lap, and unzip its contents to your desired folder. If you don't want bad things to happen, keep all the files into their original directory relative to the root!
 
  * 📁 **bin** contains the Fastest-lap C++ dynamic library: ``libfastestlapc-VERSION.dll`` plus other dynamic libraries fastest-lap depends on. 
  * 📁 **include** contains the Fastest-lap C header ``fastestlapc.h`` and the python module ``fastest_lap.py`` 
  * 📁 `database <https://github.com/juanmanzanero/fastest-lap/tree/main/database>`_ includes track and vehicle models inputs 
  * 📁 `examples <https://github.com/juanmanzanero/fastest-lap/tree/main/examples>`_ contains python notebook examples
+
+.. image:: windows_libraries.png
 
 Linux and Mac 
 -------------
@@ -80,6 +82,13 @@ If make was successful, the dynamic library ``libfastestlapc.dylib`` (Mac) or ``
 
     $ ctest --verbose
 
+You can also check-out this video where the steps are visualized (for Mac)
+
+.. raw:: html
+
+    <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; height: auto;">
+        <iframe src="https://youtu.be/F5xsIVLzNak" frameborder="0" allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe>
+    </div>
 
 Troubleshooting
 ---------------
