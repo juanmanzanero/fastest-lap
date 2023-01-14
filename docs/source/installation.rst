@@ -1,16 +1,16 @@
 Installation
 ============
 
-Fastest-lap is ready to use once you have the dynamic library ``fastest-lap-VERSION.dll`` (Windows) ``libfastestlapc-VERSION.dylib`` (Mac) or ``libfastestlapc-VERSION.so``, plus other libraries such as Ipopt and Mumps. The following steps describe how to get such library. 
+Fastest-lap is ready to use once you have the dynamic library ``libfastestlapc-VERSION``, plus other libraries such as Ipopt and Mumps. The following steps describe how to get such library. 
 
-Windows 10
-----------
+Windows 10 (Precompiled binaries)
+---------------------------------
 
 Prerequisites: none :)
 
 Download the latest `release <https://github.com/juanmanzanero/fastest-lap/releases>`_ of Fastest-lap, and unzip its contents into an appropriate folder. If you don't want bad things to happen, keep all the files into their original directory!
 
- * 📁 **bin** contains the Fastest-lap C++ dynamic library: ``fastest-lap-0.1.dll`` plus other dynamic libraries fastest-lap depends on. 
+ * 📁 **bin** contains the Fastest-lap C++ dynamic library: ``libfastestlapc-VERSION.dll`` plus other dynamic libraries fastest-lap depends on. 
  * 📁 **include** contains the Fastest-lap C header ``fastestlapc.h`` and the python module ``fastest_lap.py`` 
  * 📁 `database <https://github.com/juanmanzanero/fastest-lap/tree/main/database>`_ includes track and vehicle models inputs 
  * 📁 `examples <https://github.com/juanmanzanero/fastest-lap/tree/main/examples>`_ contains python notebook examples
@@ -79,3 +79,9 @@ If make was successful, the dynamic library ``libfastestlapc.dylib`` (Mac) or ``
 .. code-block:: console
 
     $ ctest --verbose
+
+
+Troubleshooting
+---------------
+
+If you encounter any issue while repeating the steps, first take a look in the `Issues section <https://github.com/juanmanzanero/fastest-lap/issues?q=is%3Aissue>`_ of the repository. Probably someone has been there before :). If still you cannot fix the issue, feel free to open a new issue.

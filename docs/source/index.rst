@@ -13,7 +13,9 @@ Fastest-lap is a vehicle dynamics simulator. It can be used to understand vehicl
 Overview
 --------
 
-Fastest-lap an open source (`MIT <https://github.com/juanmanzanero/fastest-lap/blob/main/LICENSE>`_) written in C++, and it is usable from any scripting language such as Python and MATLAB.
+Fastest-lap an open source (`MIT <https://github.com/juanmanzanero/fastest-lap/blob/main/LICENSE>`_) written in C++, and it is usable from any scripting language such as Python and MATLAB. It is cross-platform, and it has been extensively tested on Windows 10, Linux (Ubuntu) and Mac. 
+
+Fastest-lap is characterized for its simplity and ease of use. With less than 10 lines of code you will be running and analyzing your first laptime simulation.
 
 .. toctree::
    :maxdepth: 2
@@ -35,3 +37,7 @@ Fastest-lap an open source (`MIT <https://github.com/juanmanzanero/fastest-lap/b
    :caption: Blog
 
    lift_and_coast
+   blog_car_tire_dynamics_part_1
+   blog_car_tire_dynamics_part_2
+   blog_130R_Suzuka
+   blog_USGP_tech_bits
