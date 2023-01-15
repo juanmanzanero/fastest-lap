@@ -33,6 +33,8 @@ Fastest-lap is characterized for its simplity and ease of use. With less than 10
    user_guide/overview
    user_guide/variable_types
    user_guide/functions
+   user_guide/models
+   user_guide/modules
 
 .. toctree::
    :maxdepth: 2

@@ -28,7 +28,7 @@ Examples of the functions you can find are:
 The variables are internally stored by name (as in every programming language), and there can only one and only variable with the same name.
 That is, if there's a ``vehicle`` called ``"my_car"``, one cannot create another ``vehicle`` called ``"my_car"`` or a ``vector`` called ``"my_car"``.
 
-Also, one can use *paths* to group variables. For example, in the figure, there are the vector variables ``Simulation1/chassis.x`` and ``Simulation2/chassis.x``
+Also, one can use *paths* to group variables. For example, in the figure, there are the vector variables ``Simulation1/chassis.position.x`` and ``Simulation2/chassis.position.x``
 
 With the use of this methodology, it is very easy to perform computations. For example, what the :ref:`quickstart example <quickstart>` does is:
 
@@ -39,6 +39,6 @@ With the use of this methodology, it is very easy to perform computations. For e
    ``"run/chassis.position.x"``, ``"run/chassis.position.y"``, ``"run/chassis.velocity.x"``, ...
 4. Download results. The vector and scalar tables can be emptied afterwards by calling
 
-.. code-block:: python
+    .. code-block:: python
 	
-	fastest_lap.clear_tables_by_prefix("run/")
+     fastest_lap.clear_tables_by_prefix("run/")
