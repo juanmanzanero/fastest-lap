@@ -8,6 +8,8 @@ Quickstart
 
 Fastest-lap can be very easily invoked from scripting languages such as Python and MATLAB. Let's do a super fast and simple system test: let's compute a lap around Circuit de Catalunya using Python.
 
+.. image:: quickstart.gif
+
 This example is based on the python notebook `1-simple-lap <https://github.com/juanmanzanero/fastest-lap/tree/main/examples/python/f1/optimal-laptime/1-simple-lap>`_ that can be found in the repository.
 
 The entry point to fastest-lap, is the file ``fastest_lap.py``. It is located under ``examples/python`` for Mac and Linux, and under ``include`` for Windows. This file already knows how to find the C++ dynamic library, so you do not need to worry about it.

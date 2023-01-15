@@ -20,6 +20,13 @@ Download the latest `release <https://github.com/juanmanzanero/fastest-lap/relea
 Linux and Mac 
 -------------
 
+.. raw:: html
+
+    <div style="position: relative; margin: 0 auto; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; height: auto; margin-bottom: -24em;">
+	<iframe width="560" height="315" src="https://www.youtube.com/embed/F5xsIVLzNak" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+    </div>
+
+
 Prerequisites: 
  * C/C++ and Fortran compilers
  * `CMake <https://cmake.org>`_
@@ -84,11 +91,6 @@ If make was successful, the dynamic library ``libfastestlapc.dylib`` (Mac) or ``
 
 You can also check-out this video where the steps are visualized (for Mac)
 
-.. raw:: html
-
-    <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; height: auto;">
-        <iframe src="https://youtu.be/F5xsIVLzNak" frameborder="0" allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe>
-    </div>
 
 Troubleshooting
 ---------------

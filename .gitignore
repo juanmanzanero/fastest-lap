@@ -4,4 +4,9 @@ __pycache__/
 
 # C extensions
 *.so
+*.dylib
 
+# Build directory
+build/
+docs/build/
+.venv/
