@@ -30,13 +30,15 @@ Fastest-lap is characterized for its simplity and ease of use. With less than 10
    :maxdepth: 2
    :caption: User guide
 
-   overview
-   variable_types
-   functions
+   user_guide/overview
+   user_guide/variable_types
+   user_guide/functions
 
 .. toctree::
    :maxdepth: 2
    :caption: Tutorials
+
+   tutorials/handling_internal_memory
 
 .. toctree::
    :maxdepth: 2

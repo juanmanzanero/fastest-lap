@@ -22,9 +22,7 @@ Linux and Mac
 
 .. raw:: html
 
-    <div style="position: relative; margin: 0 auto; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; height: auto; margin-bottom: -24em;">
 	<iframe width="560" height="315" src="https://www.youtube.com/embed/F5xsIVLzNak" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-    </div>
 
 
 Prerequisites: 
@@ -88,8 +86,6 @@ If make was successful, the dynamic library ``libfastestlapc.dylib`` (Mac) or ``
 .. code-block:: console
 
     $ ctest --verbose
-
-You can also check-out this video where the steps are visualized (for Mac)
 
 
 Troubleshooting
