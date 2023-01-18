@@ -1,6 +1,6 @@
 if (${BUILD_LION})
 
-set(lion_version 7ae920eb44d69114769c7bd0235aa22aa934bc8f)
+set(lion_version d7c4f615d32aebbeab7520e004f246797f1ad79d)
 
 include(ExternalProject)
 ExternalProject_Add(lion

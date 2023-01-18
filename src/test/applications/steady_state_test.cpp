@@ -50,7 +50,7 @@ struct Steady_state_test_kart_new_reference
     bool save;
 };
 
-static bool save_xml = true;
+static bool save_xml = false;
 static Steady_state_test_kart_new_reference new_reference(save_xml);
 
 

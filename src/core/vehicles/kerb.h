@@ -59,6 +59,8 @@ public:
 
     constexpr const std::vector<Kerb_element>& get_kerbs() const { return _kerbs; }
 
+    std::vector<Kerb_element>& get_kerbs() { return _kerbs; }
+
     scalar evaluate(scalar s) const { return evaluate_generic(s, false); }
 
     scalar evaluate_display(scalar s) const { return evaluate_generic(s, true); }
