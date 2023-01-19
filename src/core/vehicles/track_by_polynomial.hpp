@@ -55,7 +55,7 @@ inline Track_by_polynomial::Track_by_polynomial(const vPolynomial& position, con
 
         for (size_t i_point = 0; i_point < 2 * polynomial_order + 1; ++i_point)
         {
-            const auto dp_i = dp(x[i_point]);
+            const auto dp_i  = dp(x[i_point]);
             const auto d2p_i = d2p(x[i_point]);
 
             yaw_values[i_point] = atan2(dp_i.y(), dp_i.x());
@@ -66,28 +66,48 @@ inline Track_by_polynomial::Track_by_polynomial(const vPolynomial& position, con
         curvature_polynomials[i_block]     = { x, yaw_dot_values, polynomial_order, true };
     }
 
-    _yaw = { heading_angle_polynomials };
+    _yaw     = { heading_angle_polynomials };
     _dyaw_ds = { curvature_polynomials };
 
-    _pitch      = { {position.get_left_bound(), position.get_right_bound()}, {0.0, 0.0}, 1, false };
-    _roll     = { {position.get_left_bound(), position.get_right_bound()}, {0.0, 0.0}, 1, false };
-    _dpitch_ds  = { {position.get_left_bound(), position.get_right_bound()}, {0.0, 0.0}, 1, false };
-    _droll_ds = { {position.get_left_bound(), position.get_right_bound()}, {0.0, 0.0}, 1, false };
+    _pitch     = { {position.get_left_bound(), position.get_right_bound()}, {0.0, 0.0}, 1, false };
+    _roll      = { {position.get_left_bound(), position.get_right_bound()}, {0.0, 0.0}, 1, false };
+    _dpitch_ds = { {position.get_left_bound(), position.get_right_bound()}, {0.0, 0.0}, 1, false };
+    _droll_ds  = { {position.get_left_bound(), position.get_right_bound()}, {0.0, 0.0}, 1, false };
 }
 
 inline Track_by_polynomial::Track_by_polynomial(const Circuit_preprocessor& circuit)
 {
+    // (1) Get data from circuit preprocessor
     auto s            = circuit.s;
     auto r_centerline = circuit.r_centerline;
-    auto yaw        = circuit.yaw;
-    auto pitch           = circuit.pitch;
-    auto roll          = circuit.roll;
-    auto yaw_dot        = circuit.yaw_dot;
-    auto dpitchds        = circuit.dpitch_dot;
-    auto drollds       = circuit.droll_dot;
+    auto yaw          = circuit.yaw;
+    auto pitch        = circuit.pitch;
+    auto roll         = circuit.roll;
+    auto yaw_dot      = circuit.yaw_dot;
+    auto dpitchds     = circuit.dpitch_dot;
+    auto drollds      = circuit.droll_dot;
     auto nl           = circuit.nl;
     auto nr           = circuit.nr;
 
+    // (2) Augment nl and nr with the kerbs
+    for (size_t i_s = 0; i_s < s.size(); ++i_s)
+    {
+        for (const auto& kerb : circuit.left_kerb.get_kerbs())
+            if (s[i_s] > kerb.arclength_start - 1.0e-12 && s[i_s] < kerb.arclength_finish + 1.0e-12) 
+            {
+                nl[i_s] += kerb.width;
+                break;
+            }
+
+        for (const auto& kerb : circuit.right_kerb.get_kerbs())
+            if (s[i_s] > kerb.arclength_start - 1.0e-12 && s[i_s] < kerb.arclength_finish + 1.0e-12) 
+            {
+                nr[i_s] += kerb.width;
+                break;
+            }
+    }
+
+    // (3) Close the circuit if needed
     if ( circuit.is_closed ) 
     { 
         s.push_back(circuit.track_length);
@@ -107,25 +127,25 @@ inline Track_by_polynomial::Track_by_polynomial(const Circuit_preprocessor& circ
     }
 
     // Construct the polynomials
-    _r         = {s,r_centerline,1,false};
+    _r       = {s,r_centerline,1,false};
     _yaw     = { s, yaw, 1, false };
     _dyaw_ds = { s, yaw_dot, 1, false };
-    _wl        = {s,nl,1,false};
-    _wr        = {s,nr,1,false};
+    _wl      = {s,nl,1,false};
+    _wr      = {s,nr,1,false};
 
     if (circuit.options.with_elevation)
     {
-        _pitch = { s, pitch, 1, false };
-        _roll = { s, roll, 1, false };
+        _pitch     = { s, pitch, 1, false };
+        _roll      = { s, roll, 1, false };
         _dpitch_ds = { s, dpitchds, 1, false };
-        _droll_ds = { s, drollds, 1, false };
+        _droll_ds  = { s, drollds, 1, false };
     }
     else
     {
-        _pitch      = { {s.front(), s.back()}, {0.0, 0.0}, 1, false };
-        _roll     = { {s.front(), s.back()}, {0.0, 0.0}, 1, false };
-        _dpitch_ds  = { {s.front(), s.back()}, {0.0, 0.0}, 1, false };
-        _droll_ds = { {s.front(), s.back()}, {0.0, 0.0}, 1, false };
+        _pitch     = { {s.front(), s.back()}, {0.0, 0.0}, 1, false };
+        _roll      = { {s.front(), s.back()}, {0.0, 0.0}, 1, false };
+        _dpitch_ds = { {s.front(), s.back()}, {0.0, 0.0}, 1, false };
+        _droll_ds  = { {s.front(), s.back()}, {0.0, 0.0}, 1, false };
     }
 
     // Save the preprocessor

@@ -45,7 +45,11 @@ class Circuit_preprocessor : public Circuit_geometry
 
         int print_level = 0;
 
-        bool compute_kerbs = false;
+        // Kerb options
+        bool   compute_kerbs            = false;
+        scalar kerb_width               = 1.0;
+        bool   use_kerbs                = false;
+        int    exterior_kerbs_direction = Kerb::Direction::inside;
     };
 
     //! Default constructor

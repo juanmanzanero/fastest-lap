@@ -730,7 +730,6 @@ inline void Circuit_preprocessor::compute(const std::vector<scalar>& s_center, c
     // (7) Compute kerbs
     if (options.compute_kerbs)
     {
-
         // (7.1) Run a minimum curvature problem
         const Minimum_curvature_path minimum_curvature(*this, s, is_closed, {});
 
@@ -741,8 +740,21 @@ inline void Circuit_preprocessor::compute(const std::vector<scalar>& s_center, c
         for (size_t i_s = 0; i_s < s.size(); ++i_s)
             lateral_displacement_percentage[i_s] *= 1.0 / (nr[i_s] + nl[i_s]);
 
-        left_kerb = Kerb(s, std::vector<scalar>(s.size(),1.0) - lateral_displacement_percentage, yaw_dot, Kerb::Side::left, 1.0, false, Kerb::Direction::inside);
-        right_kerb = Kerb(s, lateral_displacement_percentage, yaw_dot, Kerb::Side::right, 1.0, false, Kerb::Direction::inside);
+        left_kerb = Kerb(s, 
+                         std::vector<scalar>(s.size(),1.0) - lateral_displacement_percentage, 
+                         yaw_dot, 
+                         Kerb::Side::left, 
+                         options.kerb_width, 
+                         options.use_kerbs, 
+                         options.exterior_kerbs_direction);
+
+        right_kerb = Kerb(s, 
+                          lateral_displacement_percentage, 
+                          yaw_dot, 
+                          Kerb::Side::right, 
+                          options.kerb_width, 
+                          options.use_kerbs, 
+                          options.exterior_kerbs_direction);
     }
 }
 

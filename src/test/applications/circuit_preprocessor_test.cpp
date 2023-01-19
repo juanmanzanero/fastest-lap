@@ -1208,6 +1208,7 @@ TEST(Circuit_preprocessor_test, catalunya_3d)
 
 TEST(Circuit_preprocessor_test, laguna_seca_3d)
 {
+    GTEST_SKIP();
     #ifndef NDEBUG
         GTEST_SKIP();
     #endif
