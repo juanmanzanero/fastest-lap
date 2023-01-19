@@ -1208,7 +1208,6 @@ TEST(Circuit_preprocessor_test, catalunya_3d)
 
 TEST(Circuit_preprocessor_test, laguna_seca_3d)
 {
-    GTEST_SKIP();
     #ifndef NDEBUG
         GTEST_SKIP();
     #endif
@@ -1221,12 +1220,14 @@ TEST(Circuit_preprocessor_test, laguna_seca_3d)
     auto options = Circuit_preprocessor::Options{};
     options.print_level = 0;
     options.with_elevation = true;
-    options.eps_pitch = 4.0e4;
-    options.eps_roll = 4.0e4;
-    options.eps_n = 1.0e1;
-    options.eps_d = 1.0e0;
-    options.eps_c = 1.0e-2;
-    Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, options, 1000);
+    options.eps_pitch = 5.0e5;
+    options.eps_roll = 5.0e5;
+
+    options.compute_kerbs = true;
+    options.exterior_kerbs_direction = Kerb::Direction::outside;
+    options.use_kerbs = true;
+    options.kerb_width = 1.0;
+    Circuit_preprocessor circuit(coord_left_kml, coord_right_kml, options, 500);
 
     circuit.xml();
 
@@ -1250,21 +1251,21 @@ TEST(Circuit_preprocessor_test, laguna_seca_3d)
     const std::vector<scalar> dnl    = solution_saved.get_element("circuit/data/dnl").get_value(std::vector<scalar>());
     const std::vector<scalar> dnr    = solution_saved.get_element("circuit/data/dnr").get_value(std::vector<scalar>());
 
-    EXPECT_EQ(circuit.n_points,1000);
-    EXPECT_EQ(circuit.r_centerline.size(),1000);
-    EXPECT_EQ(circuit.yaw.size(),1000);
-    EXPECT_EQ(circuit.pitch.size(),1000);
-    EXPECT_EQ(circuit.roll.size(),1000);
-    EXPECT_EQ(circuit.yaw_dot.size(),1000);
-    EXPECT_EQ(circuit.pitch_dot.size(),1000);
-    EXPECT_EQ(circuit.roll_dot.size(),1000);
-    EXPECT_EQ(circuit.nl.size(),1000);
-    EXPECT_EQ(circuit.nr.size(),1000);
-    EXPECT_EQ(circuit.dyaw_dot.size(),1000);
-    EXPECT_EQ(circuit.dpitch_dot.size(),1000);
-    EXPECT_EQ(circuit.droll_dot.size(),1000);
-    EXPECT_EQ(circuit.dnl.size(),1000);
-    EXPECT_EQ(circuit.dnr.size(),1000);
+    EXPECT_EQ(circuit.n_points,500);
+    EXPECT_EQ(circuit.r_centerline.size(),500);
+    EXPECT_EQ(circuit.yaw.size(),500);
+    EXPECT_EQ(circuit.pitch.size(),500);
+    EXPECT_EQ(circuit.roll.size(),500);
+    EXPECT_EQ(circuit.yaw_dot.size(),500);
+    EXPECT_EQ(circuit.pitch_dot.size(),500);
+    EXPECT_EQ(circuit.roll_dot.size(),500);
+    EXPECT_EQ(circuit.nl.size(),500);
+    EXPECT_EQ(circuit.nr.size(),500);
+    EXPECT_EQ(circuit.dyaw_dot.size(),500);
+    EXPECT_EQ(circuit.dpitch_dot.size(),500);
+    EXPECT_EQ(circuit.droll_dot.size(),500);
+    EXPECT_EQ(circuit.dnl.size(),500);
+    EXPECT_EQ(circuit.dnr.size(),500);
 
     // compare centerline
     for (size_t i = 0; i < circuit.n_points; ++i)

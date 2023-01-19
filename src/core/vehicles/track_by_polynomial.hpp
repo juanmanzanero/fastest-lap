@@ -93,14 +93,14 @@ inline Track_by_polynomial::Track_by_polynomial(const Circuit_preprocessor& circ
     for (size_t i_s = 0; i_s < s.size(); ++i_s)
     {
         for (const auto& kerb : circuit.left_kerb.get_kerbs())
-            if (s[i_s] > kerb.arclength_start - 1.0e-12 && s[i_s] < kerb.arclength_finish + 1.0e-12) 
+            if (s[i_s] > kerb.arclength_start - 1.0e-12 && s[i_s] < kerb.arclength_finish + 1.0e-12 && kerb.used) 
             {
                 nl[i_s] += kerb.width;
                 break;
             }
 
         for (const auto& kerb : circuit.right_kerb.get_kerbs())
-            if (s[i_s] > kerb.arclength_start - 1.0e-12 && s[i_s] < kerb.arclength_finish + 1.0e-12) 
+            if (s[i_s] > kerb.arclength_start - 1.0e-12 && s[i_s] < kerb.arclength_finish + 1.0e-12 && kerb.used) 
             {
                 nr[i_s] += kerb.width;
                 break;

@@ -1342,7 +1342,6 @@ TEST_F(F1_optimal_laptime_test, Catalunya_3d)
 
 TEST_F(F1_optimal_laptime_test, laguna_seca_3d)
 {
-    GTEST_SKIP();
     if ( is_valgrind ) GTEST_SKIP();
 
     Xml_document laguna_xml("./database/tracks/laguna_seca/laguna_seca_3d.xml",true);
@@ -1360,7 +1359,7 @@ TEST_F(F1_optimal_laptime_test, laguna_seca_3d)
     const auto& s = laguna_pproc.s;
     const auto& n = s.size();
     
-    EXPECT_EQ(n, 1000);
+    EXPECT_EQ(n, 500);
 
     // Construct control variables
     auto control_variables = Optimal_laptime<decltype(car)>::template Control_variables<>{};
