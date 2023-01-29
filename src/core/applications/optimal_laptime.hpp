@@ -7,17 +7,22 @@
 template<typename Dynamic_model_t>
 inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const std::vector<scalar>& s_, const bool is_closed_, const bool is_direct_,
     const Dynamic_model_t& car, const std::vector<std::array<scalar,Dynamic_model_t::number_of_inputs>>& inputs_start, 
-    Control_variables<> controls_start, 
+    Control_variables_type<> controls_start, 
     const Options opts)
-: options(opts), integral_quantities(), is_closed(is_closed_), is_direct(is_direct_), warm_start(false), 
-  s(s_), inputs(inputs_start),
-  controls(controls_start.check()),
-  optimization_data()
+: options(opts), integral_quantities()
 {
-    // (1) Check inputs
+    // (1) Initialize optimal laptime data members
+    base_type::is_closed  = is_closed_;
+    base_type::is_direct  = is_direct_;
+    base_type::warm_start = false;
+    base_type::s          = s_;
+    base_type::inputs     = inputs_start;
+    base_type::controls   = controls_start.check();
+
+    // (2) Check inputs
     check_inputs(car);
 
-    // (4) Compute
+    // (3) Compute
     compute(car);
 }
 
@@ -26,20 +31,26 @@ template<typename Dynamic_model_t>
 inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const std::vector<scalar>& s_, const bool is_closed_, const bool is_direct_,
     const Dynamic_model_t& car,
     const std::vector<std::array<scalar,Dynamic_model_t::number_of_inputs>>& inputs_start, 
-    Control_variables<> controls_start, 
+    Control_variables_type<> controls_start, 
     const std::vector<scalar>& zl,
     const std::vector<scalar>& zu,
     const std::vector<scalar>& lambda,
     const Options opts)
-: options(opts), integral_quantities(), is_closed(is_closed_), is_direct(is_direct_), warm_start(true), 
-  s(s_), inputs(inputs_start),
-  controls(controls_start.check()),
-  optimization_data({.zl{zl},.zu{zu},.lambda{lambda}})
+: options(opts), integral_quantities()
 {
-    // (1) Check inputs
+    // (1) Initialize optimal laptime data
+    base_type::is_closed         = is_closed_;
+    base_type::is_direct         = is_direct_;
+    base_type::warm_start        = true;
+    base_type::s                 = s_;
+    base_type::inputs            = inputs_start;
+    base_type::controls          = controls_start.check();
+    base_type::optimization_data = {.zl{zl}, .zu{zu}, .lambda{lambda}};
+
+    // (2) Check inputs
     check_inputs(car);
       
-    // (5) Compute
+    // (3) Compute
     compute(car);
 }
 
@@ -47,6 +58,14 @@ inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(const std::vector<scala
 template<typename Dynamic_model_t>
 inline void Optimal_laptime<Dynamic_model_t>::check_inputs(const Dynamic_model_t& car)
 {
+    auto& s          = base_type::s;
+    auto& n_points   = base_type::n_points;
+    auto& n_elements = base_type::n_elements;
+    auto& is_closed  = base_type::is_closed;
+    auto& is_direct  = base_type::is_direct;
+    auto& inputs     = base_type::inputs;
+    auto& controls   = base_type::controls;
+
     if ( s.size() <= 1 )
         throw fastest_lap_exception("Provide at least two values of arclength");
 
@@ -89,7 +108,7 @@ inline void Optimal_laptime<Dynamic_model_t>::check_inputs(const Dynamic_model_t
     // (3.3) Controls: check size only for full-mesh controls
     for (const auto& control_variable : controls )
     {
-        if ( control_variable.optimal_control_type == FULL_MESH )
+        if ( control_variable.optimal_control_type == Optimal_control_type::FULL_MESH )
         {
             if ( control_variable.controls.size() != n_points )
                 throw fastest_lap_exception("controls.controls must have the size of n_points");            
@@ -146,91 +165,7 @@ inline void Optimal_laptime<Dynamic_model_t>::check_inputs(const Dynamic_model_t
 template<typename Dynamic_model_t>
 inline Optimal_laptime<Dynamic_model_t>::Optimal_laptime(Xml_document& doc)
 {
-    Xml_element root = doc.get_root_element();
-
-    if ( root.get_attribute("type") == "closed" )
-        is_closed = true;
-    else if ( root.get_attribute("type") == "open" )
-        is_closed = false;
-    else
-        throw fastest_lap_exception("Incorrect track type, should be \"open\" or \"closed\"");
-
-    if ( root.get_attribute("is_direct") == "true" )
-        is_direct = true;
-    else if ( root.get_attribute("is_direct") == "false" )
-        is_direct = false;
-    else
-        throw fastest_lap_exception("Incorrect \"is_direct\" attribute, should be \"true\" or \"false\"");
-
-    auto children = doc.get_root_element().get_children();
-
-    const auto [key_name, q_names, u_names] = Dynamic_model_t{}.get_state_and_control_names();
-
-    // Get the data
-    n_points = std::stoi(root.get_attribute("n_points"));
-    n_elements = (is_closed ? n_points : n_points - 1);
-
-    laptime = root.get_child("laptime").get_value(scalar());
-
-    s = root.get_child(key_name).get_value(std::vector<scalar>());
-
-    // Get state
-    inputs = std::vector<std::array<scalar,Dynamic_model_t::number_of_inputs>>(n_points);
-    for (size_t i = 0; i < Dynamic_model_t::number_of_inputs; ++i)
-    {
-        std::vector<scalar> data_in = root.get_child(q_names[i]).get_value(std::vector<scalar>());
-        for (size_t j = 0; j < n_points; ++j)
-            inputs[j][i] = data_in[j];
-    }
-
-    // Get controls
-    controls = Control_variables<>{};
-    for (size_t i = 0; i < Dynamic_model_t::number_of_controls; ++i)
-    {
-        auto control_var_element = root.get_child("control_variables/" + u_names[i]);
-        
-        // Get optimal control type attribute
-        auto optimal_control_type_str = control_var_element.get_attribute("optimal_control_type");
-
-        if ( optimal_control_type_str == "dont optimize" )
-            controls[i].optimal_control_type = DONT_OPTIMIZE;
-        else if ( optimal_control_type_str == "constant" )
-            controls[i].optimal_control_type = CONSTANT;
-        else if ( optimal_control_type_str == "hypermesh" )
-            controls[i].optimal_control_type = HYPERMESH;
-        else if ( optimal_control_type_str == "full-mesh" )
-            controls[i].optimal_control_type = FULL_MESH;
-        else
-            throw fastest_lap_exception("optimal_control_type attribute not recognize. Options are: 'dont optimize', 'constant', 'hypermesh', 'full-mesh'");
-
-        // Get value
-        controls[i].controls = root.get_child("control_variables/" + u_names[i] + "/values").get_value(std::vector<scalar>());
-
-        // Get hypermesh
-        if ( controls[i].optimal_control_type == HYPERMESH )
-            controls[i].s_hypermesh = root.get_child("control_variables/" + u_names[i] + "/hypermesh").get_value(std::vector<scalar>());
-
-        // Get derivative value if present
-        if ( !is_direct && root.has_child("control_variables/" + u_names[i] + "/derivatives") )
-            controls[i].dcontrols_dt = root.get_child("control_variables/" + u_names[i] + "/derivatives").get_value(std::vector<scalar>());
-
-        // Get hypermesh 
-        if ( controls[i].optimal_control_type == HYPERMESH )
-            controls[i].s_hypermesh = root.get_child("control_variables/" + u_names[i] + "/hypermesh").get_value(std::vector<scalar>());
-    }
-
-    // check them and compute its statistics
-    controls.check();
-
-    // Get x
-    x_coord = root.get_child("x").get_value(std::vector<scalar>());
-    y_coord = root.get_child("y").get_value(std::vector<scalar>());
-    psi     = root.get_child("psi").get_value(std::vector<scalar>());
-
-    // Get optimization data
-    optimization_data.zl     = root.get_child("optimization_data").get_child("zl").get_value(std::vector<scalar>());
-    optimization_data.zu     = root.get_child("optimization_data").get_child("zu").get_value(std::vector<scalar>());
-    optimization_data.lambda = root.get_child("optimization_data").get_child("lambda").get_value(std::vector<scalar>());
+    base_type::template construct_from_xml<Dynamic_model_t>(doc);
 }
 
 
@@ -239,6 +174,9 @@ template<typename FG_t>
 inline typename Optimal_laptime<Dynamic_model_t>::Export_solution 
     Optimal_laptime<Dynamic_model_t>::export_solution(FG_t& fg, const std::vector<scalar>& x) const
 {
+    auto& n_points          = base_type::n_points;
+    auto& controls          = base_type::controls;
+
     // (1) Create output
     Export_solution output;
 
@@ -268,17 +206,17 @@ inline typename Optimal_laptime<Dynamic_model_t>::Export_solution
     {
         switch (output.controls[j].optimal_control_type) 
         {
-         case (CONSTANT):
+         case (Optimal_control_type::CONSTANT):
             std::transform(fg.get_controls()[j].controls.cbegin(), fg.get_controls()[j].controls.cend(), output.controls[j].controls.begin(), 
                 [](const auto& u_cppad) -> auto { return Value(u_cppad); });
             break;
         
-         case (HYPERMESH):
+         case (Optimal_control_type::HYPERMESH):
             std::transform(fg.get_controls()[j].controls.cbegin(), fg.get_controls()[j].controls.cend(), output.controls[j].controls.begin(), 
                 [](const auto& u_cppad) -> auto { return Value(u_cppad); });
             break;
 
-         case (FULL_MESH):
+         case (Optimal_control_type::FULL_MESH):
             std::transform(fg.get_controls()[j].controls.cbegin(), fg.get_controls()[j].controls.cend(), output.controls[j].controls.begin(), 
                 [](const auto& u_cppad) -> auto { return Value(u_cppad); });
 
@@ -303,6 +241,9 @@ inline typename Optimal_laptime<Dynamic_model_t>::Export_solution
 template<typename Dynamic_model_t>
 inline void Optimal_laptime<Dynamic_model_t>::compute(const Dynamic_model_t& car)
 {
+    auto& is_closed         = base_type::is_closed;
+    auto& is_direct         = base_type::is_direct;
+
     // (1) Check that the car is ready
     if ( !car.is_ready() )
     {
@@ -346,6 +287,20 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
      private:
         size_t k;
     };
+
+    auto& s                 = base_type::s;
+    auto& n_points          = base_type::n_points;
+    auto& n_elements        = base_type::n_elements;
+    auto& inputs            = base_type::inputs;
+    auto& controls          = base_type::controls;
+    auto& laptime           = base_type::laptime;
+    auto& x_coord           = base_type::x_coord;
+    auto& y_coord           = base_type::y_coord;
+    auto& psi               = base_type::psi;
+    auto& optimization_data = base_type::optimization_data;
+    auto& warm_start        = base_type::warm_start;
+    auto& success           = base_type::success;
+    auto& iter_count        = base_type::iter_count;
 
     out(2) << "[" << get_current_date_and_time() << "] Optimal laptime computation -> start" << std::endl;
 
@@ -409,7 +364,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
         // (3.5) Set full mesh control variables
         for (size_t j = 0; j < Dynamic_model_t::number_of_controls; ++j)
         {
-            if ( controls[j].optimal_control_type == FULL_MESH )
+            if ( controls[j].optimal_control_type == Optimal_control_type::FULL_MESH )
             {
                 x_start[k] = controls[j].controls[i];
                 x_lb[k]    = controls_lb[j];
@@ -424,7 +379,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
     {
         switch (controls[j].optimal_control_type)
         {
-         case (CONSTANT):
+         case (Optimal_control_type::CONSTANT):
             for (size_t i = 0; i < controls[j].controls.size(); ++i)
             {
                 x_start[k] = controls[j].controls[i];
@@ -434,7 +389,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_direct(const Dynamic_model
             } 
             break;
 
-         case (HYPERMESH):
+         case (Optimal_control_type::HYPERMESH):
             for (size_t i = 0; i < controls[j].controls.size(); ++i)
             {
                 x_start[k] = controls[j].controls[i];
@@ -791,11 +746,25 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
         size_t k;
     };
 
+    auto& s                 = base_type::s;
+    auto& n_points          = base_type::n_points;
+    auto& n_elements        = base_type::n_elements;
+    auto& inputs            = base_type::inputs;
+    auto& controls          = base_type::controls;
+    auto& laptime           = base_type::laptime;
+    auto& x_coord           = base_type::x_coord;
+    auto& y_coord           = base_type::y_coord;
+    auto& psi               = base_type::psi;
+    auto& optimization_data = base_type::optimization_data;
+    auto& warm_start        = base_type::warm_start;
+    auto& success           = base_type::success;
+    auto& iter_count        = base_type::iter_count;
+
     // (1) Get variable bounds and default control variables
-    const auto& inputs_lb     = options.inputs_lb;
-    const auto& inputs_ub     = options.inputs_ub;
-    const auto& controls_lb         = options.controls_lb;
-    const auto& controls_ub         = options.controls_ub;
+    const auto& inputs_lb   = options.inputs_lb;
+    const auto& inputs_ub   = options.inputs_ub;
+    const auto& controls_lb = options.controls_lb;
+    const auto& controls_ub = options.controls_ub;
 
     const auto [dcontrols_dt_lb, dcontrols_dt_ub] = car.optimal_laptime_derivative_control_bounds();
 
@@ -848,7 +817,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
         // (3.5) Set full mesh control variables
         for (size_t j = 0; j < Dynamic_model_t::number_of_controls; ++j)
         {
-            if ( controls[j].optimal_control_type == FULL_MESH )
+            if ( controls[j].optimal_control_type == Optimal_control_type::FULL_MESH )
             {
                 x_start[k] = controls[j].controls[i];
                 x_lb[k]    = controls_lb[j];
@@ -860,7 +829,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
         // (3.6) Set full mesh control variables derivatives
         for (size_t j = 0; j < Dynamic_model_t::number_of_controls; ++j)
         {
-            if ( controls[j].optimal_control_type == FULL_MESH )
+            if ( controls[j].optimal_control_type == Optimal_control_type::FULL_MESH )
             {
                 x_start[k] = controls[j].dcontrols_dt[i];
                 x_lb[k]    = dcontrols_dt_lb[j];
@@ -875,7 +844,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
     {
         switch (controls[j].optimal_control_type)
         {
-         case (CONSTANT):
+         case (Optimal_control_type::CONSTANT):
             for (size_t i = 0; i < controls[j].controls.size(); ++i)
             {
                 x_start[k] = controls[j].controls[i];
@@ -884,7 +853,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
                 k.increment();
             } 
 
-         case (HYPERMESH):
+         case (Optimal_control_type::HYPERMESH):
             for (size_t i = 0; i < controls[j].controls.size(); ++i)
             {
                 x_start[k] = controls[j].controls[i];
@@ -935,7 +904,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
         // (4.5) Full mesh control derivatives
         for (size_t j = 0; j < Dynamic_model_t::number_of_controls; ++j)
         {   
-            if ( controls[j].optimal_control_type == FULL_MESH )
+            if ( controls[j].optimal_control_type == Optimal_control_type::FULL_MESH )
             {
                 c_lb[kc] = 0.0;
                 c_ub[kc] = 0.0;
@@ -977,7 +946,7 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
         // (5.5) Full mesh control variables derivatives
         for (size_t j = 0; j < Dynamic_model_t::number_of_controls; ++j)
         {   
-            if ( controls[j].optimal_control_type == FULL_MESH )
+            if ( controls[j].optimal_control_type == Optimal_control_type::FULL_MESH )
             {
                 c_lb[kc] = 0.0;
                 c_ub[kc] = 0.0;
@@ -1252,190 +1221,6 @@ inline void Optimal_laptime<Dynamic_model_t>::compute_derivative(const Dynamic_m
 
 
 template<typename Dynamic_model_t>
-std::unique_ptr<Xml_document> Optimal_laptime<Dynamic_model_t>::xml() const 
-{
-    std::unique_ptr<Xml_document> doc_ptr(std::make_unique<Xml_document>());
-
-
-    std::ostringstream s_out;
-    s_out.precision(17);
-
-    doc_ptr->create_root_element("optimal_laptime");
-
-    auto root = doc_ptr->get_root_element();
-    
-    root.set_attribute("n_points",std::to_string(n_points));
-    
-    if ( is_closed )
-        root.set_attribute("type", "closed");
-    else
-        root.set_attribute("type", "open");
-
-    if ( is_direct )
-        root.set_attribute("is_direct","true");
-    else
-        root.set_attribute("is_direct","false");
-    
-
-    // Save arclength
-    for (size_t j = 0; j < s.size()-1; ++j)
-        s_out << s[j] << ", ";
-
-    s_out << s.back();
-
-    root.add_child("laptime").set_value(std::to_string(laptime));
-
-    const auto [key_name, q_names, u_names] = Dynamic_model_t{}.get_state_and_control_names();
-
-    root.add_child(key_name).set_value(s_out.str());
-    s_out.str(""); s_out.clear();
-
-
-    // Save state
-    for (size_t i = 0; i < Dynamic_model_t::number_of_inputs; ++i)
-    {
-        for (size_t j = 0; j < inputs.size()-1; ++j)
-            s_out << inputs[j][i] << ", " ;
-
-        s_out << inputs.back()[i];
-
-        root.add_child(q_names[i]).set_value(s_out.str());
-        s_out.str(""); s_out.clear();
-    }
-
-    // Save controls
-    auto node_control_variables = root.add_child("control_variables");
-    for (size_t i = 0; i < Dynamic_model_t::number_of_controls; ++i)
-    {
-        auto node_variable = node_control_variables.add_child(u_names[i]);
-        if ( controls[i].optimal_control_type == DONT_OPTIMIZE )
-        {
-            node_variable.set_attribute("optimal_control_type","dont optimize");
-            node_variable.add_child("values");
-        }
-        else if ( controls[i].optimal_control_type == CONSTANT )
-        {   
-            node_variable.set_attribute("optimal_control_type","constant");
-            s_out << controls[i].controls.front();
-            node_variable.add_child("values").set_value(s_out.str());
-            s_out.str(""); s_out.clear();
-        }
-        else if ( controls[i].optimal_control_type == HYPERMESH )
-        {
-            node_variable.set_attribute("optimal_control_type","hypermesh");
-            for (size_t j = 0; j < controls[i].controls.size()-1; ++j)
-                s_out << controls[i].controls[j] << ", " ;
-
-            s_out << controls[i].controls.back();
-
-            node_variable.add_child("values").set_value(s_out.str());
-            s_out.str(""); s_out.clear();
-
-            for (size_t j = 0; j < controls[i].s_hypermesh.size()-1; ++j)
-                s_out << controls[i].s_hypermesh[j] << ", " ;
-
-            s_out << controls[i].s_hypermesh.back();
-
-            node_variable.add_child("hypermesh").set_value(s_out.str());
-            s_out.str(""); s_out.clear();
-        }
-        else if ( controls[i].optimal_control_type == FULL_MESH )
-        {
-            node_variable.set_attribute("optimal_control_type", "full-mesh");
-            for (size_t j = 0; j < controls[i].controls.size()-1; ++j)
-                s_out << controls[i].controls[j] << ", " ;
-
-            s_out << controls[i].controls.back();
-
-            node_variable.add_child("values").set_value(s_out.str());
-            s_out.str(""); s_out.clear();
-
-            // Save controls derivatives if not direct
-            if ( !is_direct )
-            {
-                for (size_t j = 0; j < controls[i].dcontrols_dt.size()-1; ++j)
-                    s_out << controls[i].dcontrols_dt[j] << ", " ;
-        
-                s_out << controls[i].dcontrols_dt.back();
-
-                node_variable.add_child("derivatives").set_value(s_out.str());
-                s_out.str(""); s_out.clear();
-            }
-        }
-    }
-
-    // Save x, y, and psi if they are not contained
-    for (size_t j = 0; j < inputs.size()-1; ++j)
-        s_out << x_coord[j] << ", " ;
-
-    s_out << x_coord.back();
-    root.add_child("x").set_value(s_out.str());
-    s_out.str(""); s_out.clear();
-
-    for (size_t j = 0; j < inputs.size()-1; ++j)
-        s_out << y_coord[j] << ", " ;
-
-    s_out << y_coord.back();
-    root.add_child("y").set_value(s_out.str());
-    s_out.str(""); s_out.clear();
-
-    for (size_t j = 0; j < inputs.size()-1; ++j)
-        s_out << psi[j] << ", " ;
-
-    s_out << psi.back();
-    root.add_child("psi").set_value(s_out.str());
-    s_out.str(""); s_out.clear();
-
-    // Save optimization data
-    auto opt_data = root.add_child("optimization_data");
-    size_t n_vars(0);
-    size_t n_cons(0);
-
-    if ( is_direct )
-    {
-        n_vars = n_variables_per_point<true>(controls);
-        n_cons = n_constraints_per_element<true>(controls);
-    }
-    else
-    {
-        n_vars = n_variables_per_point<false>(controls);
-        n_cons = n_constraints_per_element<false>(controls);
-    }
-
-    opt_data.set_attribute("n_variables_per_point", std::to_string(n_vars));
-    opt_data.set_attribute("n_constraints_per_element", std::to_string(n_cons));
-
-    opt_data.add_child("number_of_iterations").set_value(std::to_string(iter_count));
-
-    for (size_t j = 0; j < optimization_data.zl.size()-1; ++j)
-        s_out << optimization_data.zl[j] << ", " ;
-
-    s_out << optimization_data.zl.back();
-
-    opt_data.add_child("zl").set_value(s_out.str());
-    s_out.str(""); s_out.clear();
-
-    for (size_t j = 0; j < optimization_data.zu.size()-1; ++j)
-        s_out << optimization_data.zu[j] << ", " ;
-
-    s_out << optimization_data.zu.back();
-
-    opt_data.add_child("zu").set_value(s_out.str());
-    s_out.str(""); s_out.clear();
-
-    for (size_t j = 0; j < optimization_data.lambda.size()-1; ++j)
-        s_out << optimization_data.lambda[j] << ", " ;
-
-    s_out << optimization_data.lambda.back();
-
-    opt_data.add_child("lambda").set_value(s_out.str());
-    s_out.str(""); s_out.clear();
-
-    return doc_ptr;
-}
-
-
-template<typename Dynamic_model_t>
 template<bool isClosed>
 template<bool compute_integrated_quantities>
 inline void Optimal_laptime<Dynamic_model_t>::FG_direct<isClosed>::compute(FG_direct<isClosed>::ADvector& fg, const Optimal_laptime<Dynamic_model_t>::FG_direct<isClosed>::ADvector& x)
@@ -1472,7 +1257,7 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_direct<isClosed>::compute(FG_di
         // (3.1.3) Control for full mesh calculations
         for (size_t j = 0; j < Dynamic_model_t::number_of_controls; ++j)
         {
-            if ( _controls[j].optimal_control_type == FULL_MESH )
+            if ( _controls[j].optimal_control_type == Optimal_control_type::FULL_MESH )
                 _controls[j].controls.front() = _controls_open_initial_point[j];
         }
     }
@@ -1494,7 +1279,7 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_direct<isClosed>::compute(FG_di
         // (3.2.4) Load full mesh controls
         for (auto& control_variable : _controls)
         {
-            if ( control_variable.optimal_control_type == FULL_MESH )
+            if ( control_variable.optimal_control_type == Optimal_control_type::FULL_MESH )
                 control_variable.controls[i] = x[k++];
         }
     }
@@ -1504,11 +1289,11 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_direct<isClosed>::compute(FG_di
     {
         switch (control_variable.optimal_control_type)
         {
-         case (CONSTANT):
+         case (Optimal_control_type::CONSTANT):
             for (size_t i = 0; i < control_variable.controls.size(); ++i)
                 control_variable.controls[i] = x[k++];
             break;
-         case (HYPERMESH):
+         case (Optimal_control_type::HYPERMESH):
             for (size_t i = 0; i < control_variable.controls.size(); ++i)
                 control_variable.controls[i] = x[k++];
             break;
@@ -1572,7 +1357,7 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_direct<isClosed>::compute(FG_di
     // (5.6) Add a penalisation to the controls
     for (const auto& control_variable : _controls)
     {
-        if (control_variable.optimal_control_type == FULL_MESH)
+        if (control_variable.optimal_control_type == Optimal_control_type::FULL_MESH)
         {
             for (size_t i = 1; i < _n_points; ++i)
             {
@@ -1611,7 +1396,7 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_direct<isClosed>::compute(FG_di
         // (5.7.6) Add a penalisation to the controls
         for (const auto& control_variable : _controls)
         {
-            if (control_variable.optimal_control_type == FULL_MESH)
+            if (control_variable.optimal_control_type == Optimal_control_type::FULL_MESH)
             {
                 const auto derivative = (control_variable.controls.front()-control_variable.controls.back())/(L-_s.back());
                 fg.front() += control_variable.dissipation*(derivative*derivative)*(L-_s.back());
@@ -1672,7 +1457,7 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_derivative<isClosed>::compute(F
         // (3.1.3) Control for full mesh calculations
         for (size_t j = 0; j < Dynamic_model_t::number_of_controls; ++j)
         {
-            if ( _controls[j].optimal_control_type == FULL_MESH )
+            if ( _controls[j].optimal_control_type == Optimal_control_type::FULL_MESH )
             {
                 _controls[j].controls.front()     = _controls_open_initial_point[j];
                 _controls[j].dcontrols_dt.front() = _dcontrols_dt_open_initial_point[j];
@@ -1696,14 +1481,14 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_derivative<isClosed>::compute(F
         // (3.2.4) Load full mesh controls
         for (auto& control_variable : _controls)
         {
-            if ( control_variable.optimal_control_type == FULL_MESH )
+            if ( control_variable.optimal_control_type == Optimal_control_type::FULL_MESH )
                 control_variable.controls[i] = x[k++];
         }
 
         // (3.2.4) Load full mesh control derivatives
         for (auto& control_variable : _controls)
         {
-            if ( control_variable.optimal_control_type == FULL_MESH )
+            if ( control_variable.optimal_control_type == Optimal_control_type::FULL_MESH )
                 control_variable.dcontrols_dt[i] = x[k++];
         }
     }
@@ -1713,11 +1498,11 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_derivative<isClosed>::compute(F
     {
         switch (control_variable.optimal_control_type)
         {
-         case (CONSTANT):
+         case (Optimal_control_type::CONSTANT):
             for (size_t i = 0; i < control_variable.controls.size(); ++i)
                 control_variable.controls[i] = x[k++];
             break;
-         case (HYPERMESH):
+         case (Optimal_control_type::HYPERMESH):
             for (size_t i = 0; i < control_variable.controls.size(); ++i)
                 control_variable.controls[i] = x[k++];
             break;
@@ -1761,7 +1546,7 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_derivative<isClosed>::compute(F
         // (5.1.2) Penalisation of controls
         for (const auto& control_variable : _controls)
         {
-            if ( control_variable.optimal_control_type == FULL_MESH )
+            if ( control_variable.optimal_control_type == Optimal_control_type::FULL_MESH )
             {
                 const auto& dcontrols_dt = control_variable.dcontrols_dt;
                 const auto& dissipation = control_variable.dissipation;
@@ -1787,7 +1572,7 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_derivative<isClosed>::compute(F
         // (5.6) Time derivative of full mesh controls
         for (const auto& control_variable : _controls)
         {
-            if (control_variable.optimal_control_type == FULL_MESH)
+            if (control_variable.optimal_control_type == Optimal_control_type::FULL_MESH)
             {
                 const auto& controls = control_variable.controls;
                 const auto& dcontrols_dt = control_variable.dcontrols_dt;
@@ -1819,7 +1604,7 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_derivative<isClosed>::compute(F
         // (5.7.1.2) Penalisation to the controls
         for (const auto& control_variable : _controls)
         {
-            if ( control_variable.optimal_control_type == FULL_MESH )
+            if ( control_variable.optimal_control_type == Optimal_control_type::FULL_MESH )
             {
                 const auto& dcontrols_dt = control_variable.dcontrols_dt;
                 const auto& dissipation = control_variable.dissipation;
@@ -1846,7 +1631,7 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_derivative<isClosed>::compute(F
         // (5.7.5) Time derivative of the control variables
         for (const auto& control_variable : _controls)
         {
-            if (control_variable.optimal_control_type == FULL_MESH)
+            if (control_variable.optimal_control_type == Optimal_control_type::FULL_MESH)
             {
                 const auto& controls = control_variable.controls;
                 const auto& dcontrols_dt = control_variable.dcontrols_dt;
@@ -1871,323 +1656,5 @@ inline void Optimal_laptime<Dynamic_model_t>::FG_derivative<isClosed>::compute(F
     assert(k == FG::_n_constraints+1);
 }
 
-//
-// Implementation of the helper class Control_variables ----------------------------------------------------:-
-//
 
-template<typename Dynamic_model_t>
-template<typename T>
-void Optimal_laptime<Dynamic_model_t>::Control_variables<T>::check_inputs()
-{
-    for (auto& control_variable : *this)
-    {
-        switch(control_variable.optimal_control_type)
-        {
-         case(DONT_OPTIMIZE):
-            // Check that s_hypermesh is empty, and that controls only contains one value 
-            if ( control_variable.s_hypermesh.size() > 0 ) 
-                throw fastest_lap_exception("[ERROR] Control_variables::check_inputs() -> "
-                    "In \"don't optimize\" mode, s_hypermesh should be empty");
 
-            if ( control_variable.controls.size() > 0 )
-                throw fastest_lap_exception("[ERROR] Control_variables::check_inputs() -> "
-                    "In \"don't optimize\" mode, controls should be empty. Its size is " + std::to_string(control_variable.controls.size()) );
-
-            if ( control_variable.dcontrols_dt.size() != 0 )
-                throw fastest_lap_exception("[ERROR] Control_variables::check_inputs() -> "
-                    "In \"don't optimize\" mode, dcontrols_dt should be empty");
-
-            control_variable.dissipation = 0.0;
-
-            break;
-
-         case(CONSTANT):
-            // Check that s_hypermesh is empty, and that controls only contains one value 
-            if ( control_variable.s_hypermesh.size() > 0 ) 
-                throw fastest_lap_exception("[ERROR] Control_variables::check_inputs() -> "
-                    "In \"constant optimization\" mode, s_hypermesh should be empty");
-
-            if ( control_variable.controls.size() != 1 )
-                throw fastest_lap_exception("[ERROR] Control_variables::check_inputs() -> "
-                    "In \"constant optimization\" mode, controls should contain only one value");
-
-            if ( control_variable.dcontrols_dt.size() != 0 )
-                throw fastest_lap_exception("[ERROR] Control_variables::check_inputs() -> "
-                    "In \"constant optimization\" mode, dcontrols_dt should be empty");
-
-            control_variable.dissipation = 0.0;
-
-            break;
-         case(HYPERMESH):
-            // Check that the size of s_hypermesh equals the size of controls
-            if ( control_variable.s_hypermesh.size() != control_variable.controls.size() )
-                throw fastest_lap_exception("[ERROR] Control_variables::check_inputs() -> "
-                    "In \"hypermesh optimization\" mode, size(s_hypermesh) should be equal to size(controls)");
-
-            if ( control_variable.dcontrols_dt.size() != 0 )
-                throw fastest_lap_exception("[ERROR] Control_variables::check_inputs() -> "
-                    "In \"hypermesh optimization\" mode, dcontrols_dt should be empty");
-
-            control_variable.dissipation = 0.0;
-
-            break;
-         case(FULL_MESH): 
-            // Check that s_hypermesh is empty, the size of controls will be checked later 
-            if ( control_variable.s_hypermesh.size() > 0 ) 
-                throw fastest_lap_exception("[ERROR] Control_variables::check_inputs() -> "
-                    "In \"full-mesh optimize\" mode, s_hypermesh should be empty");
-
-            if ( (control_variable.controls.size() != control_variable.dcontrols_dt.size()) && (control_variable.dcontrols_dt.size() != 0) )
-                throw fastest_lap_exception("[ERROR] Control_variables::check_inputs() -> "
-                    "In \"full-mesh optimize\" mode, dcontrols_dt should either have the same size as controls, or be empty");
-
-            if ( control_variable.dissipation < 0.0 )
-                throw fastest_lap_exception("[ERROR] Control_variables::check_inputs() -> dissipation must be non-negative");
-
-            break;
-         default:
-            throw fastest_lap_exception("[ERROR] Control_variables::check_inputs() -> optimization mode not recognized");
-    
-            break;
-        }
-    }
-}
-
-
-template<typename Dynamic_model_t>
-template<typename T>
-void Optimal_laptime<Dynamic_model_t>::Control_variables<T>::compute_statistics()
-{
-    // (1) Reset values
-    number_of_constant_optimizations        = 0;
-    number_of_hypermesh_optimization_points = 0;
-    number_of_full_optimizations            = 0;
-
-    for (const auto& control_variable : *this)
-    {
-        switch(control_variable.optimal_control_type)
-        {
-         case(DONT_OPTIMIZE):
-            // Do nothing
-            break;
-         case(CONSTANT):
-            ++number_of_constant_optimizations;
-            break;
-         case(HYPERMESH):
-            number_of_hypermesh_optimization_points += control_variable.s_hypermesh.size();
-            break;
-         case(FULL_MESH): 
-            ++number_of_full_optimizations;
-            break;
-         default:
-            throw fastest_lap_exception("[ERROR] Control_variables::check_inputs() -> optimization mode not recognized");
-    
-            break;
-        }
-    }
-}
-
-
-template<typename Dynamic_model_t>
-template<typename T>
-template<typename U>
-std::enable_if_t<std::is_same_v<U,scalar>, typename Optimal_laptime<Dynamic_model_t>::template Control_variables<CppAD::AD<scalar>>> 
-    Optimal_laptime<Dynamic_model_t>::Control_variables<T>::to_CppAD() const
-{
-    // (1) Create return value
-    Control_variables<CppAD::AD<scalar>> output;
-
-    // (2) Copy the std::array storage
-    std::transform(base_type::cbegin(), base_type::cend(), output.begin(), [](const auto& scalar_control) -> auto { return scalar_control.to_CppAD(); });
-
-    // (3) Copy the statistics
-    output.number_of_constant_optimizations        = number_of_constant_optimizations;
-    output.number_of_hypermesh_optimization_points = number_of_hypermesh_optimization_points;
-    output.number_of_full_optimizations            = number_of_full_optimizations;
-
-    // (4) Return
-    return output;
-}
-
-template<typename Dynamic_model_t>
-template<typename T>
-typename Optimal_laptime<Dynamic_model_t>::template Control_variables<T>& Optimal_laptime<Dynamic_model_t>::Control_variables<T>::clear()
-{
-    std::transform(base_type::begin(), base_type::end(), base_type::begin(), [](auto& input) -> auto { return input.clear(); });
-    return *this;
-}
-
-
-template<typename Dynamic_model_t>
-template<typename T>
-std::array<T,Dynamic_model_t::number_of_controls> Optimal_laptime<Dynamic_model_t>::Control_variables<T>::control_array_at_s(const Dynamic_model_t& car, const size_t i_fullmesh, const scalar s) const
-{
-    std::array<scalar,Dynamic_model_t::number_of_controls> controls_scalar = car.get_state_and_control_upper_lower_and_default_values().controls_def;
-    std::array<T,Dynamic_model_t::number_of_controls> controls;
-
-    std::copy(controls_scalar.cbegin(), controls_scalar.cend(), controls.begin());
-
-    for (size_t j = 0; j < Dynamic_model_t::Dynamic_model_t::number_of_controls; ++j)
-    {
-        switch((*this)[j].optimal_control_type)
-        {
-         case (DONT_OPTIMIZE):
-            // Keep the default value
-            break;
-
-         case (CONSTANT):
-            controls[j] = (*this)[j].controls.front();
-            break;
-
-         case (HYPERMESH):
-            controls[j] = (*this)[j].get_hypermesh_control_value_for_s(s);
-            break;
-
-         case (FULL_MESH):
-            controls[j] = (*this)[j].controls[i_fullmesh];
-            break;
-        }
-    }
-    
-    return controls;
-}
-
-
-template<typename Dynamic_model_t>
-template<typename T>
-std::pair<std::array<T,Dynamic_model_t::number_of_controls>,std::array<T,Dynamic_model_t::number_of_controls>>
-    Optimal_laptime<Dynamic_model_t>::Control_variables<T>::control_array_and_derivative_at_s
-        (const Dynamic_model_t& car, const size_t i_fullmesh, const scalar s) const
-{
-    std::array<T,Dynamic_model_t::number_of_controls> controls = car.get_state_and_control_upper_lower_and_default_values().controls_def;
-    std::array<T,Dynamic_model_t::number_of_controls> dcontrols_dt{0.0};
-
-    for (size_t j = 0; j < Dynamic_model_t::Dynamic_model_t::number_of_controls; ++j)
-    {
-        switch((*this)[j].optimal_control_type)
-        {
-         case (DONT_OPTIMIZE):
-            dcontrols_dt[j] = 0.0;
-            break;
-
-         case (CONSTANT):
-            controls[j] = (*this)[j].controls.front();
-            dcontrols_dt[j] = 0.0;
-            break;
-
-         case (HYPERMESH):
-            controls[j] = (*this)[j].get_hypermesh_control_value_for_s(s);
-            dcontrols_dt[j] = 0.0;
-            break;
-
-         case (FULL_MESH):
-            controls[j] = (*this)[j].controls[i_fullmesh];
-            dcontrols_dt[j] = (*this)[j].dcontrols_dt[i_fullmesh];
-            break;
-        }
-    }
-
-    return {controls,dcontrols_dt};
-}
-
-
-template<typename Dynamic_model_t>
-template<typename T>
-typename Optimal_laptime<Dynamic_model_t>::template Control_variables<T>& Optimal_laptime<Dynamic_model_t>::Control_variables<T>::check()
-{
-    check_inputs();
-    compute_statistics();
-    return *this;
-}
-
-
-
-//
-// Implementation of the helper class Control_variable -----------------------------------------------------:-
-//
-
-template<typename Dynamic_model_t>
-template<typename T>
-template<typename U>
-std::enable_if_t<std::is_same_v<U,scalar>, typename Optimal_laptime<Dynamic_model_t>::template Control_variable<CppAD::AD<scalar>>> 
-    Optimal_laptime<Dynamic_model_t>::Control_variable<T>::to_CppAD() const
-{
-    // (1) Define the new variable of type CppAD::AD
-    Control_variable<CppAD::AD<scalar>> output;
-
-    // (2) Copy optimal control type
-    output.optimal_control_type = optimal_control_type; 
-
-    // (3) Copy hypermesh
-    output.s_hypermesh          = s_hypermesh; 
-
-    // (4) Copy control variable values
-    output.controls = std::vector<CppAD::AD<scalar>>(controls.size());
-    std::copy(controls.cbegin(), controls.cend(), output.controls.begin());
-
-    output.dcontrols_dt = std::vector<CppAD::AD<scalar>>(dcontrols_dt.size());
-    std::copy(dcontrols_dt.cbegin(), dcontrols_dt.cend(), output.dcontrols_dt.begin());
-
-    // (5) Copy dissipation
-    output.dissipation = dissipation;
-
-    // (6) Return
-    return output;
-}
-
-
-template<typename Dynamic_model_t>
-template<typename T>
-size_t Optimal_laptime<Dynamic_model_t>::Control_variable<T>::get_hypermesh_position_for_s(const std::vector<scalar>& s_hypermesh, scalar s)
-{
-    // (1) Get an iterator to the first point in the hypermesh grid that *it > s
-    auto it = std::upper_bound(s_hypermesh.begin(), s_hypermesh.end(), s);
-
-    // (2) Error if the point found is the first node of the hypermesh
-    if ( it == s_hypermesh.cbegin() )
-        throw fastest_lap_exception("[ERROR] Optimal_laptime::Control_variable::get_hypermesh_value_for_s -> input s(" 
-            + std::to_string(s) + ") is smaller than the first hypermesh checkpoint (" + std::to_string(s_hypermesh.front()) + ")");
-
-    // (3) Compute position
-    const size_t i_position = std::distance(s_hypermesh.begin(), it) - 1;
-
-    return i_position;
-}
-
-
-template<typename Dynamic_model_t>
-template<typename T>
-const T& Optimal_laptime<Dynamic_model_t>::Control_variable<T>::get_hypermesh_control_value_for_s(const scalar s) const
-{
-    // (1) Error if control variable is not of type hypermesh
-    if (optimal_control_type != HYPERMESH )
-        throw fastest_lap_exception("[ERROR] Optimal_laptime::Control_variable::get_hypermesh_value_for_s can only be called for HYPERMESH parameters");
-
-    // (2) Return
-    return controls[get_hypermesh_position_for_s(s_hypermesh,s)]; 
-}
-
-
-template<typename Dynamic_model_t>
-template<typename T>
-std::pair<const T&,const T&> Optimal_laptime<Dynamic_model_t>::Control_variable<T>::get_hypermesh_control_value_and_derivative_for_s(const scalar s) const
-{
-    // (1) Error if control variable is not of type hypermesh
-    if (optimal_control_type != HYPERMESH )
-        throw fastest_lap_exception("[ERROR] Optimal_laptime::Control_variable::get_hypermesh_value_for_s can only be called for HYPERMESH parameters");
-
-    // (2) Return
-    const size_t i_position = get_hypermesh_position_for_s(s_hypermesh,s);
-    return {controls[i_position], dcontrols_dt[i_position]}; 
-}
-
-
-template<typename Dynamic_model_t>
-template<typename T>
-typename Optimal_laptime<Dynamic_model_t>::template Control_variable<T>& Optimal_laptime<Dynamic_model_t>::Control_variable<T>::clear()
-{
-    std::fill(controls.begin(), controls.end(), 0.0);
-    std::fill(dcontrols_dt.begin(), dcontrols_dt.end(), 0.0);
-
-    return *this;
-}

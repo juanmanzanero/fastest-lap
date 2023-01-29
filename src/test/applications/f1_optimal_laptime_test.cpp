@@ -189,7 +189,7 @@ TEST_F(F1_optimal_laptime_test, Catalunya_discrete)
     EXPECT_EQ(n, 500);
 
     // Construct control variables
-    auto control_variables = Optimal_laptime<decltype(car)>::template Control_variables<>{};
+    auto control_variables = Optimal_laptime<decltype(car)>::template Control_variables_type<>{};
 
     // steering wheel: optimize in the full mesh
     control_variables[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING]
@@ -235,7 +235,7 @@ TEST_F(F1_optimal_laptime_test, Catalunya_adapted)
     const size_t n = s.size();
 
     // Construct control variables
-    auto control_variables = Optimal_laptime<decltype(car)>::template Control_variables<>{};
+    auto control_variables = Optimal_laptime<decltype(car)>::template Control_variables_type<>{};
 
     // steering wheel: optimize in the full mesh
     control_variables[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING]
@@ -289,7 +289,7 @@ TEST_F(F1_optimal_laptime_test, Catalunya_variable_parameter)
     const size_t n = s.size();
 
     // Construct control variables
-    auto control_variables = Optimal_laptime<decltype(car)>::template Control_variables<>{};
+    auto control_variables = Optimal_laptime<decltype(car)>::template Control_variables_type<>{};
 
     // steering wheel: optimize in the full mesh
     control_variables[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING]
@@ -346,7 +346,7 @@ TEST_F(F1_optimal_laptime_test, Catalunya_chicane)
     std::vector<std::array<scalar,limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p::number_of_inputs>> inputs_start(n,ss.inputs);
     
     // Construct control variables
-    auto controls = Optimal_laptime<decltype(car)>::template Control_variables<>{};
+    auto controls = Optimal_laptime<decltype(car)>::template Control_variables_type<>{};
 
     // steering wheel: optimize in the full mesh
     controls[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING]
@@ -371,7 +371,7 @@ TEST_F(F1_optimal_laptime_test, Catalunya_chicane)
 
     for (size_t i = 0; i < decltype(car)::number_of_controls; ++i)
     {
-        if ( controls[i].optimal_control_type != Optimal_laptime<decltype(car)>::DONT_OPTIMIZE )
+        if ( controls[i].optimal_control_type != Optimal_control_type::DONT_OPTIMIZE )
             controls[i].controls.front() = controls_start[i];
     }
 
@@ -504,18 +504,18 @@ TEST_F(F1_optimal_laptime_test, Catalunya_chicane_warm_start)
     const size_t i1         = 677;
     const size_t n_elements = i1-i0;
     const size_t n_points   = n_elements + 1;
-    const size_t n_vars_per_point = Optimal_laptime<limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p>::n_variables_per_point<true>(opt_laptime_saved.controls);
-    const size_t n_cons_per_point = Optimal_laptime<limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p>::n_constraints_per_element<true>(opt_laptime_saved.controls);
+    const size_t n_vars_per_point = Optimal_laptime<limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p>::base_type::n_variables_per_point<true>(opt_laptime_saved.controls);
+    const size_t n_cons_per_point = Optimal_laptime<limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p>::base_type::n_constraints_per_element<true>(opt_laptime_saved.controls, limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p::N_OL_EXTRA_CONSTRAINTS);
     std::vector<scalar> s(i1-i0+1);
     std::copy(catalunya_pproc.s.cbegin()+i0,catalunya_pproc.s.cbegin()+i1+1,s.begin());        
 
     std::vector<std::array<scalar,limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p::number_of_inputs>> q(n_points);
 
-    auto control_variables = Optimal_laptime<decltype(car)>::Control_variables<>{};
+    auto control_variables = Optimal_laptime<decltype(car)>::Control_variables_type<>{};
 
-    control_variables[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING].optimal_control_type = Optimal_laptime<decltype(car)>::FULL_MESH;
-    control_variables[decltype(car)::Chassis_type::control_names::throttle].optimal_control_type                  = Optimal_laptime<decltype(car)>::FULL_MESH;
-    control_variables[decltype(car)::Chassis_type::control_names::brake_bias].optimal_control_type                = Optimal_laptime<decltype(car)>::DONT_OPTIMIZE;
+    control_variables[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING].optimal_control_type = Optimal_control_type::FULL_MESH;
+    control_variables[decltype(car)::Chassis_type::control_names::throttle].optimal_control_type                  = Optimal_control_type::FULL_MESH;
+    control_variables[decltype(car)::Chassis_type::control_names::brake_bias].optimal_control_type                = Optimal_control_type::DONT_OPTIMIZE;
 
     control_variables[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING].controls = std::vector<scalar>(n_points);
     control_variables[decltype(car)::Chassis_type::control_names::throttle].controls = std::vector<scalar>(n_points);
@@ -621,7 +621,7 @@ TEST_F(F1_optimal_laptime_test, maximum_acceleration)
     const scalar v = 80.0*KMH;
     auto ss = Steady_state(car_cartesian).solve(v,0.0,0.0); 
 
-    auto control_variables = Optimal_laptime<decltype(car)>::Control_variables<>{};
+    auto control_variables = Optimal_laptime<decltype(car)>::Control_variables_type<>{};
 
     control_variables[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING] 
         = Optimal_laptime<decltype(car)>::create_full_mesh(std::vector<scalar>(n+1, 0.0), 0.0e0);
@@ -673,7 +673,7 @@ TEST_F(F1_optimal_laptime_test, Ovaltrack_open)
     const scalar v = 100.0*KMH;
     auto ss = Steady_state(car_cartesian).solve(v,0.0,0.0); 
 
-    auto control_variables = Optimal_laptime<decltype(car)>::Control_variables<>{};
+    auto control_variables = Optimal_laptime<decltype(car)>::Control_variables_type<>{};
 
     control_variables[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING] 
         = Optimal_laptime<decltype(car)>::create_full_mesh(std::vector<scalar>(n+1,ss.controls[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING]), 1.0e2);
@@ -712,7 +712,7 @@ TEST_F(F1_optimal_laptime_test, Ovaltrack_closed)
     const scalar v = 50.0*KMH;
     auto ss = Steady_state(car_cartesian).solve(v,0.0,0.0); 
 
-    auto control_variables = Optimal_laptime<decltype(car)>::Control_variables<>{};
+    auto control_variables = Optimal_laptime<decltype(car)>::Control_variables_type<>{};
 
     control_variables[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING] 
         = Optimal_laptime<decltype(car)>::create_full_mesh(std::vector<scalar>(n,ss.controls[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING]), 1.0e2);
@@ -757,7 +757,7 @@ TEST_F(F1_optimal_laptime_test, Melbourne_direct)
     const scalar v = 50.0*KMH;
     auto ss = Steady_state(car_cartesian).solve(v,0.0,0.0); 
 
-    auto control_variables = Optimal_laptime<decltype(car)>::Control_variables<>{};
+    auto control_variables = Optimal_laptime<decltype(car)>::Control_variables_type<>{};
 
     control_variables[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING] 
         = Optimal_laptime<decltype(car)>::create_full_mesh(std::vector<scalar>(n,ss.controls[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING]), 50.0);
@@ -809,7 +809,7 @@ TEST_F(F1_optimal_laptime_test, Catalunya_chicane_derivative)
     // Set initial condtion
     std::vector<std::array<scalar,limebeer2014f1<CppAD::AD<scalar>>::curvilinear_p::number_of_inputs>> q0(n,ss.inputs);
     
-    auto control_variables = Optimal_laptime<decltype(car)>::Control_variables<>{};
+    auto control_variables = Optimal_laptime<decltype(car)>::Control_variables_type<>{};
 
     // steering wheel: optimize in the full mesh
     control_variables[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING]
@@ -837,7 +837,7 @@ TEST_F(F1_optimal_laptime_test, Catalunya_chicane_derivative)
 
     for (size_t i = 0; i < decltype(car)::number_of_controls; ++i)
     {
-        if ( control_variables[i].optimal_control_type != Optimal_laptime<decltype(car)>::DONT_OPTIMIZE )
+        if ( control_variables[i].optimal_control_type != Optimal_control_type::DONT_OPTIMIZE )
             control_variables[i].controls.front() = u_start[i];
     }
 
@@ -877,7 +877,7 @@ TEST_F(F1_optimal_laptime_test, Melbourne_derivative)
     auto ss = Steady_state(car_cartesian).solve(v,0.0,0.0); 
 
     // Construct control variables
-    auto control_variables = Optimal_laptime<decltype(car)>::template Control_variables<>{};
+    auto control_variables = Optimal_laptime<decltype(car)>::template Control_variables_type<>{};
 
     // steering wheel: optimize in the full mesh
     control_variables[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING]
@@ -1019,7 +1019,7 @@ TEST_F(F1_optimal_laptime_test, imola_adapted_hypermesh)
     const size_t n = s.size();
 
     // Construct control variables
-    auto control_variables = Optimal_laptime<decltype(car)>::template Control_variables<>{};
+    auto control_variables = Optimal_laptime<decltype(car)>::template Control_variables_type<>{};
 
     // steering wheel: optimize in the full mesh
     control_variables[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING]
@@ -1077,7 +1077,7 @@ TEST_F(F1_optimal_laptime_test, Catalunya_engine_energy_limited)
     const size_t n = s.size();
 
     // Construct control variables
-    auto control_variables = Optimal_laptime<decltype(car)>::template Control_variables<>{};
+    auto control_variables = Optimal_laptime<decltype(car)>::template Control_variables_type<>{};
 
     // steering wheel: optimize in the full mesh
     control_variables[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING]
@@ -1135,7 +1135,7 @@ TEST_F(F1_optimal_laptime_test, Catalunya_tire_energy_limited)
     const size_t n = s.size();
 
     // Construct control variables
-    auto control_variables = Optimal_laptime<decltype(car)>::template Control_variables<>{};
+    auto control_variables = Optimal_laptime<decltype(car)>::template Control_variables_type<>{};
 
     // steering wheel: optimize in the full mesh
     control_variables[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING]
@@ -1196,7 +1196,7 @@ TEST_F(F1_optimal_laptime_test, Catalunya_boost)
     const size_t n = s.size();
 
     // Construct control variables
-    auto control_variables = Optimal_laptime<decltype(car)>::template Control_variables<>{};
+    auto control_variables = Optimal_laptime<decltype(car)>::template Control_variables_type<>{};
 
     // steering wheel: optimize in the full mesh
     control_variables[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING]
@@ -1267,7 +1267,7 @@ TEST_F(F1_optimal_laptime_test, Catalunya_2022_3d)
     EXPECT_EQ(n, 500);
 
     // Construct control variables
-    auto control_variables = Optimal_laptime<decltype(car)>::template Control_variables<>{};
+    auto control_variables = Optimal_laptime<decltype(car)>::template Control_variables_type<>{};
 
     // steering wheel: optimize in the full mesh
     control_variables[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING]
@@ -1315,7 +1315,7 @@ TEST_F(F1_optimal_laptime_test, Catalunya_3d)
     EXPECT_EQ(n, 500);
 
     // Construct control variables
-    auto control_variables = Optimal_laptime<decltype(car)>::template Control_variables<>{};
+    auto control_variables = Optimal_laptime<decltype(car)>::template Control_variables_type<>{};
 
     // steering wheel: optimize in the full mesh
     control_variables[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING]
@@ -1362,7 +1362,7 @@ TEST_F(F1_optimal_laptime_test, laguna_seca_3d)
     EXPECT_EQ(n, 500);
 
     // Construct control variables
-    auto control_variables = Optimal_laptime<decltype(car)>::template Control_variables<>{};
+    auto control_variables = Optimal_laptime<decltype(car)>::template Control_variables_type<>{};
 
     // steering wheel: optimize in the full mesh
     control_variables[decltype(car)::Chassis_type::front_axle_type::control_names::STEERING]

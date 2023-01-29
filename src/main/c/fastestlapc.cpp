@@ -1442,12 +1442,12 @@ struct Optimal_laptime_configuration
 };
 
 template<typename vehicle_t>
-typename Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>::template Control_variables<>
+typename Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>::template Control_variables_type<>
     construct_control_variables(const Optimal_laptime_configuration<vehicle_t>& conf,
     const size_t n_points, const std::array<scalar, vehicle_t::vehicle_ad_curvilinear::number_of_controls>& u_steady_state)
 {
     // (1) Define control variables
-    auto control_variables = typename Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>::template Control_variables<>{};
+    auto control_variables = typename Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>::template Control_variables_type<>{};
 
     // (2) Construct each control variable from the information in the configuration
     for (size_t j = 0; j < vehicle_t::vehicle_ad_curvilinear::number_of_controls; ++j)
@@ -1549,7 +1549,7 @@ void compute_optimal_laptime(vehicle_t& vehicle, Track_by_polynomial& track, con
             // Set only full-mesh variables
             for (size_t j = 0; j < vehicle_t::vehicle_ad_curvilinear::number_of_controls; ++j)
             {
-                if ( control_variables[j].optimal_control_type == Optimal_laptime<typename vehicle_t::vehicle_ad_curvilinear>::FULL_MESH)
+                if ( control_variables[j].optimal_control_type == Optimal_control_type::FULL_MESH)
                 {
                     control_variables[j].controls.front() = conf.u_start[j];
                 }
