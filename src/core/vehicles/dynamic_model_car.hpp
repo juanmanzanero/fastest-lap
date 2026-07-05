@@ -1,6 +1,8 @@
 #ifndef DYNAMIC_MODEL_CAR_HPP
 #define DYNAMIC_MODEL_CAR_HPP
 
+#include <utility>
+
 #include "lion/math/matrix_extensions.h"
 #include "lion/math/euler_angles.h"
 

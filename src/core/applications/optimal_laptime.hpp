@@ -1,3 +1,4 @@
+#include <utility>
 #include "lion/thirdparty/include/cppad/ipopt/solve.hpp"
 #include "lion/math/ipopt_cppad_handler.hpp"
 #include "lion/math/sensitivity_analysis.h"

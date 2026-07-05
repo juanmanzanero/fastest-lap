@@ -25,12 +25,15 @@ if ( ${CONSTRUCT_LIBFASTESTLAPC} )
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
         )
     
-    if (NOT MSYS)
-    	if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    		set(LFASTESTLAPC_ADDITIONAL_FLAGS -static-libstdc++ -static-libgcc)
-    	endif()
-    endif()
-    
+    # NOTE: do NOT statically link libstdc++/libgcc into this SHARED library.
+    # It is loaded into processes (e.g. the Python API) that already load the
+    # dynamic libstdc++.so.6 transitively (libgfortran, the scientific stack).
+    # Two libstdc++ runtimes in one process gives std::locale/std::regex facets
+    # with mismatched vtables -> virtual dispatch lands in the wrong method and
+    # segfaults (observed: SIGSEGV in std::regex compilation via trim() during
+    # optimal_laptime setup on aarch64). Use the single system libstdc++.
+    set(LFASTESTLAPC_ADDITIONAL_FLAGS)
+
     target_link_libraries(fastestlapc LINK_PUBLIC lion::lion ${LFASTESTLAPC_ADDITIONAL_FLAGS})
     
     if ( NOT APPLE)
