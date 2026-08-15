@@ -1,3 +1,4 @@
+#include <utility>
 #include "gtest/gtest.h"
 
 #include "lion/thirdparty/include/cppad/cppad.hpp"
